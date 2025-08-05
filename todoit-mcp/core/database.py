@@ -1,0 +1,465 @@
+"""
+TODOIT MCP - Database Layer
+SQLAlchemy models and database operations
+"""
+import json
+import os
+from typing import List, Optional, Dict, Any, Union
+from datetime import datetime
+from sqlalchemy import create_engine, Column, Integer, String, Text, JSON, DateTime, ForeignKey, Index, event
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, relationship, Session
+from sqlalchemy.sql import func
+from sqlalchemy.engine import Engine
+
+from .models import (
+    TodoList as TodoListModel, TodoItem as TodoItemModel, 
+    ListRelation as ListRelationModel, TodoHistory as TodoHistoryModel,
+    ProgressStats, ListType, ItemStatus, RelationType, HistoryAction
+)
+
+Base = declarative_base()
+
+
+# SQLAlchemy ORM Models
+class TodoListDB(Base):
+    """SQLAlchemy model for todo_lists table"""
+    __tablename__ = 'todo_lists'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    list_key = Column(String(100), unique=True, nullable=False)
+    title = Column(String(255), nullable=False)
+    description = Column(Text)
+    list_type = Column(String(20), default='sequential')
+    parent_list_id = Column(Integer, ForeignKey('todo_lists.id'))
+    meta_data = Column('metadata', JSON, default=lambda: {})
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    items = relationship("TodoItemDB", back_populates="list", cascade="all, delete-orphan")
+    parent = relationship("TodoListDB", remote_side=[id], back_populates="children")
+    children = relationship("TodoListDB", back_populates="parent")
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_todo_lists_list_key', 'list_key'),
+        Index('idx_todo_lists_parent', 'parent_list_id'),
+    )
+
+
+class TodoItemDB(Base):
+    """SQLAlchemy model for todo_items table"""
+    __tablename__ = 'todo_items'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    list_id = Column(Integer, ForeignKey('todo_lists.id'), nullable=False)
+    item_key = Column(String(100), nullable=False)
+    content = Column(String(1000), nullable=False)
+    position = Column(Integer, nullable=False)
+    status = Column(String(20), default='pending')
+    completion_states = Column(JSON, default=lambda: {})
+    parent_item_id = Column(Integer, ForeignKey('todo_items.id'))
+    meta_data = Column('metadata', JSON, default=lambda: {})
+    started_at = Column(DateTime)
+    completed_at = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    list = relationship("TodoListDB", back_populates="items")
+    parent = relationship("TodoItemDB", remote_side=[id], back_populates="children")
+    children = relationship("TodoItemDB", back_populates="parent")
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_todo_items_list_id', 'list_id'),
+        Index('idx_todo_items_status', 'status'),
+        Index('idx_todo_items_position', 'list_id', 'position'),
+        Index('idx_todo_items_parent', 'parent_item_id'),
+        Index('idx_todo_items_unique_key', 'list_id', 'item_key', unique=True),
+    )
+
+
+class ListRelationDB(Base):
+    """SQLAlchemy model for list_relations table"""
+    __tablename__ = 'list_relations'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    source_list_id = Column(Integer, ForeignKey('todo_lists.id'), nullable=False)
+    target_list_id = Column(Integer, ForeignKey('todo_lists.id'), nullable=False)
+    relation_type = Column(String(20), nullable=False)
+    relation_key = Column(String(100))
+    meta_data = Column('metadata', JSON, default=lambda: {})
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    source_list = relationship("TodoListDB", foreign_keys=[source_list_id])
+    target_list = relationship("TodoListDB", foreign_keys=[target_list_id])
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_list_relations_source', 'source_list_id'),
+        Index('idx_list_relations_target', 'target_list_id'),
+        Index('idx_list_relations_unique', 'source_list_id', 'target_list_id', 'relation_type', unique=True),
+    )
+
+
+class TodoHistoryDB(Base):
+    """SQLAlchemy model for todo_history table"""
+    __tablename__ = 'todo_history'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    item_id = Column(Integer, ForeignKey('todo_items.id'))
+    list_id = Column(Integer, ForeignKey('todo_lists.id'))
+    action = Column(String(20), nullable=False)
+    old_value = Column(JSON)
+    new_value = Column(JSON)
+    user_context = Column(String(50), default='system')
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    item = relationship("TodoItemDB")
+    list = relationship("TodoListDB")
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_todo_history_item', 'item_id'),
+        Index('idx_todo_history_list', 'list_id'),
+        Index('idx_todo_history_timestamp', 'timestamp'),
+    )
+
+
+class Database:
+    """Database connection and operations manager"""
+    
+    def __init__(self, db_path: str = "todoit.db"):
+        """Initialize database connection"""
+        self.db_path = os.path.abspath(db_path)
+        self.engine = create_engine(f"sqlite:///{self.db_path}", echo=False)
+        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
+        
+        # Enable foreign key constraints for SQLite
+        @event.listens_for(Engine, "connect")
+        def set_sqlite_pragma(dbapi_connection, connection_record):
+            if 'sqlite' in str(dbapi_connection):
+                cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA foreign_keys=ON")
+                cursor.close()
+        
+        # Create all tables
+        self.create_tables()
+    
+    def create_tables(self):
+        """Create all database tables"""
+        Base.metadata.create_all(bind=self.engine)
+    
+    def get_session(self) -> Session:
+        """Get database session"""
+        return self.SessionLocal()
+    
+    def execute_migration(self, sql_file_path: str):
+        """Execute SQL migration file"""
+        with open(sql_file_path, 'r') as f:
+            sql_content = f.read()
+        
+        with self.engine.connect() as conn:
+            # Split by semicolon and execute each statement
+            statements = [stmt.strip() for stmt in sql_content.split(';') if stmt.strip()]
+            for statement in statements:
+                conn.execute(statement)
+            conn.commit()
+    
+    # TodoList operations
+    def create_list(self, list_data: Dict[str, Any]) -> TodoListDB:
+        """Create a new TODO list"""
+        with self.get_session() as session:
+            db_list = TodoListDB(**list_data)
+            session.add(db_list)
+            session.commit()
+            session.refresh(db_list)
+            return db_list
+    
+    def get_list_by_id(self, list_id: int) -> Optional[TodoListDB]:
+        """Get list by ID"""
+        with self.get_session() as session:
+            return session.query(TodoListDB).filter(TodoListDB.id == list_id).first()
+    
+    def get_list_by_key(self, list_key: str) -> Optional[TodoListDB]:
+        """Get list by key"""
+        with self.get_session() as session:
+            return session.query(TodoListDB).filter(TodoListDB.list_key == list_key).first()
+    
+    def get_all_lists(self, limit: Optional[int] = None) -> List[TodoListDB]:
+        """Get all lists"""
+        with self.get_session() as session:
+            query = session.query(TodoListDB).order_by(TodoListDB.created_at.desc())
+            if limit:
+                query = query.limit(limit)
+            return query.all()
+    
+    def update_list(self, list_id: int, updates: Dict[str, Any]) -> Optional[TodoListDB]:
+        """Update list"""
+        with self.get_session() as session:
+            db_list = session.query(TodoListDB).filter(TodoListDB.id == list_id).first()
+            if db_list:
+                for key, value in updates.items():
+                    if hasattr(db_list, key):
+                        setattr(db_list, key, value)
+                session.commit()
+                session.refresh(db_list)
+            return db_list
+    
+    def delete_list(self, list_id: int) -> bool:
+        """Delete list"""
+        with self.get_session() as session:
+            db_list = session.query(TodoListDB).filter(TodoListDB.id == list_id).first()
+            if db_list:
+                session.delete(db_list)
+                session.commit()
+                return True
+            return False
+    
+    def get_dependent_lists(self, list_id: int) -> List[TodoListDB]:
+        """Get lists that depend on this list"""
+        with self.get_session() as session:
+            relations = session.query(ListRelationDB).filter(
+                ListRelationDB.source_list_id == list_id
+            ).all()
+            dependent_list_ids = [rel.target_list_id for rel in relations]
+            if dependent_list_ids:
+                return session.query(TodoListDB).filter(
+                    TodoListDB.id.in_(dependent_list_ids)
+                ).all()
+            return []
+    
+    # TodoItem operations
+    def create_item(self, item_data: Dict[str, Any]) -> TodoItemDB:
+        """Create a new TODO item"""
+        with self.get_session() as session:
+            db_item = TodoItemDB(**item_data)
+            session.add(db_item)
+            session.commit()
+            session.refresh(db_item)
+            return db_item
+    
+    def get_item_by_id(self, item_id: int) -> Optional[TodoItemDB]:
+        """Get item by ID"""
+        with self.get_session() as session:
+            return session.query(TodoItemDB).filter(TodoItemDB.id == item_id).first()
+    
+    def get_item_by_key(self, list_id: int, item_key: str) -> Optional[TodoItemDB]:
+        """Get item by list_id and item_key"""
+        with self.get_session() as session:
+            return session.query(TodoItemDB).filter(
+                TodoItemDB.list_id == list_id,
+                TodoItemDB.item_key == item_key
+            ).first()
+    
+    def get_list_items(self, list_id: int, status: Optional[str] = None) -> List[TodoItemDB]:
+        """Get all items for a list"""
+        with self.get_session() as session:
+            query = session.query(TodoItemDB).filter(TodoItemDB.list_id == list_id)
+            if status:
+                query = query.filter(TodoItemDB.status == status)
+            return query.order_by(TodoItemDB.position).all()
+    
+    def get_items_by_status(self, list_id: int, status: str) -> List[TodoItemDB]:
+        """Get items by status"""
+        with self.get_session() as session:
+            return session.query(TodoItemDB).filter(
+                TodoItemDB.list_id == list_id,
+                TodoItemDB.status == status
+            ).order_by(TodoItemDB.position).all()
+    
+    def update_item(self, item_id: int, updates: Dict[str, Any]) -> Optional[TodoItemDB]:
+        """Update item"""
+        with self.get_session() as session:
+            db_item = session.query(TodoItemDB).filter(TodoItemDB.id == item_id).first()
+            if db_item:
+                for key, value in updates.items():
+                    if hasattr(db_item, key):
+                        setattr(db_item, key, value)
+                session.commit()
+                session.refresh(db_item)
+            return db_item
+    
+    def delete_item(self, item_id: int) -> bool:
+        """Delete item"""
+        with self.get_session() as session:
+            db_item = session.query(TodoItemDB).filter(TodoItemDB.id == item_id).first()
+            if db_item:
+                session.delete(db_item)
+                session.commit()
+                return True
+            return False
+    
+    def get_next_position(self, list_id: int) -> int:
+        """Get next position for new item in list"""
+        with self.get_session() as session:
+            max_pos = session.query(func.max(TodoItemDB.position)).filter(
+                TodoItemDB.list_id == list_id
+            ).scalar()
+            return (max_pos or 0) + 1
+    
+    def get_max_position(self, list_id: int) -> int:
+        """Get maximum position in list"""
+        with self.get_session() as session:
+            max_pos = session.query(func.max(TodoItemDB.position)).filter(
+                TodoItemDB.list_id == list_id
+            ).scalar()
+            return max_pos or 0
+    
+    def shift_positions(self, list_id: int, from_position: int, shift: int):
+        """Shift positions of items"""
+        with self.get_session() as session:
+            items = session.query(TodoItemDB).filter(
+                TodoItemDB.list_id == list_id,
+                TodoItemDB.position >= from_position
+            ).all()
+            for item in items:
+                item.position += shift
+            session.commit()
+    
+    def get_item_at_position(self, list_id: int, position: int) -> Optional[TodoItemDB]:
+        """Get item at specific position"""
+        with self.get_session() as session:
+            return session.query(TodoItemDB).filter(
+                TodoItemDB.list_id == list_id,
+                TodoItemDB.position == position
+            ).first()
+    
+    # Statistics and progress
+    def get_list_stats(self, list_id: int) -> Dict[str, int]:
+        """Get statistics for a list"""
+        with self.get_session() as session:
+            items = session.query(TodoItemDB).filter(TodoItemDB.list_id == list_id).all()
+            
+            stats = {
+                "total": len(items),
+                "pending": 0,
+                "in_progress": 0,
+                "completed": 0,
+                "failed": 0
+            }
+            
+            for item in items:
+                if item.status in stats:
+                    stats[item.status] += 1
+            
+            return stats
+    
+    # List relations
+    def create_list_relation(self, relation_data: Dict[str, Any]) -> ListRelationDB:
+        """Create list relation"""
+        with self.get_session() as session:
+            db_relation = ListRelationDB(**relation_data)
+            session.add(db_relation)
+            session.commit()
+            session.refresh(db_relation)
+            return db_relation
+    
+    def get_list_relations(self, list_id: int, as_source: bool = True) -> List[ListRelationDB]:
+        """Get list relations"""
+        with self.get_session() as session:
+            if as_source:
+                return session.query(ListRelationDB).filter(
+                    ListRelationDB.source_list_id == list_id
+                ).all()
+            else:
+                return session.query(ListRelationDB).filter(
+                    ListRelationDB.target_list_id == list_id
+                ).all()
+    
+    def delete_list_relations(self, list_id: int):
+        """Delete all relations for a list"""
+        with self.get_session() as session:
+            relations = session.query(ListRelationDB).filter(
+                (ListRelationDB.source_list_id == list_id) |
+                (ListRelationDB.target_list_id == list_id)
+            ).all()
+            for relation in relations:
+                session.delete(relation)
+            session.commit()
+    
+    def get_lists_by_relation(self, relation_type: str, relation_key: str) -> List[TodoListDB]:
+        """Get lists by relation type and key"""
+        with self.get_session() as session:
+            relations = session.query(ListRelationDB).filter(
+                ListRelationDB.relation_type == relation_type,
+                ListRelationDB.relation_key == relation_key
+            ).all()
+            list_ids = list(set([rel.source_list_id for rel in relations] + 
+                               [rel.target_list_id for rel in relations]))
+            if list_ids:
+                return session.query(TodoListDB).filter(TodoListDB.id.in_(list_ids)).all()
+            return []
+    
+    def get_list_dependencies(self, list_id: int) -> List[ListRelationDB]:
+        """Get dependencies for a list"""
+        with self.get_session() as session:
+            return session.query(ListRelationDB).filter(
+                ListRelationDB.target_list_id == list_id,
+                ListRelationDB.relation_type == 'dependency'
+            ).all()
+    
+    # History operations
+    def create_history_entry(self, history_data: Dict[str, Any]) -> TodoHistoryDB:
+        """Create history entry"""
+        with self.get_session() as session:
+            db_history = TodoHistoryDB(**history_data)
+            session.add(db_history)
+            session.commit()
+            session.refresh(db_history)
+            return db_history
+    
+    def get_item_history(self, item_id: int, limit: Optional[int] = None) -> List[TodoHistoryDB]:
+        """Get history for an item"""
+        with self.get_session() as session:
+            query = session.query(TodoHistoryDB).filter(
+                TodoHistoryDB.item_id == item_id
+            ).order_by(TodoHistoryDB.timestamp.desc())
+            if limit:
+                query = query.limit(limit)
+            return query.all()
+    
+    def get_list_history(self, list_id: int, limit: Optional[int] = None) -> List[TodoHistoryDB]:
+        """Get history for a list"""
+        with self.get_session() as session:
+            query = session.query(TodoHistoryDB).filter(
+                TodoHistoryDB.list_id == list_id
+            ).order_by(TodoHistoryDB.timestamp.desc())
+            if limit:
+                query = query.limit(limit)
+            return query.all()
+    
+    # Bulk operations
+    def bulk_update_items(self, list_id: int, filter_criteria: Dict[str, Any], 
+                         updates: Dict[str, Any]) -> List[TodoItemDB]:
+        """Bulk update items"""
+        with self.get_session() as session:
+            query = session.query(TodoItemDB).filter(TodoItemDB.list_id == list_id)
+            
+            # Apply filters
+            for key, value in filter_criteria.items():
+                if hasattr(TodoItemDB, key):
+                    query = query.filter(getattr(TodoItemDB, key) == value)
+            
+            items = query.all()
+            
+            # Apply updates
+            for item in items:
+                for key, value in updates.items():
+                    if hasattr(item, key):
+                        setattr(item, key, value)
+            
+            session.commit()
+            return items
+    
+    def delete_list_items(self, list_id: int):
+        """Delete all items in a list"""
+        with self.get_session() as session:
+            items = session.query(TodoItemDB).filter(TodoItemDB.list_id == list_id).all()
+            for item in items:
+                session.delete(item)
+            session.commit()
