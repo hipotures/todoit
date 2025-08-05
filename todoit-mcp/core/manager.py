@@ -328,13 +328,13 @@ class TodoManager:
         return None
     
     def get_progress(self, list_key: str) -> ProgressStats:
-        """8. Zwraca postęp realizacji listy"""
+        """8. Phase 3: Enhanced progress tracking with hierarchies and dependencies"""
         # Pobierz listę
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             raise ValueError(f"Lista '{list_key}' nie istnieje")
         
-        # Pobierz statystyki
+        # Basic stats
         stats = self.db.get_list_stats(db_list.id)
         
         # Oblicz procent ukończenia
@@ -342,13 +342,45 @@ class TodoManager:
         if stats["total"] > 0:
             completion_percentage = (stats["completed"] / stats["total"]) * 100
         
+        # Phase 3: Enhanced statistics
+        all_items = self.db.get_list_items(db_list.id)
+        
+        # Count hierarchy structure
+        root_items = [item for item in all_items if item.parent_item_id is None]
+        subtasks = [item for item in all_items if item.parent_item_id is not None]
+        
+        # Calculate maximum hierarchy depth
+        max_depth = 0
+        for item in all_items:
+            depth = self.db.get_item_depth(item.id)
+            max_depth = max(max_depth, depth)
+        
+        # Count blocked items (Phase 2 cross-list dependencies)
+        blocked_count = 0
+        available_count = 0
+        for item in all_items:
+            if item.status in ['pending']:
+                if self.db.is_item_blocked(item.id):
+                    blocked_count += 1
+                else:
+                    available_count += 1
+        
+        # Count cross-list dependencies involving this list
+        dependencies = self.db.get_all_dependencies_for_list(db_list.id)
+        
         return ProgressStats(
             total=stats["total"],
             completed=stats["completed"],
             in_progress=stats["in_progress"],
             pending=stats["pending"],
             failed=stats["failed"],
-            completion_percentage=completion_percentage
+            completion_percentage=completion_percentage,
+            blocked=blocked_count,
+            available=available_count,
+            root_items=len(root_items),
+            subtasks=len(subtasks),
+            hierarchy_depth=max_depth,
+            dependency_count=len(dependencies)
         )
     
     def import_from_markdown(self, file_path: str, base_key: Optional[str] = None) -> List[TodoList]:
@@ -664,33 +696,97 @@ class TodoManager:
     
     def get_next_pending_with_subtasks(self, list_key: str) -> Optional[TodoItem]:
         """
-        Smart next task logic:
-        1. Find first pending task
-        2. If it has pending subtasks → return first pending subtask  
-        3. If no subtasks → return the task itself
+        Phase 3: Smart next task algorithm combining Phase 1 + Phase 2
+        1. Find all pending tasks (root and subtasks)
+        2. Filter out blocked (cross-list dependencies - Phase 2)
+        3. For each unblocked pending task:
+           a. If has pending subtasks → return first pending subtask
+           b. If no subtasks → return task itself
+        4. Priority:
+           - Tasks with in_progress parents (continue working on started tasks)
+           - Tasks without cross-list dependencies
+           - Tasks by position
         """
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             raise ValueError(f"Lista '{list_key}' nie istnieje")
         
-        # Get all pending root items (no parent)
+        # Phase 3: Enhanced algorithm - collect all candidates with priority scoring
+        candidates = []
+        
+        # Get all root items (both pending and in_progress for subtask checking)
         root_items = self.db.get_root_items(db_list.id)
-        pending_root_items = [item for item in root_items if item.status == 'pending']
         
-        for item in pending_root_items:
-            # Check if this item has pending subtasks
-            children = self.db.get_item_children(item.id)
-            pending_children = [child for child in children if child.status == 'pending']
+        for item in root_items:
+            # Priority 1: In-progress parent with pending subtasks (continue working)
+            if item.status == 'in_progress':
+                children = self.db.get_item_children(item.id)
+                pending_children = [child for child in children if child.status == 'pending']
+                
+                for child in pending_children:
+                    # Phase 2: Check if subtask is blocked by cross-list dependencies
+                    if not self.db.is_item_blocked(child.id):
+                        candidates.append({
+                            'item': child,
+                            'priority': 1,  # Highest priority - continue in-progress work
+                            'parent_position': item.position,
+                            'item_position': child.position
+                        })
             
-            if pending_children:
-                # Return first pending subtask
-                return self._db_to_model(pending_children[0], TodoItem)
-            else:
-                # No pending subtasks, return the parent task
-                return self._db_to_model(item, TodoItem)
+            # Priority 2: Pending parent tasks
+            elif item.status == 'pending':
+                # Phase 2: Check if parent is blocked by cross-list dependencies
+                if self.db.is_item_blocked(item.id):
+                    continue  # Skip blocked items
+                
+                # Check if parent has pending subtasks
+                children = self.db.get_item_children(item.id)
+                pending_children = [child for child in children if child.status == 'pending']
+                
+                if pending_children:
+                    # Return first unblocked pending subtask
+                    for child in pending_children:
+                        if not self.db.is_item_blocked(child.id):
+                            candidates.append({
+                                'item': child,
+                                'priority': 2,  # Medium priority - new subtask
+                                'parent_position': item.position,
+                                'item_position': child.position
+                            })
+                            break  # Take first available subtask
+                else:
+                    # No subtasks, return parent task itself
+                    candidates.append({
+                        'item': item,
+                        'priority': 3,  # Lower priority - root task
+                        'parent_position': item.position,
+                        'item_position': 0
+                    })
         
-        # No pending tasks found
+        # Phase 3: Also check orphaned subtasks (subtasks with completed/failed parents)
+        all_items = self.db.get_list_items(db_list.id, status='pending')
+        for item in all_items:
+            if item.parent_item_id:  # This is a subtask
+                parent = self.db.get_item_by_id(item.parent_item_id)
+                if parent and parent.status in ['completed', 'failed']:
+                    # Orphaned subtask - can be worked on independently
+                    if not self.db.is_item_blocked(item.id):
+                        candidates.append({
+                            'item': item,
+                            'priority': 4,  # Lowest priority - orphaned subtask
+                            'parent_position': parent.position if parent else 999,
+                            'item_position': item.position
+                        })
+        
+        # Sort candidates by priority, then parent position, then item position
+        candidates.sort(key=lambda x: (x['priority'], x['parent_position'], x['item_position']))
+        
+        # Return first candidate
+        if candidates:
+            return self._db_to_model(candidates[0]['item'], TodoItem)
+        
+        # No available tasks found
         return None
     
     def auto_complete_parent(self, list_key: str, item_key: str) -> bool:

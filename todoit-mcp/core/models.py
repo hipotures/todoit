@@ -360,6 +360,14 @@ class ProgressStats(BaseModel):
     failed: int = 0
     completion_percentage: float = 0.0
     
+    # Phase 3: Enhanced progress tracking
+    blocked: int = 0  # Items blocked by cross-list dependencies
+    available: int = 0  # Items available to start (not blocked)
+    root_items: int = 0  # Count of root items (no parent)
+    subtasks: int = 0  # Count of subtasks (has parent)
+    hierarchy_depth: int = 0  # Maximum hierarchy depth
+    dependency_count: int = 0  # Total cross-list dependencies
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization"""
         return {
@@ -368,7 +376,13 @@ class ProgressStats(BaseModel):
             "in_progress": self.in_progress,
             "pending": self.pending,
             "failed": self.failed,
-            "completion_percentage": self.completion_percentage
+            "completion_percentage": self.completion_percentage,
+            "blocked": self.blocked,
+            "available": self.available,
+            "root_items": self.root_items,
+            "subtasks": self.subtasks,
+            "hierarchy_depth": self.hierarchy_depth,
+            "dependency_count": self.dependency_count
         }
 
 

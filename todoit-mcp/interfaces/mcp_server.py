@@ -1099,6 +1099,97 @@ async def todo_get_next_pending_enhanced(list_key: str, respect_dependencies: bo
         }
 
 
+@mcp.tool()
+@mcp_error_handler  
+async def todo_get_comprehensive_status(list_key: str, mgr=None) -> Dict[str, Any]:
+    """Get comprehensive Phase 3 status: hierarchies, dependencies, progress, and next task.
+    
+    Combines all Phase 1 (subtasks), Phase 2 (cross-list deps), and Phase 3 (smart algorithm) features.
+    
+    Args:
+        list_key: Key of list to analyze
+        
+    Returns:
+        Dictionary with comprehensive status including:
+        - Enhanced progress stats (blocked, available, hierarchy info)
+        - Next recommended task using Phase 3 smart algorithm  
+        - List of blocked items with blocking reasons
+        - Hierarchical item structure
+        - Cross-list dependency summary
+    """
+    # Get enhanced progress stats (Phase 3)
+    progress = mgr.get_progress(list_key)
+    
+    # Get next task using Phase 3 smart algorithm
+    next_task = mgr.get_next_pending_with_subtasks(list_key)
+    
+    # Get hierarchical items structure
+    items = mgr.get_list_items_hierarchical(list_key)
+    
+    # Get all items and their blocking status
+    all_items = mgr.get_list_items(list_key)
+    blocked_items = []
+    available_items = []
+    
+    for item in all_items:
+        if item.status == 'pending':
+            can_start_info = mgr.can_start_item(list_key, item.item_key)
+            if can_start_info['can_start']:
+                available_items.append({
+                    'key': item.item_key,
+                    'content': item.content,
+                    'position': item.position
+                })
+            else:
+                blocked_items.append({
+                    'key': item.item_key, 
+                    'content': item.content,
+                    'reason': can_start_info['reason'],
+                    'blocked_by_dependencies': can_start_info['blocked_by_dependencies'],
+                    'blocked_by_subtasks': can_start_info['blocked_by_subtasks'],
+                    'blockers': can_start_info['blockers'],
+                    'pending_subtasks': can_start_info['pending_subtasks']
+                })
+    
+    # Get cross-list dependencies summary
+    db_list = mgr.db.get_list_by_key(list_key)
+    dependencies = mgr.db.get_all_dependencies_for_list(db_list.id) if db_list else []
+    
+    dependency_summary = {
+        'total_dependencies': len(dependencies),
+        'as_dependent': 0,  # How many items in this list depend on others
+        'as_required': 0    # How many items in this list block others
+    }
+    
+    for dep in dependencies:
+        # Check if the dependent item is in this list
+        dependent_item = mgr.db.get_item_by_id(dep.dependent_item_id)
+        if dependent_item and dependent_item.list_id == db_list.id:
+            dependency_summary['as_dependent'] += 1
+        
+        # Check if the required item is in this list  
+        required_item = mgr.db.get_item_by_id(dep.required_item_id)
+        if required_item and required_item.list_id == db_list.id:
+            dependency_summary['as_required'] += 1
+    
+    return {
+        "success": True,
+        "list_key": list_key,
+        "progress": progress.to_dict(),
+        "next_task": next_task.to_dict() if next_task else None,
+        "blocked_items": blocked_items,
+        "available_items": available_items,
+        "items_hierarchical": items,
+        "dependency_summary": dependency_summary,
+        "recommendations": {
+            "action": "start_next" if next_task else "all_completed" if progress.total > 0 and progress.completed == progress.total else "add_items",
+            "next_task_key": next_task.item_key if next_task else None,
+            "blocked_count": len(blocked_items),
+            "available_count": len(available_items)
+        }
+    }
+
+
 if __name__ == "__main__":
     import signal
     import sys
