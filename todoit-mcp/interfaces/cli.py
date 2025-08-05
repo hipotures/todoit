@@ -61,11 +61,12 @@ def list():
 @click.option('--items', '-i', multiple=True, help='Initial items')
 @click.option('--from-folder', help='Create tasks from folder contents')
 @click.option('--filter-ext', help='Filter files by extension (e.g., .yaml, .py, .md)')
+@click.option('--task-prefix', default='Process', help='Task name prefix (default: Process)')
 @click.option('--type', 'list_type', default='sequential', 
               type=click.Choice(['sequential', 'parallel', 'hierarchical']))
 @click.option('--metadata', '-m', help='Metadata JSON')
 @click.pass_context
-def list_create(ctx, list_key, title, items, from_folder, filter_ext, list_type, metadata):
+def list_create(ctx, list_key, title, items, from_folder, filter_ext, task_prefix, list_type, metadata):
     """Create a new TODO list"""
     manager = get_manager(ctx.obj['db_path'])
     
@@ -94,7 +95,7 @@ def list_create(ctx, list_key, title, items, from_folder, filter_ext, list_type,
                             filter_ext = '.' + filter_ext
                         if not item.lower().endswith(filter_ext.lower()):
                             continue
-                    folder_items.append(f"Process {item}")
+                    folder_items.append(f"{task_prefix} {item}")
                 elif os.path.isdir(item_path) and not filter_ext:
                     # Only include directories if no extension filter
                     folder_items.append(f"Handle folder {item}/")

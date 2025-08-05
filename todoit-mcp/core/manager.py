@@ -135,12 +135,27 @@ class TodoManager:
             deps = ", ".join([l.list_key for l in dependent_lists])
             raise ValueError(f"Nie można usunąć listy '{key}' - ma zależne listy: {deps}")
         
-        # Zapisz w historii przed usunięciem
-        self._record_history(
-            list_id=db_list.id,
-            action="deleted",
-            old_value={"list_key": db_list.list_key, "title": db_list.title}
-        )
+        # Usuń historię powiązaną z listą i jej zadaniami
+        from .database import TodoHistoryDB
+        items = self.db.get_list_items(db_list.id)
+        for item in items:
+            # Usuń historię dla każdego zadania
+            with self.db.get_session() as session:
+                history_entries = session.query(TodoHistoryDB).filter(
+                    TodoHistoryDB.item_id == item.id
+                ).all()
+                for entry in history_entries:
+                    session.delete(entry)
+                session.commit()
+        
+        # Usuń historię powiązaną z listą
+        with self.db.get_session() as session:
+            history_entries = session.query(TodoHistoryDB).filter(
+                TodoHistoryDB.list_id == db_list.id
+            ).all()
+            for entry in history_entries:
+                session.delete(entry)
+            session.commit()
         
         # Usuń wszystkie zadania (kaskadowo)
         self.db.delete_list_items(db_list.id)
