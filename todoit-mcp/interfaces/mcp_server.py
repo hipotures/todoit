@@ -2,7 +2,8 @@
 TODOIT MCP Server
 MCP (Model Context Protocol) interface for TodoManager
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Callable
+from functools import wraps
 from mcp.server.fastmcp import FastMCP
 
 from core.manager import TodoManager
@@ -19,6 +20,22 @@ def init_manager(db_path: Optional[str] = None):
     if manager is None:
         manager = TodoManager(db_path)
     return manager
+
+
+def mcp_error_handler(func: Callable) -> Callable:
+    """Decorator to handle MCP tool errors consistently."""
+    @wraps(func)
+    async def wrapper(*args, **kwargs) -> Dict[str, Any]:
+        try:
+            # Initialize manager and inject it into the function namespace
+            mgr = init_manager()
+            # Call the function with manager available in local scope
+            return await func(*args, mgr=mgr, **kwargs)
+        except ValueError as e:
+            return {"success": False, "error": str(e), "error_type": "validation"}
+        except Exception as e:
+            return {"success": False, "error": str(e), "error_type": "internal"}
+    return wrapper
 
 # === ETAP 1: 10 kluczowych funkcji ===
 
@@ -566,7 +583,8 @@ async def todo_project_overview(project_key: str) -> Dict[str, Any]:
 # === List Properties Functions ===
 
 @mcp.tool()
-async def todo_set_list_property(list_key: str, property_key: str, property_value: str) -> Dict[str, Any]:
+@mcp_error_handler
+async def todo_set_list_property(list_key: str, property_key: str, property_value: str, mgr=None) -> Dict[str, Any]:
     """Set a property for a list (create or update).
     
     Args:
@@ -577,18 +595,15 @@ async def todo_set_list_property(list_key: str, property_key: str, property_valu
     Returns:
         Dictionary with success status and property details
     """
-    try:
-        mgr = init_manager()
-        property_obj = mgr.set_list_property(list_key, property_key, property_value)
-        return {
-            "success": True,
-            "property": property_obj.to_dict()
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    property_obj = mgr.set_list_property(list_key, property_key, property_value)
+    return {
+        "success": True,
+        "property": property_obj.to_dict()
+    }
 
 @mcp.tool()
-async def todo_get_list_property(list_key: str, property_key: str) -> Dict[str, Any]:
+@mcp_error_handler
+async def todo_get_list_property(list_key: str, property_key: str, mgr=None) -> Dict[str, Any]:
     """Get a property value for a list.
     
     Args:
@@ -598,25 +613,22 @@ async def todo_get_list_property(list_key: str, property_key: str) -> Dict[str, 
     Returns:
         Dictionary with success status and property value
     """
-    try:
-        mgr = init_manager()
-        value = mgr.get_list_property(list_key, property_key)
-        if value is not None:
-            return {
-                "success": True,
-                "property_key": property_key,
-                "property_value": value
-            }
-        else:
-            return {
-                "success": False,
-                "error": f"Property '{property_key}' not found for list '{list_key}'"
-            }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    value = mgr.get_list_property(list_key, property_key)
+    if value is not None:
+        return {
+            "success": True,
+            "property_key": property_key,
+            "property_value": value
+        }
+    else:
+        return {
+            "success": False,
+            "error": f"Property '{property_key}' not found for list '{list_key}'"
+        }
 
 @mcp.tool()
-async def todo_get_list_properties(list_key: str) -> Dict[str, Any]:
+@mcp_error_handler
+async def todo_get_list_properties(list_key: str, mgr=None) -> Dict[str, Any]:
     """Get all properties for a list.
     
     Args:
@@ -625,20 +637,17 @@ async def todo_get_list_properties(list_key: str) -> Dict[str, Any]:
     Returns:
         Dictionary with success status and all properties as key-value pairs
     """
-    try:
-        mgr = init_manager()
-        properties = mgr.get_list_properties(list_key)
-        return {
-            "success": True,
-            "list_key": list_key,
-            "properties": properties,
-            "count": len(properties)
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    properties = mgr.get_list_properties(list_key)
+    return {
+        "success": True,
+        "list_key": list_key,
+        "properties": properties,
+        "count": len(properties)
+    }
 
 @mcp.tool()
-async def todo_delete_list_property(list_key: str, property_key: str) -> Dict[str, Any]:
+@mcp_error_handler
+async def todo_delete_list_property(list_key: str, property_key: str, mgr=None) -> Dict[str, Any]:
     """Delete a property from a list.
     
     Args:
@@ -648,21 +657,203 @@ async def todo_delete_list_property(list_key: str, property_key: str) -> Dict[st
     Returns:
         Dictionary with success status and confirmation message
     """
-    try:
-        mgr = init_manager()
-        success = mgr.delete_list_property(list_key, property_key)
-        if success:
-            return {
-                "success": True,
-                "message": f"Property '{property_key}' deleted from list '{list_key}'"
-            }
+    success = mgr.delete_list_property(list_key, property_key)
+    if success:
+        return {
+            "success": True,
+            "message": f"Property '{property_key}' deleted from list '{list_key}'"
+        }
+    else:
+        return {
+            "success": False,
+            "error": f"Property '{property_key}' not found for list '{list_key}'"
+        }
+
+
+# ===== SUBTASK MANAGEMENT MCP TOOLS (Phase 1) =====
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_add_subtask(list_key: str, parent_key: str, subtask_key: str, content: str, metadata: Optional[Dict[str, Any]] = None, mgr=None) -> Dict[str, Any]:
+    """Add a subtask to an existing task.
+    
+    Args:
+        list_key: Key of the list containing the parent task (required)
+        parent_key: Key of the parent task (required)
+        subtask_key: Unique key for the new subtask (required)
+        content: Content/description of the subtask (required)
+        metadata: Optional metadata for the subtask
+        
+    Returns:
+        Dictionary with success status and created subtask details
+    """
+    subtask = mgr.add_subtask(list_key, parent_key, subtask_key, content, metadata)
+    return {
+        "success": True,
+        "subtask": subtask.to_dict(),
+        "message": f"Subtask '{subtask_key}' added to '{parent_key}' in list '{list_key}'"
+    }
+
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_get_subtasks(list_key: str, parent_key: str, mgr=None) -> Dict[str, Any]:
+    """Get all subtasks for a parent task.
+    
+    Args:
+        list_key: Key of the list containing the parent task (required)
+        parent_key: Key of the parent task (required)
+        
+    Returns:
+        Dictionary with success status, subtasks list, and count
+    """
+    subtasks = mgr.get_subtasks(list_key, parent_key)
+    return {
+        "success": True,
+        "subtasks": [subtask.to_dict() for subtask in subtasks],
+        "count": len(subtasks),
+        "parent_key": parent_key
+    }
+
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_get_item_hierarchy(list_key: str, item_key: str, mgr=None) -> Dict[str, Any]:
+    """Get full hierarchy for an item (item + all subtasks recursively).
+    
+    Args:
+        list_key: Key of the list containing the item (required)
+        item_key: Key of the item to get hierarchy for (required)
+        
+    Returns:
+        Dictionary with success status and hierarchical structure
+    """
+    hierarchy = mgr.get_item_hierarchy(list_key, item_key)
+    return {
+        "success": True,
+        "hierarchy": hierarchy,
+        "list_key": list_key,
+        "root_item_key": item_key
+    }
+
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_move_to_subtask(list_key: str, item_key: str, new_parent_key: str, mgr=None) -> Dict[str, Any]:
+    """Convert an existing task to be a subtask of another task.
+    
+    Args:
+        list_key: Key of the list containing both items (required)
+        item_key: Key of the item to move (required)
+        new_parent_key: Key of the new parent task (required)
+        
+    Returns:
+        Dictionary with success status and updated item details
+    """
+    moved_item = mgr.move_to_subtask(list_key, item_key, new_parent_key)
+    return {
+        "success": True,
+        "moved_item": moved_item.to_dict(),
+        "message": f"Item '{item_key}' moved to be subtask of '{new_parent_key}'"
+    }
+
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_get_next_pending_smart(list_key: str, mgr=None) -> Dict[str, Any]:
+    """Get next pending item using smart subtask logic (subtasks before parents).
+    
+    Args:
+        list_key: Key of the list to get next item from (required)
+        
+    Returns:
+        Dictionary with success status and next available item or null if none
+    """
+    item = mgr.get_next_pending_with_subtasks(list_key)
+    if item:
+        return {
+            "success": True,
+            "next_item": item.to_dict(),
+            "is_subtask": item.parent_item_id is not None,
+            "message": f"Next smart task: {item.item_key}"
+        }
+    else:
+        return {
+            "success": True,
+            "next_item": None,
+            "message": f"No pending items in list '{list_key}'"
+        }
+
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_can_complete_item(list_key: str, item_key: str, mgr=None) -> Dict[str, Any]:
+    """Check if an item can be completed (no pending subtasks).
+    
+    Args:
+        list_key: Key of the list containing the item (required)
+        item_key: Key of the item to check (required)
+        
+    Returns:
+        Dictionary with completion check results
+    """
+    result = mgr.can_complete_item(list_key, item_key)
+    return {
+        "success": True,
+        "can_complete": result["can_complete"],
+        "details": result,
+        "item_key": item_key
+    }
+
+
+# Enhanced existing tools to support hierarchy
+
+@mcp.tool()
+@mcp_error_handler  
+async def todo_get_list_items_hierarchical(list_key: str, status: Optional[str] = None, mgr=None) -> Dict[str, Any]:
+    """Get all items from a list with hierarchical organization.
+    
+    Args:
+        list_key: Key of the list to get items from (required)
+        status: Optional status filter (pending, completed, in_progress, etc.)
+        
+    Returns:
+        Dictionary with success status, hierarchically organized items, and count
+    """
+    items = mgr.get_list_items(list_key, status)
+    
+    # Organize items hierarchically
+    items_by_id = {item.id: item for item in items}
+    root_items = []
+    children_map = {}
+    
+    for item in items:
+        if item.parent_item_id is None:
+            root_items.append(item)
         else:
-            return {
-                "success": False,
-                "error": f"Property '{property_key}' not found for list '{list_key}'"
-            }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+            if item.parent_item_id not in children_map:
+                children_map[item.parent_item_id] = []
+            children_map[item.parent_item_id].append(item)
+    
+    def build_hierarchy(item):
+        item_dict = item.to_dict()
+        children = children_map.get(item.id, [])
+        if children:
+            item_dict["subtasks"] = [build_hierarchy(child) for child in sorted(children, key=lambda x: x.position)]
+        else:
+            item_dict["subtasks"] = []
+        return item_dict
+    
+    hierarchical_items = [build_hierarchy(item) for item in sorted(root_items, key=lambda x: x.position)]
+    
+    return {
+        "success": True,
+        "items": hierarchical_items,
+        "total_count": len(items),
+        "root_count": len(root_items),
+        "status_filter": status,
+        "list_key": list_key
+    }
 
 
 if __name__ == "__main__":

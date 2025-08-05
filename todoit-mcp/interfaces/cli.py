@@ -5,7 +5,7 @@ Command Line Interface with Rich for better presentation
 import click
 import json
 import os
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 from rich.console import Console
 from rich.table import Table
@@ -19,6 +19,226 @@ from core.manager import TodoManager
 
 
 console = Console()
+
+
+def _get_status_icon(status_value: str) -> str:
+    """Get status icon for display"""
+    return {
+        'pending': '⏳',
+        'in_progress': '🔄',
+        'completed': '✅',
+        'failed': '❌'
+    }.get(status_value, '❓')
+
+
+def _get_status_display(status_value: str) -> str:
+    """Get full status display text"""
+    return {
+        'pending': '⏳ Pending',
+        'in_progress': '🔄 In Progress', 
+        'completed': '✅ Completed',
+        'failed': '❌ Failed'
+    }.get(status_value, f'❓ {status_value}')
+
+
+def _get_status_style(status_value: str) -> str:
+    """Get status style for Rich formatting"""
+    return {
+        'pending': 'yellow',
+        'in_progress': 'blue', 
+        'completed': 'green',
+        'failed': 'red'
+    }.get(status_value, 'white')
+
+
+def _add_completion_states_to_node(node, completion_states):
+    """Add completion states to tree node"""
+    if completion_states:
+        for state, value in completion_states.items():
+            if isinstance(value, bool):
+                icon = '✅' if value else '❌'
+                node.add(f"{icon} {state}")
+            else:
+                node.add(f"📝 {state}: {value}")
+
+
+def _create_properties_table(properties: Dict[str, str], title: str = "Properties") -> Table:
+    """Create Rich table for properties display"""
+    prop_table = Table(title=title, box=box.SIMPLE)
+    prop_table.add_column("Key", style="cyan", width=20)
+    prop_table.add_column("Value", style="white")
+    
+    for key, value in properties.items():
+        # Truncate long values for display
+        display_value = value if len(value) <= 60 else value[:57] + "..."
+        prop_table.add_row(key, display_value)
+    
+    return prop_table
+
+
+def _organize_items_by_hierarchy(items: List) -> Dict[str, Any]:
+    """Organize items into hierarchical structure"""
+    # Create lookup dictionaries
+    items_by_id = {item.id: item for item in items}
+    items_by_parent = {}
+    root_items = []
+    
+    # Group items by parent
+    for item in items:
+        parent_id = getattr(item, 'parent_item_id', None)
+        if parent_id is None:
+            root_items.append(item)
+        else:
+            if parent_id not in items_by_parent:
+                items_by_parent[parent_id] = []
+            items_by_parent[parent_id].append(item)
+    
+    # Sort each group by position
+    root_items.sort(key=lambda x: x.position)
+    for parent_id in items_by_parent:
+        items_by_parent[parent_id].sort(key=lambda x: x.position)
+    
+    return {
+        'roots': root_items,
+        'children': items_by_parent
+    }
+
+
+def _get_hierarchical_numbering(item, parent_numbers: List[int] = None) -> str:
+    """Generate hierarchical numbering like 1, 1.1, 1.2, 2, 2.1, etc."""
+    if parent_numbers is None:
+        parent_numbers = []
+    
+    # For root items, use position directly
+    if not parent_numbers:
+        return str(item.position)
+    
+    # For subtasks, append to parent numbering
+    return ".".join(map(str, parent_numbers + [item.position]))
+
+
+def _render_tree_view(todo_list, items: List, properties: Dict[str, str]) -> Tree:
+    """Render list as hierarchical tree view"""
+    tree_view = Tree(f"📋 {todo_list.title} ({todo_list.list_key})")
+    
+    # Organize items by hierarchy
+    hierarchy = _organize_items_by_hierarchy(items)
+    
+    def add_item_to_tree(item, parent_node, depth=0):
+        """Recursively add item and its children to tree"""
+        status_icon = _get_status_icon(item.status.value)
+        
+        # Calculate progress if item has children
+        children = hierarchy['children'].get(item.id, [])
+        progress_info = ""
+        if children:
+            completed = sum(1 for child in children if child.status.value == 'completed')
+            total = len(children)
+            progress_info = f" [Progress: {completed}/{total}]"
+        
+        # Add item node
+        item_text = f"{status_icon} {item.content}{progress_info}"
+        item_node = parent_node.add(item_text)
+        
+        # Add completion states
+        _add_completion_states_to_node(item_node, item.completion_states)
+        
+        # Recursively add children
+        for child in children:
+            add_item_to_tree(child, item_node, depth + 1)
+    
+    # Add all root items and their subtrees
+    for root_item in hierarchy['roots']:
+        add_item_to_tree(root_item, tree_view)
+    
+    # Add list properties to tree if any
+    if properties:
+        props_node = tree_view.add("🔧 Properties")
+        for key, value in properties.items():
+            display_value = value if len(value) <= 40 else value[:37] + "..."
+            props_node.add(f"{key}: {display_value}")
+    
+    return tree_view
+
+
+def _render_table_view(todo_list, items: List, properties: Dict[str, str]):
+    """Render list as hierarchical table view"""
+    # Main items table
+    table = Table(title=f"📋 {todo_list.title} (ID: {todo_list.id})", box=box.ROUNDED)
+    table.add_column("#", style="cyan", width=8)
+    table.add_column("Key", style="magenta")
+    table.add_column("Task", style="white")
+    table.add_column("Status", style="yellow")
+    table.add_column("Progress", style="blue", width=10)
+    table.add_column("States", style="green")
+    
+    # Organize items by hierarchy
+    hierarchy = _organize_items_by_hierarchy(items)
+    
+    def add_item_to_table(item, parent_numbers=None, depth=0):
+        """Recursively add item and its children to table"""
+        if parent_numbers is None:
+            parent_numbers = []
+        
+        # Generate hierarchical numbering
+        current_numbers = parent_numbers + [item.position]
+        hierarchical_num = ".".join(map(str, current_numbers))
+        
+        # Create indentation for visual hierarchy
+        indent = "  " * depth
+        if depth > 0:
+            indent += "└─ "
+        
+        # Get status info
+        status_display = _get_status_display(item.status.value)
+        status_style = _get_status_style(item.status.value)
+        
+        # Calculate progress if item has children
+        children = hierarchy['children'].get(item.id, [])
+        progress_str = ""
+        if children:
+            completed = sum(1 for child in children if child.status.value == 'completed')
+            total = len(children)
+            percentage = (completed / total * 100) if total > 0 else 0
+            progress_str = f"{percentage:.0f}% ({completed}/{total})"
+        
+        # Format completion states
+        states_str = ""
+        if item.completion_states:
+            states = []
+            for k, v in item.completion_states.items():
+                if isinstance(v, bool):
+                    icon = '✅' if v else '❌'
+                    states.append(f"{icon}{k}")
+                else:
+                    states.append(f"📝{k}")
+            states_str = " ".join(states)
+        
+        # Add row to table
+        table.add_row(
+            hierarchical_num,
+            item.item_key,
+            f"{indent}{item.content}",
+            f"[{status_style}]{status_display}[/]",
+            progress_str,
+            states_str
+        )
+        
+        # Recursively add children
+        for child in children:
+            add_item_to_table(child, current_numbers, depth + 1)
+    
+    # Add all root items and their subtrees
+    for root_item in hierarchy['roots']:
+        add_item_to_table(root_item)
+    
+    console.print(table)
+    
+    # Properties table
+    if properties:
+        prop_table = _create_properties_table(properties)
+        console.print()
+        console.print(prop_table)
 
 
 def get_manager(db_path: Optional[str]) -> TodoManager:
@@ -146,98 +366,13 @@ def list_show(ctx, list_key, tree):
             return
         
         items = manager.get_list_items(list_key)
+        properties = manager.get_list_properties(list_key)
         
         if tree:
-            # Tree view
-            tree_view = Tree(f"📋 {todo_list.title} ({todo_list.list_key})")
-            
-            for item in items:
-                status_icon = {
-                    'pending': '⏳',
-                    'in_progress': '🔄',
-                    'completed': '✅',
-                    'failed': '❌'
-                }.get(item.status.value, '❓')
-                
-                node = tree_view.add(f"{status_icon} {item.content}")
-                
-                # Add completion states if they exist
-                if item.completion_states:
-                    for state, value in item.completion_states.items():
-                        if isinstance(value, bool):
-                            icon = '✅' if value else '❌'
-                            node.add(f"{icon} {state}")
-                        else:
-                            node.add(f"📝 {state}: {value}")
-            
-            # Add list properties to tree if any
-            properties = manager.get_list_properties(list_key)
-            if properties:
-                props_node = tree_view.add("🔧 Properties")
-                for key, value in properties.items():
-                    display_value = value if len(value) <= 40 else value[:37] + "..."
-                    props_node.add(f"{key}: {display_value}")
-            
+            tree_view = _render_tree_view(todo_list, items, properties)
             console.print(tree_view)
         else:
-            # Table view
-            table = Table(title=f"📋 {todo_list.title} (ID: {todo_list.id})", box=box.ROUNDED)
-            table.add_column("#", style="cyan", width=4)
-            table.add_column("Key", style="magenta")
-            table.add_column("Task", style="white")
-            table.add_column("Status", style="yellow")
-            table.add_column("States", style="blue")
-            
-            for item in items:
-                status_icon = {
-                    'pending': '⏳ Pending',
-                    'in_progress': '🔄 In Progress', 
-                    'completed': '✅ Completed',
-                    'failed': '❌ Failed'
-                }.get(item.status.value, f'❓ {item.status.value}')
-                
-                status_style = {
-                    'pending': 'yellow',
-                    'in_progress': 'blue', 
-                    'completed': 'green',
-                    'failed': 'red'
-                }.get(item.status.value, 'white')
-                
-                states_str = ""
-                if item.completion_states:
-                    states = []
-                    for k, v in item.completion_states.items():
-                        if isinstance(v, bool):
-                            icon = '✅' if v else '❌'
-                            states.append(f"{icon}{k}")
-                        else:
-                            states.append(f"📝{k}")
-                    states_str = " ".join(states)
-                
-                table.add_row(
-                    str(item.position),
-                    item.item_key,
-                    item.content,
-                    f"[{status_style}]{status_icon}[/]",
-                    states_str
-                )
-            
-            console.print(table)
-            
-            # Show list properties if any
-            properties = manager.get_list_properties(list_key)
-            if properties:
-                prop_table = Table(title="Properties", box=box.SIMPLE)
-                prop_table.add_column("Key", style="cyan", width=20)
-                prop_table.add_column("Value", style="white")
-                
-                for key, value in properties.items():
-                    # Truncate long values for display
-                    display_value = value if len(value) <= 60 else value[:57] + "..."
-                    prop_table.add_row(key, display_value)
-                
-                console.print()
-                console.print(prop_table)
+            _render_table_view(todo_list, items, properties)
             
             # Show progress
             progress = manager.get_progress(list_key)
@@ -396,6 +531,229 @@ def item_next(ctx, list_key, start):
             f"[bold cyan]Key:[/] {item.item_key}\n"
             f"[bold cyan]Position:[/] {item.position}",
             title="⏭️ Next Task",
+            border_style="cyan"
+        )
+        console.print(panel)
+        
+        if start and Confirm.ask("Start this task?"):
+            manager.update_item_status(list_key, item.item_key, status='in_progress')
+            console.print("[green]✅ Task started[/]")
+            
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command('add-subtask')
+@click.argument('list_key')
+@click.argument('parent_key')
+@click.argument('subtask_key')
+@click.argument('content')
+@click.option('--metadata', '-m', help='Metadata JSON')
+@click.pass_context
+def item_add_subtask(ctx, list_key, parent_key, subtask_key, content, metadata):
+    """Add subtask to existing task"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        meta = json.loads(metadata) if metadata else {}
+        subtask = manager.add_subtask(
+            list_key=list_key,
+            parent_key=parent_key,
+            subtask_key=subtask_key,
+            content=content,
+            metadata=meta
+        )
+        console.print(f"[green]✅ Added subtask '{subtask_key}' to '{parent_key}' in list '{list_key}'[/]")
+        
+        # Show hierarchy for parent
+        try:
+            hierarchy = manager.get_item_hierarchy(list_key, parent_key)
+            console.print(f"\n[dim]Current hierarchy:[/]")
+            console.print(f"📋 {parent_key}: {hierarchy['item']['content']}")
+            for subtask_info in hierarchy['subtasks']:
+                st = subtask_info['item']
+                status_icon = _get_status_icon(st['status'])
+                console.print(f"  └─ {status_icon} {st['item_key']}: {st['content']}")
+        except:
+            pass  # Skip hierarchy display if error
+            
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command('tree')
+@click.argument('list_key')
+@click.argument('item_key', required=False)
+@click.pass_context
+def item_tree(ctx, list_key, item_key):
+    """Show hierarchy tree for item or entire list"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        if item_key:
+            # Show hierarchy for specific item
+            hierarchy = manager.get_item_hierarchy(list_key, item_key)
+            
+            def print_hierarchy(item_info, depth=0):
+                item = item_info['item']
+                indent = "  " * depth
+                status_icon = _get_status_icon(item['status'])
+                
+                if depth == 0:
+                    console.print(f"📋 {item['item_key']}: {item['content']}")
+                else:
+                    console.print(f"{indent}└─ {status_icon} {item['item_key']}: {item['content']}")
+                
+                for subtask_info in item_info['subtasks']:
+                    print_hierarchy(subtask_info, depth + 1)
+            
+            print_hierarchy(hierarchy)
+        else:
+            # Show entire list in tree view
+            todo_list = manager.get_list(list_key)
+            if not todo_list:
+                console.print(f"[red]List '{list_key}' not found[/]")
+                return
+            
+            items = manager.get_list_items(list_key)
+            properties = manager.get_list_properties(list_key)
+            tree_view = _render_tree_view(todo_list, items, properties)
+            console.print(tree_view)
+            
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command('move-to-subtask')
+@click.argument('list_key')
+@click.argument('item_key')
+@click.argument('new_parent_key')
+@click.pass_context
+def item_move_to_subtask(ctx, list_key, item_key, new_parent_key):
+    """Convert existing task to be a subtask of another task"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        # Show current state
+        item = manager.get_item(list_key, item_key)
+        parent = manager.get_item(list_key, new_parent_key)
+        
+        if not item or not parent:
+            console.print("[red]Item or parent not found[/]")
+            return
+        
+        console.print(f"[yellow]Moving '{item.item_key}: {item.content}'[/]")
+        console.print(f"[yellow]To be subtask of '{parent.item_key}: {parent.content}'[/]")
+        
+        if not Confirm.ask("Proceed with move?"):
+            return
+        
+        moved_item = manager.move_to_subtask(list_key, item_key, new_parent_key)
+        console.print(f"[green]✅ Moved '{item_key}' to be subtask of '{new_parent_key}'[/]")
+        
+        # Show updated hierarchy
+        try:
+            hierarchy = manager.get_item_hierarchy(list_key, new_parent_key)
+            console.print(f"\n[dim]Updated hierarchy:[/]")
+            console.print(f"📋 {new_parent_key}: {hierarchy['item']['content']}")
+            for subtask_info in hierarchy['subtasks']:
+                st = subtask_info['item']
+                status_icon = _get_status_icon(st['status'])
+                console.print(f"  └─ {status_icon} {st['item_key']}: {st['content']}")
+        except:
+            pass
+            
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command('subtasks')
+@click.argument('list_key')
+@click.argument('parent_key')
+@click.pass_context
+def item_subtasks(ctx, list_key, parent_key):
+    """List all subtasks for a parent task"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        subtasks = manager.get_subtasks(list_key, parent_key)
+        
+        if not subtasks:
+            console.print(f"[yellow]No subtasks found for '{parent_key}' in list '{list_key}'[/]")
+            return
+        
+        # Show parent info
+        parent = manager.get_item(list_key, parent_key)
+        console.print(f"📋 Parent: {parent.item_key} - {parent.content}")
+        console.print()
+        
+        # Show subtasks table
+        table = Table(title=f"Subtasks for '{parent_key}'", box=box.ROUNDED)
+        table.add_column("Key", style="magenta")
+        table.add_column("Task", style="white")
+        table.add_column("Status", style="yellow")
+        table.add_column("States", style="blue")
+        
+        for subtask in subtasks:
+            status_display = _get_status_display(subtask.status.value)
+            status_style = _get_status_style(subtask.status.value)
+            
+            states_str = ""
+            if subtask.completion_states:
+                states = []
+                for k, v in subtask.completion_states.items():
+                    if isinstance(v, bool):
+                        icon = '✅' if v else '❌'
+                        states.append(f"{icon}{k}")
+                    else:
+                        states.append(f"📝{k}")
+                states_str = " ".join(states)
+            
+            table.add_row(
+                subtask.item_key,
+                subtask.content,
+                f"[{status_style}]{status_display}[/]",
+                states_str
+            )
+        
+        console.print(table)
+        
+        # Show completion info
+        completed = sum(1 for st in subtasks if st.status.value == 'completed')
+        total = len(subtasks)
+        percentage = (completed / total * 100) if total > 0 else 0
+        console.print(f"\n[bold]Progress:[/] {percentage:.1f}% ({completed}/{total} completed)")
+        
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+# === Enhanced next command with smart subtasks ===
+
+@item.command('next-smart')
+@click.argument('list_key')
+@click.option('--start', is_flag=True, help='Start the task')
+@click.pass_context
+def item_next_smart(ctx, list_key, start):
+    """Get next pending item with smart subtask logic"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        item = manager.get_next_pending(list_key, smart_subtasks=True)
+        if not item:
+            console.print(f"[yellow]No pending items in list '{list_key}'[/]")
+            return
+        
+        # Check if this is a subtask
+        is_subtask = getattr(item, 'parent_item_id', None) is not None
+        task_type = "Subtask" if is_subtask else "Task"
+        
+        panel = Panel(
+            f"[bold cyan]Type:[/] {task_type}\n"
+            f"[bold cyan]Task:[/] {item.content}\n"
+            f"[bold cyan]Key:[/] {item.item_key}\n"
+            f"[bold cyan]Position:[/] {item.position}",
+            title="⏭️ Next Smart Task",
             border_style="cyan"
         )
         console.print(panel)

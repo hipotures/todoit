@@ -236,8 +236,43 @@ class ListPropertyBase(BaseModel):
     @validator('property_key')
     def validate_property_key(cls, v):
         """Validate property_key format"""
-        if not v.replace('_', '').replace('-', '').replace('.', '').isalnum():
-            raise ValueError('property_key must contain only alphanumeric characters, underscores, hyphens, and dots')
+        import re
+        
+        # Allow alphanumeric, underscores, hyphens, dots, and colons for namespacing
+        if not re.match(r'^[a-zA-Z0-9_\-.:]+$', v):
+            raise ValueError('property_key must contain only alphanumeric characters, underscores, hyphens, dots, and colons')
+        
+        if len(v) < 1 or len(v) > 100:
+            raise ValueError('property_key must be between 1 and 100 characters')
+        
+        # Prevent reserved keys
+        reserved_keys = {'id', 'created_at', 'updated_at', 'list_id'}
+        if v.lower() in reserved_keys:
+            raise ValueError(f'property_key "{v}" is reserved')
+        
+        return v
+    
+    @validator('property_value')
+    def validate_property_value(cls, v):
+        """Validate property_value content and prevent XSS"""
+        if len(v) > 2000:
+            raise ValueError('property_value cannot exceed 2000 characters')
+        
+        # Basic XSS prevention for web contexts
+        dangerous_patterns = ['<script>', 'javascript:', 'onload=', 'onerror=', 'onclick=', 'onmouseover=']
+        v_lower = v.lower()
+        for pattern in dangerous_patterns:
+            if pattern in v_lower:
+                raise ValueError(f'property_value contains potentially dangerous content: {pattern}')
+        
+        # Check for HTML injection attempts
+        if '<' in v and '>' in v:
+            import re
+            # Allow simple formatting tags but block script tags
+            allowed_tags = r'</?(?:b|i|u|em|strong|br|p)/?>'
+            if re.search(r'<(?!/?(?:b|i|u|em|strong|br|p)/?)[^>]*>', v, re.IGNORECASE):
+                raise ValueError('property_value contains potentially dangerous HTML tags')
+        
         return v
 
 

@@ -268,12 +268,21 @@ class TodoManager:
             new_value=new_value_for_history
         )
         
+        # Auto-complete parent if this item was completed and all siblings are also completed
+        if status == "completed":
+            self.auto_complete_parent(list_key, item_key)
+        
         return self._db_to_model(db_item, TodoItem)
     
     def get_next_pending(self, 
                         list_key: str,
-                        respect_dependencies: bool = True) -> Optional[TodoItem]:
+                        respect_dependencies: bool = True,
+                        smart_subtasks: bool = False) -> Optional[TodoItem]:
         """7. Pobiera następne zadanie do wykonania"""
+        # Use smart subtask logic if requested
+        if smart_subtasks:
+            return self.get_next_pending_with_subtasks(list_key)
+        
         # Pobierz listę
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
@@ -524,7 +533,7 @@ class TodoManager:
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
-            return None
+            raise ValueError(f"List '{list_key}' not found")
         
         # Get property
         db_property = self.db.get_list_property(db_list.id, property_key)
@@ -535,7 +544,7 @@ class TodoManager:
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
-            return {}
+            raise ValueError(f"List '{list_key}' not found")
         
         # Get all properties
         db_properties = self.db.get_list_properties(db_list.id)
@@ -546,7 +555,249 @@ class TodoManager:
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
-            return False
+            raise ValueError(f"List '{list_key}' not found")
         
         # Delete property
         return self.db.delete_list_property(db_list.id, property_key)
+    
+    # ===== SUBTASK MANAGEMENT METHODS (Phase 1) =====
+    
+    def add_subtask(self, list_key: str, parent_key: str, subtask_key: str, content: str, 
+                   metadata: Optional[Dict[str, Any]] = None) -> TodoItem:
+        """Add a subtask to an existing task"""
+        # Get list
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"Lista '{list_key}' nie istnieje")
+        
+        # Get parent item
+        parent_item = self.db.get_item_by_key(db_list.id, parent_key)
+        if not parent_item:
+            raise ValueError(f"Parent task '{parent_key}' not found in list '{list_key}'")
+        
+        # Check if subtask_key already exists in the list
+        existing_item = self.db.get_item_by_key(db_list.id, subtask_key)
+        if existing_item:
+            raise ValueError(f"Item key '{subtask_key}' already exists in list '{list_key}'")
+        
+        # Get next position for subtask (after existing subtasks of this parent)
+        existing_subtasks = self.db.get_item_children(parent_item.id)
+        if existing_subtasks:
+            # Position after the last subtask
+            max_subtask_position = max(subtask.position for subtask in existing_subtasks)
+            position = max_subtask_position + 1
+        else:
+            # First subtask gets position after parent
+            position = parent_item.position + 1
+            # Shift other items to make room
+            self.db.shift_positions(db_list.id, position, 1)
+        
+        # Create subtask
+        item_data = {
+            "list_id": db_list.id,
+            "item_key": subtask_key,
+            "content": content,
+            "position": position,
+            "status": "pending",
+            "parent_item_id": parent_item.id,
+            "meta_data": metadata or {}
+        }
+        
+        db_item = self.db.create_item(item_data)
+        
+        # Record history
+        self._record_history(
+            item_id=db_item.id,
+            list_id=db_list.id,
+            action=HistoryAction.CREATED,
+            new_value={"content": content, "parent": parent_key}
+        )
+        
+        return self._db_to_model(db_item, TodoItem)
+    
+    def get_subtasks(self, list_key: str, parent_key: str) -> List[TodoItem]:
+        """Get all subtasks for a given parent task"""
+        # Get list
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"Lista '{list_key}' nie istnieje")
+        
+        # Get parent item
+        parent_item = self.db.get_item_by_key(db_list.id, parent_key)
+        if not parent_item:
+            raise ValueError(f"Parent task '{parent_key}' not found in list '{list_key}'")
+        
+        # Get children
+        children = self.db.get_item_children(parent_item.id)
+        return [self._db_to_model(child, TodoItem) for child in children]
+    
+    def get_item_hierarchy(self, list_key: str, item_key: str) -> Dict[str, Any]:
+        """Get full hierarchy for an item (item + all subtasks recursively)"""
+        # Get list
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"Lista '{list_key}' nie istnieje")
+        
+        # Get item
+        db_item = self.db.get_item_by_key(db_list.id, item_key) 
+        if not db_item:
+            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+        
+        def build_hierarchy(item_db) -> Dict[str, Any]:
+            """Recursively build hierarchy structure"""
+            item_model = self._db_to_model(item_db, TodoItem)
+            children = self.db.get_item_children(item_db.id)
+            
+            hierarchy = {
+                "item": item_model.to_dict(),
+                "subtasks": [build_hierarchy(child) for child in children]
+            }
+            
+            return hierarchy
+        
+        return build_hierarchy(db_item)
+    
+    def get_next_pending_with_subtasks(self, list_key: str) -> Optional[TodoItem]:
+        """
+        Smart next task logic:
+        1. Find first pending task
+        2. If it has pending subtasks → return first pending subtask  
+        3. If no subtasks → return the task itself
+        """
+        # Get list
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"Lista '{list_key}' nie istnieje")
+        
+        # Get all pending root items (no parent)
+        root_items = self.db.get_root_items(db_list.id)
+        pending_root_items = [item for item in root_items if item.status == 'pending']
+        
+        for item in pending_root_items:
+            # Check if this item has pending subtasks
+            children = self.db.get_item_children(item.id)
+            pending_children = [child for child in children if child.status == 'pending']
+            
+            if pending_children:
+                # Return first pending subtask
+                return self._db_to_model(pending_children[0], TodoItem)
+            else:
+                # No pending subtasks, return the parent task
+                return self._db_to_model(item, TodoItem)
+        
+        # No pending tasks found
+        return None
+    
+    def auto_complete_parent(self, list_key: str, item_key: str) -> bool:
+        """
+        Auto-complete parent task if all its subtasks are completed
+        Returns True if parent was auto-completed, False otherwise
+        """
+        # Get list
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"Lista '{list_key}' nie istnieje")
+        
+        # Get item  
+        db_item = self.db.get_item_by_key(db_list.id, item_key)
+        if not db_item:
+            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+        
+        # Check if this item has a parent
+        if not db_item.parent_item_id:
+            return False  # This is a root item, no parent to complete
+        
+        # Get parent
+        parent_item = self.db.get_item_by_id(db_item.parent_item_id)
+        if not parent_item or parent_item.status == 'completed':
+            return False  # Parent doesn't exist or is already completed
+        
+        # Check if all children of parent are completed
+        if self.db.check_all_children_completed(parent_item.id):
+            # Auto-complete the parent
+            self.db.update_item(parent_item.id, {
+                'status': 'completed',
+                'completed_at': datetime.utcnow()
+            })
+            
+            # Record history
+            self._record_history(
+                item_id=parent_item.id,
+                list_id=db_list.id,
+                action=HistoryAction.COMPLETED,
+                old_value={"status": parent_item.status},
+                new_value={"status": "completed", "auto_completed": True}
+            )
+            
+            return True
+        
+        return False
+    
+    def move_to_subtask(self, list_key: str, item_key: str, new_parent_key: str) -> TodoItem:
+        """Convert an existing task to be a subtask of another task"""
+        # Get list  
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"Lista '{list_key}' nie istnieje")
+        
+        # Get item to move
+        db_item = self.db.get_item_by_key(db_list.id, item_key)
+        if not db_item:
+            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+        
+        # Get new parent
+        parent_item = self.db.get_item_by_key(db_list.id, new_parent_key)
+        if not parent_item:
+            raise ValueError(f"Parent task '{new_parent_key}' not found in list '{list_key}'")
+        
+        # Prevent circular references
+        if parent_item.id == db_item.id:
+            raise ValueError("Cannot make item a subtask of itself")
+        
+        # Check if new parent is not already a descendant of this item
+        parent_path = self.db.get_item_path(parent_item.id)
+        if any(path_item.id == db_item.id for path_item in parent_path):
+            raise ValueError("Cannot create circular reference in subtask hierarchy")
+        
+        # Update the item to have the new parent
+        old_parent_id = db_item.parent_item_id
+        self.db.update_item(db_item.id, {"parent_item_id": parent_item.id})
+        
+        # Record history
+        self._record_history(
+            item_id=db_item.id,
+            list_id=db_list.id,
+            action=HistoryAction.UPDATED,
+            old_value={"parent_item_id": old_parent_id},
+            new_value={"parent_item_id": parent_item.id}
+        )
+        
+        return self._db_to_model(db_item, TodoItem)
+    
+    def can_complete_item(self, list_key: str, item_key: str) -> Dict[str, Any]:
+        """
+        Check if an item can be completed (no pending subtasks)
+        Returns dict with can_complete flag and details
+        """
+        # Get list
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"Lista '{list_key}' nie istnieje")
+        
+        # Get item
+        db_item = self.db.get_item_by_key(db_list.id, item_key)
+        if not db_item:
+            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+        
+        # Check for pending children
+        has_pending = self.db.has_pending_children(db_item.id)
+        children = self.db.get_item_children(db_item.id)
+        pending_children = [child for child in children if child.status in ['pending', 'in_progress']]
+        
+        return {
+            "can_complete": not has_pending,
+            "has_subtasks": len(children) > 0,
+            "pending_subtasks": len(pending_children),
+            "pending_subtask_keys": [child.item_key for child in pending_children],
+            "total_subtasks": len(children)
+        }

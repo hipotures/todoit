@@ -544,3 +544,101 @@ class Database:
                 session.commit()
                 return True
             return False
+    
+    # Hierarchical item operations (for subtasks)
+    def get_item_children(self, item_id: int) -> List[TodoItemDB]:
+        """Get all direct children (subtasks) of an item"""
+        with self.get_session() as session:
+            return session.query(TodoItemDB).filter(
+                TodoItemDB.parent_item_id == item_id
+            ).order_by(TodoItemDB.position).all()
+    
+    def get_item_with_hierarchy(self, item_id: int) -> Optional[TodoItemDB]:
+        """Get item with all its children recursively"""
+        with self.get_session() as session:
+            item = session.query(TodoItemDB).filter(TodoItemDB.id == item_id).first()
+            if not item:
+                return None
+            
+            # Load children recursively
+            def load_children(parent_item):
+                children = session.query(TodoItemDB).filter(
+                    TodoItemDB.parent_item_id == parent_item.id
+                ).order_by(TodoItemDB.position).all()
+                
+                for child in children:
+                    load_children(child)  # Recursive loading
+                
+                return children
+            
+            load_children(item)
+            return item
+    
+    def check_all_children_completed(self, item_id: int) -> bool:
+        """Check if all direct children of an item are completed"""
+        with self.get_session() as session:
+            children = session.query(TodoItemDB).filter(
+                TodoItemDB.parent_item_id == item_id
+            ).all()
+            
+            if not children:
+                return True  # No children means nothing to block completion
+            
+            return all(child.status == 'completed' for child in children)
+    
+    def get_root_items(self, list_id: int) -> List[TodoItemDB]:
+        """Get all root items (items without parent) in a list"""
+        with self.get_session() as session:
+            return session.query(TodoItemDB).filter(
+                TodoItemDB.list_id == list_id,
+                TodoItemDB.parent_item_id.is_(None)
+            ).order_by(TodoItemDB.position).all()
+    
+    def get_item_depth(self, item_id: int) -> int:
+        """Get the depth level of an item in hierarchy (0 = root, 1 = first level, etc.)"""
+        with self.get_session() as session:
+            depth = 0
+            current_item = session.query(TodoItemDB).filter(TodoItemDB.id == item_id).first()
+            
+            while current_item and current_item.parent_item_id:
+                depth += 1
+                current_item = session.query(TodoItemDB).filter(
+                    TodoItemDB.id == current_item.parent_item_id
+                ).first()
+                
+                # Prevent infinite loops
+                if depth > 10:  # Max 10 levels deep
+                    break
+            
+            return depth
+    
+    def get_item_path(self, item_id: int) -> List[TodoItemDB]:
+        """Get the full path from root to item (including the item itself)"""
+        with self.get_session() as session:
+            path = []
+            current_item = session.query(TodoItemDB).filter(TodoItemDB.id == item_id).first()
+            
+            while current_item:
+                path.insert(0, current_item)  # Insert at beginning to maintain order
+                if current_item.parent_item_id:
+                    current_item = session.query(TodoItemDB).filter(
+                        TodoItemDB.id == current_item.parent_item_id
+                    ).first()
+                else:
+                    break
+                
+                # Prevent infinite loops
+                if len(path) > 10:
+                    break
+            
+            return path
+    
+    def has_pending_children(self, item_id: int) -> bool:
+        """Check if item has any pending children (subtasks)"""
+        with self.get_session() as session:
+            pending_child = session.query(TodoItemDB).filter(
+                TodoItemDB.parent_item_id == item_id,
+                TodoItemDB.status.in_(['pending', 'in_progress'])
+            ).first()
+            
+            return pending_child is not None
