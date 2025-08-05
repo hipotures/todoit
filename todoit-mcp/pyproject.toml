@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "todoit-mcp"
+version = "1.0.0"
+description = "TODOIT MCP - Universal TODO list management system with MCP integration for Claude Code"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    {name = "TODOIT Team", email = "todoit@example.com"}
+]
+keywords = ["todo", "task-management", "mcp", "claude-code", "productivity"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Office/Business :: Scheduling",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "sqlalchemy>=2.0.0",
+    "pydantic>=2.0.0",
+    "python-dateutil>=2.8.0",
+    "mcp>=1.0.0",
+    "click>=8.1.0",
+    "rich>=13.0.0",
+    "pyyaml>=6.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "alembic>=1.12.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.5.0",
+]
+
+[project.scripts]
+todoit = "interfaces.cli:cli"
+
+[project.urls]
+Homepage = "https://github.com/todoit-team/todoit-mcp"
+Repository = "https://github.com/todoit-team/todoit-mcp"
+Documentation = "https://todoit-mcp.readthedocs.io"
+Issues = "https://github.com/todoit-team/todoit-mcp/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["core*", "interfaces*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
