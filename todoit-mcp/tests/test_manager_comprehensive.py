@@ -394,13 +394,8 @@ class TestManagerComprehensive:
     def test_error_handling_and_edge_cases(self, temp_manager):
         """Test error handling and edge cases"""
         # Test operations on non-existent list
-        try:
+        with pytest.raises(ValueError, match="not exist"):
             temp_manager.add_item('non_existent', 'item1', 'Content')
-            assert False, "Should have raised error"
-        except ValueError as e:
-            # Check for Polish or English error message
-            error_msg = str(e).lower()
-            assert 'nie istnieje' in error_msg or 'not exist' in error_msg
         
         # Test operations on non-existent item
         list_obj = temp_manager.create_list('error_test', 'Error Test')
@@ -410,12 +405,8 @@ class TestManagerComprehensive:
         assert non_existent is None
         
         # Test duplicate list creation
-        try:
+        with pytest.raises(ValueError, match="already exists"):
             temp_manager.create_list('error_test', 'Another Error Test')
-            assert False, "Should have raised error for duplicate key"
-        except ValueError as e:
-            error_msg = str(e).lower()
-            assert 'już istnieje' in error_msg or 'already exists' in error_msg
         
         # Test valid status update
         temp_manager.add_item('error_test', 'test_item', 'Test content')
@@ -425,12 +416,8 @@ class TestManagerComprehensive:
         assert updated_item.status == 'in_progress'
         
         # Test empty content handling - should be rejected by validation
-        try:
-            empty_item = temp_manager.add_item('error_test', 'empty', '')
-            assert False, "Empty content should be rejected"
-        except ValueError:
-            # Error is expected for empty content
-            pass
+        with pytest.raises(ValueError):
+            temp_manager.add_item('error_test', 'empty', '')
         
         # Test normal length content
         normal_content = 'Normal content'
@@ -449,14 +436,8 @@ class TestManagerComprehensive:
         )
         
         # Try to delete parent list - should check dependencies
-        try:
+        with pytest.raises(ValueError, match="dependent lists"):
             temp_manager.delete_list('parent_list')
-            # If deletion succeeds, verify child list handling
-        except ValueError as e:
-            # Error is expected for dependent lists - check for Polish message
-            error_msg = str(e).lower()
-            assert ('zależne listy' in error_msg or 'dependent' in error_msg or 
-                   'relation' in error_msg or 'ma zależne' in error_msg)
         
         # Delete child list first, then parent should work
         temp_manager.delete_list('child_list')

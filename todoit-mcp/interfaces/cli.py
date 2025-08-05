@@ -1,3 +1,4 @@
+
 """
 TODOIT CLI
 Command Line Interface with Rich for better presentation
@@ -1014,14 +1015,7 @@ def interactive(ctx):
                 break
             elif command.lower() == 'help':
                 console.print("""
-[bold]Available commands:[/]
-  lists          - Show all lists
-  show <key>     - Show list details
-  next <key>     - Next task from list
-  complete <key> <item> - Mark task as completed  
-  progress <key> - Show list progress
-  help          - This help
-  exit          - Exit
+[bold]Available commands:[/]\n  lists          - Show all lists\n  show <key>     - Show list details\n  next <key>     - Next task from list\n  complete <key> <item> - Mark task as completed  \n  progress <key> - Show list progress\n  help          - This help\n  exit          - Exit
                 """)
             elif command.startswith('lists'):
                 lists = manager.list_all()

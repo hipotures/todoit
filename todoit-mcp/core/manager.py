@@ -1,3 +1,4 @@
+
 """
 TODOIT MCP - Todo Manager
 Programmatic API for TODO list management - core business logic
@@ -63,7 +64,7 @@ class TodoManager:
         }
         self.db.create_history_entry(history_data)
     
-    # === ETAP 1: 10 kluczowych funkcji ===
+    # === STAGE 1: 10 key functions ===
     
     def create_list(self, 
                    list_key: str, 
@@ -71,13 +72,13 @@ class TodoManager:
                    items: Optional[List[str]] = None,
                    list_type: str = "sequential",
                    metadata: Optional[Dict] = None) -> TodoList:
-        """1. Tworzy nową listę TODO z opcjonalnymi zadaniami"""
-        # Sprawdź czy lista już istnieje
+        """1. Creates a new TODO list with optional tasks"""
+        # Check if the list already exists
         existing = self.db.get_list_by_key(list_key)
         if existing:
-            raise ValueError(f"Lista '{list_key}' już istnieje")
+            raise ValueError(f"List '{list_key}' already exists")
         
-        # Przygotuj dane listy
+        # Prepare list data
         list_data = {
             "list_key": list_key,
             "title": title,
@@ -85,10 +86,10 @@ class TodoManager:
             "meta_data": metadata or {}
         }
         
-        # Utwórz listę
+        # Create the list
         db_list = self.db.create_list(list_data)
         
-        # Dodaj zadania jeśli podane
+        # Add tasks if provided
         if items:
             for position, content in enumerate(items):
                 item_key = f"item_{position + 1}"
@@ -101,7 +102,7 @@ class TodoManager:
                 }
                 self.db.create_item(item_data)
         
-        # Zapisz w historii
+        # Save to history
         self._record_history(
             list_id=db_list.id,
             action="created",
@@ -111,7 +112,7 @@ class TodoManager:
         return self._db_to_model(db_list, TodoList)
     
     def get_list(self, key: Union[str, int]) -> Optional[TodoList]:
-        """2. Pobiera listę po kluczu lub ID"""
+        """2. Gets a list by key or ID"""
         if isinstance(key, int) or (isinstance(key, str) and key.isdigit()):
             db_list = self.db.get_list_by_id(int(key))
         else:
@@ -120,21 +121,21 @@ class TodoManager:
         return self._db_to_model(db_list, TodoList)
     
     def delete_list(self, key: Union[str, int]) -> bool:
-        """3. Usuwa listę (z walidacją powiązań)"""
-        # Pobierz listę
+        """3. Deletes a list (with relationship validation)"""
+        # Get the list
         if isinstance(key, int) or (isinstance(key, str) and key.isdigit()):
             db_list = self.db.get_list_by_id(int(key))
         else:
             db_list = self.db.get_list_by_key(str(key))
 
         if not db_list:
-            raise ValueError(f"Lista '{key}' nie istnieje")
+            raise ValueError(f"List '{key}' does not exist")
 
-        # Sprawdź czy lista ma zależne listy
+        # Check if the list has dependent lists
         dependent_lists = self.db.get_dependent_lists(db_list.id)
         if dependent_lists:
             deps = ", ".join([l.list_key for l in dependent_lists])
-            raise ValueError(f"Nie można usunąć listy '{key}' - ma zależne listy: {deps}")
+            raise ValueError(f"Cannot delete list '{key}' - it has dependent lists: {deps}")
 
         with self.db.get_session() as session:
             # Re-fetch the list in the current session to ensure it's attached
@@ -168,7 +169,7 @@ class TodoManager:
         return True
     
     def list_all(self, limit: Optional[int] = None) -> List[TodoList]:
-        """4. Listuje wszystkie listy TODO"""
+        """4. Lists all TODO lists"""
         db_lists = self.db.get_all_lists(limit=limit)
         return [self._db_to_model(db_list, TodoList) for db_list in db_lists]
     
@@ -178,22 +179,22 @@ class TodoManager:
                 content: str,
                 position: Optional[int] = None,
                 metadata: Optional[Dict] = None) -> TodoItem:
-        """5. Dodaje zadanie do listy"""
-        # Pobierz listę
+        """5. Adds a task to a list"""
+        # Get the list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
-            raise ValueError(f"Lista '{list_key}' nie istnieje")
+            raise ValueError(f"List '{list_key}' does not exist")
         
-        # Sprawdź czy zadanie już istnieje
+        # Check if the task already exists
         existing_item = self.db.get_item_by_key(db_list.id, item_key)
         if existing_item:
-            raise ValueError(f"Zadanie '{item_key}' już istnieje w liście '{list_key}'")
+            raise ValueError(f"Task '{item_key}' already exists in list '{list_key}'")
         
-        # Ustaw pozycję jeśli nie podana
+        # Set position if not provided
         if position is None:
             position = self.db.get_next_position(db_list.id)
         
-        # Przygotuj dane zadania
+        # Prepare task data
         item_data = {
             "list_id": db_list.id,
             "item_key": item_key,
@@ -202,10 +203,10 @@ class TodoManager:
             "meta_data": metadata or {}
         }
         
-        # Utwórz zadanie
+        # Create the task
         db_item = self.db.create_item(item_data)
         
-        # Zapisz w historii
+        # Save to history
         self._record_history(
             item_id=db_item.id,
             list_id=db_list.id,
@@ -220,18 +221,18 @@ class TodoManager:
                           item_key: str,
                           status: Optional[str] = None,
                           completion_states: Optional[Dict[str, Any]] = None) -> TodoItem:
-        """6. Aktualizuje status zadania z obsługą multi-state"""
-        # Pobierz listę
+        """6. Updates task status with multi-state support"""
+        # Get the list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
-            raise ValueError(f"Lista '{list_key}' nie istnieje")
+            raise ValueError(f"List '{list_key}' does not exist")
         
-        # Pobierz zadanie
+        # Get the task
         db_item = self.db.get_item_by_key(db_list.id, item_key)
         if not db_item:
-            raise ValueError(f"Zadanie '{item_key}' nie istnieje w liście '{list_key}'")
+            raise ValueError(f"Task '{item_key}' does not exist in list '{list_key}'")
         
-        # Przygotuj dane do aktualizacji
+        # Prepare data for update
         old_values = {
             "status": db_item.status,
             "completion_states": db_item.completion_states
@@ -250,10 +251,10 @@ class TodoManager:
             current_states.update(completion_states)
             updates["completion_states"] = current_states
         
-        # Aktualizuj zadanie
+        # Update the task
         db_item = self.db.update_item(db_item.id, updates)
         
-        # Zapisz w historii (konwertuj datetime do string dla JSON)
+        # Save to history (convert datetime to string for JSON)
         new_value_for_history = {}
         for key, value in updates.items():
             if isinstance(value, datetime):
@@ -279,42 +280,42 @@ class TodoManager:
                         list_key: str,
                         respect_dependencies: bool = True,
                         smart_subtasks: bool = False) -> Optional[TodoItem]:
-        """7. Pobiera następne zadanie do wykonania (enhanced with Phase 2 blocking logic)"""
+        """7. Gets the next task to be executed (enhanced with Phase 2 blocking logic)"""
         # Use smart subtask logic if requested
         if smart_subtasks:
             return self.get_next_pending_with_subtasks(list_key)
         
-        # Pobierz listę
+        # Get the list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             return None
         
-        # Pobierz zadania oczekujące
+        # Get pending tasks
         pending_items = self.db.get_items_by_status(db_list.id, "pending")
         
         if not respect_dependencies:
             return self._db_to_model(pending_items[0], TodoItem) if pending_items else None
         
-        # Sprawdź zależności
+        # Check dependencies
         for db_item in pending_items:
-            # Phase 1: Sprawdź zależności parent/child (subtasks)
+            # Phase 1: Check parent/child dependencies (subtasks)
             if db_item.parent_item_id:
                 parent = self.db.get_item_by_id(db_item.parent_item_id)
                 if parent and parent.status != "completed":
                     continue
             
-            # Phase 2: Sprawdź cross-list dependencies (item blocked by other items)
+            # Phase 2: Check cross-list dependencies (item blocked by other items)
             if self.db.is_item_blocked(db_item.id):
                 continue  # Skip blocked items
             
-            # Legacy: Sprawdź zależności między listami (old list-level dependencies)
+            # Legacy: Check dependencies between lists (old list-level dependencies)
             dependencies = self.db.get_list_dependencies(db_list.id)
             if dependencies:
                 can_proceed = True
                 for dep in dependencies:
-                    # Sprawdź czy metadane zawierają regułę item_n_requires_item_n
+                    # Check if metadata contains the item_n_requires_item_n rule
                     if dep.metadata and dep.metadata.get("rule") == "item_n_requires_item_n":
-                        # Znajdź odpowiadający item w liście źródłowej
+                        # Find the corresponding item in the source list
                         source_item = self.db.get_item_at_position(dep.source_list_id, db_item.position)
                         if source_item and source_item.status != "completed":
                             can_proceed = False
@@ -329,15 +330,15 @@ class TodoManager:
     
     def get_progress(self, list_key: str) -> ProgressStats:
         """8. Phase 3: Enhanced progress tracking with hierarchies and dependencies"""
-        # Pobierz listę
+        # Get the list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
-            raise ValueError(f"Lista '{list_key}' nie istnieje")
+            raise ValueError(f"List '{list_key}' does not exist")
         
         # Basic stats
         stats = self.db.get_list_stats(db_list.id)
         
-        # Oblicz procent ukończenia
+        # Calculate completion percentage
         completion_percentage = 0.0
         if stats["total"] > 0:
             completion_percentage = (stats["completed"] / stats["total"]) * 100
@@ -384,9 +385,9 @@ class TodoManager:
         )
     
     def import_from_markdown(self, file_path: str, base_key: Optional[str] = None) -> List[TodoList]:
-        """9. Importuje listy z pliku markdown (obsługuje multi-column)"""
+        """9. Imports lists from a markdown file (supports multi-column)"""
         if not os.path.exists(file_path):
-            raise ValueError(f"Plik '{file_path}' nie istnieje")
+            raise ValueError(f"File '{file_path}' does not exist")
         
         lists_data = {}
         
@@ -394,22 +395,22 @@ class TodoManager:
             for line_num, line in enumerate(f, 1):
                 line = line.strip()
                 if line.startswith('['):
-                    # Parsowanie wszystkich kolumn [ ] lub [x]
+                    # Parse all columns [ ] or [x]
                     columns = []
                     content = line
                     
-                    # Wyciągnij wszystkie stany
+                    # Extract all states
                     while content.startswith('['):
                         if len(content) < 3:
                             break
                         state = content[1] == 'x' or content[1] == 'X'
                         columns.append(state)
-                        content = content[4:].strip()  # Skip [x] lub [ ]
+                        content = content[4:].strip()  # Skip [x] or [ ]
                     
                     if not content:
                         continue
                     
-                    # Dla każdej kolumny tworzymy osobną listę
+                    # For each column, we create a separate list
                     for i, state in enumerate(columns):
                         if i not in lists_data:
                             lists_data[i] = []
@@ -420,9 +421,9 @@ class TodoManager:
                         })
         
         if not lists_data:
-            raise ValueError("Nie znaleziono zadań w formacie markdown w pliku")
+            raise ValueError("No tasks found in markdown format in the file")
         
-        # Tworzenie list
+        # Create lists
         created_lists = []
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         base_key = base_key or f"import_{timestamp}"
@@ -431,14 +432,14 @@ class TodoManager:
             list_key = f"{base_key}_col{i+1}" if len(lists_data) > 1 else base_key
             list_title = f"Imported list {i+1}" if len(lists_data) > 1 else "Imported list"
             
-            # Utwórz listę
+            # Create the list
             todo_list = self.create_list(
                 list_key=list_key,
                 title=list_title,
                 metadata={"imported_from": file_path, "import_timestamp": timestamp}
             )
             
-            # Dodaj zadania
+            # Add tasks
             for item in items:
                 item_obj = self.add_item(
                     list_key=list_key,
@@ -447,7 +448,7 @@ class TodoManager:
                     position=item["position"]
                 )
                 
-                # Ustaw status jeśli ukończone
+                # Set status if completed
                 if item["completed"]:
                     self.update_item_status(
                         list_key=list_key,
@@ -457,7 +458,7 @@ class TodoManager:
             
             created_lists.append(todo_list)
         
-        # Tworzenie powiązań między listami (lista N+1 zależy od listy N)
+        # Create relationships between lists (list N+1 depends on list N)
         for i in range(len(created_lists) - 1):
             self.create_list_relation(
                 source_list_id=created_lists[i].id,
@@ -469,35 +470,35 @@ class TodoManager:
         return created_lists
     
     def export_to_markdown(self, list_key: str, file_path: str) -> None:
-        """10. Eksportuje listę do formatu markdown [x] tekst"""
-        # Pobierz listę
+        """10. Exports a list to markdown format [x] text"""
+        # Get the list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
-            raise ValueError(f"Lista '{list_key}' nie istnieje")
+            raise ValueError(f"List '{list_key}' does not exist")
         
-        # Pobierz zadania
+        # Get tasks
         items = self.db.get_list_items(db_list.id)
         
-        # Eksportuj do pliku
+        # Export to file
         with open(file_path, 'w', encoding='utf-8') as f:
-            # Nagłówek
+            # Header
             f.write(f"# {db_list.title}\n\n")
             if db_list.description:
                 f.write(f"{db_list.description}\n\n")
             
-            # Zadania
+            # Tasks
             for item in sorted(items, key=lambda x: x.position):
                 status_mark = '[x]' if item.status == 'completed' else '[ ]'
                 f.write(f"{status_mark} {item.content}\n")
         
-        # Zapisz w historii
+        # Save to history
         self._record_history(
             list_id=db_list.id,
             action="exported",
             new_value={"file_path": file_path, "format": "markdown"}
         )
     
-    # === Funkcje pomocnicze ===
+    # === Helper functions ===
     
     def create_list_relation(self, 
                            source_list_id: int,
@@ -505,7 +506,7 @@ class TodoManager:
                            relation_type: str,
                            relation_key: Optional[str] = None,
                            metadata: Optional[Dict] = None) -> ListRelation:
-        """Tworzy powiązanie między listami"""
+        """Creates a relationship between lists"""
         relation_data = {
             "source_list_id": source_list_id,
             "target_list_id": target_list_id,
@@ -520,12 +521,12 @@ class TodoManager:
     def get_lists_by_relation(self, 
                              relation_type: str, 
                              relation_key: str) -> List[TodoList]:
-        """Pobiera listy powiązane relacją (np. project_id)"""
+        """Gets lists related by a relationship (e.g., project_id)"""
         db_lists = self.db.get_lists_by_relation(relation_type, relation_key)
         return [self._db_to_model(db_list, TodoList) for db_list in db_lists]
     
     def get_item(self, list_key: str, item_key: str) -> Optional[TodoItem]:
-        """Pobiera konkretne zadanie"""
+        """Gets a specific task"""
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             return None
@@ -534,7 +535,7 @@ class TodoManager:
         return self._db_to_model(db_item, TodoItem)
     
     def get_list_items(self, list_key: str, status: Optional[str] = None) -> List[TodoItem]:
-        """Pobiera wszystkie zadania z listy"""
+        """Gets all tasks from a list"""
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             return []
@@ -543,7 +544,7 @@ class TodoManager:
         return [self._db_to_model(db_item, TodoItem) for db_item in db_items]
     
     def get_item_history(self, list_key: str, item_key: str, limit: Optional[int] = None) -> List[TodoHistory]:
-        """Pobiera historię zmian zadania"""
+        """Gets the change history of a task"""
         item = self.get_item(list_key, item_key)
         if not item:
             return []
@@ -605,7 +606,7 @@ class TodoManager:
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
-            raise ValueError(f"Lista '{list_key}' nie istnieje")
+            raise ValueError(f"List '{list_key}' does not exist")
         
         # Get parent item
         parent_item = self.db.get_item_by_key(db_list.id, parent_key)
@@ -657,7 +658,7 @@ class TodoManager:
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
-            raise ValueError(f"Lista '{list_key}' nie istnieje")
+            raise ValueError(f"List '{list_key}' does not exist")
         
         # Get parent item
         parent_item = self.db.get_item_by_key(db_list.id, parent_key)
@@ -673,7 +674,7 @@ class TodoManager:
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
-            raise ValueError(f"Lista '{list_key}' nie istnieje")
+            raise ValueError(f"List '{list_key}' does not exist")
         
         # Get item
         db_item = self.db.get_item_by_key(db_list.id, item_key) 
@@ -710,7 +711,7 @@ class TodoManager:
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
-            raise ValueError(f"Lista '{list_key}' nie istnieje")
+            raise ValueError(f"List '{list_key}' does not exist")
         
         # Phase 3: Enhanced algorithm - collect all candidates with priority scoring
         candidates = []
@@ -797,7 +798,7 @@ class TodoManager:
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
-            raise ValueError(f"Lista '{list_key}' nie istnieje")
+            raise ValueError(f"List '{list_key}' does not exist")
         
         # Get item  
         db_item = self.db.get_item_by_key(db_list.id, item_key)
@@ -839,7 +840,7 @@ class TodoManager:
         # Get list  
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
-            raise ValueError(f"Lista '{list_key}' nie istnieje")
+            raise ValueError(f"List '{list_key}' does not exist")
         
         # Get item to move
         db_item = self.db.get_item_by_key(db_list.id, item_key)
@@ -883,7 +884,7 @@ class TodoManager:
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
-            raise ValueError(f"Lista '{list_key}' nie istnieje")
+            raise ValueError(f"List '{list_key}' does not exist")
         
         # Get item
         db_item = self.db.get_item_by_key(db_list.id, item_key)
