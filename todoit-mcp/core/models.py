@@ -199,9 +199,9 @@ class ListRelationBase(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict)
     
     @field_validator('target_list_id')
-    def validate_different_lists(cls, v, values):
+    def validate_different_lists(cls, v, info):
         """Ensure source and target are different lists"""
-        if 'source_list_id' in values and v == values['source_list_id']:
+        if info.data and 'source_list_id' in info.data and v == info.data['source_list_id']:
             raise ValueError('source_list_id and target_list_id must be different')
         return v
 
@@ -431,10 +431,10 @@ class ItemDependencyBase(BaseModel):
 class ItemDependencyCreate(ItemDependencyBase):
     """Model for creating item dependencies"""
     
-    @field_validator('dependent_item_id')
-    def validate_not_self_dependency(cls, v, values):
+    @field_validator('required_item_id')
+    def validate_not_self_dependency(cls, v, info):
         """Prevent self-dependencies"""
-        if 'required_item_id' in values and v == values['required_item_id']:
+        if info.data and 'dependent_item_id' in info.data and v == info.data['dependent_item_id']:
             raise ValueError('Item cannot depend on itself')
         return v
 

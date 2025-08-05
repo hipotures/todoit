@@ -126,46 +126,46 @@ class TodoManager:
             db_list = self.db.get_list_by_id(int(key))
         else:
             db_list = self.db.get_list_by_key(str(key))
-        
+
         if not db_list:
             raise ValueError(f"Lista '{key}' nie istnieje")
-        
+
         # Sprawdź czy lista ma zależne listy
         dependent_lists = self.db.get_dependent_lists(db_list.id)
         if dependent_lists:
             deps = ", ".join([l.list_key for l in dependent_lists])
             raise ValueError(f"Nie można usunąć listy '{key}' - ma zależne listy: {deps}")
-        
-        # Usuń historię powiązaną z listą i jej zadaniami
-        from .database import TodoHistoryDB
-        items = self.db.get_list_items(db_list.id)
-        for item in items:
-            # Usuń historię dla każdego zadania
-            with self.db.get_session() as session:
-                history_entries = session.query(TodoHistoryDB).filter(
-                    TodoHistoryDB.item_id == item.id
-                ).all()
-                for entry in history_entries:
-                    session.delete(entry)
-                session.commit()
-        
-        # Usuń historię powiązaną z listą
+
         with self.db.get_session() as session:
-            history_entries = session.query(TodoHistoryDB).filter(
-                TodoHistoryDB.list_id == db_list.id
-            ).all()
-            for entry in history_entries:
-                session.delete(entry)
+            # Re-fetch the list in the current session to ensure it's attached
+            db_list_in_session = session.query(TodoListDB).filter(TodoListDB.id == db_list.id).first()
+            if not db_list_in_session:
+                return False
+
+            # Get item IDs for cleanup
+            item_ids = [item.id for item in db_list_in_session.items]
+
+            # Delete item history
+            if item_ids:
+                session.query(TodoHistoryDB).filter(TodoHistoryDB.item_id.in_(item_ids)).delete(synchronize_session=False)
+
+            # Delete list history
+            session.query(TodoHistoryDB).filter(TodoHistoryDB.list_id == db_list.id).delete(synchronize_session=False)
+
+            # Delete list properties
+            session.query(ListPropertyDB).filter(ListPropertyDB.list_id == db_list.id).delete(synchronize_session=False)
+
+            # Delete list relations
+            session.query(ListRelationDB).filter(
+                (ListRelationDB.source_list_id == db_list.id) |
+                (ListRelationDB.target_list_id == db_list.id)
+            ).delete(synchronize_session=False)
+            
+            # Items are deleted via cascade="all, delete-orphan" on the list's items relationship.
+            # Deleting the list will trigger the deletion of its items.
+            session.delete(db_list_in_session)
             session.commit()
-        
-        # Usuń wszystkie zadania (kaskadowo)
-        self.db.delete_list_items(db_list.id)
-        
-        # Usuń relacje gdzie lista jest źródłem
-        self.db.delete_list_relations(db_list.id)
-        
-        # Usuń listę
-        return self.db.delete_list(db_list.id)
+        return True
     
     def list_all(self, limit: Optional[int] = None) -> List[TodoList]:
         """4. Listuje wszystkie listy TODO"""
@@ -862,7 +862,7 @@ class TodoManager:
         
         # Update the item to have the new parent
         old_parent_id = db_item.parent_item_id
-        self.db.update_item(db_item.id, {"parent_item_id": parent_item.id})
+        updated_item = self.db.update_item(db_item.id, {"parent_item_id": parent_item.id})
         
         # Record history
         self._record_history(
@@ -873,7 +873,7 @@ class TodoManager:
             new_value={"parent_item_id": parent_item.id}
         )
         
-        return self._db_to_model(db_item, TodoItem)
+        return self._db_to_model(updated_item, TodoItem)
     
     def can_complete_item(self, list_key: str, item_key: str) -> Dict[str, Any]:
         """
