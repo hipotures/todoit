@@ -15,6 +15,7 @@ from sqlalchemy.engine import Engine
 from .models import (
     TodoList as TodoListModel, TodoItem as TodoItemModel, 
     ListRelation as ListRelationModel, TodoHistory as TodoHistoryModel,
+    ListProperty as ListPropertyModel,
     ProgressStats, ListType, ItemStatus, RelationType, HistoryAction
 )
 
@@ -102,6 +103,28 @@ class ListRelationDB(Base):
         Index('idx_list_relations_source', 'source_list_id'),
         Index('idx_list_relations_target', 'target_list_id'),
         Index('idx_list_relations_unique', 'source_list_id', 'target_list_id', 'relation_type', unique=True),
+    )
+
+
+class ListPropertyDB(Base):
+    """SQLAlchemy model for list_properties table"""
+    __tablename__ = 'list_properties'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    list_id = Column(Integer, ForeignKey('todo_lists.id'), nullable=False)
+    property_key = Column(String(100), nullable=False)
+    property_value = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    todo_list = relationship("TodoListDB", foreign_keys=[list_id])
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_list_properties_list_id', 'list_id'),
+        Index('idx_list_properties_key', 'property_key'),
+        Index('idx_list_properties_unique', 'list_id', 'property_key', unique=True),
     )
 
 
@@ -463,3 +486,61 @@ class Database:
             for item in items:
                 session.delete(item)
             session.commit()
+    
+    # List Properties methods
+    def create_list_property(self, list_id: int, property_key: str, property_value: str) -> ListPropertyDB:
+        """Create or update a list property"""
+        with self.get_session() as session:
+            # Try to find existing property
+            existing = session.query(ListPropertyDB).filter(
+                ListPropertyDB.list_id == list_id,
+                ListPropertyDB.property_key == property_key
+            ).first()
+            
+            if existing:
+                # Update existing property
+                existing.property_value = property_value
+                existing.updated_at = datetime.utcnow()
+                session.commit()
+                session.refresh(existing)
+                return existing
+            else:
+                # Create new property
+                property_obj = ListPropertyDB(
+                    list_id=list_id,
+                    property_key=property_key,
+                    property_value=property_value
+                )
+                session.add(property_obj)
+                session.commit()
+                session.refresh(property_obj)
+                return property_obj
+    
+    def get_list_property(self, list_id: int, property_key: str) -> Optional[ListPropertyDB]:
+        """Get a specific list property"""
+        with self.get_session() as session:
+            return session.query(ListPropertyDB).filter(
+                ListPropertyDB.list_id == list_id,
+                ListPropertyDB.property_key == property_key
+            ).first()
+    
+    def get_list_properties(self, list_id: int) -> List[ListPropertyDB]:
+        """Get all properties for a list"""
+        with self.get_session() as session:
+            return session.query(ListPropertyDB).filter(
+                ListPropertyDB.list_id == list_id
+            ).order_by(ListPropertyDB.property_key).all()
+    
+    def delete_list_property(self, list_id: int, property_key: str) -> bool:
+        """Delete a list property"""
+        with self.get_session() as session:
+            property_obj = session.query(ListPropertyDB).filter(
+                ListPropertyDB.list_id == list_id,
+                ListPropertyDB.property_key == property_key
+            ).first()
+            
+            if property_obj:
+                session.delete(property_obj)
+                session.commit()
+                return True
+            return False

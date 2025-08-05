@@ -6,9 +6,9 @@ import os
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime
 
-from .database import Database, TodoListDB, TodoItemDB, ListRelationDB, TodoHistoryDB
+from .database import Database, TodoListDB, TodoItemDB, ListRelationDB, TodoHistoryDB, ListPropertyDB
 from .models import (
-    TodoList, TodoItem, ListRelation, TodoHistory, ProgressStats,
+    TodoList, TodoItem, ListRelation, TodoHistory, ProgressStats, ListProperty,
     TodoListCreate, TodoItemCreate, ListRelationCreate, TodoHistoryCreate,
     ItemStatus, ListType, RelationType, HistoryAction
 )
@@ -504,3 +504,49 @@ class TodoManager:
         
         db_history = self.db.get_item_history(item.id, limit=limit)
         return [self._db_to_model(entry, TodoHistory) for entry in db_history]
+    
+    # === List Properties Methods ===
+    
+    def set_list_property(self, list_key: str, property_key: str, property_value: str) -> ListProperty:
+        """Set a property for a list (create or update)"""
+        
+        # Get list
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
+        
+        # Create or update property
+        db_property = self.db.create_list_property(db_list.id, property_key, property_value)
+        return self._db_to_model(db_property, ListProperty)
+    
+    def get_list_property(self, list_key: str, property_key: str) -> Optional[str]:
+        """Get a property value for a list"""
+        # Get list
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            return None
+        
+        # Get property
+        db_property = self.db.get_list_property(db_list.id, property_key)
+        return db_property.property_value if db_property else None
+    
+    def get_list_properties(self, list_key: str) -> Dict[str, str]:
+        """Get all properties for a list as key-value dict"""
+        # Get list
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            return {}
+        
+        # Get all properties
+        db_properties = self.db.get_list_properties(db_list.id)
+        return {prop.property_key: prop.property_value for prop in db_properties}
+    
+    def delete_list_property(self, list_key: str, property_key: str) -> bool:
+        """Delete a property from a list"""
+        # Get list
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            return False
+        
+        # Delete property
+        return self.db.delete_list_property(db_list.id, property_key)

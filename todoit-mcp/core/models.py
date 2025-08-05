@@ -227,6 +227,51 @@ class ListRelation(ListRelationBase):
         }
 
 
+class ListPropertyBase(BaseModel):
+    """Base model for list properties (key-value storage)"""
+    list_id: int
+    property_key: str = Field(..., min_length=1, max_length=100)
+    property_value: str = Field(..., max_length=2000)
+    
+    @validator('property_key')
+    def validate_property_key(cls, v):
+        """Validate property_key format"""
+        if not v.replace('_', '').replace('-', '').replace('.', '').isalnum():
+            raise ValueError('property_key must contain only alphanumeric characters, underscores, hyphens, and dots')
+        return v
+
+
+class ListPropertyCreate(ListPropertyBase):
+    """Model for creating list properties"""
+    pass
+
+
+class ListPropertyUpdate(BaseModel):
+    """Model for updating list properties"""
+    property_value: Optional[str] = Field(None, max_length=2000)
+
+
+class ListProperty(ListPropertyBase):
+    """Complete list property model"""
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary"""
+        return {
+            "id": self.id,
+            "list_id": self.list_id,
+            "property_key": self.property_key,
+            "property_value": self.property_value,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat()
+        }
+
+
 class TodoHistoryBase(BaseModel):
     """Base model for TODO history"""
     item_id: Optional[int] = None

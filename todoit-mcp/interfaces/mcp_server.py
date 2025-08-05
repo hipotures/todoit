@@ -563,6 +563,107 @@ async def todo_project_overview(project_key: str) -> Dict[str, Any]:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
+# === List Properties Functions ===
+
+@mcp.tool()
+async def todo_set_list_property(list_key: str, property_key: str, property_value: str) -> Dict[str, Any]:
+    """Set a property for a list (create or update).
+    
+    Args:
+        list_key: Key of the list to set property for (required)
+        property_key: Name of the property (required)
+        property_value: Value to set (required)
+        
+    Returns:
+        Dictionary with success status and property details
+    """
+    try:
+        mgr = init_manager()
+        property_obj = mgr.set_list_property(list_key, property_key, property_value)
+        return {
+            "success": True,
+            "property": property_obj.to_dict()
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@mcp.tool()
+async def todo_get_list_property(list_key: str, property_key: str) -> Dict[str, Any]:
+    """Get a property value for a list.
+    
+    Args:
+        list_key: Key of the list to get property from (required)
+        property_key: Name of the property (required)
+        
+    Returns:
+        Dictionary with success status and property value
+    """
+    try:
+        mgr = init_manager()
+        value = mgr.get_list_property(list_key, property_key)
+        if value is not None:
+            return {
+                "success": True,
+                "property_key": property_key,
+                "property_value": value
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Property '{property_key}' not found for list '{list_key}'"
+            }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@mcp.tool()
+async def todo_get_list_properties(list_key: str) -> Dict[str, Any]:
+    """Get all properties for a list.
+    
+    Args:
+        list_key: Key of the list to get properties from (required)
+        
+    Returns:
+        Dictionary with success status and all properties as key-value pairs
+    """
+    try:
+        mgr = init_manager()
+        properties = mgr.get_list_properties(list_key)
+        return {
+            "success": True,
+            "list_key": list_key,
+            "properties": properties,
+            "count": len(properties)
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@mcp.tool()
+async def todo_delete_list_property(list_key: str, property_key: str) -> Dict[str, Any]:
+    """Delete a property from a list.
+    
+    Args:
+        list_key: Key of the list to delete property from (required)
+        property_key: Name of the property to delete (required)
+        
+    Returns:
+        Dictionary with success status and confirmation message
+    """
+    try:
+        mgr = init_manager()
+        success = mgr.delete_list_property(list_key, property_key)
+        if success:
+            return {
+                "success": True,
+                "message": f"Property '{property_key}' deleted from list '{list_key}'"
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Property '{property_key}' not found for list '{list_key}'"
+            }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
 
 if __name__ == "__main__":
     import signal

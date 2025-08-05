@@ -170,6 +170,14 @@ def list_show(ctx, list_key, tree):
                         else:
                             node.add(f"📝 {state}: {value}")
             
+            # Add list properties to tree if any
+            properties = manager.get_list_properties(list_key)
+            if properties:
+                props_node = tree_view.add("🔧 Properties")
+                for key, value in properties.items():
+                    display_value = value if len(value) <= 40 else value[:37] + "..."
+                    props_node.add(f"{key}: {display_value}")
+            
             console.print(tree_view)
         else:
             # Table view
@@ -215,6 +223,21 @@ def list_show(ctx, list_key, tree):
                 )
             
             console.print(table)
+            
+            # Show list properties if any
+            properties = manager.get_list_properties(list_key)
+            if properties:
+                prop_table = Table(title="Properties", box=box.SIMPLE)
+                prop_table.add_column("Key", style="cyan", width=20)
+                prop_table.add_column("Value", style="white")
+                
+                for key, value in properties.items():
+                    # Truncate long values for display
+                    display_value = value if len(value) <= 60 else value[:57] + "..."
+                    prop_table.add_row(key, display_value)
+                
+                console.print()
+                console.print(prop_table)
             
             # Show progress
             progress = manager.get_progress(list_key)
@@ -475,6 +498,90 @@ def io_export(ctx, list_key, file_path):
     try:
         manager.export_to_markdown(list_key, file_path)
         console.print(f"[green]✅ Exported list '{list_key}' to {file_path}[/]")
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+# === Property management commands ===
+
+@cli.group()
+def property():
+    """List property management"""
+    pass
+
+
+@property.command('set')
+@click.argument('list_key')
+@click.argument('property_key')
+@click.argument('property_value')
+@click.pass_context
+def property_set(ctx, list_key, property_key, property_value):
+    """Set a property for a list"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        property_obj = manager.set_list_property(list_key, property_key, property_value)
+        console.print(f"[green]✅ Set property '{property_key}' = '{property_value}' for list '{list_key}'[/]")
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@property.command('get')
+@click.argument('list_key')
+@click.argument('property_key')
+@click.pass_context
+def property_get(ctx, list_key, property_key):
+    """Get a property value for a list"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        value = manager.get_list_property(list_key, property_key)
+        if value is not None:
+            console.print(f"[cyan]{property_key}:[/] {value}")
+        else:
+            console.print(f"[yellow]Property '{property_key}' not found for list '{list_key}'[/]")
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@property.command('list')
+@click.argument('list_key')
+@click.pass_context
+def property_list(ctx, list_key):
+    """List all properties for a list"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        properties = manager.get_list_properties(list_key)
+        if properties:
+            prop_table = Table(title=f"Properties for list '{list_key}'", box=box.SIMPLE)
+            prop_table.add_column("Key", style="cyan", width=20)
+            prop_table.add_column("Value", style="white")
+            
+            for key, value in properties.items():
+                prop_table.add_row(key, value)
+            
+            console.print(prop_table)
+        else:
+            console.print(f"[yellow]No properties found for list '{list_key}'[/]")
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@property.command('delete')
+@click.argument('list_key')
+@click.argument('property_key')
+@click.pass_context
+def property_delete(ctx, list_key, property_key):
+    """Delete a property from a list"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        success = manager.delete_list_property(list_key, property_key)
+        if success:
+            console.print(f"[green]✅ Deleted property '{property_key}' from list '{list_key}'[/]")
+        else:
+            console.print(f"[yellow]Property '{property_key}' not found for list '{list_key}'[/]")
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
 
