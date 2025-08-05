@@ -40,6 +40,13 @@ class HistoryAction(str, Enum):
     DELETED = "deleted"
 
 
+class DependencyType(str, Enum):
+    """Types of cross-list item dependencies - Phase 2"""
+    BLOCKS = "blocks"      # Required item blocks dependent item
+    REQUIRES = "requires"  # Dependent item requires required item
+    RELATED = "related"    # Informational relationship
+
+
 class CompletionStates(BaseModel):
     """Multi-state completion tracking for complex tasks"""
     states: Dict[str, bool] = Field(default_factory=dict)
@@ -379,4 +386,101 @@ class BulkOperationResult(BaseModel):
             "affected_count": self.affected_count,
             "errors": self.errors,
             "items": self.items
+        }
+
+
+# ===== PHASE 2: CROSS-LIST DEPENDENCIES MODELS =====
+
+class ItemDependencyBase(BaseModel):
+    """Base model for cross-list item dependencies"""
+    dependent_item_id: int = Field(..., gt=0, description="ID of item that depends on another")
+    required_item_id: int = Field(..., gt=0, description="ID of item that is required")
+    dependency_type: DependencyType = Field(default=DependencyType.BLOCKS)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    
+    @validator('dependent_item_id', 'required_item_id')
+    def validate_item_ids(cls, v):
+        """Validate item IDs are positive integers"""
+        if v <= 0:
+            raise ValueError('Item IDs must be positive integers')
+        return v
+    
+    @validator('metadata')  
+    def validate_metadata(cls, v):
+        """Validate metadata content"""
+        if v is None:
+            return {}
+        
+        # Limit metadata size
+        import json
+        if len(json.dumps(v)) > 1000:
+            raise ValueError('Metadata too large (max 1000 characters when serialized)')
+        
+        return v
+
+
+class ItemDependencyCreate(ItemDependencyBase):
+    """Model for creating item dependencies"""
+    
+    @validator('dependent_item_id')
+    def validate_not_self_dependency(cls, v, values):
+        """Prevent self-dependencies"""
+        if 'required_item_id' in values and v == values['required_item_id']:
+            raise ValueError('Item cannot depend on itself')
+        return v
+
+
+class ItemDependency(ItemDependencyBase):
+    """Complete item dependency model"""
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization"""
+        return {
+            "id": self.id,
+            "dependent_item_id": self.dependent_item_id,
+            "required_item_id": self.required_item_id,
+            "dependency_type": self.dependency_type,
+            "metadata": self.metadata,
+            "created_at": self.created_at.isoformat()
+        }
+
+
+class DependencyGraph(BaseModel):
+    """Model for dependency graph visualization"""
+    lists: List[Dict[str, Any]] = Field(default_factory=list)
+    items: List[Dict[str, Any]] = Field(default_factory=list)
+    dependencies: List[Dict[str, Any]] = Field(default_factory=list)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization"""
+        return {
+            "lists": self.lists,
+            "items": self.items,
+            "dependencies": self.dependencies
+        }
+
+
+class BlockedItemsResult(BaseModel):
+    """Model for blocked items query results"""
+    item_id: int
+    item_key: str
+    content: str
+    list_key: str
+    blockers: List[Dict[str, Any]] = Field(default_factory=list)
+    is_blocked: bool = False
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization"""
+        return {
+            "item_id": self.item_id,
+            "item_key": self.item_key,
+            "content": self.content,
+            "list_key": self.list_key,
+            "blockers": self.blockers,
+            "is_blocked": self.is_blocked
         }

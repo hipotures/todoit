@@ -15,8 +15,8 @@ from sqlalchemy.engine import Engine
 from .models import (
     TodoList as TodoListModel, TodoItem as TodoItemModel, 
     ListRelation as ListRelationModel, TodoHistory as TodoHistoryModel,
-    ListProperty as ListPropertyModel,
-    ProgressStats, ListType, ItemStatus, RelationType, HistoryAction
+    ListProperty as ListPropertyModel, ItemDependency as ItemDependencyModel,
+    ProgressStats, ListType, ItemStatus, RelationType, HistoryAction, DependencyType
 )
 
 Base = declarative_base()
@@ -153,6 +153,30 @@ class TodoHistoryDB(Base):
     )
 
 
+class ItemDependencyDB(Base):
+    """SQLAlchemy model for item_dependencies table - Phase 2"""
+    __tablename__ = 'item_dependencies'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    dependent_item_id = Column(Integer, ForeignKey('todo_items.id'), nullable=False)
+    required_item_id = Column(Integer, ForeignKey('todo_items.id'), nullable=False)
+    dependency_type = Column(String(20), default='blocks')
+    meta_data = Column('metadata', JSON, default=lambda: {})
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    dependent_item = relationship("TodoItemDB", foreign_keys=[dependent_item_id])
+    required_item = relationship("TodoItemDB", foreign_keys=[required_item_id])
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_item_deps_dependent', 'dependent_item_id'),
+        Index('idx_item_deps_required', 'required_item_id'),
+        Index('idx_item_deps_type', 'dependency_type'),
+        Index('idx_item_deps_unique', 'dependent_item_id', 'required_item_id', unique=True),
+    )
+
+
 class Database:
     """Database connection and operations manager"""
     
@@ -172,6 +196,9 @@ class Database:
         
         # Create all tables
         self.create_tables()
+        
+        # Run Phase 2 migration if needed
+        self.run_phase2_migration()
     
     def create_tables(self):
         """Create all database tables"""
@@ -192,6 +219,27 @@ class Database:
             for statement in statements:
                 conn.execute(statement)
             conn.commit()
+    
+    def run_phase2_migration(self):
+        """Run Phase 2 migration to add item_dependencies table"""
+        try:
+            # Check if table already exists
+            from sqlalchemy import text
+            with self.get_session() as session:
+                result = session.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='item_dependencies'"))
+                if result.fetchone():
+                    return  # Table already exists
+            
+            # Execute migration
+            migration_path = os.path.join(os.path.dirname(__file__), '..', 'migrations', '002_item_dependencies.sql')
+            if os.path.exists(migration_path):
+                self.execute_migration(migration_path)
+            else:
+                # Create table directly if migration file not found
+                Base.metadata.create_all(bind=self.engine)
+        except Exception as e:
+            print(f"Warning: Could not run Phase 2 migration: {e}")
+            # Continue anyway - table might already exist
     
     # TodoList operations
     def create_list(self, list_data: Dict[str, Any]) -> TodoListDB:
@@ -642,3 +690,187 @@ class Database:
             ).first()
             
             return pending_child is not None
+    
+    # ===== ITEM DEPENDENCIES OPERATIONS (Phase 2) =====
+    
+    def create_item_dependency(self, dependency_data: Dict[str, Any]) -> ItemDependencyDB:
+        """Create cross-list item dependency"""
+        with self.get_session() as session:
+            # Check if both items exist
+            dependent_item = session.query(TodoItemDB).filter(
+                TodoItemDB.id == dependency_data['dependent_item_id']
+            ).first()
+            required_item = session.query(TodoItemDB).filter(
+                TodoItemDB.id == dependency_data['required_item_id']
+            ).first()
+            
+            if not dependent_item:
+                raise ValueError(f"Dependent item with ID {dependency_data['dependent_item_id']} not found")
+            if not required_item:
+                raise ValueError(f"Required item with ID {dependency_data['required_item_id']} not found")
+            
+            # Check for circular dependencies
+            if self._would_create_circular_dependency(
+                dependency_data['dependent_item_id'], 
+                dependency_data['required_item_id']
+            ):
+                raise ValueError("Creating this dependency would create a circular reference")
+            
+            # Create dependency
+            db_dependency = ItemDependencyDB(**dependency_data)
+            session.add(db_dependency)
+            session.commit()
+            session.refresh(db_dependency)
+            return db_dependency
+    
+    def get_item_dependencies(self, item_id: int, as_dependent: bool = True) -> List[ItemDependencyDB]:
+        """Get dependencies for an item"""
+        with self.get_session() as session:
+            if as_dependent:
+                # Get what this item depends on (what blocks this item)
+                return session.query(ItemDependencyDB).filter(
+                    ItemDependencyDB.dependent_item_id == item_id
+                ).all()
+            else:
+                # Get what depends on this item (what this item blocks)
+                return session.query(ItemDependencyDB).filter(
+                    ItemDependencyDB.required_item_id == item_id
+                ).all()
+    
+    def delete_item_dependency(self, dependent_item_id: int, required_item_id: int) -> bool:
+        """Delete specific item dependency"""
+        with self.get_session() as session:
+            dependency = session.query(ItemDependencyDB).filter(
+                ItemDependencyDB.dependent_item_id == dependent_item_id,
+                ItemDependencyDB.required_item_id == required_item_id
+            ).first()
+            
+            if dependency:
+                session.delete(dependency)
+                session.commit()
+                return True
+            return False
+    
+    def get_item_blockers(self, item_id: int) -> List[TodoItemDB]:
+        """Get all items that block this item (not completed required items)"""
+        with self.get_session() as session:
+            # Get dependencies where this item is dependent
+            dependencies = session.query(ItemDependencyDB).filter(
+                ItemDependencyDB.dependent_item_id == item_id
+            ).all()
+            
+            blockers = []
+            for dep in dependencies:
+                required_item = session.query(TodoItemDB).filter(
+                    TodoItemDB.id == dep.required_item_id
+                ).first()
+                
+                # Only include if required item is not completed
+                if required_item and required_item.status != 'completed':
+                    blockers.append(required_item)
+            
+            return blockers
+    
+    def get_items_blocked_by(self, item_id: int) -> List[TodoItemDB]:
+        """Get all items blocked by this item"""
+        with self.get_session() as session:
+            # Get dependencies where this item is required
+            dependencies = session.query(ItemDependencyDB).filter(
+                ItemDependencyDB.required_item_id == item_id
+            ).all()
+            
+            blocked_items = []
+            for dep in dependencies:
+                dependent_item = session.query(TodoItemDB).filter(
+                    TodoItemDB.id == dep.dependent_item_id
+                ).first()
+                
+                if dependent_item:
+                    blocked_items.append(dependent_item)
+            
+            return blocked_items
+    
+    def is_item_blocked(self, item_id: int) -> bool:
+        """Check if item is blocked by uncompleted dependencies"""
+        blockers = self.get_item_blockers(item_id)
+        return len(blockers) > 0
+    
+    def get_all_dependencies_for_list(self, list_id: int) -> List[ItemDependencyDB]:
+        """Get all dependencies involving items from a specific list"""
+        with self.get_session() as session:
+            # Get items from this list
+            list_items = session.query(TodoItemDB).filter(
+                TodoItemDB.list_id == list_id
+            ).all()
+            item_ids = [item.id for item in list_items]
+            
+            if not item_ids:
+                return []
+            
+            # Get dependencies where items from this list are involved
+            dependencies = session.query(ItemDependencyDB).filter(
+                (ItemDependencyDB.dependent_item_id.in_(item_ids)) |
+                (ItemDependencyDB.required_item_id.in_(item_ids))
+            ).all()
+            
+            return dependencies
+    
+    def _would_create_circular_dependency(self, dependent_item_id: int, required_item_id: int) -> bool:
+        """Check if adding this dependency would create a circular reference"""
+        with self.get_session() as session:
+            # Check if required_item depends on dependent_item (directly or indirectly)
+            visited = set()
+            
+            def has_dependency_path(from_item: int, to_item: int) -> bool:
+                if from_item in visited:
+                    return False  # Prevent infinite recursion
+                visited.add(from_item)
+                
+                # Direct dependency check
+                direct_deps = session.query(ItemDependencyDB).filter(
+                    ItemDependencyDB.dependent_item_id == from_item
+                ).all()
+                
+                for dep in direct_deps:
+                    if dep.required_item_id == to_item:
+                        return True  # Direct circular dependency
+                    
+                    # Recursive check
+                    if has_dependency_path(dep.required_item_id, to_item):
+                        return True
+                
+                return False
+            
+            return has_dependency_path(required_item_id, dependent_item_id)
+    
+    def get_dependency_graph_for_project(self, project_key: str) -> Dict[str, Any]:
+        """Get complete dependency graph for a project (related lists)"""
+        with self.get_session() as session:
+            # Get all lists in the project
+            project_lists = self.get_lists_by_relation('project', project_key)
+            if not project_lists:
+                return {"lists": [], "dependencies": []}
+            
+            list_ids = [lst.id for lst in project_lists]
+            
+            # Get all items from these lists
+            all_items = session.query(TodoItemDB).filter(
+                TodoItemDB.list_id.in_(list_ids)
+            ).all()
+            
+            item_ids = [item.id for item in all_items]
+            
+            # Get all dependencies between items in these lists
+            dependencies = session.query(ItemDependencyDB).filter(
+                ItemDependencyDB.dependent_item_id.in_(item_ids),
+                ItemDependencyDB.required_item_id.in_(item_ids)
+            ).all()
+            
+            return {
+                "lists": [{"id": lst.id, "key": lst.list_key, "title": lst.title} for lst in project_lists],
+                "items": [{"id": item.id, "key": item.item_key, "content": item.content, 
+                          "list_id": item.list_id, "status": item.status} for item in all_items],
+                "dependencies": [{"id": dep.id, "dependent": dep.dependent_item_id, 
+                                "required": dep.required_item_id, "type": dep.dependency_type} 
+                               for dep in dependencies]
+            }

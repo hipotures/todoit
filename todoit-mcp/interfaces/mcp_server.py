@@ -856,6 +856,249 @@ async def todo_get_list_items_hierarchical(list_key: str, status: Optional[str] 
     }
 
 
+# ===== PHASE 2: CROSS-LIST DEPENDENCIES MCP TOOLS =====
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_add_item_dependency(dependent_list: str, dependent_item: str, 
+                                  required_list: str, required_item: str,
+                                  dependency_type: str = "blocks",
+                                  metadata: Optional[Dict[str, Any]] = None, mgr=None) -> Dict[str, Any]:
+    """Add dependency between tasks from different lists.
+    
+    Args:
+        dependent_list: Key of list containing item that depends on another
+        dependent_item: Key of item that depends on another  
+        required_list: Key of list containing item that is required
+        required_item: Key of item that is required
+        dependency_type: Type of dependency (blocks, requires, related)
+        metadata: Optional metadata for the dependency
+        
+    Returns:
+        Dictionary with success status and dependency details
+    """
+    dependency = mgr.add_item_dependency(
+        dependent_list=dependent_list,
+        dependent_item=dependent_item,
+        required_list=required_list,
+        required_item=required_item,
+        dependency_type=dependency_type,
+        metadata=metadata
+    )
+    return {
+        "success": True,
+        "dependency": dependency.to_dict(),
+        "message": f"Dependency added: {dependent_list}:{dependent_item} → {required_list}:{required_item}"
+    }
+
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_remove_item_dependency(dependent_list: str, dependent_item: str,
+                                     required_list: str, required_item: str, mgr=None) -> Dict[str, Any]:
+    """Remove dependency between tasks from different lists.
+    
+    Args:
+        dependent_list: Key of list containing dependent item
+        dependent_item: Key of dependent item
+        required_list: Key of list containing required item  
+        required_item: Key of required item
+        
+    Returns:
+        Dictionary with success status and confirmation
+    """
+    success = mgr.remove_item_dependency(
+        dependent_list=dependent_list,
+        dependent_item=dependent_item,
+        required_list=required_list,
+        required_item=required_item
+    )
+    return {
+        "success": success,
+        "message": f"Dependency {'removed' if success else 'not found'}: {dependent_list}:{dependent_item} → {required_list}:{required_item}"
+    }
+
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_get_item_blockers(list_key: str, item_key: str, mgr=None) -> Dict[str, Any]:
+    """Get all items that block this item (uncompleted required items).
+    
+    Args:
+        list_key: Key of list containing the item
+        item_key: Key of item to check for blockers
+        
+    Returns:
+        Dictionary with success status, blockers list, and blocking status
+    """
+    blockers = mgr.get_item_blockers(list_key, item_key)
+    is_blocked = len(blockers) > 0
+    
+    return {
+        "success": True,
+        "blockers": [blocker.to_dict() for blocker in blockers],
+        "is_blocked": is_blocked,
+        "blocker_count": len(blockers),
+        "list_key": list_key,
+        "item_key": item_key
+    }
+
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_get_items_blocked_by(list_key: str, item_key: str, mgr=None) -> Dict[str, Any]:
+    """Get all items blocked by this item.
+    
+    Args:
+        list_key: Key of list containing the item
+        item_key: Key of item to check what it blocks
+        
+    Returns:
+        Dictionary with success status and list of blocked items
+    """
+    blocked_items = mgr.get_items_blocked_by(list_key, item_key)
+    
+    return {
+        "success": True,
+        "blocked_items": [item.to_dict() for item in blocked_items],
+        "blocked_count": len(blocked_items),
+        "list_key": list_key,
+        "item_key": item_key
+    }
+
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_is_item_blocked(list_key: str, item_key: str, mgr=None) -> Dict[str, Any]:
+    """Check if item is blocked by uncompleted cross-list dependencies.
+    
+    Args:
+        list_key: Key of list containing the item
+        item_key: Key of item to check
+        
+    Returns:
+        Dictionary with success status and blocking information
+    """
+    is_blocked = mgr.is_item_blocked(list_key, item_key)
+    
+    result = {
+        "success": True,
+        "is_blocked": is_blocked,
+        "list_key": list_key,
+        "item_key": item_key
+    }
+    
+    if is_blocked:
+        blockers = mgr.get_item_blockers(list_key, item_key)
+        result["blockers"] = [{"key": b.item_key, "content": b.content} for b in blockers]
+    
+    return result
+
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_can_start_item(list_key: str, item_key: str, mgr=None) -> Dict[str, Any]:
+    """Check if item can be started (combines Phase 1 + Phase 2 logic).
+    
+    Args:
+        list_key: Key of list containing the item
+        item_key: Key of item to check
+        
+    Returns:
+        Dictionary with detailed analysis of whether item can be started
+    """
+    analysis = mgr.can_start_item(list_key, item_key)
+    
+    return {
+        "success": True,
+        "analysis": analysis,
+        "list_key": list_key,
+        "item_key": item_key
+    }
+
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_get_cross_list_progress(project_key: str, mgr=None) -> Dict[str, Any]:
+    """Get progress for all lists in a project with dependency information.
+    
+    Args:
+        project_key: Key of project to analyze
+        
+    Returns:
+        Dictionary with comprehensive project progress and dependency info
+    """
+    progress_info = mgr.get_cross_list_progress(project_key)
+    
+    return {
+        "success": True,
+        "project_progress": progress_info
+    }
+
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_get_dependency_graph(project_key: str, mgr=None) -> Dict[str, Any]:
+    """Get dependency graph for visualization.
+    
+    Args:
+        project_key: Key of project to get dependency graph for
+        
+    Returns:
+        Dictionary with dependency graph data for visualization
+    """
+    graph_data = mgr.get_dependency_graph(project_key)
+    
+    return {
+        "success": True,
+        "graph": graph_data,
+        "project_key": project_key
+    }
+
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_get_next_pending_enhanced(list_key: str, respect_dependencies: bool = True,
+                                        smart_subtasks: bool = False, mgr=None) -> Dict[str, Any]:
+    """Get next pending item with enhanced Phase 2 logic (blocks + subtasks).
+    
+    Args:
+        list_key: Key of list to get next item from
+        respect_dependencies: Whether to consider cross-list dependencies
+        smart_subtasks: Whether to use smart subtask prioritization
+        
+    Returns:
+        Dictionary with next available item or null if none
+    """
+    item = mgr.get_next_pending(
+        list_key=list_key,
+        respect_dependencies=respect_dependencies,
+        smart_subtasks=smart_subtasks
+    )
+    
+    if item:
+        # Get additional context
+        is_blocked = mgr.is_item_blocked(list_key, item.item_key) if respect_dependencies else False
+        is_subtask = getattr(item, 'parent_item_id', None) is not None
+        
+        return {
+            "success": True,
+            "next_item": item.to_dict(),
+            "is_blocked": is_blocked,
+            "is_subtask": is_subtask,
+            "context": {
+                "smart_subtasks_used": smart_subtasks,
+                "dependencies_considered": respect_dependencies
+            }
+        }
+    else:
+        return {
+            "success": True,
+            "next_item": None,
+            "message": f"No available items in list '{list_key}'"
+        }
+
+
 if __name__ == "__main__":
     import signal
     import sys

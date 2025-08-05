@@ -9,7 +9,8 @@ from datetime import datetime
 from .database import Database, TodoListDB, TodoItemDB, ListRelationDB, TodoHistoryDB, ListPropertyDB
 from .models import (
     TodoList, TodoItem, ListRelation, TodoHistory, ProgressStats, ListProperty,
-    TodoListCreate, TodoItemCreate, ListRelationCreate, TodoHistoryCreate,
+    TodoListCreate, TodoItemCreate, ListRelationCreate, TodoHistoryCreate,  
+    ItemDependency, DependencyType,
     ItemStatus, ListType, RelationType, HistoryAction
 )
 
@@ -278,7 +279,7 @@ class TodoManager:
                         list_key: str,
                         respect_dependencies: bool = True,
                         smart_subtasks: bool = False) -> Optional[TodoItem]:
-        """7. Pobiera następne zadanie do wykonania"""
+        """7. Pobiera następne zadanie do wykonania (enhanced with Phase 2 blocking logic)"""
         # Use smart subtask logic if requested
         if smart_subtasks:
             return self.get_next_pending_with_subtasks(list_key)
@@ -296,13 +297,17 @@ class TodoManager:
         
         # Sprawdź zależności
         for db_item in pending_items:
-            # Sprawdź zależności parent/child
+            # Phase 1: Sprawdź zależności parent/child (subtasks)
             if db_item.parent_item_id:
                 parent = self.db.get_item_by_id(db_item.parent_item_id)
                 if parent and parent.status != "completed":
                     continue
             
-            # Sprawdź zależności między listami
+            # Phase 2: Sprawdź cross-list dependencies (item blocked by other items)
+            if self.db.is_item_blocked(db_item.id):
+                continue  # Skip blocked items
+            
+            # Legacy: Sprawdź zależności między listami (old list-level dependencies)
             dependencies = self.db.get_list_dependencies(db_list.id)
             if dependencies:
                 can_proceed = True
@@ -801,3 +806,276 @@ class TodoManager:
             "pending_subtask_keys": [child.item_key for child in pending_children],
             "total_subtasks": len(children)
         }
+    
+    # ===== CROSS-LIST DEPENDENCIES METHODS (Phase 2) =====
+    
+    def add_item_dependency(self, dependent_list: str, dependent_item: str,
+                           required_list: str, required_item: str,
+                           dependency_type: str = "blocks",
+                           metadata: Optional[Dict[str, Any]] = None) -> 'ItemDependency':
+        """Add dependency between tasks from different lists"""
+        from .models import ItemDependency, DependencyType
+        
+        # Get dependent item
+        dependent_db_list = self.db.get_list_by_key(dependent_list)
+        if not dependent_db_list:
+            raise ValueError(f"Dependent list '{dependent_list}' not found")
+        
+        dependent_db_item = self.db.get_item_by_key(dependent_db_list.id, dependent_item)
+        if not dependent_db_item:
+            raise ValueError(f"Dependent item '{dependent_item}' not found in list '{dependent_list}'")
+        
+        # Get required item
+        required_db_list = self.db.get_list_by_key(required_list)
+        if not required_db_list:
+            raise ValueError(f"Required list '{required_list}' not found")
+        
+        required_db_item = self.db.get_item_by_key(required_db_list.id, required_item)
+        if not required_db_item:
+            raise ValueError(f"Required item '{required_item}' not found in list '{required_list}'")
+        
+        # Validate dependency type
+        try:
+            dep_type = DependencyType(dependency_type)
+        except ValueError:
+            raise ValueError(f"Invalid dependency type: {dependency_type}")
+        
+        # Create dependency
+        dependency_data = {
+            "dependent_item_id": dependent_db_item.id,
+            "required_item_id": required_db_item.id,
+            "dependency_type": dep_type.value,
+            "meta_data": metadata or {}
+        }
+        
+        db_dependency = self.db.create_item_dependency(dependency_data)
+        
+        # Record history for both items
+        self._record_history(
+            item_id=dependent_db_item.id,
+            list_id=dependent_db_list.id,
+            action=HistoryAction.UPDATED,
+            new_value={
+                "dependency_added": f"now depends on {required_list}:{required_item}",
+                "dependency_type": dep_type.value
+            }
+        )
+        
+        self._record_history(
+            item_id=required_db_item.id,
+            list_id=required_db_list.id,
+            action=HistoryAction.UPDATED,
+            new_value={
+                "dependency_added": f"now blocks {dependent_list}:{dependent_item}",
+                "dependency_type": dep_type.value
+            }
+        )
+        
+        return self._db_to_model(db_dependency, ItemDependency)
+    
+    def remove_item_dependency(self, dependent_list: str, dependent_item: str,
+                              required_list: str, required_item: str) -> bool:
+        """Remove dependency between tasks from different lists"""
+        # Get dependent item
+        dependent_db_list = self.db.get_list_by_key(dependent_list)
+        if not dependent_db_list:
+            raise ValueError(f"Dependent list '{dependent_list}' not found")
+        
+        dependent_db_item = self.db.get_item_by_key(dependent_db_list.id, dependent_item)
+        if not dependent_db_item:
+            raise ValueError(f"Dependent item '{dependent_item}' not found in list '{dependent_list}'")
+        
+        # Get required item
+        required_db_list = self.db.get_list_by_key(required_list)
+        if not required_db_list:
+            raise ValueError(f"Required list '{required_list}' not found")
+        
+        required_db_item = self.db.get_item_by_key(required_db_list.id, required_item)
+        if not required_db_item:
+            raise ValueError(f"Required item '{required_item}' not found in list '{required_list}'")
+        
+        # Remove dependency
+        success = self.db.delete_item_dependency(dependent_db_item.id, required_db_item.id)
+        
+        if success:
+            # Record history
+            self._record_history(
+                item_id=dependent_db_item.id,
+                list_id=dependent_db_list.id,
+                action=HistoryAction.UPDATED,
+                new_value={"dependency_removed": f"no longer depends on {required_list}:{required_item}"}
+            )
+        
+        return success
+    
+    def get_item_blockers(self, list_key: str, item_key: str) -> List['TodoItem']:
+        """Get all items that block this item (not completed required items)"""
+        # Get item
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
+        
+        db_item = self.db.get_item_by_key(db_list.id, item_key)
+        if not db_item:
+            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+        
+        # Get blocking items
+        blockers = self.db.get_item_blockers(db_item.id)
+        return [self._db_to_model(blocker, TodoItem) for blocker in blockers]
+    
+    def get_items_blocked_by(self, list_key: str, item_key: str) -> List['TodoItem']:
+        """Get all items blocked by this item"""
+        # Get item
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
+        
+        db_item = self.db.get_item_by_key(db_list.id, item_key)
+        if not db_item:
+            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+        
+        # Get blocked items
+        blocked = self.db.get_items_blocked_by(db_item.id)
+        return [self._db_to_model(item, TodoItem) for item in blocked]
+    
+    def is_item_blocked(self, list_key: str, item_key: str) -> bool:
+        """Check if item is blocked by uncompleted cross-list dependencies"""
+        # Get item
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
+        
+        db_item = self.db.get_item_by_key(db_list.id, item_key)
+        if not db_item:
+            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+        
+        return self.db.is_item_blocked(db_item.id)
+    
+    def can_start_item(self, list_key: str, item_key: str) -> Dict[str, Any]:
+        """
+        Check if task can be started (all dependencies completed, no pending subtasks)
+        Combines both Phase 1 (subtasks) and Phase 2 (cross-list dependencies) logic
+        """
+        # Get item
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
+        
+        db_item = self.db.get_item_by_key(db_list.id, item_key)
+        if not db_item:
+            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+        
+        # Check if item is already completed or in progress
+        if db_item.status in ['completed', 'in_progress']:
+            return {
+                "can_start": False,
+                "reason": f"Item is already {db_item.status}",
+                "blocked_by_dependencies": False,
+                "blocked_by_subtasks": False,
+                "blockers": [],
+                "pending_subtasks": []
+            }
+        
+        # Check cross-list dependencies
+        blockers = self.db.get_item_blockers(db_item.id)
+        is_blocked_by_deps = len(blockers) > 0
+        
+        # Check subtasks (if this is a parent with pending subtasks)
+        pending_children = []
+        if db_item.parent_item_id is None:  # Only check for root items
+            children = self.db.get_item_children(db_item.id)
+            pending_children = [child for child in children if child.status in ['pending', 'in_progress']]
+        
+        is_blocked_by_subtasks = len(pending_children) > 0
+        
+        can_start = not (is_blocked_by_deps or is_blocked_by_subtasks)
+        
+        return {
+            "can_start": can_start,
+            "blocked_by_dependencies": is_blocked_by_deps,
+            "blocked_by_subtasks": is_blocked_by_subtasks,
+            "blockers": [{"id": b.id, "key": b.item_key, "content": b.content} for b in blockers],
+            "pending_subtasks": [{"id": s.id, "key": s.item_key, "content": s.content} for s in pending_children],
+            "reason": self._get_blocking_reason(is_blocked_by_deps, is_blocked_by_subtasks, blockers, pending_children)
+        }
+    
+    def _get_blocking_reason(self, blocked_by_deps: bool, blocked_by_subtasks: bool, 
+                           blockers: List, pending_subtasks: List) -> str:
+        """Generate human-readable blocking reason"""
+        reasons = []
+        
+        if blocked_by_deps:
+            blocker_names = [f"{b.item_key}" for b in blockers[:3]]  # Show first 3
+            if len(blockers) > 3:
+                blocker_names.append(f"and {len(blockers) - 3} more")
+            reasons.append(f"blocked by dependencies: {', '.join(blocker_names)}")
+        
+        if blocked_by_subtasks:
+            subtask_names = [f"{s.item_key}" for s in pending_subtasks[:3]]  # Show first 3
+            if len(pending_subtasks) > 3:
+                subtask_names.append(f"and {len(pending_subtasks) - 3} more")
+            reasons.append(f"has pending subtasks: {', '.join(subtask_names)}")
+        
+        if not reasons:
+            return "ready to start"
+        
+        return "; ".join(reasons)
+    
+    def get_cross_list_progress(self, project_key: str) -> Dict[str, Any]:
+        """Get progress for all lists in a project with dependency information"""
+        # Get project lists
+        project_lists = self.get_lists_by_relation("project", project_key)
+        if not project_lists:
+            return {
+                "project_key": project_key,
+                "lists": [],
+                "total_items": 0,
+                "total_completed": 0,
+                "overall_progress": 0.0,
+                "dependencies": []
+            }
+        
+        result = {
+            "project_key": project_key,
+            "lists": [],
+            "total_items": 0,
+            "total_completed": 0,
+            "overall_progress": 0.0,
+            "dependencies": []
+        }
+        
+        # Get dependency graph
+        dependency_graph = self.db.get_dependency_graph_for_project(project_key)
+        result["dependencies"] = dependency_graph["dependencies"]
+        
+        # Process each list
+        for todo_list in project_lists:
+            progress = self.get_progress(todo_list.list_key)
+            items = self.get_list_items(todo_list.list_key)
+            
+            # Count blocked items
+            blocked_count = 0
+            for item in items:
+                if self.db.is_item_blocked(item.id):
+                    blocked_count += 1
+            
+            list_info = {
+                "list": todo_list.to_dict(),
+                "progress": progress.to_dict(),
+                "blocked_items": blocked_count,
+                "items": [item.to_dict() for item in items]
+            }
+            
+            result["lists"].append(list_info)
+            result["total_items"] += progress.total
+            result["total_completed"] += progress.completed
+        
+        # Calculate overall progress
+        if result["total_items"] > 0:
+            result["overall_progress"] = (result["total_completed"] / result["total_items"]) * 100
+        
+        return result
+    
+    def get_dependency_graph(self, project_key: str) -> Dict[str, Any]:
+        """Get dependency graph for visualization"""
+        return self.db.get_dependency_graph_for_project(project_key)
