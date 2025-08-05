@@ -218,7 +218,7 @@ class TodoManager:
                           list_key: str, 
                           item_key: str,
                           status: Optional[str] = None,
-                          completion_states: Optional[Dict[str, bool]] = None) -> TodoItem:
+                          completion_states: Optional[Dict[str, Any]] = None) -> TodoItem:
         """6. Aktualizuje status zadania z obsługą multi-state"""
         # Pobierz listę
         db_list = self.db.get_list_by_key(list_key)

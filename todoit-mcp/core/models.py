@@ -28,6 +28,7 @@ class RelationType(str, Enum):
     DEPENDENCY = "dependency"
     PARENT = "parent"
     RELATED = "related"
+    PROJECT = "project"
 
 
 class HistoryAction(str, Enum):
@@ -123,7 +124,7 @@ class TodoItemBase(BaseModel):
     content: str = Field(..., min_length=1, max_length=1000)
     position: int = Field(..., ge=0)
     status: ItemStatus = ItemStatus.PENDING
-    completion_states: Optional[Dict[str, bool]] = Field(default_factory=dict)
+    completion_states: Optional[Dict[str, Any]] = Field(default_factory=dict)
     parent_item_id: Optional[int] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
     
@@ -145,7 +146,7 @@ class TodoItemUpdate(BaseModel):
     content: Optional[str] = Field(None, min_length=1, max_length=1000)
     position: Optional[int] = Field(None, ge=0)
     status: Optional[ItemStatus] = None
-    completion_states: Optional[Dict[str, bool]] = None
+    completion_states: Optional[Dict[str, Any]] = None
     metadata: Optional[Dict[str, Any]] = None
 
 
@@ -179,9 +180,9 @@ class TodoItem(TodoItemBase):
             "updated_at": self.updated_at.isoformat()
         }
     
-    def get_completion_states(self) -> CompletionStates:
-        """Get completion states as CompletionStates object"""
-        return CompletionStates(states=self.completion_states or {})
+    def get_completion_metadata(self) -> Dict[str, Any]:
+        """Get completion metadata"""
+        return self.completion_states or {}
 
 
 class ListRelationBase(BaseModel):

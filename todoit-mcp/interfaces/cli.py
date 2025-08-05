@@ -157,15 +157,18 @@ def list_show(ctx, list_key, tree):
                     'in_progress': '🔄',
                     'completed': '✅',
                     'failed': '❌'
-                }.get(item.status, '❓')
+                }.get(item.status.value, '❓')
                 
                 node = tree_view.add(f"{status_icon} {item.content}")
                 
                 # Add completion states if they exist
                 if item.completion_states:
                     for state, value in item.completion_states.items():
-                        icon = '✅' if value else '❌'
-                        node.add(f"{icon} {state}")
+                        if isinstance(value, bool):
+                            icon = '✅' if value else '❌'
+                            node.add(f"{icon} {state}")
+                        else:
+                            node.add(f"📝 {state}: {value}")
             
             console.print(tree_view)
         else:
@@ -178,23 +181,36 @@ def list_show(ctx, list_key, tree):
             table.add_column("States", style="blue")
             
             for item in items:
+                status_icon = {
+                    'pending': '⏳ Pending',
+                    'in_progress': '🔄 In Progress', 
+                    'completed': '✅ Completed',
+                    'failed': '❌ Failed'
+                }.get(item.status.value, f'❓ {item.status.value}')
+                
                 status_style = {
                     'pending': 'yellow',
-                    'in_progress': 'blue',
+                    'in_progress': 'blue', 
                     'completed': 'green',
                     'failed': 'red'
-                }.get(item.status, 'white')
+                }.get(item.status.value, 'white')
                 
                 states_str = ""
                 if item.completion_states:
-                    states = [f"{'✅' if v else '❌'}{k}" for k, v in item.completion_states.items()]
+                    states = []
+                    for k, v in item.completion_states.items():
+                        if isinstance(v, bool):
+                            icon = '✅' if v else '❌'
+                            states.append(f"{icon}{k}")
+                        else:
+                            states.append(f"📝{k}")
                     states_str = " ".join(states)
                 
                 table.add_row(
                     str(item.position),
                     item.item_key,
                     item.content,
-                    f"[{status_style}]{item.status}[/]",
+                    f"[{status_style}]{status_icon}[/]",
                     states_str
                 )
             
