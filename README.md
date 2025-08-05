@@ -1,68 +1,82 @@
 # TODOIT MCP
 
-**Advanced Task Management System with Complete Phase 3 Integration**
+**Intelligent Task Management System with MCP Integration**
 
 TODOIT (Todo It) is a comprehensive task management platform that scales from simple lists to complex multi-team projects. Built with intelligent prioritization, hierarchical task breakdown, and cross-list dependency management.
 
-## 🚀 Phase 3 Features (Complete System)
-
-### 🎯 **Three-Phase Architecture**
-- **Phase 1: Subtasks** - Hierarchical task breakdown with parent-child relationships
-- **Phase 2: Cross-List Dependencies** - Project coordination across different lists/teams
-- **Phase 3: Smart Integration** - Intelligent algorithms combining all mechanisms
+## 🚀 Key Features
 
 ### 🧠 **Smart Task Management**
-- **Intelligent Next Task Algorithm** - 4-tier priority system for optimal workflow
-- **Comprehensive Progress Tracking** - 12 different metrics including blocked/available counts
-- **Circular Dependency Prevention** - Automatic detection and prevention of dependency cycles
+- **Hierarchical Tasks** - Break down complex tasks into subtasks with parent-child relationships
+- **Cross-List Dependencies** - Coordinate work across different lists and teams
+- **Intelligent Next Task Algorithm** - Smart prioritization for optimal workflow
 - **Auto-completion Logic** - Parents auto-complete when all subtasks are done
+- **Circular Dependency Prevention** - Automatic detection and prevention of dependency loops
+
+### 📊 **Advanced Progress Tracking**
+- **Comprehensive Statistics** - 12 different metrics including blocked/available counts
+- **Real-time Status** - Live blocking detection and workflow optimization
+- **Project-wide Progress** - Track progress across multiple related lists
 
 ### 🔗 **Integration Capabilities**
-- **43 MCP Tools** - Complete API coverage for all functionality
+- **43 MCP Tools** - Complete API for Claude Code integration
 - **Rich CLI Interface** - Beautiful tables with blocked status indicators (🚫)
 - **SQLite Database** - Robust schema with foreign key relationships
-- **Real-time Status** - Live blocking detection and workflow optimization
+- **Import/Export** - Markdown format with checkbox support
 
-## 🏗️ Phase 3 Architecture
+## 🏗️ Architecture
 
 ```
 Claude Code <--MCP--> TodoMCPServer <--API--> TodoManager <--ORM--> SQLite
                             |                         ^                  |
                             |                         |                  |
-                       43 MCP Tools           Smart Algorithm      item_dependencies
-                                                    |                  table
-                                               Rich CLI
-                                            (🚫 blocked status)
+                       43 MCP Tools           Smart Algorithm      Enhanced Schema
+                                                    |                     |
+                                               Rich CLI              Dependencies
+                                            (📊 status display)        & Relations
 ```
 
 ### Database Schema
-- **todo_lists** - Basic list management
-- **todo_items** - Items with `parent_item_id` for Phase 1 subtasks
-- **item_dependencies** - Cross-list dependencies for Phase 2
-- **list_relations** - Project grouping and relationships
-- **list_properties** - Key-value metadata storage
+- **todo_lists** - List management with metadata
+- **todo_items** - Items with hierarchical relationships (`parent_item_id`)
+- **item_dependencies** - Cross-list task dependencies
+- **list_relations** - Project grouping and relationships  
+- **list_properties** - Key-value configuration storage
 
-## 📦 Project Structure
+## 📦 Installation
 
+### Requirements
+- Python 3.12+
+- SQLite (included with Python)
+
+### Setup
+```bash
+# Clone repository
+git clone <repository-url>
+cd todoit-mcp
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Initialize database (automatic on first run)
+python -c "from core.manager import TodoManager; TodoManager()"
+```
+
+### Project Structure
 ```
 todoit-mcp/
-├── core/                   # Phase 3 Core Logic
-│   ├── manager.py         # TodoManager with smart algorithms
-│   ├── models.py          # Enhanced Pydantic models
-│   ├── database.py        # Full ORM with dependencies
-│   └── validators.py      # Business rules & validation
-├── interfaces/            # User Interfaces
-│   ├── mcp_server.py     # 43 MCP Tools (all phases)
-│   └── cli.py            # Rich CLI with Phase 3 display
-├── migrations/           # Database Schema Evolution
-│   ├── 001_initial.sql   # Basic schema
-│   └── 002_item_dependencies.sql # Phase 2 cross-list deps
-├── docs/                 # Complete Documentation
-│   ├── SUBTASKS.md       # Architectural plan
-│   ├── PHASE3_INTEGRATION.md # Integration guide
-│   └── PHASE3_EXAMPLES.md    # Real-world examples
+├── core/                   # Core Logic
+│   ├── manager.py         # TodoManager - main API
+│   ├── models.py          # Data models (Pydantic)
+│   ├── database.py        # Database layer (SQLAlchemy)
+│   └── validators.py      # Business rules
+├── interfaces/            # User Interfaces  
+│   ├── mcp_server.py     # MCP Server (43 tools)
+│   └── cli.py            # Command-line interface
+├── migrations/           # Database migrations
+├── docs/                 # Documentation & examples
 ├── pyproject.toml       # Project configuration
-└── requirements.txt     # Dependencies
+└── requirements.txt     # Python dependencies
 ```
 
 ## 🛠️ Tech Stack
@@ -74,30 +88,36 @@ todoit-mcp/
 - **Click + Rich** - Beautiful CLI with progress visualization
 - **SQLite** - Production-ready embedded database
 
-## 🎯 Phase 3 Capabilities
+## 🎯 Core Capabilities
 
-### **Phase 1: Hierarchical Subtasks**
+### **Basic Task Management**
+- `create_list` / `delete_list` - Manage task lists
+- `add_item` / `update_item_status` - Basic task operations
+- `get_next_pending` - Get next available task
+- `get_progress` - Track completion statistics
+
+### **Hierarchical Tasks (Subtasks)**
 - `add_subtask` - Create parent-child task relationships
-- `get_item_hierarchy` - Recursive task structure retrieval
+- `get_item_hierarchy` - View complete task breakdown
 - `auto_complete_parent` - Smart parent completion logic
 - `get_next_pending_with_subtasks` - Priority-based task selection
 
-### **Phase 2: Cross-List Dependencies**
-- `add_item_dependency` - Create cross-list task dependencies
-- `get_item_blockers` - Identify blocking tasks
-- `is_item_blocked` - Real-time blocking status
-- `get_dependency_graph` - Visualization data for complex projects
+### **Cross-List Dependencies**
+- `add_item_dependency` - Create dependencies between different lists
+- `get_item_blockers` - Identify what's blocking a task
+- `is_item_blocked` - Check if task can be started
+- `get_dependency_graph` - Visualize project dependencies
 
-### **Phase 3: Smart Integration**
-- `get_comprehensive_status` - Unified status across all mechanisms
-- `can_start_item` - Combined Phase 1 + 2 availability checks
-- `get_cross_list_progress` - Multi-list project progress tracking
-- Enhanced progress stats with 12 different metrics
+### **Smart Integration**
+- `get_comprehensive_status` - Complete task and project status
+- `can_start_item` - Check availability across all mechanisms
+- `get_cross_list_progress` - Multi-list project tracking
+- Enhanced progress with blocked/available item counts
 
-### **Core MCP Tools (43 Total)**
-All functionality accessible via MCP for Claude Code integration:
+### **MCP Integration (43 Tools)**
+All functionality available via MCP for Claude Code:
 - List management (create, update, delete, relations)
-- Item operations (add, update status, move, convert to subtask)
+- Item operations (add, update status, move, convert to subtask)  
 - Smart algorithms (next task, blocking analysis, progress tracking)
 - Import/Export (Markdown format with checkbox support)
 - Project coordination (dependency graphs, cross-list progress)
@@ -148,9 +168,9 @@ python -m interfaces.cli item next "project" --smart
 
 ## 📚 Documentation
 
-- **[SUBTASKS.md](docs/SUBTASKS.md)** - Complete architectural plan
-- **[PHASE3_INTEGRATION.md](docs/PHASE3_INTEGRATION.md)** - Integration guide  
-- **[PHASE3_EXAMPLES.md](docs/PHASE3_EXAMPLES.md)** - Practical examples and scenarios
+- **[docs/SUBTASKS.md](docs/SUBTASKS.md)** - System architecture overview
+- **[docs/PHASE3_INTEGRATION.md](docs/PHASE3_INTEGRATION.md)** - Advanced integration guide  
+- **[docs/PHASE3_EXAMPLES.md](docs/PHASE3_EXAMPLES.md)** - Real-world usage examples
 
 ## 📄 License
 
@@ -159,18 +179,14 @@ This project is released into the public domain under the [CC0 1.0 Universal](ht
 ## 🤝 Contributing
 
 Contributions are welcome! This project uses:
-- **Task Master** workflow for development coordination
+- **Modern Python** development practices
 - **Claude Code** for AI-assisted development
-- **Phase 3 TODOIT** for project management (self-hosting!)
+- **TODOIT itself** for project management
 
 ---
 
-## 🎉 Status: **COMPLETE** 
-**Phase 3 Integration Finished** - Full-featured task management system ready for production use
+## 🎉 Status: **Production Ready** 
 
-### Implementation Timeline
-- ✅ **Phase 1: Subtasks** - Hierarchical task management
-- ✅ **Phase 2: Cross-List Dependencies** - Multi-list project coordination  
-- ✅ **Phase 3: Smart Integration** - Unified intelligent system
+Full-featured task management system with intelligent prioritization, hierarchical tasks, cross-list dependencies, and complete MCP integration for Claude Code.
 
-All three phases working together seamlessly! 🚀
+**Ready for use in simple todo lists through complex multi-team projects!** 🚀
