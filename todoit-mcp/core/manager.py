@@ -4,7 +4,7 @@ Programmatic API for TODO list management - core business logic
 """
 import os
 from typing import List, Optional, Dict, Any, Union
-from datetime import datetime
+from datetime import datetime, timezone
 
 from .database import Database, TodoListDB, TodoItemDB, ListRelationDB, TodoHistoryDB, ListPropertyDB
 from .models import (
@@ -241,9 +241,9 @@ class TodoManager:
         if status:
             updates["status"] = status
             if status == "in_progress":
-                updates["started_at"] = datetime.utcnow()
+                updates["started_at"] = datetime.now(timezone.utc)
             elif status in ["completed", "failed"]:
-                updates["completed_at"] = datetime.utcnow()
+                updates["completed_at"] = datetime.now(timezone.utc)
         
         if completion_states:
             current_states = db_item.completion_states or {}
@@ -818,7 +818,7 @@ class TodoManager:
             # Auto-complete the parent
             self.db.update_item(parent_item.id, {
                 'status': 'completed',
-                'completed_at': datetime.utcnow()
+                'completed_at': datetime.now(timezone.utc)
             })
             
             # Record history

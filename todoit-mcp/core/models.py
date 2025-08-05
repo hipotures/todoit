@@ -4,7 +4,7 @@ Data models for TODO list management system
 """
 from typing import Optional, Dict, Any, List
 from datetime import datetime
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from enum import Enum
 
 
@@ -80,7 +80,7 @@ class TodoListBase(BaseModel):
     parent_list_id: Optional[int] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
     
-    @validator('list_key')
+    @field_validator('list_key')
     def validate_list_key(cls, v):
         """Validate list_key format"""
         if not v.replace('_', '').replace('-', '').replace('.', '').isalnum():
@@ -107,8 +107,7 @@ class TodoList(TodoListBase):
     created_at: datetime
     updated_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization"""
@@ -135,7 +134,7 @@ class TodoItemBase(BaseModel):
     parent_item_id: Optional[int] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
     
-    @validator('item_key')
+    @field_validator('item_key')
     def validate_item_key(cls, v):
         """Validate item_key format"""
         if not v.replace('_', '').replace('-', '').replace('.', '').isalnum():
@@ -166,8 +165,7 @@ class TodoItem(TodoItemBase):
     created_at: datetime
     updated_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization"""
@@ -200,7 +198,7 @@ class ListRelationBase(BaseModel):
     relation_key: Optional[str] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
     
-    @validator('target_list_id')
+    @field_validator('target_list_id')
     def validate_different_lists(cls, v, values):
         """Ensure source and target are different lists"""
         if 'source_list_id' in values and v == values['source_list_id']:
@@ -218,8 +216,7 @@ class ListRelation(ListRelationBase):
     id: int
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization"""
@@ -240,7 +237,7 @@ class ListPropertyBase(BaseModel):
     property_key: str = Field(..., min_length=1, max_length=100)
     property_value: str = Field(..., max_length=2000)
     
-    @validator('property_key')
+    @field_validator('property_key')
     def validate_property_key(cls, v):
         """Validate property_key format"""
         import re
@@ -259,7 +256,7 @@ class ListPropertyBase(BaseModel):
         
         return v
     
-    @validator('property_value')
+    @field_validator('property_value')
     def validate_property_value(cls, v):
         """Validate property_value content and prevent XSS"""
         if len(v) > 2000:
@@ -299,8 +296,7 @@ class ListProperty(ListPropertyBase):
     created_at: datetime
     updated_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
@@ -334,8 +330,7 @@ class TodoHistory(TodoHistoryBase):
     id: int
     timestamp: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization"""
@@ -412,14 +407,14 @@ class ItemDependencyBase(BaseModel):
     dependency_type: DependencyType = Field(default=DependencyType.BLOCKS)
     metadata: Dict[str, Any] = Field(default_factory=dict)
     
-    @validator('dependent_item_id', 'required_item_id')
+    @field_validator('dependent_item_id', 'required_item_id')
     def validate_item_ids(cls, v):
         """Validate item IDs are positive integers"""
         if v <= 0:
             raise ValueError('Item IDs must be positive integers')
         return v
     
-    @validator('metadata')  
+    @field_validator('metadata')  
     def validate_metadata(cls, v):
         """Validate metadata content"""
         if v is None:
@@ -436,7 +431,7 @@ class ItemDependencyBase(BaseModel):
 class ItemDependencyCreate(ItemDependencyBase):
     """Model for creating item dependencies"""
     
-    @validator('dependent_item_id')
+    @field_validator('dependent_item_id')
     def validate_not_self_dependency(cls, v, values):
         """Prevent self-dependencies"""
         if 'required_item_id' in values and v == values['required_item_id']:
@@ -449,8 +444,7 @@ class ItemDependency(ItemDependencyBase):
     id: int
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization"""

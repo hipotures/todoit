@@ -7,7 +7,7 @@ import os
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, Text, JSON, DateTime, ForeignKey, Index, event
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
 from sqlalchemy.sql import func
 from sqlalchemy.engine import Engine
