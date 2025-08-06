@@ -147,13 +147,15 @@ class TestTodoManagerUnit:
         mock_db.is_item_blocked.assert_called_once_with(item_to_check.id)
 
     def test_add_circular_dependency_is_handled(self, manager_with_mock, mock_db):
-        """Test that adding a circular dependency is handled.
-           NOTE: This test is skipped as the logic is not yet implemented.
-        """
-        pytest.skip("Circular dependency check not yet implemented in TodoManager")
+        """Test that adding a circular dependency is handled."""
         item_a = MagicMock(id=1)
         item_b = MagicMock(id=2)
-        mock_db.get_item_by_key.side_effect = [item_a, item_b, item_b, item_a]
+        
+        mock_db.get_item_by_key.side_effect = lambda list_id, key: {
+            "item_a": item_a,
+            "item_b": item_b
+        }.get(key)
+
         mock_db.get_item_dependencies_graph.return_value = {1: [2]}
 
         with patch.object(manager_with_mock, '_db_to_model', side_effect=lambda db_obj, model_class: db_obj):
@@ -169,7 +171,7 @@ class TestTodoManagerUnit:
         orphaned_subtask = MagicMock(id=2, parent_item_id=1, status='pending', position=1)
 
         mock_db.get_root_items.return_value = []
-        mock_db.get_all_items.return_value = [orphaned_subtask] # Only pending items are checked
+        mock_db.get_list_items.return_value = [orphaned_subtask]
         mock_db.get_item_by_id.return_value = completed_parent
         mock_db.is_item_blocked.return_value = False
 
@@ -221,10 +223,6 @@ class TestTodoManagerUnit:
         subtask1 = MagicMock(id=2, item_key='subtask1', parent_item_id=1)
         subtask2 = MagicMock(id=3, item_key='subtask2', parent_item_id=1)
 
-        # When the parent is fetched, return it.
-        # When the subtasks are fetched by their keys, return them.
-        # When the children of the parent are fetched, return the subtasks.
-        # When the children of the subtasks are fetched, return an empty list.
         mock_db.get_item_by_key.side_effect = lambda list_id, key: {
             'parent_key': parent,
             'subtask1': subtask1,
@@ -239,7 +237,6 @@ class TestTodoManagerUnit:
 
         manager_with_mock.delete_item("test", "parent_key")
 
-        # Check that delete_item was called for the parent and both children
         assert mock_db.delete_item.call_count == 3
         mock_db.delete_item.assert_any_call(parent.id)
         mock_db.delete_item.assert_any_call(subtask1.id)
@@ -249,11 +246,9 @@ class TestTodoManagerUnit:
         """Test that deleting an item also removes its dependencies."""
         item_to_delete = MagicMock(id=1)
         mock_db.get_item_by_key.return_value = item_to_delete
-        # Ensure the item has no children to avoid recursion issues in this test
         mock_db.get_item_children.return_value = []
 
         manager_with_mock.delete_item("test", "some_key")
 
-        # Check that the dependency cleanup method was called for the item
         mock_db.delete_all_dependencies_for_item.assert_called_once_with(item_to_delete.id)
         mock_db.delete_item.assert_called_once_with(item_to_delete.id)

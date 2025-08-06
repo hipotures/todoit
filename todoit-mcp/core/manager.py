@@ -766,8 +766,8 @@ class TodoManager:
                     })
         
         # Phase 3: Also check orphaned subtasks (subtasks with completed/failed parents)
-        all_items = self.db.get_all_items(db_list.id, status='pending')
-        for item in all_items:
+        all_pending_items = self.db.get_list_items(db_list.id, status='pending')
+        for item in all_pending_items:
             if item.parent_item_id:  # This is a subtask
                 parent = self.db.get_item_by_id(item.parent_item_id)
                 if parent and parent.status in ['completed', 'failed']:
@@ -936,6 +936,19 @@ class TodoManager:
             dep_type = DependencyType(dependency_type)
         except ValueError:
             raise ValueError(f"Invalid dependency type: {dependency_type}")
+
+        # Check for circular dependencies
+        graph = self.db.get_item_dependencies_graph()
+        path = [required_db_item.id]
+        visited = {required_db_item.id}
+        while path:
+            current_node = path.pop(0)
+            if current_node == dependent_db_item.id:
+                raise ValueError("Circular dependency detected")
+            for neighbor in graph.get(current_node, []):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    path.append(neighbor)
         
         # Create dependency
         dependency_data = {
