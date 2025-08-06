@@ -247,18 +247,46 @@ def _render_tree_view(todo_list, items: List, properties: Dict[str, str], manage
 
 def _render_table_view(todo_list, items: List, properties: Dict[str, str], manager: TodoManager = None):
     """Render list as hierarchical table view (Phase 2: includes blocked status)"""
+    # Organize items by hierarchy first to check what columns are needed
+    hierarchy = _organize_items_by_hierarchy(items)
+    
+    # Check if we need optional columns
+    has_progress = False
+    has_dependencies = False  
+    has_states = False
+    
+    for item in items:
+        # Check if any item has children (needs progress)
+        if hierarchy['children'].get(item.id, []):
+            has_progress = True
+            
+        # Check if any item has dependencies
+        if manager and item.status.value == 'pending':
+            try:
+                is_blocked = manager.is_item_blocked(todo_list.list_key, item.item_key)
+                if is_blocked:
+                    has_dependencies = True
+            except:
+                pass
+                
+        # Check if any item has completion states
+        if item.completion_states:
+            has_states = True
+    
     # Main items table
     table = Table(title=f"📋 {todo_list.title} (ID: {todo_list.id})", box=box.ROUNDED)
     table.add_column("#", style="cyan", width=8)
     table.add_column("Key", style="magenta")
     table.add_column("Task", style="white")
     table.add_column("Status", style="yellow")
-    table.add_column("Progress", style="blue", width=10)
-    table.add_column("Dependencies", style="red", width=15)
-    table.add_column("States", style="green")
     
-    # Organize items by hierarchy
-    hierarchy = _organize_items_by_hierarchy(items)
+    # Add optional columns only if needed
+    if has_progress:
+        table.add_column("Progress", style="blue", width=10)
+    if has_dependencies:
+        table.add_column("Dependencies", style="red", width=15)
+    if has_states:
+        table.add_column("States", style="green")
     
     def add_item_to_table(item, parent_numbers=None, depth=0):
         """Recursively add item and its children to table"""
@@ -315,16 +343,23 @@ def _render_table_view(todo_list, items: List, properties: Dict[str, str], manag
                     states.append(f"📝{k}")
             states_str = " ".join(states)
         
-        # Add row to table
-        table.add_row(
+        # Add row to table - build row data conditionally
+        row_data = [
             hierarchical_num,
             item.item_key,
             f"{indent}{item.content}",
-            f"[{status_style}]{status_display}[/]",
-            progress_str,
-            dependencies_str,
-            states_str
-        )
+            f"[{status_style}]{status_display}[/]"
+        ]
+        
+        # Add optional columns only if they were added to table
+        if has_progress:
+            row_data.append(progress_str)
+        if has_dependencies:
+            row_data.append(dependencies_str)
+        if has_states:
+            row_data.append(states_str)
+            
+        table.add_row(*row_data)
         
         # Recursively add children
         for child in children:
@@ -504,8 +539,9 @@ def list_show(ctx, list_key, tree):
 @list_group.command('all')
 @click.option('--limit', type=int, help='Limit number of results')
 @click.option('--tree', is_flag=True, help='Show hierarchical view with list relations')
+@click.option('--details', is_flag=True, help='Show detailed information including creation date')
 @click.pass_context
-def list_all(ctx, limit, tree):
+def list_all(ctx, limit, tree, details):
     """List all TODO lists"""
     manager = get_manager(ctx.obj['db_path'])
     
@@ -529,9 +565,16 @@ def list_all(ctx, limit, tree):
             table.add_column("Completed", style="blue")
             table.add_column("Progress", style="magenta")
             
+            # Add date columns if details requested
+            if details:
+                table.add_column("Created", style="green")
+                table.add_column("Updated", style="blue")
+            
             for todo_list in lists:
                 progress = manager.get_progress(todo_list.list_key)
-                table.add_row(
+                
+                # Build row data
+                row_data = [
                     str(todo_list.id),
                     todo_list.list_key,
                     todo_list.title,
@@ -539,7 +582,15 @@ def list_all(ctx, limit, tree):
                     str(progress.total),
                     str(progress.completed),
                     f"{progress.completion_percentage:.1f}%"
-                )
+                ]
+                
+                # Add date columns if details requested
+                if details:
+                    created_date = todo_list.created_at.strftime('%Y-%m-%d %H:%M')
+                    updated_date = todo_list.updated_at.strftime('%Y-%m-%d %H:%M')
+                    row_data.extend([created_date, updated_date])
+                
+                table.add_row(*row_data)
             
             console.print(table)
         console.print(f"\n[bold]Total lists:[/] {len(lists)}")
