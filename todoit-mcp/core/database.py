@@ -874,3 +874,8 @@ class Database:
                                 "required": dep.required_item_id, "type": dep.dependency_type} 
                                for dep in dependencies]
             }
+
+    def get_all_item_dependencies(self) -> List[ItemDependencyDB]:
+        """Get all item dependencies from the database."""
+        with self.get_session() as session:
+            return session.query(ItemDependencyDB).all()

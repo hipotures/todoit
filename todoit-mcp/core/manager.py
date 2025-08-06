@@ -938,7 +938,13 @@ class TodoManager:
             raise ValueError(f"Invalid dependency type: {dependency_type}")
 
         # Check for circular dependencies
-        graph = self.db.get_item_dependencies_graph()
+        all_deps = self.db.get_all_item_dependencies()
+        graph = {}
+        for dep in all_deps:
+            if dep.dependent_item_id not in graph:
+                graph[dep.dependent_item_id] = []
+            graph[dep.dependent_item_id].append(dep.required_item_id)
+
         path = [required_db_item.id]
         visited = {required_db_item.id}
         while path:

@@ -156,7 +156,9 @@ class TestTodoManagerUnit:
             "item_b": item_b
         }.get(key)
 
-        mock_db.get_item_dependencies_graph.return_value = {1: [2]}
+        # A depends on B
+        dep_a_b = MagicMock(dependent_item_id=1, required_item_id=2)
+        mock_db.get_all_item_dependencies.return_value = [dep_a_b]
 
         with patch.object(manager_with_mock, '_db_to_model', side_effect=lambda db_obj, model_class: db_obj):
             with pytest.raises(ValueError, match="Circular dependency detected"):
