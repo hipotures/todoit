@@ -58,7 +58,7 @@ def _display_lists_tree(lists, manager):
         progress = manager.get_progress(todo_list.list_key)
         
         list_text = f"[cyan]{todo_list.list_key}[/] - [white]{todo_list.title}[/] "
-        list_text += f"([yellow]{todo_list.list_type}[/]) "
+        list_text += f"([yellow]{todo_list.list_type.value if hasattr(todo_list.list_type, 'value') else str(todo_list.list_type)}[/]) "
         list_text += f"[green]{progress.total}[/]/[blue]{progress.completed}[/] "
         list_text += f"([magenta]{progress.completion_percentage:.1f}%[/])"
         
@@ -566,14 +566,30 @@ def list_delete(ctx, list_keys, force):
     
     for list_key in all_keys:
         try:
-            todo_list = manager.get_list(list_key)
+            # Try to get list by key first, then by ID if it fails
+            todo_list = None
+            actual_key = list_key
+            
+            # If it looks like an ID, try to find by ID first
+            if list_key.isdigit():
+                list_id = int(list_key)
+                all_lists = manager.list_all()
+                for l in all_lists:
+                    if l.id == list_id:
+                        todo_list = l
+                        actual_key = l.list_key
+                        break
+            else:
+                # Try as key
+                todo_list = manager.get_list(list_key)
+            
             if not todo_list:
                 console.print(f"[red]  ❌ List '{list_key}' not found[/]")
                 failed_keys.append(list_key)
                 continue
             
-            progress = manager.get_progress(list_key)
-            console.print(f"[cyan]  • {list_key}[/] - {todo_list.title} ({progress.total} items)")
+            progress = manager.get_progress(actual_key)
+            console.print(f"[cyan]  • {actual_key}[/] - {todo_list.title} ({progress.total} items)")
             
         except Exception as e:
             console.print(f"[red]  ❌ Error checking '{list_key}': {e}[/]")
@@ -592,18 +608,31 @@ def list_delete(ctx, list_keys, force):
             if not Confirm.ask(f"Delete all {len(all_keys)} lists?"):
                 return
     
-    # Delete lists
+    # Delete lists - need to resolve IDs to keys again
+    key_mapping = {}
     for list_key in all_keys:
+        actual_key = list_key
+        if list_key.isdigit():
+            list_id = int(list_key)
+            all_lists = manager.list_all()
+            for l in all_lists:
+                if l.id == list_id:
+                    actual_key = l.list_key
+                    break
+        key_mapping[list_key] = actual_key
+    
+    for list_key in all_keys:
+        actual_key = key_mapping[list_key]
         try:
-            manager.delete_list(list_key)
-            console.print(f"[green]  ✅ Deleted '{list_key}'[/]")
+            manager.delete_list(actual_key)
+            console.print(f"[green]  ✅ Deleted '{actual_key}'[/]")
             deleted_count += 1
         except ValueError as e:
-            console.print(f"[bold red]  ❌ {list_key}: {e}[/]")
+            console.print(f"[bold red]  ❌ {actual_key}: {e}[/]")
             if not force:
                 console.print("[yellow]    Hint: Use --force to break dependencies and delete[/]")
         except Exception as e:
-            console.print(f"[bold red]  ❌ {list_key}: {e}[/]")
+            console.print(f"[bold red]  ❌ {actual_key}: {e}[/]")
     
     # Summary
     if deleted_count > 0:

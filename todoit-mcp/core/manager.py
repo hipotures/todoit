@@ -131,7 +131,18 @@ class TodoManager:
         if not db_list:
             raise ValueError(f"List '{key}' does not exist")
 
-        # Check if the list has dependent lists
+        # For force delete, remove all list relations first
+        # This breaks circular dependencies and orphans dependent lists
+        with self.db.get_session() as session:
+            # Remove all relations where this list is involved (as source or target)
+            session.query(ListRelationDB).filter(
+                (ListRelationDB.source_list_id == db_list.id) |
+                (ListRelationDB.target_list_id == db_list.id)
+            ).delete(synchronize_session=False)
+            session.commit()
+
+        # After removing relations, check if the list still has dependent lists
+        # (this should now be empty, but keeping for safety)
         dependent_lists = self.db.get_dependent_lists(db_list.id)
         if dependent_lists:
             deps = ", ".join([l.list_key for l in dependent_lists])
