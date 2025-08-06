@@ -7,7 +7,7 @@ import os
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime, timezone
 
-from .database import Database, TodoListDB, TodoItemDB, ListRelationDB, TodoHistoryDB, ListPropertyDB
+from .database import Database, TodoListDB, TodoItemDB, ListRelationDB, TodoHistoryDB, ListPropertyDB, ItemDependencyDB
 from .models import (
     TodoList, TodoItem, ListRelation, TodoHistory, ProgressStats, ListProperty,
     TodoListCreate, TodoItemCreate, ListRelationCreate, TodoHistoryCreate,  
@@ -145,6 +145,13 @@ class TodoManager:
 
             # Get item IDs for cleanup
             item_ids = [item.id for item in db_list_in_session.items]
+
+            # Delete item dependencies FIRST (before deleting items)
+            if item_ids:
+                session.query(ItemDependencyDB).filter(
+                    (ItemDependencyDB.dependent_item_id.in_(item_ids)) |
+                    (ItemDependencyDB.required_item_id.in_(item_ids))
+                ).delete(synchronize_session=False)
 
             # Delete item history
             if item_ids:
@@ -1212,14 +1219,58 @@ class TodoManager:
         if not item_to_delete:
             return False # Item doesn't exist, so nothing to delete
 
-        # Recursively delete all subtasks
-        children = self.db.get_item_children(item_to_delete.id)
-        for child in children:
-            self.delete_item(list_key, child.item_key)
-
-        # Delete all dependencies related to this item
-        self.db.delete_all_dependencies_for_item(item_to_delete.id)
-
-        # Delete the item itself
-        self.db.delete_item(item_to_delete.id)
+        # Use a single database session for the entire operation
+        with self.db.get_session() as session:
+            # Get all items to delete (item + all its subtasks recursively)
+            items_to_delete = self._get_item_and_subtasks_recursive(session, item_to_delete.id)
+            item_ids_to_delete = [item.id for item in items_to_delete]
+            
+            # Delete all dependencies for these items
+            session.query(ItemDependencyDB).filter(
+                (ItemDependencyDB.dependent_item_id.in_(item_ids_to_delete)) |
+                (ItemDependencyDB.required_item_id.in_(item_ids_to_delete))
+            ).delete(synchronize_session=False)
+            
+            # Temporarily disable foreign key constraints for the deletion
+            from sqlalchemy import text
+            session.execute(text("PRAGMA foreign_keys = OFF"))
+            
+            # Delete all items
+            for item in items_to_delete:
+                session.delete(item)
+            
+            session.commit()
+            
+            # Re-enable foreign key constraints
+            session.execute(text("PRAGMA foreign_keys = ON"))
         return True
+
+    def _get_item_and_subtasks_recursive(self, session, item_id: int) -> List:
+        """Helper method to get item and all its subtasks recursively"""
+        items = []
+        
+        # Get the item itself
+        item = session.query(TodoItemDB).filter(TodoItemDB.id == item_id).first()
+        if item:
+            items.append(item)
+            
+            # Get all children recursively
+            children = session.query(TodoItemDB).filter(TodoItemDB.parent_item_id == item_id).all()
+            for child in children:
+                items.extend(self._get_item_and_subtasks_recursive(session, child.id))
+        
+        return items
+
+    def _get_item_depth(self, session, item_id: int) -> int:
+        """Helper method to get the depth of an item in the hierarchy"""
+        depth = 0
+        current_id = item_id
+        
+        while current_id:
+            item = session.query(TodoItemDB).filter(TodoItemDB.id == current_id).first()
+            if not item or not item.parent_item_id:
+                break
+            current_id = item.parent_item_id
+            depth += 1
+            
+        return depth
