@@ -80,17 +80,78 @@ pytest
 python -c "from core.manager import TodoManager; TodoManager()"
 ```
 
-### MCP Integration Setup
-```bash
-# For Claude Code MCP integration, add to your Claude Code config:
-# ~/.config/claude-code/mcp.json
+### MCP Integration with Claude Code
 
+#### Step 1: Install TODOIT MCP
+```bash
+pip install todoit-mcp
+# Or from GitHub: pip install git+https://github.com/hipotures/todoit.git
+```
+
+#### Step 2: Find Claude Code Config Directory
+```bash
+# On macOS/Linux:
+ls ~/.config/claude-code/
+
+# On Windows:
+dir %APPDATA%\claude-code\
+
+# Create directory if it doesn't exist:
+mkdir -p ~/.config/claude-code/
+```
+
+#### Step 3: Create or Edit MCP Config File
+Create/edit `~/.config/claude-code/mcp.json`:
+
+```json
 {
   "servers": {
     "todoit": {
       "command": "python",
       "args": ["-m", "interfaces.mcp_server"],
       "env": {}
+    }
+  }
+}
+```
+
+#### Step 4: Restart Claude Code
+Close and reopen Claude Code for changes to take effect.
+
+> 💡 **Need more help with MCP setup?** Check the [official Claude Code MCP documentation](https://docs.anthropic.com/en/docs/claude-code/mcp) for detailed setup instructions.
+
+#### Step 5: Verify Installation
+In Claude Code, you should now have access to 40 TODOIT MCP tools:
+- `todo_create_list` - Create new task lists
+- `todo_add_item` - Add tasks to lists
+- `todo_add_subtask` - Create hierarchical subtasks
+- `todo_get_next_pending_enhanced` - Smart task recommendations
+- And 36 more tools for complete task management
+
+#### Alternative: Manual MCP Server Start
+```bash
+# Test MCP server manually:
+python -m interfaces.mcp_server
+
+# Should show: "TODOIT MCP Server starting..."
+```
+
+#### Troubleshooting
+- **"Command not found"**: Ensure TODOIT is installed in the same Python environment Claude Code uses
+- **"Server not responding"**: Check Python path and try absolute path: `/usr/bin/python3 -m interfaces.mcp_server`
+- **"Permission denied"**: Ensure the config directory has proper permissions
+
+#### Advanced Configuration
+```json
+{
+  "servers": {
+    "todoit": {
+      "command": "/path/to/your/python",
+      "args": ["-m", "interfaces.mcp_server"],
+      "env": {
+        "TODOIT_DB_PATH": "/custom/path/to/todoit.db"
+      },
+      "timeout": 30
     }
   }
 }
@@ -204,13 +265,33 @@ todoit list show "my-project" --tree
 ```
 
 ### Using with Claude Code (MCP)
-```bash
-# After MCP setup, all 40 tools are available directly in Claude Code:
-# - Create and manage lists
-# - Add hierarchical tasks and subtasks
-# - Set up cross-list dependencies
-# - Track progress and get smart task recommendations
+After MCP setup, all 40 tools are available directly in Claude Code:
+
+**Example conversation with Claude Code:**
 ```
+You: "Help me plan a new web application project"
+
+Claude: I'll help you create a structured project plan using TODOIT. Let me set up 
+some task lists for your web application.
+
+*Uses todo_create_list to create "backend", "frontend", and "deployment" lists*
+*Uses todo_add_item to add initial tasks*
+*Uses todo_add_subtask to break down complex tasks*
+*Uses todo_add_item_dependency to set up proper task ordering*
+
+You: "What should I work on first?"
+
+Claude: *Uses todo_get_next_pending_enhanced to find the optimal next task*
+Based on your project dependencies, you should start with "Set up database schema" 
+in the backend list, as the frontend components depend on this being completed first.
+```
+
+**Available MCP Tools:**
+- **Project Management**: Create lists, set up relationships
+- **Task Management**: Add/update tasks, hierarchical subtasks
+- **Smart Workflow**: Next task recommendations, dependency management  
+- **Progress Tracking**: Statistics, completion status, project overviews
+- **Import/Export**: Markdown integration for documentation
 
 ### Advanced Workflows
 ```bash
