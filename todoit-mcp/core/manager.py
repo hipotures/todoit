@@ -766,7 +766,7 @@ class TodoManager:
                     })
         
         # Phase 3: Also check orphaned subtasks (subtasks with completed/failed parents)
-        all_items = self.db.get_list_items(db_list.id, status='pending')
+        all_items = self.db.get_all_items(db_list.id, status='pending')
         for item in all_items:
             if item.parent_item_id:  # This is a subtask
                 parent = self.db.get_item_by_id(item.parent_item_id)
@@ -1176,3 +1176,25 @@ class TodoManager:
     def get_dependency_graph(self, project_key: str) -> Dict[str, Any]:
         """Get dependency graph for visualization"""
         return self.db.get_dependency_graph_for_project(project_key)
+
+    def delete_item(self, list_key: str, item_key: str) -> bool:
+        """Deletes an item and all its subtasks and dependencies."""
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
+
+        item_to_delete = self.db.get_item_by_key(db_list.id, item_key)
+        if not item_to_delete:
+            return False # Item doesn't exist, so nothing to delete
+
+        # Recursively delete all subtasks
+        children = self.db.get_item_children(item_to_delete.id)
+        for child in children:
+            self.delete_item(list_key, child.item_key)
+
+        # Delete all dependencies related to this item
+        self.db.delete_all_dependencies_for_item(item_to_delete.id)
+
+        # Delete the item itself
+        self.db.delete_item(item_to_delete.id)
+        return True
