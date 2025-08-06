@@ -22,6 +22,74 @@ from core.manager import TodoManager
 console = Console()
 
 
+# === UNIFIED DISPLAY SYSTEM ===
+
+def _get_output_format() -> str:
+    """Get output format from environment variable"""
+    return os.environ.get('TODOIT_OUTPUT_FORMAT', 'table').lower()
+
+
+def _format_date(date: datetime) -> str:
+    """Standardized date formatting"""
+    return date.strftime('%Y-%m-%d %H:%M')
+
+
+def _display_records_vertical(data: List[Dict[str, Any]], title: str = "Records"):
+    """Display records in vertical format (key-value pairs)"""
+    console.print(f"[bold cyan]{title}[/]")
+    console.print()
+    
+    for i, record in enumerate(data, 1):
+        console.print(f"Record {i}:")
+        
+        # Find the maximum key length for alignment
+        max_key_len = max(len(str(key)) for key in record.keys()) if record else 0
+        
+        for key, value in record.items():
+            # Right-align keys for clean look
+            console.print(f"  {key:>{max_key_len}}: {value}")
+        
+        # Add blank line between records (except last)
+        if i < len(data):
+            console.print()
+
+
+def _display_records_table(data: List[Dict[str, Any]], title: str, columns: Dict[str, Dict] = None):
+    """Display records in table format"""
+    if not data:
+        console.print(f"[yellow]No {title.lower()} found[/]")
+        return
+        
+    table = Table(title=title, box=box.ROUNDED)
+    
+    # Use first record to determine columns if not specified
+    if not columns:
+        columns = {key: {"style": "white"} for key in data[0].keys()}
+    
+    # Add columns with optional styling
+    for col_name, col_config in columns.items():
+        style = col_config.get("style", "white")
+        width = col_config.get("width")
+        table.add_column(col_name, style=style, width=width)
+    
+    # Add rows
+    for record in data:
+        row_data = [str(record.get(col, "")) for col in columns.keys()]
+        table.add_row(*row_data)
+    
+    console.print(table)
+
+
+def _display_records(data: List[Dict[str, Any]], title: str, columns: Dict[str, Dict] = None):
+    """Unified record display - switches between table and vertical format"""
+    output_format = _get_output_format()
+    
+    if output_format == 'vertical':
+        _display_records_vertical(data, title)
+    else:
+        _display_records_table(data, title, columns)
+
+
 def _display_lists_tree(lists, manager):
     """Display lists in hierarchical tree view based on relations"""
     from collections import defaultdict
@@ -122,18 +190,7 @@ def _add_completion_states_to_node(node, completion_states):
                 node.add(f"📝 {state}: {value}")
 
 
-def _create_properties_table(properties: Dict[str, str], title: str = "Properties") -> Table:
-    """Create Rich table for properties display"""
-    prop_table = Table(title=title, box=box.SIMPLE)
-    prop_table.add_column("Key", style="cyan", width=20)
-    prop_table.add_column("Value", style="white")
-    
-    for key, value in properties.items():
-        # Truncate long values for display
-        display_value = value if len(value) <= 60 else value[:57] + "..."
-        prop_table.add_row(key, display_value)
-    
-    return prop_table
+# _create_properties_table removed - now using unified _display_records system
 
 
 def _organize_items_by_hierarchy(items: List) -> Dict[str, Any]:
@@ -273,20 +330,8 @@ def _render_table_view(todo_list, items: List, properties: Dict[str, str], manag
         if item.completion_states:
             has_states = True
     
-    # Main items table
-    table = Table(title=f"📋 {todo_list.title} (ID: {todo_list.id})", box=box.ROUNDED)
-    table.add_column("#", style="cyan", width=8)
-    table.add_column("Key", style="magenta")
-    table.add_column("Task", style="white")
-    table.add_column("Status", style="yellow")
-    
-    # Add optional columns only if needed
-    if has_progress:
-        table.add_column("Progress", style="blue", width=10)
-    if has_dependencies:
-        table.add_column("Dependencies", style="red", width=15)
-    if has_states:
-        table.add_column("States", style="green")
+    # Prepare data for unified display
+    data = []
     
     def add_item_to_table(item, parent_numbers=None, depth=0):
         """Recursively add item and its children to table"""
@@ -343,23 +388,23 @@ def _render_table_view(todo_list, items: List, properties: Dict[str, str], manag
                     states.append(f"📝{k}")
             states_str = " ".join(states)
         
-        # Add row to table - build row data conditionally
-        row_data = [
-            hierarchical_num,
-            item.item_key,
-            f"{indent}{item.content}",
-            f"[{status_style}]{status_display}[/]"
-        ]
+        # Build record for unified display
+        record = {
+            "#": hierarchical_num,
+            "Key": item.item_key,
+            "Task": f"{indent}{item.content}",
+            "Status": status_display  # No Rich formatting for vertical format
+        }
         
-        # Add optional columns only if they were added to table
+        # Add optional columns only if they exist
         if has_progress:
-            row_data.append(progress_str)
+            record["Progress"] = progress_str
         if has_dependencies:
-            row_data.append(dependencies_str)
+            record["Dependencies"] = dependencies_str
         if has_states:
-            row_data.append(states_str)
+            record["States"] = states_str
             
-        table.add_row(*row_data)
+        data.append(record)
         
         # Recursively add children
         for child in children:
@@ -369,13 +414,31 @@ def _render_table_view(todo_list, items: List, properties: Dict[str, str], manag
     for root_item in hierarchy['roots']:
         add_item_to_table(root_item)
     
-    console.print(table)
+    # Define column styling for table format
+    columns = {
+        "#": {"style": "cyan", "width": 8},
+        "Key": {"style": "magenta"},
+        "Task": {"style": "white"},
+        "Status": {"style": "yellow"}
+    }
     
-    # Properties table
+    # Add optional columns with styling
+    if has_progress:
+        columns["Progress"] = {"style": "blue", "width": 10}
+    if has_dependencies:
+        columns["Dependencies"] = {"style": "red", "width": 15}
+    if has_states:
+        columns["States"] = {"style": "green"}
+    
+    # Use unified display system
+    _display_records(data, f"📋 {todo_list.title} (ID: {todo_list.id})", columns)
+    
+    # Properties display
     if properties:
-        prop_table = _create_properties_table(properties)
         console.print()
-        console.print(prop_table)
+        prop_data = [{"Key": k, "Value": v} for k, v in properties.items()]
+        prop_columns = {"Key": {"style": "cyan", "width": 20}, "Value": {"style": "white"}}
+        _display_records(prop_data, "Properties", prop_columns)
 
 
 def get_manager(db_path: Optional[str]) -> TodoManager:
@@ -555,44 +618,46 @@ def list_all(ctx, limit, tree, details):
             # Show hierarchical view with relations
             _display_lists_tree(lists, manager)
         else:
-            # Show regular table view
-            table = Table(title="📋 All TODO Lists", box=box.ROUNDED)
-            table.add_column("ID", style="dim", width=4)
-            table.add_column("Key", style="cyan")
-            table.add_column("Title", style="white")
-            table.add_column("Type", style="yellow")
-            table.add_column("Items", style="green")
-            table.add_column("Completed", style="blue")
-            table.add_column("Progress", style="magenta")
-            
-            # Add date columns if details requested
-            if details:
-                table.add_column("Created", style="green")
-                table.add_column("Updated", style="blue")
+            # Prepare data for unified display
+            data = []
             
             for todo_list in lists:
                 progress = manager.get_progress(todo_list.list_key)
                 
-                # Build row data
-                row_data = [
-                    str(todo_list.id),
-                    todo_list.list_key,
-                    todo_list.title,
-                    todo_list.list_type,
-                    str(progress.total),
-                    str(progress.completed),
-                    f"{progress.completion_percentage:.1f}%"
-                ]
+                record = {
+                    "ID": str(todo_list.id),
+                    "Key": todo_list.list_key,
+                    "Title": todo_list.title,
+                    "Type": str(todo_list.list_type).replace('ListType.', '').lower(),
+                    "Items": str(progress.total),
+                    "Completed": str(progress.completed),
+                    "Progress": f"{progress.completion_percentage:.1f}%"
+                }
                 
                 # Add date columns if details requested
                 if details:
-                    created_date = todo_list.created_at.strftime('%Y-%m-%d %H:%M')
-                    updated_date = todo_list.updated_at.strftime('%Y-%m-%d %H:%M')
-                    row_data.extend([created_date, updated_date])
+                    record["Created"] = _format_date(todo_list.created_at)
+                    record["Updated"] = _format_date(todo_list.updated_at)
                 
-                table.add_row(*row_data)
+                data.append(record)
             
-            console.print(table)
+            # Define column styling for table format
+            columns = {
+                "ID": {"style": "dim", "width": 4},
+                "Key": {"style": "cyan"},
+                "Title": {"style": "white"},
+                "Type": {"style": "yellow"},
+                "Items": {"style": "green"},
+                "Completed": {"style": "blue"},
+                "Progress": {"style": "magenta"}
+            }
+            
+            if details:
+                columns["Created"] = {"style": "green"}
+                columns["Updated"] = {"style": "blue"}
+            
+            # Use unified display system
+            _display_records(data, "📋 All TODO Lists", columns)
         console.print(f"\n[bold]Total lists:[/] {len(lists)}")
         
     except Exception as e:
@@ -947,16 +1012,11 @@ def item_subtasks(ctx, list_key, parent_key):
         console.print(f"📋 Parent: {parent.item_key} - {parent.content}")
         console.print()
         
-        # Show subtasks table
-        table = Table(title=f"Subtasks for '{parent_key}'", box=box.ROUNDED)
-        table.add_column("Key", style="magenta")
-        table.add_column("Task", style="white")
-        table.add_column("Status", style="yellow")
-        table.add_column("States", style="blue")
+        # Prepare subtasks data for unified display
+        data = []
         
         for subtask in subtasks:
             status_display = _get_status_display(subtask.status.value)
-            status_style = _get_status_style(subtask.status.value)
             
             states_str = ""
             if subtask.completion_states:
@@ -969,14 +1029,24 @@ def item_subtasks(ctx, list_key, parent_key):
                         states.append(f"📝{k}")
                 states_str = " ".join(states)
             
-            table.add_row(
-                subtask.item_key,
-                subtask.content,
-                f"[{status_style}]{status_display}[/]",
-                states_str
-            )
+            record = {
+                "Key": subtask.item_key,
+                "Task": subtask.content,
+                "Status": status_display,
+                "States": states_str
+            }
+            data.append(record)
         
-        console.print(table)
+        # Define column styling
+        columns = {
+            "Key": {"style": "magenta"},
+            "Task": {"style": "white"},
+            "Status": {"style": "yellow"},
+            "States": {"style": "blue"}
+        }
+        
+        # Use unified display system
+        _display_records(data, f"Subtasks for '{parent_key}'", columns)
         
         # Show completion info
         completed = sum(1 for st in subtasks if st.status.value == 'completed')
@@ -1172,14 +1242,11 @@ def property_list(ctx, list_key):
     try:
         properties = manager.get_list_properties(list_key)
         if properties:
-            prop_table = Table(title=f"Properties for list '{list_key}'", box=box.SIMPLE)
-            prop_table.add_column("Key", style="cyan", width=20)
-            prop_table.add_column("Value", style="white")
+            # Prepare properties data for unified display
+            data = [{"Key": k, "Value": v} for k, v in properties.items()]
+            columns = {"Key": {"style": "cyan", "width": 20}, "Value": {"style": "white"}}
             
-            for key, value in properties.items():
-                prop_table.add_row(key, value)
-            
-            console.print(prop_table)
+            _display_records(data, f"Properties for list '{list_key}'", columns)
         else:
             console.print(f"[yellow]No properties found for list '{list_key}'[/]")
     except Exception as e:
