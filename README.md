@@ -49,17 +49,51 @@ Claude Code <--MCP--> TodoMCPServer <--API--> TodoManager <--ORM--> SQLite
 - Python 3.12+
 - SQLite (included with Python)
 
-### Setup
+### Quick Install (Recommended)
+```bash
+# Install from PyPI (when available)
+pip install todoit-mcp
+
+# Or install directly from GitHub
+pip install git+https://github.com/hipotures/todoit.git
+
+# Verify installation
+todoit --help
+```
+
+### Development Setup
 ```bash
 # Clone repository
-git clone <repository-url>
-cd todoit-mcp
+git clone https://github.com/hipotures/todoit.git
+cd todoit/todoit-mcp
 
-# Install dependencies
-pip install -r requirements.txt
+# Install in development mode
+pip install -e .
+
+# Or install with development dependencies
+pip install -e .[dev]
+
+# Run tests
+pytest
 
 # Initialize database (automatic on first run)
 python -c "from core.manager import TodoManager; TodoManager()"
+```
+
+### MCP Integration Setup
+```bash
+# For Claude Code MCP integration, add to your Claude Code config:
+# ~/.config/claude-code/mcp.json
+
+{
+  "servers": {
+    "todoit": {
+      "command": "python",
+      "args": ["-m", "interfaces.mcp_server"],
+      "env": {}
+    }
+  }
+}
 ```
 
 ### Project Structure
@@ -146,24 +180,53 @@ All functionality available via MCP for Claude Code:
 
 ## 🚀 Quick Start
 
-### Using with Claude Code (MCP)
+### Basic Usage (After Installation)
 ```bash
-# The system is ready for MCP integration
-# Use any of the 43 available tools directly in Claude Code
+# Create your first project
+todoit list create "my-project" --title "My First Project"
+
+# Add some tasks
+todoit item add "my-project" "setup" "Set up development environment"
+todoit item add "my-project" "feature" "Implement main feature"
+
+# Add subtasks for better organization
+todoit item add-subtask "my-project" "setup" "install-deps" "Install dependencies"
+todoit item add-subtask "my-project" "setup" "config" "Configure environment"
+
+# Check what to work on next
+todoit item next "my-project"
+
+# Mark tasks as completed
+todoit item status "my-project" "install-deps" --status completed
+
+# View project progress
+todoit list show "my-project" --tree
 ```
 
-### Command Line Interface
+### Using with Claude Code (MCP)
 ```bash
-# Create lists and add hierarchical tasks
-python -m interfaces.cli list create "project" "My Project"
-python -m interfaces.cli item add "project" "feature" "Implement feature"
-python -m interfaces.cli item add-subtask "project" "feature" "backend" "Backend implementation"
+# After MCP setup, all 40 tools are available directly in Claude Code:
+# - Create and manage lists
+# - Add hierarchical tasks and subtasks
+# - Set up cross-list dependencies
+# - Track progress and get smart task recommendations
+```
 
-# Add cross-list dependencies
-python -m interfaces.cli dep add "frontend:ui" requires "backend:api"
+### Advanced Workflows
+```bash
+# Multi-list project with dependencies
+todoit list create "backend" --title "Backend Development"
+todoit list create "frontend" --title "Frontend Development"
 
-# Get smart next task
-python -m interfaces.cli item next "project" --smart
+todoit item add "backend" "api" "REST API implementation"
+todoit item add "frontend" "ui" "User interface"
+
+# Create dependency: frontend depends on backend
+todoit dep add "frontend:ui" requires "backend:api" --force
+
+# Smart task selection respects dependencies
+todoit item next "frontend"  # Will be blocked until backend:api is done
+todoit item next "backend"   # Will suggest api task
 ```
 
 ## 📚 Documentation

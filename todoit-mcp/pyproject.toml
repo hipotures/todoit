@@ -46,10 +46,10 @@ dev = [
 todoit = "interfaces.cli:cli"
 
 [project.urls]
-Homepage = "https://github.com/todoit-team/todoit-mcp"
-Repository = "https://github.com/todoit-team/todoit-mcp"
-Documentation = "https://todoit-mcp.readthedocs.io"
-Issues = "https://github.com/todoit-team/todoit-mcp/issues"
+Homepage = "https://github.com/hipotures/todoit"
+Repository = "https://github.com/hipotures/todoit"
+Documentation = "https://github.com/hipotures/todoit/tree/master/docs"
+Issues = "https://github.com/hipotures/todoit/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
