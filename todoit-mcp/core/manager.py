@@ -73,6 +73,11 @@ class TodoManager:
                    list_type: str = "sequential",
                    metadata: Optional[Dict] = None) -> TodoList:
         """1. Creates a new TODO list with optional tasks"""
+        # Validate list key - must contain at least one letter a-z to distinguish from IDs
+        import re
+        if not re.search(r'[a-zA-Z]', list_key):
+            raise ValueError(f"List key '{list_key}' must contain at least one letter (a-z) to distinguish from numeric IDs")
+        
         # Check if the list already exists
         existing = self.db.get_list_by_key(list_key)
         if existing:

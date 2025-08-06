@@ -463,13 +463,28 @@ def list_show(ctx, list_key, tree):
     manager = get_manager(ctx.obj['db_path'])
     
     try:
-        todo_list = manager.get_list(list_key)
+        # Support both ID and key lookup
+        todo_list = None
+        if list_key.isdigit():
+            # If it's a number, try to find by ID first
+            list_id = int(list_key)
+            with manager.db.get_session() as session:
+                from core.database import TodoListDB
+                db_list = session.query(TodoListDB).filter(TodoListDB.id == list_id).first()
+                if db_list:
+                    todo_list = manager.get_list(db_list.list_key)
+        else:
+            # Otherwise, use key directly
+            todo_list = manager.get_list(list_key)
+            
         if not todo_list:
             console.print(f"[red]List '{list_key}' not found[/]")
             return
         
-        items = manager.get_list_items(list_key)
-        properties = manager.get_list_properties(list_key)
+        # Use the actual list key from the found list
+        actual_list_key = todo_list.list_key
+        items = manager.get_list_items(actual_list_key)
+        properties = manager.get_list_properties(actual_list_key)
         
         if tree:
             tree_view = _render_tree_view(todo_list, items, properties, manager)
@@ -478,7 +493,7 @@ def list_show(ctx, list_key, tree):
             _render_table_view(todo_list, items, properties, manager)
             
             # Show progress
-            progress = manager.get_progress(list_key)
+            progress = manager.get_progress(actual_list_key)
             console.print(f"\n[bold]Progress:[/] {progress.completion_percentage:.1f}% "
                          f"({progress.completed}/{progress.total})")
         

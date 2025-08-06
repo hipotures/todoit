@@ -47,6 +47,26 @@ class TestTodoManagerUnit:
         mock_db.get_root_items.assert_called_once()
         mock_db.get_item_children.assert_called_with(mock_parent.id)
 
+    def test_create_list_key_validation(self, manager_with_mock, mock_db):
+        """Test that list keys must contain at least one letter."""
+        # Test valid keys
+        valid_keys = ["test123", "abc", "task_1", "list-a", "A1B2C3"]
+        for key in valid_keys:
+            mock_db.get_list_by_key.return_value = None  # No existing list
+            try:
+                # This should not raise an error
+                manager_with_mock.create_list(key, f"Title for {key}")
+            except ValueError as e:
+                if "must contain at least one letter" in str(e):
+                    pytest.fail(f"Valid key '{key}' was rejected: {e}")
+        
+        # Test invalid keys (numeric only)
+        invalid_keys = ["123", "456789", "0", "999"]
+        for key in invalid_keys:
+            mock_db.get_list_by_key.return_value = None  # No existing list
+            with pytest.raises(ValueError, match="must contain at least one letter"):
+                manager_with_mock.create_list(key, f"Title for {key}")
+
     def test_get_next_pending_skips_blocked_subtasks(self, manager_with_mock, mock_db):
         """Test that the algorithm correctly skips subtasks that are blocked."""
         mock_parent = MagicMock(id=1, item_key="parent", status="in_progress", parent_item_id=None)
