@@ -22,6 +22,59 @@ from core.manager import TodoManager
 console = Console()
 
 
+def _display_lists_tree(lists, manager):
+    """Display lists in hierarchical tree view based on relations"""
+    from collections import defaultdict
+    
+    # Get all list relations
+    root_lists = []
+    children_by_parent = defaultdict(list)
+    
+    # Build relation mapping
+    for todo_list in lists:
+        has_parent = False
+        with manager.db.get_session() as session:
+            from core.database import ListRelationDB, TodoListDB
+            parent_relations = session.query(ListRelationDB).filter(
+                ListRelationDB.target_list_id == todo_list.id
+            ).all()
+            
+            if parent_relations:
+                for rel in parent_relations:
+                    parent_list = session.query(TodoListDB).filter(
+                        TodoListDB.id == rel.source_list_id
+                    ).first()
+                    if parent_list:
+                        children_by_parent[parent_list.list_key].append(todo_list)
+                        has_parent = True
+        
+        if not has_parent:
+            root_lists.append(todo_list)
+    
+    # Create tree view
+    tree = Tree("📋 All TODO Lists (Hierarchical)", guide_style="bold bright_blue")
+    
+    def add_list_to_tree(parent_node, todo_list, level=0):
+        progress = manager.get_progress(todo_list.list_key)
+        
+        list_text = f"[cyan]{todo_list.list_key}[/] - [white]{todo_list.title}[/] "
+        list_text += f"([yellow]{todo_list.list_type}[/]) "
+        list_text += f"[green]{progress.total}[/]/[blue]{progress.completed}[/] "
+        list_text += f"([magenta]{progress.completion_percentage:.1f}%[/])"
+        
+        list_text = f"[dim]{todo_list.id}[/] " + list_text
+        
+        list_node = parent_node.add(list_text)
+        
+        for child_list in children_by_parent.get(todo_list.list_key, []):
+            add_list_to_tree(list_node, child_list, level + 1)
+    
+    for root_list in sorted(root_lists, key=lambda x: x.id):
+        add_list_to_tree(tree, root_list)
+    
+    console.print(tree)
+
+
 def _get_status_icon(status_value: str, is_blocked: bool = False) -> str:
     """Get status icon for display (Phase 2: includes blocked status)"""
     if is_blocked and status_value == 'pending':
@@ -302,6 +355,7 @@ def get_manager(db_path: Optional[str]) -> TodoManager:
 
 @click.group()
 @click.option('--db', default='todoit.db', help='Path to database file (default: ~/.todoit/todoit.db)')
+@click.version_option(package_name='todoit-mcp', prog_name='TODOIT')
 @click.pass_context
 def cli(ctx, db):
     """TODOIT - Intelligent TODO list management system"""
@@ -318,13 +372,13 @@ def cli(ctx, db):
 
 # === List management commands ===
 
-@cli.group()
-def list():
+@cli.group(name='list')
+def list_group():
     """Manage TODO lists"""
     pass
 
 
-@list.command('create')
+@list_group.command('create')
 @click.argument('list_key')
 @click.option('--title', help='List title')
 @click.option('--items', '-i', multiple=True, help='Initial items')
@@ -400,7 +454,7 @@ def list_create(ctx, list_key, title, items, from_folder, filter_ext, task_prefi
         console.print(f"[bold red]❌ Error:[/] {e}")
 
 
-@list.command('show')
+@list_group.command('show')
 @click.argument('list_key')
 @click.option('--tree', is_flag=True, help='Display as tree')
 @click.pass_context
@@ -432,69 +486,130 @@ def list_show(ctx, list_key, tree):
         console.print(f"[bold red]❌ Error:[/] {e}")
 
 
-@list.command('all')
+@list_group.command('all')
 @click.option('--limit', type=int, help='Limit number of results')
+@click.option('--tree', is_flag=True, help='Show hierarchical view with list relations')
 @click.pass_context
-def list_all(ctx, limit):
+def list_all(ctx, limit, tree):
     """List all TODO lists"""
     manager = get_manager(ctx.obj['db_path'])
     
     try:
         lists = manager.list_all(limit=limit)
         
-        table = Table(title="📋 All TODO Lists", box=box.ROUNDED)
-        table.add_column("ID", style="dim", width=4)
-        table.add_column("Key", style="cyan")
-        table.add_column("Title", style="white")
-        table.add_column("Type", style="yellow")
-        table.add_column("Items", style="green")
-        table.add_column("Completed", style="blue")
-        table.add_column("Progress", style="magenta")
+        # Sort lists by ID (lowest first) for consistent ordering
+        lists = sorted(lists, key=lambda x: x.id)
         
-        for todo_list in lists:
-            progress = manager.get_progress(todo_list.list_key)
-            table.add_row(
-                str(todo_list.id),
-                todo_list.list_key,
-                todo_list.title,
-                todo_list.list_type,
-                str(progress.total),
-                str(progress.completed),
-                f"{progress.completion_percentage:.1f}%"
-            )
-        
-        console.print(table)
+        if tree:
+            # Show hierarchical view with relations
+            _display_lists_tree(lists, manager)
+        else:
+            # Show regular table view
+            table = Table(title="📋 All TODO Lists", box=box.ROUNDED)
+            table.add_column("ID", style="dim", width=4)
+            table.add_column("Key", style="cyan")
+            table.add_column("Title", style="white")
+            table.add_column("Type", style="yellow")
+            table.add_column("Items", style="green")
+            table.add_column("Completed", style="blue")
+            table.add_column("Progress", style="magenta")
+            
+            for todo_list in lists:
+                progress = manager.get_progress(todo_list.list_key)
+                table.add_row(
+                    str(todo_list.id),
+                    todo_list.list_key,
+                    todo_list.title,
+                    todo_list.list_type,
+                    str(progress.total),
+                    str(progress.completed),
+                    f"{progress.completion_percentage:.1f}%"
+                )
+            
+            console.print(table)
         console.print(f"\n[bold]Total lists:[/] {len(lists)}")
         
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
 
 
-@list.command('delete')
-@click.argument('list_key')
+@list_group.command('delete')
+@click.argument('list_keys', nargs=-1, required=True)
 @click.option('--force', is_flag=True, help='Force deletion')
 @click.pass_context
-def list_delete(ctx, list_key, force):
-    """Delete TODO list (with dependency validation)"""
+def list_delete(ctx, list_keys, force):
+    """Delete TODO lists (with dependency validation)
+    
+    Examples:
+    todoit list delete key1
+    todoit list delete key1 key2 key3
+    todoit list delete key1,key2,key3
+    """
     manager = get_manager(ctx.obj['db_path'])
     
-    try:
-        todo_list = manager.get_list(list_key)
-        if not todo_list:
-            console.print(f"[red]List '{list_key}' not found[/]")
-            return
-        
-        if not force and not Confirm.ask(f"Delete list '{list_key}'?"):
-            return
-        
-        manager.delete_list(list_key)
-        console.print(f"[green]✅ Deleted list '{list_key}'[/]")
-        
-    except ValueError as e:
-        console.print(f"[bold red]❌ {e}[/]")
-        console.print("[yellow]Hint: Delete dependent lists first[/]")
-    except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+    # Handle comma-separated keys
+    all_keys = []
+    for key_arg in list_keys:
+        if ',' in key_arg:
+            all_keys.extend([k.strip() for k in key_arg.split(',')])
+        else:
+            all_keys.append(key_arg)
+    
+    if not all_keys:
+        console.print("[red]No list keys provided[/]")
+        return
+    
+    # Show what will be deleted
+    console.print(f"[yellow]Will delete {len(all_keys)} list(s):[/]")
+    deleted_count = 0
+    failed_keys = []
+    
+    for list_key in all_keys:
+        try:
+            todo_list = manager.get_list(list_key)
+            if not todo_list:
+                console.print(f"[red]  ❌ List '{list_key}' not found[/]")
+                failed_keys.append(list_key)
+                continue
+            
+            progress = manager.get_progress(list_key)
+            console.print(f"[cyan]  • {list_key}[/] - {todo_list.title} ({progress.total} items)")
+            
+        except Exception as e:
+            console.print(f"[red]  ❌ Error checking '{list_key}': {e}[/]")
+            failed_keys.append(list_key)
+    
+    if failed_keys:
+        console.print(f"[red]Cannot proceed - {len(failed_keys)} list(s) have errors[/]")
+        return
+    
+    # Confirm deletion
+    if not force:
+        if len(all_keys) == 1:
+            if not Confirm.ask(f"Delete list '{all_keys[0]}'?"):
+                return
+        else:
+            if not Confirm.ask(f"Delete all {len(all_keys)} lists?"):
+                return
+    
+    # Delete lists
+    for list_key in all_keys:
+        try:
+            manager.delete_list(list_key)
+            console.print(f"[green]  ✅ Deleted '{list_key}'[/]")
+            deleted_count += 1
+        except ValueError as e:
+            console.print(f"[bold red]  ❌ {list_key}: {e}[/]")
+            if not force:
+                console.print("[yellow]    Hint: Use --force to break dependencies and delete[/]")
+        except Exception as e:
+            console.print(f"[bold red]  ❌ {list_key}: {e}[/]")
+    
+    # Summary
+    if deleted_count > 0:
+        console.print(f"\n[green]Successfully deleted {deleted_count}/{len(all_keys)} list(s)[/]")
+    else:
+        console.print(f"\n[red]No lists were deleted[/]")
 
 
 # === Item management commands ===

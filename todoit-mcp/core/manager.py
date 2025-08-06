@@ -1219,31 +1219,35 @@ class TodoManager:
         if not item_to_delete:
             return False # Item doesn't exist, so nothing to delete
 
-        # Use a single database session for the entire operation
-        with self.db.get_session() as session:
-            # Get all items to delete (item + all its subtasks recursively)
-            items_to_delete = self._get_item_and_subtasks_recursive(session, item_to_delete.id)
-            item_ids_to_delete = [item.id for item in items_to_delete]
-            
-            # Delete all dependencies for these items
-            session.query(ItemDependencyDB).filter(
-                (ItemDependencyDB.dependent_item_id.in_(item_ids_to_delete)) |
-                (ItemDependencyDB.required_item_id.in_(item_ids_to_delete))
-            ).delete(synchronize_session=False)
-            
-            # Temporarily disable foreign key constraints for the deletion
-            from sqlalchemy import text
-            session.execute(text("PRAGMA foreign_keys = OFF"))
-            
-            # Delete all items
-            for item in items_to_delete:
-                session.delete(item)
-            
-            session.commit()
-            
-            # Re-enable foreign key constraints
-            session.execute(text("PRAGMA foreign_keys = ON"))
+        # Get all subtasks recursively
+        all_subtasks = self._get_all_subtasks_recursive(item_to_delete.id)
+        
+        # Delete all subtasks first (reverse order to avoid FK issues)
+        for subtask in reversed(all_subtasks):
+            # Delete dependencies for this subtask
+            self.db.delete_all_dependencies_for_item(subtask.id)
+            # Delete the subtask
+            self.db.delete_item(subtask.id)
+        
+        # Delete dependencies for the main item
+        self.db.delete_all_dependencies_for_item(item_to_delete.id)
+        
+        # Delete the main item
+        self.db.delete_item(item_to_delete.id)
+        
         return True
+
+    def _get_all_subtasks_recursive(self, item_id: int) -> List:
+        """Get all subtasks of an item recursively"""
+        all_subtasks = []
+        children = self.db.get_item_children(item_id)
+        
+        for child in children:
+            all_subtasks.append(child)
+            # Get subtasks of this child recursively
+            all_subtasks.extend(self._get_all_subtasks_recursive(child.id))
+        
+        return all_subtasks
 
     def _get_item_and_subtasks_recursive(self, session, item_id: int) -> List:
         """Helper method to get item and all its subtasks recursively"""

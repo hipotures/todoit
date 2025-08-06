@@ -879,3 +879,13 @@ class Database:
         """Get all item dependencies from the database."""
         with self.get_session() as session:
             return session.query(ItemDependencyDB).all()
+
+    def delete_all_dependencies_for_item(self, item_id: int) -> int:
+        """Delete all dependencies involving the given item (as dependent or required)"""
+        with self.get_session() as session:
+            deleted_count = session.query(ItemDependencyDB).filter(
+                (ItemDependencyDB.dependent_item_id == item_id) |
+                (ItemDependencyDB.required_item_id == item_id)
+            ).delete(synchronize_session=False)
+            session.commit()
+            return deleted_count
