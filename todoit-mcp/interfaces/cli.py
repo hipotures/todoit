@@ -677,8 +677,9 @@ def item_tree(ctx, list_key, item_key):
 @click.argument('list_key')
 @click.argument('item_key')
 @click.argument('new_parent_key')
+@click.option('--force', is_flag=True, help='Skip confirmation prompt')
 @click.pass_context
-def item_move_to_subtask(ctx, list_key, item_key, new_parent_key):
+def item_move_to_subtask(ctx, list_key, item_key, new_parent_key, force):
     """Convert existing task to be a subtask of another task"""
     manager = get_manager(ctx.obj['db_path'])
     
@@ -694,7 +695,7 @@ def item_move_to_subtask(ctx, list_key, item_key, new_parent_key):
         console.print(f"[yellow]Moving '{item.item_key}: {item.content}'[/]")
         console.print(f"[yellow]To be subtask of '{parent.item_key}: {parent.content}'[/]")
         
-        if not Confirm.ask("Proceed with move?"):
+        if not force and not Confirm.ask("Proceed with move?"):
             return
         
         moved_item = manager.move_to_subtask(list_key, item_key, new_parent_key)
@@ -1078,8 +1079,9 @@ def _parse_item_reference(ref: str) -> tuple:
 @click.argument('requires_word')  # literally "requires"
 @click.argument('required_ref')   # list:item that is required
 @click.option('--type', 'dep_type', default='blocks', help='Dependency type (blocks, requires, related)')
+@click.option('--force', is_flag=True, help='Skip confirmation prompt')
 @click.pass_context
-def dep_add(ctx, dependent_ref, requires_word, required_ref, dep_type):
+def dep_add(ctx, dependent_ref, requires_word, required_ref, dep_type, force):
     """Add dependency between tasks from different lists
     
     Example: cli dep add frontend:auth_ui requires backend:auth_api
@@ -1100,7 +1102,7 @@ def dep_add(ctx, dependent_ref, requires_word, required_ref, dep_type):
         console.print(f"  {dep_list}:{dep_item} → {req_list}:{req_item}")
         console.print(f"  Type: {dep_type}")
         
-        if not Confirm.ask("Proceed?"):
+        if not force and not Confirm.ask("Proceed?"):
             return
         
         # Add dependency
@@ -1122,8 +1124,9 @@ def dep_add(ctx, dependent_ref, requires_word, required_ref, dep_type):
 @dep.command('remove')
 @click.argument('dependent_ref')  # list:item that depends
 @click.argument('required_ref')   # list:item that is required  
+@click.option('--force', is_flag=True, help='Skip confirmation prompt')
 @click.pass_context
-def dep_remove(ctx, dependent_ref, required_ref):
+def dep_remove(ctx, dependent_ref, required_ref, force):
     """Remove dependency between tasks
     
     Example: cli dep remove frontend:auth_ui backend:auth_api
@@ -1139,7 +1142,7 @@ def dep_remove(ctx, dependent_ref, required_ref):
         console.print(f"[yellow]Removing dependency:[/]")
         console.print(f"  {dep_list}:{dep_item} → {req_list}:{req_item}")
         
-        if not Confirm.ask("Proceed?"):
+        if not force and not Confirm.ask("Proceed?"):
             return
         
         # Remove dependency

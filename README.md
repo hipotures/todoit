@@ -19,7 +19,7 @@ TODOIT (Todo It) is a comprehensive task management platform that scales from si
 - **Project-wide Progress** - Track progress across multiple related lists
 
 ### 🔗 **Integration Capabilities**
-- **43 MCP Tools** - Complete API for Claude Code integration
+- **40 MCP Tools** - Complete API for Claude Code integration
 - **Rich CLI Interface** - Beautiful tables with blocked status indicators (🚫)
 - **SQLite Database** - Robust schema with foreign key relationships
 - **Import/Export** - Markdown format with checkbox support
@@ -30,7 +30,7 @@ TODOIT (Todo It) is a comprehensive task management platform that scales from si
 Claude Code <--MCP--> TodoMCPServer <--API--> TodoManager <--ORM--> SQLite
                             |                         ^                  |
                             |                         |                  |
-                       43 MCP Tools           Smart Algorithm      Enhanced Schema
+                       40 MCP Tools           Smart Algorithm      Enhanced Schema
                                                     |                     |
                                                Rich CLI              Dependencies
                                             (📊 status display)        & Relations
@@ -114,7 +114,7 @@ todoit-mcp/
 - `get_cross_list_progress` - Multi-list project tracking
 - Enhanced progress with blocked/available item counts
 
-### **MCP Integration (43 Tools)**
+### **MCP Integration (40 Tools)**
 All functionality available via MCP for Claude Code:
 - List management (create, update, delete, relations)
 - Item operations (add, update status, move, convert to subtask)  
@@ -168,9 +168,12 @@ python -m interfaces.cli item next "project" --smart
 
 ## 📚 Documentation
 
-- **[docs/SUBTASKS.md](docs/SUBTASKS.md)** - System architecture overview
-- **[docs/PHASE3_INTEGRATION.md](docs/PHASE3_INTEGRATION.md)** - Advanced integration guide  
-- **[docs/PHASE3_EXAMPLES.md](docs/PHASE3_EXAMPLES.md)** - Real-world usage examples
+Complete documentation available in the [docs/](docs/) directory:
+
+- **[CLI User Guide](docs/CLI_GUIDE.md)** - Comprehensive command-line interface guide
+- **[MCP Tools Reference](docs/MCP_TOOLS.md)** - All 40 MCP tools for Claude Code
+- **[Architecture](docs/architecture.md)** - System design and patterns
+- **[API Reference](docs/api.md)** - TodoManager class documentation
 
 ## 📄 License
 

@@ -394,6 +394,12 @@ class TodoManager:
         with open(file_path, 'r', encoding='utf-8') as f:
             for line_num, line in enumerate(f, 1):
                 line = line.strip()
+                
+                # Handle both formats: "[x]" and "- [x]"
+                original_line = line
+                if line.startswith('- ['):
+                    line = line[2:].strip()  # Remove "- " prefix
+                
                 if line.startswith('['):
                     # Parse all columns [ ] or [x]
                     columns = []
