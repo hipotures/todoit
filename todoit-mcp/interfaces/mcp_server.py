@@ -202,7 +202,11 @@ async def todo_update_item_status(list_key: str, item_key: str, status: Optional
     Args:
         list_key: Key of the list containing the item (required)
         item_key: Key of the item to update (required)
-        status: New status to set (pending, in_progress, completed, etc.)
+        status: New status to set. Valid values:
+                - 'pending': Task is waiting to be started
+                - 'in_progress': Task is currently being worked on
+                - 'completed': Task has been finished successfully
+                - 'failed': Task could not be completed
         completion_states: Optional dictionary of completion state details
         
     Returns:
