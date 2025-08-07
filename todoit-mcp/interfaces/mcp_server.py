@@ -459,7 +459,7 @@ async def todo_quick_add(list_key: str, items: List[str]) -> Dict[str, Any]:
         mgr = init_manager()
         created_items = []
         for i, content in enumerate(items):
-            item_key = f"item_{i+1}_{len(content)}"  # Simple unique key
+            item_key = f"item_{i+1:04d}"  # Simple sequential numbering
             item = mgr.add_item(
                 list_key=list_key,
                 item_key=item_key,
