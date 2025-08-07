@@ -1296,16 +1296,55 @@ class TodoManager:
         for subtask in reversed(all_subtasks):
             # Delete dependencies for this subtask
             self.db.delete_all_dependencies_for_item(subtask.id)
+            # Delete properties for this subtask
+            self.db.delete_all_item_properties(subtask.id)
+            # Delete history for this subtask
+            self.db.delete_item_history(subtask.id)
             # Delete the subtask
             self.db.delete_item(subtask.id)
         
         # Delete dependencies for the main item
         self.db.delete_all_dependencies_for_item(item_to_delete.id)
         
+        # Delete properties for the main item
+        self.db.delete_all_item_properties(item_to_delete.id)
+        
+        # Delete history for the main item
+        self.db.delete_item_history(item_to_delete.id)
+        
         # Delete the main item
         self.db.delete_item(item_to_delete.id)
         
         return True
+
+    def update_item_content(self, list_key: str, item_key: str, new_content: str) -> TodoItem:
+        """Updates the content/description of a TODO item."""
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
+
+        db_item = self.db.get_item_by_key(db_list.id, item_key)
+        if not db_item:
+            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+
+        # Store old content for history
+        old_content = db_item.content
+        
+        # Update the database
+        updated_item = self.db.update_item_content(db_item.id, new_content)
+        if not updated_item:
+            raise ValueError(f"Failed to update item content")
+
+        # Record history
+        self._record_history(
+            item_id=db_item.id,
+            action=HistoryAction.UPDATED,
+            old_value={"content": old_content},
+            new_value={"content": new_content},
+            user_context="content_update"
+        )
+
+        return self._db_to_model(updated_item, TodoItem)
 
     def _get_all_subtasks_recursive(self, item_id: int) -> List:
         """Get all subtasks of an item recursively"""

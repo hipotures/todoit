@@ -1293,6 +1293,54 @@ async def todo_get_comprehensive_status(list_key: str, mgr=None) -> Dict[str, An
     }
 
 
+# ===== ITEM MANAGEMENT MCP TOOLS =====
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_delete_item(list_key: str, item_key: str, mgr=None) -> Dict[str, Any]:
+    """Delete a todo item from a list permanently.
+    
+    Args:
+        list_key: Key of the list containing the item (required)
+        item_key: Key of the item to delete (required)
+        
+    Returns:
+        Dictionary with success status and confirmation message
+    """
+    success = mgr.delete_item(list_key, item_key)
+    if success:
+        return {
+            "success": True,
+            "message": f"Item '{item_key}' deleted from list '{list_key}'"
+        }
+    else:
+        return {
+            "success": False,
+            "error": f"Item '{item_key}' not found in list '{list_key}'"
+        }
+
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_update_item_content(list_key: str, item_key: str, new_content: str, mgr=None) -> Dict[str, Any]:
+    """Update the content/description of a todo item.
+    
+    Args:
+        list_key: Key of the list containing the item (required)
+        item_key: Key of the item to update (required)
+        new_content: New content/description for the item (required)
+        
+    Returns:
+        Dictionary with success status and updated item details
+    """
+    updated_item = mgr.update_item_content(list_key, item_key, new_content)
+    return {
+        "success": True,
+        "item": updated_item.to_dict(),
+        "message": f"Content updated for item '{item_key}' in list '{list_key}'"
+    }
+
+
 # ===== SYSTEM METADATA MCP TOOL =====
 
 @mcp.tool()

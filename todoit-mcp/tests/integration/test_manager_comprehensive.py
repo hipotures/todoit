@@ -415,9 +415,9 @@ class TestManagerComprehensive:
         updated_item = temp_manager.update_item_status('error_test', 'test_item', 'in_progress')
         assert updated_item.status == 'in_progress'
         
-        # Test empty content handling - should be rejected by validation
-        with pytest.raises(ValueError):
-            temp_manager.add_item('error_test', 'empty', '')
+        # Test empty content handling - should be allowed now
+        empty_item = temp_manager.add_item('error_test', 'empty', '')
+        assert empty_item.content == ''
         
         # Test normal length content
         normal_content = 'Normal content'

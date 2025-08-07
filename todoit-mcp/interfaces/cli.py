@@ -1096,6 +1096,70 @@ def item_next_smart(ctx, list_key, start):
         console.print(f"[bold red]❌ Error:[/] {e}")
 
 
+@item.command('delete')
+@click.argument('list_key')
+@click.argument('item_key')
+@click.option('--force', is_flag=True, help='Skip confirmation prompt')
+@click.pass_context
+def item_delete(ctx, list_key, item_key, force):
+    """Delete an item from a TODO list permanently"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        # Get item details for confirmation
+        item = manager.get_item(list_key, item_key)
+        if not item:
+            console.print(f"[red]Item '{item_key}' not found in list '{list_key}'[/]")
+            return
+        
+        # Show what will be deleted
+        console.print(f"[yellow]About to delete:[/] {item.content}")
+        console.print(f"[yellow]From list:[/] {list_key}")
+        
+        # Confirm deletion unless force flag is used
+        if not force and not Confirm.ask("[red]Are you sure you want to delete this item? This cannot be undone"):
+            console.print("[yellow]Deletion cancelled[/]")
+            return
+        
+        # Delete the item
+        success = manager.delete_item(list_key, item_key)
+        if success:
+            console.print(f"[green]✅ Item '{item_key}' deleted from list '{list_key}'[/]")
+        else:
+            console.print(f"[red]❌ Failed to delete item '{item_key}'[/]")
+            
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command('edit')
+@click.argument('list_key')
+@click.argument('item_key')
+@click.argument('new_content')
+@click.pass_context
+def item_edit(ctx, list_key, item_key, new_content):
+    """Edit the content/description of a TODO item"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        # Get current item
+        current_item = manager.get_item(list_key, item_key)
+        if not current_item:
+            console.print(f"[red]Item '{item_key}' not found in list '{list_key}'[/]")
+            return
+        
+        # Show changes
+        console.print(f"[yellow]Old content:[/] {current_item.content}")
+        console.print(f"[green]New content:[/] {new_content}")
+        
+        # Update the content
+        updated_item = manager.update_item_content(list_key, item_key, new_content)
+        console.print(f"[green]✅ Content updated for item '{item_key}' in list '{list_key}'[/]")
+        
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
 # === Progress and stats commands ===
 
 @cli.group()

@@ -377,6 +377,10 @@ class Database:
                 session.refresh(db_item)
             return db_item
     
+    def update_item_content(self, item_id: int, new_content: str) -> Optional[TodoItemDB]:
+        """Update item content"""
+        return self.update_item(item_id, {"content": new_content})
+    
     def delete_item(self, item_id: int) -> bool:
         """Delete item"""
         with self.get_session() as session:
@@ -965,6 +969,24 @@ class Database:
             deleted_count = session.query(ItemDependencyDB).filter(
                 (ItemDependencyDB.dependent_item_id == item_id) |
                 (ItemDependencyDB.required_item_id == item_id)
+            ).delete(synchronize_session=False)
+            session.commit()
+            return deleted_count
+
+    def delete_all_item_properties(self, item_id: int) -> int:
+        """Delete all properties for the given item"""
+        with self.get_session() as session:
+            deleted_count = session.query(ItemPropertyDB).filter(
+                ItemPropertyDB.item_id == item_id
+            ).delete(synchronize_session=False)
+            session.commit()
+            return deleted_count
+
+    def delete_item_history(self, item_id: int) -> int:
+        """Delete all history entries for the given item"""
+        with self.get_session() as session:
+            deleted_count = session.query(TodoHistoryDB).filter(
+                TodoHistoryDB.item_id == item_id
             ).delete(synchronize_session=False)
             session.commit()
             return deleted_count

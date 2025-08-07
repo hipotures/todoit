@@ -127,7 +127,7 @@ class TodoList(TodoListBase):
 class TodoItemBase(BaseModel):
     """Base model for TODO items"""
     item_key: str = Field(..., min_length=1, max_length=100)
-    content: str = Field(..., min_length=1, max_length=1000)
+    content: str = Field(..., max_length=1000)
     position: int = Field(..., ge=0)
     status: ItemStatus = ItemStatus.PENDING
     completion_states: Optional[Dict[str, Any]] = Field(default_factory=dict)
@@ -149,7 +149,7 @@ class TodoItemCreate(TodoItemBase):
 
 class TodoItemUpdate(BaseModel):
     """Model for updating TODO items"""
-    content: Optional[str] = Field(None, min_length=1, max_length=1000)
+    content: Optional[str] = Field(None, max_length=1000)
     position: Optional[int] = Field(None, ge=0)
     status: Optional[ItemStatus] = None
     completion_states: Optional[Dict[str, Any]] = None
