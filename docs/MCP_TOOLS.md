@@ -2,11 +2,11 @@
 
 ## Overview
 
-TODOIT MCP provides 45 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
+TODOIT MCP provides 47 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
 
 ## Tool Categories
 
-### 🔧 Basic Operations (12 tools)
+### 🔧 Basic Operations (14 tools)
 Core functionality for list and item management.
 
 #### List Management
@@ -18,6 +18,8 @@ Core functionality for list and item management.
 #### Item Management  
 - **`todo_add_item`** - Add new item to list
 - **`todo_update_item_status`** - Update item status (pending/in_progress/completed/failed)
+- **`todo_update_item_content`** - Update item description/content text
+- **`todo_delete_item`** - Delete item permanently from list
 - **`todo_get_item`** - Get specific item details
 - **`todo_get_list_items`** - Get all items from list with optional status filter
 

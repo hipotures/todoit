@@ -5,7 +5,7 @@ SQLAlchemy models and database operations
 import json
 import os
 from typing import List, Optional, Dict, Any, Union
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import create_engine, Column, Integer, String, Text, JSON, DateTime, ForeignKey, Index, event
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
@@ -22,6 +22,11 @@ from .models import (
 Base = declarative_base()
 
 
+def utc_now():
+    """Get current UTC timestamp - replaces deprecated datetime.utcnow()"""
+    return datetime.now(timezone.utc).replace(tzinfo=None)  # Store as naive UTC for SQLite compatibility
+
+
 # SQLAlchemy ORM Models
 class TodoListDB(Base):
     """SQLAlchemy model for todo_lists table"""
@@ -34,8 +39,8 @@ class TodoListDB(Base):
     list_type = Column(String(20), default='sequential')
     parent_list_id = Column(Integer, ForeignKey('todo_lists.id'))
     meta_data = Column('metadata', JSON, default=lambda: {})
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     
     # Relationships
     items = relationship("TodoItemDB", back_populates="list", cascade="all, delete-orphan")
@@ -64,8 +69,8 @@ class TodoItemDB(Base):
     meta_data = Column('metadata', JSON, default=lambda: {})
     started_at = Column(DateTime)
     completed_at = Column(DateTime)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     
     # Relationships
     list = relationship("TodoListDB", back_populates="items")
@@ -92,7 +97,7 @@ class ListRelationDB(Base):
     relation_type = Column(String(20), nullable=False)
     relation_key = Column(String(100))
     meta_data = Column('metadata', JSON, default=lambda: {})
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
     
     # Relationships
     source_list = relationship("TodoListDB", foreign_keys=[source_list_id])
@@ -114,8 +119,8 @@ class ListPropertyDB(Base):
     list_id = Column(Integer, ForeignKey('todo_lists.id'), nullable=False)
     property_key = Column(String(100), nullable=False)
     property_value = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now)
     
     # Relationships
     todo_list = relationship("TodoListDB", foreign_keys=[list_id])
@@ -136,8 +141,8 @@ class ItemPropertyDB(Base):
     item_id = Column(Integer, ForeignKey('todo_items.id'), nullable=False)
     property_key = Column(String(100), nullable=False)
     property_value = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now)
     
     # Relationships
     todo_item = relationship("TodoItemDB", foreign_keys=[item_id])
@@ -161,7 +166,7 @@ class TodoHistoryDB(Base):
     old_value = Column(JSON)
     new_value = Column(JSON)
     user_context = Column(String(50), default='system')
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=utc_now)
     
     # Relationships
     item = relationship("TodoItemDB")
@@ -184,7 +189,7 @@ class ItemDependencyDB(Base):
     required_item_id = Column(Integer, ForeignKey('todo_items.id'), nullable=False)
     dependency_type = Column(String(20), default='blocks')
     meta_data = Column('metadata', JSON, default=lambda: {})
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
     
     # Relationships
     dependent_item = relationship("TodoItemDB", foreign_keys=[dependent_item_id])

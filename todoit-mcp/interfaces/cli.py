@@ -6,14 +6,19 @@ Command Line Interface with Rich for better presentation
 import click
 import json
 import os
+import time
+import hashlib
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.tree import Tree
 from rich.prompt import Prompt, Confirm
+from rich.live import Live
+from rich.layout import Layout
+from rich.text import Text
 from rich import box
 
 from core.manager import TodoManager
@@ -30,8 +35,19 @@ def _get_output_format() -> str:
 
 
 def _format_date(date: datetime) -> str:
-    """Standardized date formatting"""
-    return date.strftime('%Y-%m-%d %H:%M')
+    """Standardized date formatting - converts UTC to local time"""
+    if date is None:
+        return "Never"
+    
+    # Assume date from DB is naive UTC, convert to local time
+    if date.tzinfo is None:
+        utc_date = date.replace(tzinfo=timezone.utc)
+        local_date = utc_date.astimezone()
+        return local_date.strftime('%Y-%m-%d %H:%M')
+    else:
+        # Already timezone-aware
+        local_date = date.astimezone()
+        return local_date.strftime('%Y-%m-%d %H:%M')
 
 
 def _display_records_vertical(data: List[Dict[str, Any]], title: str = "Records"):
@@ -770,6 +786,239 @@ def list_delete(ctx, list_keys, force):
         console.print(f"\n[green]Successfully deleted {deleted_count}/{len(all_keys)} list(s)[/]")
     else:
         console.print(f"\n[red]No lists were deleted[/]")
+
+
+@list_group.command('live')
+@click.argument('list_key')
+@click.option('--refresh', '-r', default=2, type=float, help='Refresh interval in seconds (default: 2)')
+@click.option('--show-history', '-h', is_flag=True, help='Show recent changes history')
+@click.option('--filter-status', '-f', help='Filter items by status (pending, in_progress, completed, failed)')
+@click.option('--no-heartbeat', is_flag=True, help='Disable heartbeat animation (reduces flicker)')
+@click.pass_context
+def list_live(ctx, list_key, refresh, show_history, filter_status, no_heartbeat):
+    """Live monitoring of TODO list changes
+    
+    Shows real-time updates of list status, item changes, and progress.
+    Use Ctrl+C to exit.
+    
+    Examples:
+    todoit list live my-project
+    todoit list live my-project --refresh 1 --show-history
+    todoit list live my-project --filter-status pending
+    """
+    manager = get_manager(ctx.obj['db_path'])
+    
+    # Verify list exists
+    todo_list = manager.get_list(list_key)
+    if not todo_list:
+        console.print(f"[red]❌ List '{list_key}' not found[/]")
+        return
+    
+    # State tracking for change detection
+    last_hash = None
+    last_update_time = datetime.now()
+    changes_history = []
+    last_display = None  # Cache for display content
+    
+    def get_list_hash(items_data):
+        """Generate hash of list state for change detection"""
+        state_str = json.dumps(items_data, sort_keys=True, default=str)
+        return hashlib.md5(state_str.encode()).hexdigest()
+    
+    def generate_display():
+        """Generate the live display layout"""
+        nonlocal last_hash, last_update_time, changes_history, last_display
+        
+        try:
+            # Get current list data
+            todo_list = manager.get_list(list_key)
+            if not todo_list:
+                return Panel("[red]❌ List not found[/]", title="Error")
+            
+            items = manager.get_list_items(list_key, status=filter_status)
+            progress = manager.get_progress(list_key)
+            
+            # Create items data for change detection
+            items_data = []
+            for item in items:
+                items_data.append({
+                    'id': item.item_key,
+                    'content': item.content,
+                    'status': item.status,
+                    'position': item.position,
+                    'updated_at': str(item.updated_at)
+                })
+            
+            # Check for changes
+            current_hash = get_list_hash(items_data)
+            has_changed = last_hash is not None and current_hash != last_hash
+            
+            # If nothing changed and we have cached display, check if we need heartbeat
+            if not has_changed and last_display is not None and no_heartbeat:
+                # No changes and no heartbeat wanted - return cached display
+                return last_display
+            
+            if has_changed:
+                last_update_time = datetime.now()
+                if len(changes_history) >= 10:  # Keep only last 10 changes
+                    changes_history.pop(0)
+                changes_history.append({
+                    'timestamp': last_update_time,
+                    'type': 'update',
+                    'message': 'List updated'
+                })
+            
+            last_hash = current_hash
+            
+            # Create layout
+            layout = Layout()
+            
+            # Top section - List info and progress
+            list_info = _create_list_info_panel(todo_list, progress, last_update_time, has_changed, no_heartbeat)
+            
+            # Main section - Items table
+            items_table = _create_live_items_table(items, has_changed)
+            
+            # Split layout
+            if show_history and changes_history:
+                layout.split(
+                    Layout(list_info, name="info", size=8),
+                    Layout(items_table, name="items", ratio=2),
+                    Layout(_create_changes_panel(changes_history), name="history", size=8)
+                )
+            else:
+                layout.split(
+                    Layout(list_info, name="info", size=8),
+                    Layout(items_table, name="items")
+                )
+            
+            # Cache the display
+            last_display = layout
+            return layout
+            
+        except Exception as e:
+            return Panel(f"[red]❌ Error: {e}[/]", title="Error")
+    
+    # Start live monitoring
+    try:
+        with Live(generate_display(), refresh_per_second=2, console=console, auto_refresh=False) as live:  # Disable auto refresh, we'll control it
+            console.print(f"[green]🔴 Live monitoring started for '[cyan]{list_key}[/]'[/]")
+            console.print(f"[dim]Refresh rate: {refresh}s | Press Ctrl+C to exit[/]")
+            console.print()
+            
+            while True:
+                time.sleep(refresh)
+                old_hash = last_hash
+                old_time = datetime.now()
+                new_display = generate_display()
+                
+                # Determine if we should update display
+                content_changed = old_hash != last_hash or old_hash is None
+                heartbeat_tick = not no_heartbeat and int(old_time.timestamp()) % 2 != int(datetime.now().timestamp()) % 2
+                
+                # Only update if something actually changed, first run, or heartbeat tick
+                if content_changed or heartbeat_tick:
+                    live.update(new_display)
+                    live.refresh()
+                
+    except KeyboardInterrupt:
+        console.print("\n[yellow]📡 Live monitoring stopped[/]")
+    except Exception as e:
+        console.print(f"\n[red]❌ Error during live monitoring: {e}[/]")
+
+
+def _create_list_info_panel(todo_list, progress, last_update_time, has_changed, no_heartbeat=False):
+    """Create the list information panel"""
+    # Status indicator with heartbeat
+    current_time = datetime.now()
+    seconds_since_update = (current_time - last_update_time).total_seconds()
+    
+    if has_changed:
+        status_color = "green"
+        status_icon = "🔄"
+        status_text = "UPDATED"
+    else:
+        status_color = "blue" 
+        status_text = "MONITORING"
+        
+        if no_heartbeat:
+            status_icon = "📋"  # Static icon
+        else:
+            # Show heartbeat every few seconds to indicate system is alive
+            heartbeat = "💓" if int(current_time.timestamp()) % 4 < 2 else "📋"
+            status_icon = heartbeat
+    
+    # Progress bar
+    if progress.total > 0:
+        completed_percentage = int((progress.completed / progress.total) * 100)
+        progress_bar = "█" * (completed_percentage // 5) + "░" * (20 - (completed_percentage // 5))
+        progress_text = f"[{status_color}]{progress_bar}[/] {progress.completed}/{progress.total} ({completed_percentage}%)"
+    else:
+        progress_text = "[dim]No items[/]"
+    
+    info_content = f"""[bold cyan]{todo_list.title}[/]
+[dim]Key:[/] {todo_list.list_key}
+[dim]Last update:[/] {_format_date(last_update_time)}
+
+{status_icon} [bold]Progress:[/] {progress_text}
+
+[dim]Items:[/] [green]✅ {progress.completed}[/] | [yellow]🔄 {progress.in_progress}[/] | [blue]⏳ {progress.pending}[/] | [red]❌ {progress.failed}[/]"""
+    
+    title = f"📋 List Monitor | {status_icon} {status_text}"
+    return Panel(info_content, title=title, border_style=status_color)
+
+
+def _create_live_items_table(items, has_changed):
+    """Create the items table with live updates"""
+    table = Table(title="📝 Items" + (" 🔄 UPDATED" if has_changed else ""), box=box.ROUNDED)
+    
+    table.add_column("Key", style="cyan", width=15)
+    table.add_column("Content", style="white", min_width=30)
+    table.add_column("Status", justify="center", width=12)
+    table.add_column("Updated", style="dim", width=16)
+    
+    if not items:
+        table.add_row("", "[dim]No items found[/]", "", "")
+        return table
+    
+    # Sort items by position
+    sorted_items = sorted(items, key=lambda x: x.position)
+    
+    for item in sorted_items:
+        # Status formatting
+        status_map = {
+            "pending": "[blue]⏳ Pending[/]",
+            "in_progress": "[yellow]🔄 Progress[/]", 
+            "completed": "[green]✅ Done[/]",
+            "failed": "[red]❌ Failed[/]"
+        }
+        status_display = status_map.get(item.status, f"[white]{item.status}[/]")
+        
+        # Highlight recently changed items
+        content_style = "bold white" if has_changed else "white"
+        
+        table.add_row(
+            item.item_key,
+            Text(item.content[:50] + "..." if len(item.content) > 50 else item.content, style=content_style),
+            status_display,
+            _format_date(item.updated_at)
+        )
+    
+    return table
+
+
+def _create_changes_panel(changes_history):
+    """Create the changes history panel"""
+    if not changes_history:
+        return Panel("[dim]No recent changes[/]", title="📊 Recent Changes")
+    
+    changes_text = []
+    for change in changes_history[-5:]:  # Show last 5 changes
+        timestamp = change['timestamp'].strftime('%H:%M:%S')
+        changes_text.append(f"[dim]{timestamp}[/] {change['message']}")
+    
+    content = "\n".join(changes_text) if changes_text else "[dim]No recent changes[/]"
+    return Panel(content, title="📊 Recent Changes", border_style="yellow")
 
 
 # === Item management commands ===

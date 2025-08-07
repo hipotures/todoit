@@ -169,6 +169,10 @@ class TodoManager:
                     (ItemDependencyDB.required_item_id.in_(item_ids))
                 ).delete(synchronize_session=False)
 
+            # Delete item properties FIRST (before deleting items)
+            if item_ids:
+                session.query(ItemPropertyDB).filter(ItemPropertyDB.item_id.in_(item_ids)).delete(synchronize_session=False)
+
             # Delete item history
             if item_ids:
                 session.query(TodoHistoryDB).filter(TodoHistoryDB.item_id.in_(item_ids)).delete(synchronize_session=False)

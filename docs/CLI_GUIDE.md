@@ -59,6 +59,25 @@ python -m interfaces.cli list delete "old-project"
 python -m interfaces.cli list delete "old-project" --force  # Skip confirmation
 ```
 
+#### Live Monitoring
+```bash
+# Real-time monitoring of list changes
+python -m interfaces.cli list live "my-project"
+
+# With faster refresh rate
+python -m interfaces.cli list live "my-project" --refresh 1
+
+# Show change history panel
+python -m interfaces.cli list live "my-project" --show-history
+
+# Filter by status
+python -m interfaces.cli list live "my-project" --filter-status pending
+python -m interfaces.cli list live "my-project" --filter-status in_progress
+
+# Disable heartbeat animation (reduces flicker)
+python -m interfaces.cli list live "my-project" --no-heartbeat
+```
+
 ### 📝 Item Management (`item`)
 
 #### Add Items
@@ -78,6 +97,21 @@ python -m interfaces.cli item status "my-project" "task1" --status completed
 
 # Add completion states
 python -m interfaces.cli item status "my-project" "task1" --status completed -s "quality=excellent"
+```
+
+#### Edit Item Content
+```bash
+# Edit item description/content
+python -m interfaces.cli item edit "my-project" "task1" "Updated task description"
+```
+
+#### Delete Items
+```bash
+# Delete item with confirmation prompt
+python -m interfaces.cli item delete "my-project" "task1"
+
+# Force delete without confirmation
+python -m interfaces.cli item delete "my-project" "task1" --force
 ```
 
 #### Subtask Operations
@@ -217,6 +251,21 @@ python -m interfaces.cli interactive
 - **Yellow**: Warning messages and in-progress items  
 - **Red**: Error messages and failed items
 - **Blue**: Information and pending items
+
+### Live Monitoring Display
+- **Real-time Updates**: Automatically refreshes list status and changes
+- **Change Detection**: Visual indicators when items are modified 🔄
+- **Progress Visualization**: Live progress bars and completion statistics
+- **Status Filtering**: Focus on specific item statuses (pending, in-progress, etc.)
+- **Change History**: Recent modification timestamps and activity log
+- **Interactive Layout**: Three-panel view with list info, items table, and history
+
+#### Live Monitoring Features:
+- 📋 **List Monitor Panel**: Shows list title, progress bar, and statistics
+- 📝 **Items Table**: Real-time item status with color coding
+- 📊 **Change History Panel**: Recent activity log (optional with `--show-history`)
+- 🔄 **Update Indicators**: Visual highlights when changes are detected
+- ⏱️ **Configurable Refresh**: Adjust update frequency with `--refresh` option
 
 ## Advanced Workflows
 
