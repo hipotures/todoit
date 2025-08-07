@@ -19,38 +19,57 @@ class TestMCPToolsSimple:
     def test_mcp_tools_count(self):
         """Test that we have expected number of MCP tools"""
         import subprocess
-        result = subprocess.run(['grep', '-c', '@mcp.tool()', 'interfaces/mcp_server.py'], 
+        import os
+        
+        # Get the absolute path to the mcp_server.py file
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        mcp_server_path = os.path.join(current_dir, '..', '..', 'interfaces', 'mcp_server.py')
+        
+        result = subprocess.run(['grep', '-c', '@mcp.tool()', mcp_server_path], 
                               capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            raise AssertionError(f"Failed to count tools in {mcp_server_path}: {result.stderr}")
+            
         tool_count = int(result.stdout.strip())
         
-        # We found 40 tools, expecting around 40+
-        assert tool_count >= 40, f"Expected at least 40 MCP tools, found {tool_count}"
+        # We found 40 tools, expecting exactly 40
+        assert tool_count == 40, f"Expected exactly 40 MCP tools, found {tool_count}"
     
     def test_mcp_tool_categories_exist(self):
         """Test that expected categories of tools exist"""
         import subprocess
+        import os
+        
+        # Get the absolute path to the mcp_server.py file
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        mcp_server_path = os.path.join(current_dir, '..', '..', 'interfaces', 'mcp_server.py')
         
         # Check for basic CRUD tools
-        result = subprocess.run(['grep', '-E', 'todo_(create|get|delete|list)', 'interfaces/mcp_server.py'], 
+        result = subprocess.run(['grep', '-E', 'todo_(create|get|delete|list)', mcp_server_path], 
                               capture_output=True, text=True)
         basic_tools = result.stdout.count('async def')
         assert basic_tools >= 4, "Missing basic CRUD tools"
         
         # Check for subtask tools
-        result = subprocess.run(['grep', '-E', 'subtask|hierarchy', 'interfaces/mcp_server.py'], 
+        result = subprocess.run(['grep', '-E', 'subtask|hierarchy', mcp_server_path], 
                               capture_output=True, text=True)
         subtask_tools = result.stdout.count('async def')
         assert subtask_tools >= 3, "Missing subtask tools"
         
         # Check for dependency tools
-        result = subprocess.run(['grep', '-E', 'dependency|blocked|blocker', 'interfaces/mcp_server.py'], 
+        result = subprocess.run(['grep', '-E', 'dependency|blocked|blocker', mcp_server_path], 
                               capture_output=True, text=True)
         dependency_tools = result.stdout.count('async def')
         assert dependency_tools >= 3, "Missing dependency tools"
     
     def test_key_mcp_tools_exist(self):
         """Test that key MCP tools are defined"""
-        with open('interfaces/mcp_server.py', 'r') as f:
+        import os
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        mcp_server_path = os.path.join(current_dir, '..', '..', 'interfaces', 'mcp_server.py')
+        
+        with open(mcp_server_path, 'r') as f:
             content = f.read()
         
         # Essential tools that must exist
@@ -91,7 +110,11 @@ class TestMCPToolsSimple:
     
     def test_subtask_mcp_tools_exist(self):
         """Test that subtask-related MCP tools exist"""
-        with open('interfaces/mcp_server.py', 'r') as f:
+        import os
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        mcp_server_path = os.path.join(current_dir, '..', '..', 'interfaces', 'mcp_server.py')
+        
+        with open(mcp_server_path, 'r') as f:
             content = f.read()
         
         subtask_tools = [
@@ -106,7 +129,11 @@ class TestMCPToolsSimple:
     
     def test_dependency_mcp_tools_exist(self):
         """Test that dependency-related MCP tools exist"""
-        with open('interfaces/mcp_server.py', 'r') as f:
+        import os
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        mcp_server_path = os.path.join(current_dir, '..', '..', 'interfaces', 'mcp_server.py')
+        
+        with open(mcp_server_path, 'r') as f:
             content = f.read()
         
         dependency_tools = [
@@ -123,7 +150,11 @@ class TestMCPToolsSimple:
     
     def test_smart_algorithm_mcp_tools_exist(self):
         """Test that smart algorithm MCP tools exist"""
-        with open('interfaces/mcp_server.py', 'r') as f:
+        import os
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        mcp_server_path = os.path.join(current_dir, '..', '..', 'interfaces', 'mcp_server.py')
+        
+        with open(mcp_server_path, 'r') as f:
             content = f.read()
         
         smart_tools = [
@@ -142,7 +173,11 @@ class TestMCPToolsSimple:
     
     def test_progress_tracking_mcp_tools_exist(self):
         """Test that progress tracking MCP tools exist"""
-        with open('interfaces/mcp_server.py', 'r') as f:
+        import os
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        mcp_server_path = os.path.join(current_dir, '..', '..', 'interfaces', 'mcp_server.py')
+        
+        with open(mcp_server_path, 'r') as f:
             content = f.read()
         
         progress_tools = [

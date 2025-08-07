@@ -49,13 +49,20 @@ class TestTodoManagerUnit:
 
     def test_create_list_key_validation(self, manager_with_mock, mock_db):
         """Test that list keys must contain at least one letter."""
+        # Create a proper mock database object that returns a mock with required attributes
+        mock_list_obj = MagicMock()
+        mock_list_obj.__table__ = MagicMock()
+        mock_list_obj.__table__.columns = []
+        
         # Test valid keys
         valid_keys = ["test123", "abc", "task_1", "list-a", "A1B2C3"]
         for key in valid_keys:
             mock_db.get_list_by_key.return_value = None  # No existing list
+            mock_db.create_list.return_value = mock_list_obj
             try:
                 # This should not raise an error
-                manager_with_mock.create_list(key, f"Title for {key}")
+                result = manager_with_mock.create_list(key, f"Title for {key}")
+                assert result is not None
             except ValueError as e:
                 if "must contain at least one letter" in str(e):
                     pytest.fail(f"Valid key '{key}' was rejected: {e}")
@@ -64,6 +71,7 @@ class TestTodoManagerUnit:
         invalid_keys = ["123", "456789", "0", "999"]
         for key in invalid_keys:
             mock_db.get_list_by_key.return_value = None  # No existing list
+            mock_db.create_list.return_value = mock_list_obj
             with pytest.raises(ValueError, match="must contain at least one letter"):
                 manager_with_mock.create_list(key, f"Title for {key}")
 
