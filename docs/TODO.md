@@ -73,6 +73,20 @@ This document tracks functionality gaps between the core manager/database layer 
 - [ ] `todo_archive_list` - hide completed projects
 - [ ] Template system for common task patterns
 
+### 6. 🤖 **JSON Output for Systems/Scripts**
+**Status:** ❌ Missing structured output  
+**Backend:** ✅ Available (all data models support JSON)
+
+**Impact:** Scripts and automation tools cannot easily parse CLI output
+**Priority:** MEDIUM
+
+**Needed:**
+- [ ] Extend existing `TODOIT_OUTPUT_FORMAT=json` support to all commands
+- [ ] Structured JSON output instead of human-readable text
+- [ ] Consistent schema across all commands
+- [ ] Error responses in JSON format when JSON mode is enabled
+- [ ] Documentation for JSON schemas
+
 ## Interface-Specific Gaps
 
 ### MCP Tools Missing
@@ -94,6 +108,7 @@ todoit item copy         - Duplicate tasks
 todoit item move         - Transfer between lists
 todoit search           - Find tasks by content
 todoit bulk             - Bulk operations group
+TODOIT_OUTPUT_FORMAT=json - Extend JSON support to all commands
 ```
 
 ## Data Model Enhancements Needed
