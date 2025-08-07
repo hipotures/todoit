@@ -6,7 +6,7 @@ Tests that UTC timestamps are stored correctly and displayed as local time.
 import pytest
 from datetime import datetime, timezone
 from core.manager import TodoManager
-from interfaces.cli import _format_date
+from interfaces.cli_modules.display import _format_date
 
 
 class TestTimezoneHandling:
