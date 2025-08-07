@@ -159,21 +159,43 @@ python -m interfaces.cli io import "/path/to/tasks.md" --key "imported"
 # - [ ] Pending task (NEW: fixed in latest version)
 ```
 
-### 🔧 Property Management (`property`)
+### 🔧 Property Management
 
+#### List Properties (`list property`)
 ```bash
-# Set property
-python -m interfaces.cli property set "my-project" "priority" "high"
+# Set list property
+python -m interfaces.cli list property set "my-project" "priority" "high"
 
-# Get property
-python -m interfaces.cli property get "my-project" "priority"
+# Get list property
+python -m interfaces.cli list property get "my-project" "priority"
 
-# List all properties
-python -m interfaces.cli property list "my-project"
+# List all list properties
+python -m interfaces.cli list property list "my-project"
 
-# Delete property
-python -m interfaces.cli property delete "my-project" "old-property"
+# Delete list property
+python -m interfaces.cli list property delete "my-project" "old-property"
 ```
+
+#### Item Properties (`item property`)
+```bash
+# Set item property for runtime tracking
+python -m interfaces.cli item property set "my-project" "task1" "priority" "high"
+python -m interfaces.cli item property set "my-project" "task1" "estimated_hours" "8"
+python -m interfaces.cli item property set "my-project" "task1" "assignee" "john_doe"
+
+# Get item property
+python -m interfaces.cli item property get "my-project" "task1" "priority"
+
+# List all properties for an item
+python -m interfaces.cli item property list "my-project" "task1"
+
+# Delete item property when no longer needed
+python -m interfaces.cli item property delete "my-project" "task1" "assignee"
+```
+
+**Property Use Cases:**
+- **List Properties**: Configuration and metadata (team, project phase, default priority)
+- **Item Properties**: Runtime tracking (priority, estimated hours, assignee, progress notes)
 
 ### 🎮 Interactive Mode (`interactive`)
 

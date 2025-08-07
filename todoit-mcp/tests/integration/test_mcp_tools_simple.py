@@ -33,8 +33,8 @@ class TestMCPToolsSimple:
             
         tool_count = int(result.stdout.strip())
         
-        # After adding item properties, we have exactly 44 tools
-        assert tool_count == 44, f"Expected exactly 44 MCP tools, found {tool_count}"
+        # After adding item properties and schema info, we have exactly 45 tools
+        assert tool_count == 45, f"Expected exactly 45 MCP tools, found {tool_count}"
     
     def test_mcp_tool_categories_exist(self):
         """Test that expected categories of tools exist"""

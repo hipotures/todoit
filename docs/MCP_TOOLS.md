@@ -2,7 +2,7 @@
 
 ## Overview
 
-TODOIT MCP provides 44 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
+TODOIT MCP provides 45 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
 
 ## Tool Categories
 
@@ -28,7 +28,7 @@ Core functionality for list and item management.
 - **`todo_mark_completed`** - Quick completion shortcut
 - **`todo_start_item`** - Quick start shortcut
 
-### 🏗️ Advanced Operations (15 tools)
+### 🏗️ Advanced Operations (16 tools)
 Extended functionality for complex workflows.
 
 #### Import/Export
@@ -52,6 +52,7 @@ Extended functionality for complex workflows.
 #### Project Management
 - **`todo_project_overview`** - Get comprehensive project status across related lists
 - **`todo_get_item_history`** - Get complete change history for items
+- **`todo_get_schema_info`** - Get system schema information (available statuses, types, constants)
 
 ### 🌳 Subtask Operations (6 tools)
 Hierarchical task management with parent-child relationships.

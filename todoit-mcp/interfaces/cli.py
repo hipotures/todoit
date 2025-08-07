@@ -1669,5 +1669,62 @@ def dep_graph(ctx, project):
         console.print(f"[bold red]❌ Error:[/] {e}")
 
 
+# ===== SYSTEM METADATA COMMANDS =====
+
+@cli.command('schema')
+@click.pass_context
+def schema_info(ctx):
+    """Show system schema information (available statuses, types, etc.)"""
+    
+    # Get schema info from manager (we'll implement this logic directly)
+    schema_info = {
+        "item_statuses": ["pending", "in_progress", "completed", "failed"],
+        "list_types": ["sequential", "parallel"], 
+        "relation_types": ["dependency", "parent", "related", "project"],
+        "dependency_types": ["blocks", "requires", "related"],
+        "history_actions": ["created", "updated", "status_changed", "deleted"]
+    }
+    
+    descriptions = {
+        "item_statuses": {
+            "pending": "Task is waiting to be started",
+            "in_progress": "Task is currently being worked on", 
+            "completed": "Task has been finished successfully",
+            "failed": "Task could not be completed"
+        },
+        "list_types": {
+            "sequential": "Tasks should be completed in order",
+            "parallel": "Tasks can be completed in any order"
+        },
+        "relation_types": {
+            "dependency": "Lists have dependency relationship",
+            "parent": "Parent-child relationship between lists", 
+            "related": "Lists are loosely related",
+            "project": "Lists belong to the same project"
+        },
+        "dependency_types": {
+            "blocks": "This item blocks another from starting",
+            "requires": "This item requires another to be completed first",
+            "related": "Items are related but not blocking"
+        }
+    }
+    
+    console.print(Panel.fit(
+        "[bold cyan]TODOIT System Schema Information[/]",
+        border_style="cyan"
+    ))
+    
+    # Display each category
+    for category, values in schema_info.items():
+        console.print(f"\n[bold yellow]{category.replace('_', ' ').title()}:[/]")
+        
+        for value in values:
+            description = descriptions.get(category, {}).get(value, "")
+            if description:
+                console.print(f"  [cyan]{value}[/] - {description}")
+            else:
+                console.print(f"  [cyan]{value}[/]")
+
+
 if __name__ == '__main__':
     cli()

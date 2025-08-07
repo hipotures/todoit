@@ -19,7 +19,7 @@ TODOIT (Todo It) is a comprehensive task management platform that scales from si
 - **Project-wide Progress** - Track progress across multiple related lists
 
 ### 🔗 **Integration Capabilities**
-- **40 MCP Tools** - Complete API for Claude Code integration
+- **45 MCP Tools** - Complete API for Claude Code integration
 - **Rich CLI Interface** - Beautiful tables with blocked status indicators (🚫)
 - **SQLite Database** - Robust schema with foreign key relationships
 - **Import/Export** - Markdown format with checkbox support
@@ -41,7 +41,8 @@ Claude Code <--MCP--> TodoMCPServer <--API--> TodoManager <--ORM--> SQLite
 - **todo_items** - Items with hierarchical relationships (`parent_item_id`)
 - **item_dependencies** - Cross-list task dependencies
 - **list_relations** - Project grouping and relationships  
-- **list_properties** - Key-value configuration storage
+- **list_properties** - Key-value configuration storage for lists
+- **item_properties** - Key-value runtime properties for individual items
 
 ## 📦 Installation
 
@@ -121,12 +122,13 @@ Close and reopen Claude Code for changes to take effect.
 > 💡 **Need more help with MCP setup?** Check the [official Claude Code MCP documentation](https://docs.anthropic.com/en/docs/claude-code/mcp) for detailed setup instructions.
 
 #### Step 5: Verify Installation
-In Claude Code, you should now have access to 40 TODOIT MCP tools:
+In Claude Code, you should now have access to 45 TODOIT MCP tools:
 - `todo_create_list` - Create new task lists
 - `todo_add_item` - Add tasks to lists
 - `todo_add_subtask` - Create hierarchical subtasks
 - `todo_get_next_pending_enhanced` - Smart task recommendations
-- And 36 more tools for complete task management
+- `todo_set_item_property` - Set runtime properties on individual items
+- And 39 more tools for complete task management
 
 #### Alternative: Manual MCP Server Start
 ```bash
@@ -166,7 +168,7 @@ todoit-mcp/
 │   ├── database.py        # Database layer (SQLAlchemy)
 │   └── validators.py      # Business rules
 ├── interfaces/            # User Interfaces  
-│   ├── mcp_server.py     # MCP Server (43 tools)
+│   ├── mcp_server.py     # MCP Server (44 tools)
 │   └── cli.py            # Command-line interface
 ├── migrations/           # Database migrations
 ├── docs/                 # Documentation & examples
@@ -209,7 +211,7 @@ todoit-mcp/
 - `get_cross_list_progress` - Multi-list project tracking
 - Enhanced progress with blocked/available item counts
 
-### **MCP Integration (40 Tools)**
+### **MCP Integration (44 Tools)**
 All functionality available via MCP for Claude Code:
 - List management (create, update, delete, relations)
 - Item operations (add, update status, move, convert to subtask)  
@@ -265,7 +267,7 @@ todoit list show "my-project" --tree
 ```
 
 ### Using with Claude Code (MCP)
-After MCP setup, all 40 tools are available directly in Claude Code:
+After MCP setup, all 44 tools are available directly in Claude Code:
 
 **Example conversation with Claude Code:**
 ```
@@ -289,6 +291,7 @@ in the backend list, as the frontend components depend on this being completed f
 **Available MCP Tools:**
 - **Project Management**: Create lists, set up relationships
 - **Task Management**: Add/update tasks, hierarchical subtasks
+- **Properties Management**: Set runtime properties on lists and individual items
 - **Smart Workflow**: Next task recommendations, dependency management  
 - **Progress Tracking**: Statistics, completion status, project overviews
 - **Import/Export**: Markdown integration for documentation
@@ -315,7 +318,7 @@ todoit item next "backend"   # Will suggest api task
 Complete documentation available in the [docs/](docs/) directory:
 
 - **[CLI User Guide](docs/CLI_GUIDE.md)** - Comprehensive command-line interface guide
-- **[MCP Tools Reference](docs/MCP_TOOLS.md)** - All 40 MCP tools for Claude Code
+- **[MCP Tools Reference](docs/MCP_TOOLS.md)** - All 44 MCP tools for Claude Code
 - **[Architecture](docs/architecture.md)** - System design and patterns
 - **[API Reference](docs/api.md)** - TodoManager class documentation
 
