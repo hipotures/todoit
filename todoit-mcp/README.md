@@ -111,3 +111,17 @@ export TODOIT_OUTPUT_FORMAT=json
 todoit list all  # Will output JSON
 todoit list show project1  # Will also output JSON
 ```
+
+## List Types
+
+TODOIT supports three types of task organization:
+
+- **📋 S** (Sequential) - Tasks must be completed in order, one after another
+- **📋 P** (Parallel) - Tasks can be worked on simultaneously  
+- **📋 H** (Hierarchical) - Tasks organized in parent-child relationships with subtasks
+
+### Column Icons
+- **⏳** - Number of pending items (total - completed)
+- **✅** - Number of completed items
+- **📊** - Progress percentage
+- **📋** - List type (S/P/H)

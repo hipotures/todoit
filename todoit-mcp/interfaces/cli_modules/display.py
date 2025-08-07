@@ -76,7 +76,8 @@ def _display_records_table(data: List[Dict[str, Any]], title: str, columns: Dict
     for col_name, col_config in columns.items():
         style = col_config.get("style", "white")
         width = col_config.get("width")
-        table.add_column(col_name, style=style, width=width)
+        justify = col_config.get("justify", "left")
+        table.add_column(col_name, style=style, width=width, justify=justify)
     
     # Add rows
     for record in data:
@@ -231,10 +232,10 @@ def _get_status_display(status_value: str, is_blocked: bool = False) -> str:
     if is_blocked and status_value == 'pending':
         return '🚫 Blocked'
     return {
-        'pending': '⏳ Pending',
-        'in_progress': '🔄 In Progress', 
-        'completed': '✅ Completed',
-        'failed': '❌ Failed'
+        'pending': '⏳',
+        'in_progress': '🔄', 
+        'completed': '✅',
+        'failed': '❌'
     }.get(status_value, f'❓ {status_value}')
 
 
@@ -536,16 +537,16 @@ def _create_live_items_table(items, has_changed):
     if not items:
         return Table(title="📝 No items in this list")
     
-    table = Table(title=f"📝 Items {'(Updated!)' if has_changed else ''}", box=box.ROUNDED)
-    table.add_column("#", style="cyan", width=4)
-    table.add_column("Key", style="magenta", width=15)
+    table = Table(title=f"📝 Items {'(Updated!)' if has_changed else ''}")
+    table.add_column("#", style="dim", justify="right", width=4)
+    table.add_column("Key", style="magenta")
     table.add_column("Task", style="white", min_width=20)
-    table.add_column("Status", style="yellow", width=12)
+    table.add_column("Status", style="yellow", justify="left", width=6)
     table.add_column("Modified", style="dim", width=16)
     
     for i, item in enumerate(items, 1):
         status_icon = _get_status_icon(item.status.value)
-        status_text = f"{status_icon} {item.status.value}"
+        status_text = status_icon
         
         # Truncate long content for live view
         content = item.content[:30] + "..." if len(item.content) > 30 else item.content

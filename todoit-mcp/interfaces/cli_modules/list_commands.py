@@ -186,14 +186,18 @@ def list_all(ctx, limit, tree, details):
             for todo_list in lists:
                 progress = manager.get_progress(todo_list.list_key)
                 
+                # Show first letter of type for clarity
+                list_type_str = str(todo_list.list_type).replace('ListType.', '').lower()
+                type_short = list_type_str[0].upper()  # S, P, H
+                
                 record = {
                     "ID": str(todo_list.id),
                     "Key": todo_list.list_key,
                     "Title": todo_list.title,
-                    "Type": str(todo_list.list_type).replace('ListType.', '').lower(),
-                    "Items": str(progress.total),
-                    "Completed": str(progress.completed),
-                    "Progress": f"{progress.completion_percentage:.1f}%"
+                    "🔀": type_short,
+                    "📋": str(progress.total - progress.completed),
+                    "✅": str(progress.completed),
+                    "⏳": f"{progress.completion_percentage:.0f}%"
                 }
                 
                 # Add date columns if details requested
@@ -208,10 +212,10 @@ def list_all(ctx, limit, tree, details):
                 "ID": {"style": "dim", "width": 4},
                 "Key": {"style": "cyan"},
                 "Title": {"style": "white"},
-                "Type": {"style": "yellow"},
-                "Items": {"style": "green"},
-                "Completed": {"style": "blue"},
-                "Progress": {"style": "magenta"}
+                "🔀": {"style": "yellow", "justify": "center", "width": 3},
+                "📋": {"style": "yellow", "justify": "right"},
+                "✅": {"style": "green", "justify": "right"},
+                "⏳": {"style": "magenta", "justify": "right"}
             }
             
             if details:
@@ -522,9 +526,9 @@ def _create_live_items_table(items, has_changed):
     """Create the items table with live updates"""
     table = Table(title="📝 Items" + (" 🔄 UPDATED" if has_changed else ""), box=box.ROUNDED)
     
-    table.add_column("Key", style="cyan", width=15)
+    table.add_column("Key", style="cyan")
     table.add_column("Content", style="white", min_width=30)
-    table.add_column("Status", justify="center", width=12)
+    table.add_column("Status", justify="center", width=6)
     table.add_column("Updated", style="dim", width=16)
     
     if not items:
@@ -537,10 +541,10 @@ def _create_live_items_table(items, has_changed):
     for item in sorted_items:
         # Status formatting
         status_map = {
-            "pending": "[blue]⏳ Pending[/]",
-            "in_progress": "[yellow]🔄 Progress[/]", 
-            "completed": "[green]✅ Done[/]",
-            "failed": "[red]❌ Failed[/]"
+            "pending": "[blue]⏳[/]",
+            "in_progress": "[yellow]🔄[/]", 
+            "completed": "[green]✅[/]",
+            "failed": "[red]❌[/]"
         }
         status_display = status_map.get(item.status, f"[white]{item.status}[/]")
         
