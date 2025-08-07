@@ -1,6 +1,6 @@
 # TODOIT Development Roadmap
 
-## Current Version: 1.5.1
+## Current Version: 1.7.0
 
 ### Recently Completed ✅
 
@@ -22,27 +22,35 @@
 - **Comprehensive Testing**: 20+ test cases for all output formats
 - **New Dependencies**: Added `dicttoxml>=1.7.0` for XML support
 
+#### Version 1.7.0 - Icon-based UI
+- **Text-to-Icon Replacement**: Replaced text labels with intuitive icons in CLI tables
+- **Column Icons**: Added ✅ (completed), ⏳ (progress/pending), 📋 (list info), 🔀 (list type)
+- **Improved Column Alignment**: Right-aligned numeric columns, centered single characters
+- **Compact Display**: Removed verbose text descriptions, kept only essential icons
+- **Documentation Updates**: Added icon explanations and list type documentation
+- **Space Optimization**: Better column width management for cleaner tables
+
 ### Planned Features 🚧
 
-#### Version 1.6.0 - Enhanced Export/Import
+#### Version 1.8.0 - Enhanced Export/Import
 - **Structured Export**: Export with full hierarchy and dependencies preserved
 - **Import Validation**: Schema validation for imported data
 - **Backup/Restore**: Complete database backup and restore functionality
 - **Migration Tools**: Import from other TODO applications (Todoist, Trello, etc.)
 
-#### Version 1.7.0 - Advanced Scheduling
+#### Version 1.9.0 - Advanced Scheduling
 - **Due Dates**: Add due date support to tasks
 - **Recurring Tasks**: Support for recurring task patterns
 - **Calendar Integration**: iCal export and import
 - **Reminders**: Basic notification system
 
-#### Version 1.8.0 - Collaboration Features
+#### Version 2.0.0 - Collaboration Features
 - **Shared Lists**: Multi-user list sharing
 - **Assignment**: Task assignment to team members  
 - **Comments**: Task comments and notes
 - **Audit Trail**: Enhanced history tracking with user attribution
 
-#### Version 2.0.0 - Web Interface
+#### Version 2.1.0 - Web Interface
 - **REST API**: Full REST API for all operations
 - **Web Dashboard**: Modern web interface
 - **Real-time Updates**: WebSocket-based live updates
@@ -61,6 +69,7 @@
 - **Themes**: Customizable Rich themes
 - **Plugins**: Plugin architecture for extensions
 - **Configuration**: Advanced configuration management
+- **Bash/Zsh Completion**: Auto-completion for list keys and commands (requires proper testing environment)
 
 #### Low Priority
 - **AI Integration**: Smart task suggestions and automation
