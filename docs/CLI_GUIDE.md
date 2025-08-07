@@ -88,6 +88,30 @@ python -m interfaces.cli list live "my-project" --filter-status in_progress
 python -m interfaces.cli list live "my-project" --no-heartbeat
 ```
 
+#### Link Lists (1:1 Relationships)
+```bash
+# Create a linked copy of a list with 1:1 task mapping
+python -m interfaces.cli list link "source-list" "target-list"
+
+# Link with custom title for the target list
+python -m interfaces.cli list link "api-dev" "api-test" --title "API Testing Tasks"
+
+# Example workflow: Create development and testing lists
+python -m interfaces.cli list create "frontend-dev" --title "Frontend Development"
+python -m interfaces.cli item add "frontend-dev" "component1" "Build user dashboard"
+python -m interfaces.cli item add "frontend-dev" "component2" "Implement authentication"
+python -m interfaces.cli list link "frontend-dev" "frontend-test" --title "Frontend Testing"
+```
+
+**What the link command does:**
+- Creates a new target list (fails if target already exists)
+- Copies all tasks from source to target with 1:1 mapping
+- Resets all target task statuses to "pending" 
+- Copies all list properties from source to target
+- Copies all item properties from source to target
+- Creates automatic project relationship between lists
+- Displays comprehensive statistics of the linking operation
+
 ### 📝 Item Management (`item`)
 
 #### Add Items
@@ -311,6 +335,26 @@ python -m interfaces.cli dep add "testing:e2e" requires "frontend:components" --
 python -m interfaces.cli item next-smart "backend"  # Get next backend task
 python -m interfaces.cli stats progress "backend"   # Check backend progress
 python -m interfaces.cli dep graph "project"        # Visualize dependencies
+```
+
+### Development-Testing Workflow with List Linking
+```bash
+# Create development list with tasks
+python -m interfaces.cli list create "feature-dev" --title "Feature Development"
+python -m interfaces.cli item add "feature-dev" "setup" "Setup development environment"
+python -m interfaces.cli item add "feature-dev" "implement" "Implement core functionality"
+python -m interfaces.cli item add "feature-dev" "review" "Code review and cleanup"
+
+# Add properties to development list
+python -m interfaces.cli list property set "feature-dev" "project_id" "proj-123"
+python -m interfaces.cli list property set "feature-dev" "team" "backend"
+
+# Link to create testing list with 1:1 task mapping
+python -m interfaces.cli list link "feature-dev" "feature-test" --title "Feature Testing"
+
+# Both lists now have identical tasks and properties, but testing tasks are all pending
+# Development list maintains original task statuses
+# Automatic project relationship created between the lists
 ```
 
 ### Daily Workflow

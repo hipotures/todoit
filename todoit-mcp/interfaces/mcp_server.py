@@ -120,6 +120,29 @@ async def todo_delete_list(key: str) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 @mcp.tool()
+async def todo_link_list_1to1(source_list_key: str, target_list_key: str, target_title: Optional[str] = None) -> Dict[str, Any]:
+    """Create a linked copy of a list with 1:1 task mapping and automatic relation.
+    
+    Creates a complete copy of the source list including all items and properties,
+    but with all item statuses reset to 'pending'. Establishes a 'project' relation
+    between the source and target lists.
+    
+    Args:
+        source_list_key: Key of the existing list to copy from (required)
+        target_list_key: Key for the new list to create (required, must not exist)
+        target_title: Optional custom title for new list
+        
+    Returns:
+        Dictionary with success status, operation details and copy statistics
+    """
+    try:
+        mgr = init_manager()
+        result = mgr.link_list_1to1(source_list_key, target_list_key, target_title)
+        return result
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@mcp.tool()
 async def todo_list_all(limit: Optional[int] = None) -> Dict[str, Any]:
     """List all TODO lists in the database.
     

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2025-08-07
+
+### Added
+- **List Linking (1:1 Relationships)**: New `list link` CLI command for creating linked lists
+- **MCP Tool `todo_link_list_1to1`**: Programmatic list linking with comprehensive statistics
+- **Automatic Synchronization**: New tasks added to parent lists automatically sync to linked children
+- **Advanced List Management**: Support for multiple child lists with 1:1 relationships
+- **Property Preservation**: Automatic copying of list and item properties during linking
+- **Comprehensive Testing**: 37 new test cases (15 unit + 13 integration + 9 CLI tests)
+
+### Enhanced
+- **CLI Documentation**: Updated with list linking examples and workflows
+- **MCP Tools**: Now 48 total tools available (was 47)
+- **API Documentation**: Added `link_list_1to1` method documentation
+
+### Implementation Details
+- New helper methods: `_get_1to1_child_lists()` and `_sync_add_to_children()`
+- Enhanced `add_item()` method with automatic synchronization to linked lists
+- Rich CLI output with detailed linking statistics
+- Error handling that doesn't interrupt main operations
+
 ## [1.7.1] - 2025-08-07
 
 ### Added

@@ -201,3 +201,49 @@ mgr.export_to_markdown("work", "work.md")
 ```
 
 [Source](../todoit-mcp/core/manager.py#L505-L533)
+
+### `link_list_1to1`
+
+**Parameters**
+
+* `source_list_key: str` – key of the source list to copy from.
+* `target_list_key: str` – key for the new target list to create.
+* `target_title: Optional[str]` – custom title for target list (defaults to "{source_title} - Linked").
+
+**Returns**
+
+`Dict[str, Any]` – comprehensive result with copy statistics and operation details.
+
+**Example**
+
+```python
+# Basic usage
+result = mgr.link_list_1to1("api-dev", "api-test")
+
+# With custom title
+result = mgr.link_list_1to1("frontend-dev", "frontend-test", "Frontend Testing Tasks")
+
+# Result contains:
+# {
+#   "success": True,
+#   "source_list": "api-dev",
+#   "target_list": "api-test", 
+#   "items_copied": 5,
+#   "list_properties_copied": 2,
+#   "item_properties_copied": 8,
+#   "all_items_set_to_pending": True,
+#   "relation_created": True,
+#   "relation_key": "api-dev_linked"
+# }
+```
+
+**What it does:**
+
+1. **Creates target list** with identical metadata from source
+2. **Copies all tasks 1:1** with same keys and content  
+3. **Resets all target task statuses** to "pending"
+4. **Copies all list properties** from source to target
+5. **Copies all item properties** for each task individually
+6. **Creates automatic project relation** linking both lists
+
+[Source](../todoit-mcp/core/manager.py#L1395-L1499)

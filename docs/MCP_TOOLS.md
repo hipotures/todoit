@@ -2,11 +2,11 @@
 
 ## Overview
 
-TODOIT MCP provides 47 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
+TODOIT MCP provides 48 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
 
 ## Tool Categories
 
-### 🔧 Basic Operations (14 tools)
+### 🔧 Basic Operations (15 tools)
 Core functionality for list and item management.
 
 #### List Management
@@ -14,6 +14,7 @@ Core functionality for list and item management.
 - **`todo_get_list`** - Retrieve list details by key or ID  
 - **`todo_delete_list`** - Delete list with dependency validation
 - **`todo_list_all`** - List all TODO lists with optional limit
+- **`todo_link_list_1to1`** - Create linked copy of list with 1:1 task mapping and automatic relation
 
 #### Item Management  
 - **`todo_add_item`** - Add new item to list
@@ -102,6 +103,35 @@ await todo_add_item_dependency("frontend", "ui_task", "backend", "api_task")
 next_task = await todo_get_next_pending_enhanced("project", smart_subtasks=True)
 ```
 
+### List Linking (1:1 Relationships)
+```python
+# Create development list with tasks and properties
+await todo_create_list("api-dev", "API Development")
+await todo_quick_add("api-dev", ["Setup environment", "Implement endpoints", "Write tests"])
+await todo_set_list_property("api-dev", "project_id", "proj-123")
+await todo_set_item_property("api-dev", "item1", "priority", "high")
+
+# Link to create testing list with identical structure
+result = await todo_link_list_1to1("api-dev", "api-test", "API Testing Tasks")
+
+# Result contains:
+# {
+#   "success": true,
+#   "source_list": "api-dev",
+#   "target_list": "api-test", 
+#   "items_copied": 3,
+#   "list_properties_copied": 1,
+#   "item_properties_copied": 1,
+#   "all_items_set_to_pending": true,
+#   "relation_created": true,
+#   "relation_key": "api-dev_linked"
+# }
+
+# Both lists now have identical tasks and properties
+# Testing tasks are all "pending" status (reset from source statuses)
+# Automatic project relationship created between lists
+```
+
 ### Project Coordination
 ```python
 # Get comprehensive project status
@@ -153,7 +183,7 @@ Error responses include:
 
 ## Integration with Claude Code
 
-All 40 tools are automatically available in Claude Code through MCP integration:
+All 48 tools are automatically available in Claude Code through MCP integration:
 
 1. **List Management** - Create, organize, and manage task lists
 2. **Task Operations** - Add, update, and track individual tasks
@@ -171,7 +201,7 @@ All 40 tools are automatically available in Claude Code through MCP integration:
 
 ## Testing Status
 
-✅ **All 40 MCP tools tested and verified working**
+✅ **All 48 MCP tools tested and verified working**
 - 100% functional coverage
 - Error handling validated  
 - Integration tested with real workflows

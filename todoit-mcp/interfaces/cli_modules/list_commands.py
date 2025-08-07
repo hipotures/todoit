@@ -112,6 +112,57 @@ def list_create(ctx, list_key, title, items, from_folder, filter_ext, task_prefi
         console.print(f"[bold red]❌ Error:[/] {e}")
 
 
+@list_group.command('link')
+@click.argument('source_key')
+@click.argument('target_key')
+@click.option('--title', help='Title for the linked list')
+@click.pass_context
+def list_link(ctx, source_key, target_key, title):
+    """Create a linked copy of a list with 1:1 task mapping
+    
+    Creates a complete copy of the source list including all items and properties,
+    but with all item statuses reset to 'pending'. Establishes a 'project' relation
+    between the source and target lists.
+    
+    Examples:
+        todoit list link 0008_emma 0008_emma-download
+        todoit list link project_a project_a-testing --title "Testing Tasks"
+    """
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        result = manager.link_list_1to1(source_key, target_key, title)
+        
+        if result.get('success'):
+            # Display success message with statistics
+            console.print(f"[bold green]✅ Successfully linked list![/]")
+            console.print(f"[dim]Source:[/] {result['source_list']}")
+            console.print(f"[dim]Target:[/] {result['target_list']} (ID: {result['target_list_id']})")
+            console.print()
+            
+            # Statistics table
+            stats_table = Table(title="Link Statistics", show_header=True, header_style="bold blue")
+            stats_table.add_column("Operation", style="cyan")
+            stats_table.add_column("Count", justify="right", style="green")
+            
+            stats_table.add_row("Items copied", str(result['items_copied']))
+            stats_table.add_row("List properties copied", str(result['list_properties_copied']))
+            stats_table.add_row("Item properties copied", str(result['item_properties_copied']))
+            stats_table.add_row("Items set to pending", "✅ All" if result['all_items_set_to_pending'] else "❌ None")
+            stats_table.add_row("Project relation created", "✅ Yes" if result['relation_created'] else "❌ No")
+            
+            console.print(stats_table)
+            console.print()
+            console.print(f"[dim]Relation key:[/] {result['relation_key']}")
+            console.print(f"[dim]Both lists are now linked in project:[/] {result['relation_key']}")
+            
+        else:
+            console.print(f"[bold red]❌ Link failed:[/] {result.get('error', 'Unknown error')}")
+        
+    except Exception as e:
+        console.print(f"[bold red]❌ Error linking lists:[/] {e}")
+
+
 @list_group.command('show')
 @click.argument('list_key')
 @click.option('--tree', is_flag=True, help='Display as tree')
