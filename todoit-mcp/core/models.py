@@ -16,6 +16,12 @@ class ListType(str, Enum):
     LINKED = "linked"
 
 
+class ListStatus(str, Enum):
+    """Status of TODO lists"""
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+
+
 class ItemStatus(str, Enum):
     """Status of TODO items"""
     PENDING = "pending"
@@ -78,6 +84,7 @@ class TodoListBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
     list_type: ListType = ListType.SEQUENTIAL
+    status: ListStatus = ListStatus.ACTIVE
     parent_list_id: Optional[int] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
     
@@ -99,6 +106,7 @@ class TodoListUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = None
     list_type: Optional[ListType] = None
+    status: Optional[ListStatus] = None
     metadata: Optional[Dict[str, Any]] = None
 
 

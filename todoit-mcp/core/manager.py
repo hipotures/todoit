@@ -7,7 +7,7 @@ import os
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime, timezone
 
-from .database import Database, TodoListDB, TodoItemDB, ListRelationDB, TodoHistoryDB, ListPropertyDB, ItemPropertyDB, ItemDependencyDB
+from .database import Database, TodoListDB, TodoItemDB, ListRelationDB, TodoHistoryDB, ListPropertyDB, ItemPropertyDB, ItemDependencyDB, utc_now
 from .models import (
     TodoList, TodoItem, ListRelation, TodoHistory, ProgressStats, ListProperty, ItemProperty,
     TodoListCreate, TodoItemCreate, ListRelationCreate, TodoHistoryCreate,  
@@ -195,10 +195,99 @@ class TodoManager:
             session.commit()
         return True
     
-    def list_all(self, limit: Optional[int] = None) -> List[TodoList]:
+    def archive_list(self, key: Union[str, int]) -> TodoList:
+        """Archive a TODO list (sets status to 'archived')"""
+        # Get the list
+        if isinstance(key, int) or (isinstance(key, str) and key.isdigit()):
+            db_list = self.db.get_list_by_id(int(key))
+        else:
+            db_list = self.db.get_list_by_key(str(key))
+
+        if not db_list:
+            raise ValueError(f"List '{key}' does not exist")
+        
+        if db_list.status == 'archived':
+            raise ValueError(f"List '{key}' is already archived")
+
+        with self.db.get_session() as session:
+            # Re-fetch the list in the current session
+            db_list_in_session = session.query(TodoListDB).filter(TodoListDB.id == db_list.id).first()
+            if not db_list_in_session:
+                raise ValueError(f"List '{key}' not found")
+            
+            # Update status to archived
+            db_list_in_session.status = 'archived'
+            db_list_in_session.updated_at = utc_now()
+            session.commit()
+            
+            # Convert to Pydantic model and return
+            return TodoList(
+                id=db_list_in_session.id,
+                list_key=db_list_in_session.list_key,
+                title=db_list_in_session.title,
+                description=db_list_in_session.description,
+                list_type=db_list_in_session.list_type,
+                status=db_list_in_session.status,
+                parent_list_id=db_list_in_session.parent_list_id,
+                metadata=db_list_in_session.meta_data or {},
+                created_at=db_list_in_session.created_at,
+                updated_at=db_list_in_session.updated_at
+            )
+    
+    def unarchive_list(self, key: Union[str, int]) -> TodoList:
+        """Unarchive a TODO list (sets status to 'active')"""
+        # Get the list
+        if isinstance(key, int) or (isinstance(key, str) and key.isdigit()):
+            db_list = self.db.get_list_by_id(int(key))
+        else:
+            db_list = self.db.get_list_by_key(str(key))
+
+        if not db_list:
+            raise ValueError(f"List '{key}' does not exist")
+        
+        if db_list.status == 'active':
+            raise ValueError(f"List '{key}' is already active")
+
+        with self.db.get_session() as session:
+            # Re-fetch the list in the current session
+            db_list_in_session = session.query(TodoListDB).filter(TodoListDB.id == db_list.id).first()
+            if not db_list_in_session:
+                raise ValueError(f"List '{key}' not found")
+            
+            # Update status to active
+            db_list_in_session.status = 'active'
+            db_list_in_session.updated_at = utc_now()
+            session.commit()
+            
+            # Convert to Pydantic model and return
+            return TodoList(
+                id=db_list_in_session.id,
+                list_key=db_list_in_session.list_key,
+                title=db_list_in_session.title,
+                description=db_list_in_session.description,
+                list_type=db_list_in_session.list_type,
+                status=db_list_in_session.status,
+                parent_list_id=db_list_in_session.parent_list_id,
+                metadata=db_list_in_session.meta_data or {},
+                created_at=db_list_in_session.created_at,
+                updated_at=db_list_in_session.updated_at
+            )
+    
+    def list_all(self, limit: Optional[int] = None, include_archived: bool = False) -> List[TodoList]:
         """4. Lists all TODO lists"""
         db_lists = self.db.get_all_lists(limit=limit)
+        
+        # Filter by status unless include_archived is True
+        if not include_archived:
+            db_lists = [db_list for db_list in db_lists if db_list.status != 'archived']
+        
         return [self._db_to_model(db_list, TodoList) for db_list in db_lists]
+    
+    def get_archived_lists(self, limit: Optional[int] = None) -> List[TodoList]:
+        """Get only archived lists"""
+        db_lists = self.db.get_all_lists(limit=limit)
+        archived_lists = [db_list for db_list in db_lists if db_list.status == 'archived']
+        return [self._db_to_model(db_list, TodoList) for db_list in archived_lists]
     
     def add_item(self, 
                 list_key: str, 

@@ -15,7 +15,7 @@ from .models import (
     TodoList as TodoListModel, TodoItem as TodoItemModel, 
     ListRelation as ListRelationModel, TodoHistory as TodoHistoryModel,
     ListProperty as ListPropertyModel, ItemProperty as ItemPropertyModel, ItemDependency as ItemDependencyModel,
-    ProgressStats, ListType, ItemStatus, RelationType, HistoryAction, DependencyType
+    ProgressStats, ListType, ListStatus, ItemStatus, RelationType, HistoryAction, DependencyType
 )
 
 Base = declarative_base()
@@ -36,6 +36,7 @@ class TodoListDB(Base):
     title = Column(String(255), nullable=False)
     description = Column(Text)
     list_type = Column(String(20), default='sequential')
+    status = Column(String(20), default='active')
     parent_list_id = Column(Integer, ForeignKey('todo_lists.id'))
     meta_data = Column('metadata', JSON, default=lambda: {})
     created_at = Column(DateTime, default=utc_now)

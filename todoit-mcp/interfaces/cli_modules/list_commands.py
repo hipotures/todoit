@@ -216,13 +216,20 @@ def list_show(ctx, list_key, tree):
 @click.option('--limit', type=int, help='Limit number of results')
 @click.option('--tree', is_flag=True, help='Show hierarchical view with list relations')
 @click.option('--details', is_flag=True, help='Show detailed information including creation date')
+@click.option('--archived', is_flag=True, help='Show only archived lists')
+@click.option('--include-archived', is_flag=True, help='Include archived lists in results')
 @click.pass_context
-def list_all(ctx, limit, tree, details):
+def list_all(ctx, limit, tree, details, archived, include_archived):
     """List all TODO lists"""
     manager = get_manager(ctx.obj['db_path'])
     
     try:
-        lists = manager.list_all(limit=limit)
+        if archived:
+            # Show only archived lists
+            lists = manager.get_archived_lists(limit=limit)
+        else:
+            # Show active lists, optionally including archived
+            lists = manager.list_all(limit=limit, include_archived=include_archived)
         
         # Sort lists by ID (lowest first) for consistent ordering
         lists = sorted(lists, key=lambda x: x.id)
@@ -241,6 +248,14 @@ def list_all(ctx, limit, tree, details):
                 list_type_str = str(todo_list.list_type).replace('ListType.', '').lower()
                 type_short = list_type_str[0].upper()  # S, P, H, L
                 
+                # Show short indicator for status
+                if hasattr(todo_list, 'status') and todo_list.status:
+                    status_value = todo_list.status.value if hasattr(todo_list.status, 'value') else str(todo_list.status)
+                else:
+                    status_value = 'active'
+                # Use specific letters: A for active, Z for archived (from Polish "zarchiwizowana")
+                status_short = 'A' if status_value == 'active' else 'Z'
+                
                 record = {
                     "ID": str(todo_list.id),
                     "Key": todo_list.list_key,
@@ -250,6 +265,10 @@ def list_all(ctx, limit, tree, details):
                     "✅": str(progress.completed),
                     "⏳": f"{progress.completion_percentage:.0f}%"
                 }
+                
+                # Only show status column when there are mixed statuses
+                if include_archived or archived:
+                    record["📦"] = status_short
                 
                 # Add date columns if details requested
                 if details:
@@ -268,6 +287,10 @@ def list_all(ctx, limit, tree, details):
                 "✅": {"style": "green", "justify": "right"},
                 "⏳": {"style": "magenta", "justify": "right"}
             }
+            
+            # Only show status column when there are mixed statuses
+            if include_archived or archived:
+                columns["📦"] = {"style": "bright_blue", "justify": "center", "width": 3}
             
             if details:
                 columns["Created"] = {"style": "green"}
@@ -624,3 +647,40 @@ def _create_changes_panel(changes_history):
     
     content = "\n".join(changes_text) if changes_text else "[dim]No recent changes[/]"
     return Panel(content, title="📊 Recent Changes", border_style="yellow")
+
+
+@list_group.command('archive')
+@click.argument('list_key')
+@click.pass_context
+def list_archive(ctx, list_key):
+    """Archive a TODO list (hide from normal view)"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        archived_list = manager.archive_list(list_key)
+        console.print(f"✅ List '[cyan]{list_key}[/]' has been archived")
+        console.print(f"   Title: [white]{archived_list.title}[/]")
+        console.print(f"   Status: [yellow]{archived_list.status}[/]")
+        console.print()
+        console.print("💡 Use [cyan]todoit list all --include-archived[/] to see archived lists")
+        console.print("💡 Use [cyan]todoit list unarchive {list_key}[/] to restore it")
+    except ValueError as e:
+        console.print(f"[red]❌ Error: {e}[/]")
+
+
+@list_group.command('unarchive')
+@click.argument('list_key')
+@click.pass_context
+def list_unarchive(ctx, list_key):
+    """Unarchive a TODO list (restore to normal view)"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        restored_list = manager.unarchive_list(list_key)
+        console.print(f"✅ List '[cyan]{list_key}[/]' has been restored")
+        console.print(f"   Title: [white]{restored_list.title}[/]")
+        console.print(f"   Status: [green]{restored_list.status}[/]")
+        console.print()
+        console.print("💡 The list is now visible in normal [cyan]todoit list all[/] view")
+    except ValueError as e:
+        console.print(f"[red]❌ Error: {e}[/]")

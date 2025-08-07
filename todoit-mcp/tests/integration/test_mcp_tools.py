@@ -31,7 +31,7 @@ class TestMCPToolsBasic:
             raise AssertionError(f"Failed to count tools in {mcp_server_path}: {result.stderr}")
             
         tool_count = int(result.stdout.strip())
-        assert tool_count == 47, f"Expected exactly 47 MCP tools, found {tool_count}"
+        assert tool_count == 50, f"Expected exactly 50 MCP tools, found {tool_count}"
     
     def test_mcp_tool_names(self):
         """Test that all expected tool names are present"""

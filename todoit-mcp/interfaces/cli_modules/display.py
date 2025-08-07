@@ -197,11 +197,24 @@ def _display_lists_tree(lists, manager):
     def add_list_to_tree(parent_node, todo_list, level=0):
         progress = manager.get_progress(todo_list.list_key)
         
-        list_text = f"[cyan]{todo_list.list_key}[/] - [white]{todo_list.title}[/] "
+        # Check if list is archived
+        is_archived = hasattr(todo_list, 'status') and todo_list.status == 'archived'
+        
+        # Use different colors for archived lists
+        if is_archived:
+            list_text = f"[dim cyan]{todo_list.list_key}[/] - [dim white]{todo_list.title}[/] "
+        else:
+            list_text = f"[cyan]{todo_list.list_key}[/] - [white]{todo_list.title}[/] "
+            
         # Show first letter of type for clarity  
         list_type_str = str(todo_list.list_type.value if hasattr(todo_list.list_type, 'value') else todo_list.list_type)
         type_short = list_type_str[0].upper()  # S, P, H, L
         list_text += f"([yellow]{type_short}[/]) "
+        
+        # Add archived indicator
+        if is_archived:
+            list_text += "[dim]📦[/] "
+            
         list_text += f"[green]{progress.total}[/]/[blue]{progress.completed}[/] "
         list_text += f"([magenta]{progress.completion_percentage:.1f}%[/])"
         

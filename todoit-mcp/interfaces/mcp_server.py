@@ -120,6 +120,60 @@ async def todo_delete_list(key: str) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 @mcp.tool()
+async def todo_archive_list(list_key: str) -> Dict[str, Any]:
+    """Archive a TODO list (hide from normal view).
+    
+    Args:
+        list_key: Key of the list to archive (required)
+        
+    Returns:
+        Dictionary with success status and archived list details
+    """
+    try:
+        mgr = init_manager()
+        archived_list = mgr.archive_list(list_key)
+        return {
+            "success": True,
+            "list": {
+                "id": archived_list.id,
+                "list_key": archived_list.list_key,
+                "title": archived_list.title,
+                "status": archived_list.status,
+                "updated_at": archived_list.updated_at.isoformat() if archived_list.updated_at else None
+            },
+            "message": f"List '{list_key}' archived successfully"
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@mcp.tool()
+async def todo_unarchive_list(list_key: str) -> Dict[str, Any]:
+    """Unarchive a TODO list (restore to normal view).
+    
+    Args:
+        list_key: Key of the list to unarchive (required)
+        
+    Returns:
+        Dictionary with success status and unarchived list details
+    """
+    try:
+        mgr = init_manager()
+        unarchived_list = mgr.unarchive_list(list_key)
+        return {
+            "success": True,
+            "list": {
+                "id": unarchived_list.id,
+                "list_key": unarchived_list.list_key,
+                "title": unarchived_list.title,
+                "status": unarchived_list.status,
+                "updated_at": unarchived_list.updated_at.isoformat() if unarchived_list.updated_at else None
+            },
+            "message": f"List '{list_key}' unarchived successfully"
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@mcp.tool()
 async def todo_link_list_1to1(source_list_key: str, target_list_key: str, target_title: Optional[str] = None) -> Dict[str, Any]:
     """Create a linked copy of a list with 1:1 task mapping and automatic relation.
     
@@ -143,18 +197,19 @@ async def todo_link_list_1to1(source_list_key: str, target_list_key: str, target
         return {"success": False, "error": str(e)}
 
 @mcp.tool()
-async def todo_list_all(limit: Optional[int] = None) -> Dict[str, Any]:
+async def todo_list_all(limit: Optional[int] = None, include_archived: bool = False) -> Dict[str, Any]:
     """List all TODO lists in the database.
     
     Args:
         limit: Optional maximum number of lists to return
+        include_archived: Whether to include archived lists (default: False)
         
     Returns:
         Dictionary with success status, list of all todo lists, and count
     """
     try:
         mgr = init_manager()
-        lists = mgr.list_all(limit=limit)
+        lists = mgr.list_all(limit=limit, include_archived=include_archived)
         return {
             "success": True,
             "lists": [todo_list.to_dict() for todo_list in lists],
