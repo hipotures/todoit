@@ -26,7 +26,7 @@ def _parse_item_reference(ref: str) -> tuple:
 
 @click.group()
 def dep():
-    """Cross-list dependency management (Phase 2)"""
+    """Cross-list dependency management"""
     pass
 
 

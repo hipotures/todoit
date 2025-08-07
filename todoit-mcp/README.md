@@ -35,3 +35,79 @@ todoit --help
 
 ## Database
 Default database location: `~/.todoit/todoit.db`
+
+## Output Formats
+
+TODOIT supports multiple output formats controlled by the `TODOIT_OUTPUT_FORMAT` environment variable:
+
+### Available Formats
+- `table` (default) - Rich formatted tables
+- `vertical` - Key-value pairs  
+- `json` - JSON format
+- `yaml` - YAML format
+- `xml` - XML format
+
+### Examples
+
+**Default table format:**
+```bash
+todoit list all
+```
+
+**JSON output:**
+```bash
+TODOIT_OUTPUT_FORMAT=json todoit list all
+```
+```json
+{
+  "title": "📋 All TODO Lists",
+  "count": 2,
+  "data": [
+    {
+      "ID": "1",
+      "Key": "work_tasks", 
+      "Title": "Work Tasks",
+      "Items": "5",
+      "Progress": "60.0%"
+    }
+  ]
+}
+```
+
+**YAML output:**
+```bash
+TODOIT_OUTPUT_FORMAT=yaml todoit list show work_tasks
+```
+```yaml
+title: 📋 Work Tasks (ID: 1)
+count: 5
+data:
+  - Key: task_1
+    Task: Complete project proposal
+    Status: ⏳ Pending
+```
+
+**XML output:**
+```bash
+TODOIT_OUTPUT_FORMAT=xml todoit item list work_tasks
+```
+```xml
+<todoit_output>
+  <title>📋 Work Tasks Items</title>
+  <count>5</count>
+  <data>
+    <record>
+      <Key>task_1</Key>
+      <Task>Complete project proposal</Task>
+      <Status>⏳ Pending</Status>
+    </record>
+  </data>
+</todoit_output>
+```
+
+**Persistent format setting:**
+```bash
+export TODOIT_OUTPUT_FORMAT=json
+todoit list all  # Will output JSON
+todoit list show project1  # Will also output JSON
+```

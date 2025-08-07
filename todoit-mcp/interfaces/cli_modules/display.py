@@ -1,21 +1,27 @@
 """
 Display utilities for TODOIT CLI
 Rich formatting, tables, trees, and status rendering
+Supports multiple output formats: table, vertical, json, yaml, xml
 """
 import os
+import json
+import yaml
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 from rich.console import Console
 from rich.table import Table
 from rich.tree import Tree
 from rich import box
+import dicttoxml
 
 console = Console()
 
 
 def _get_output_format() -> str:
     """Get output format from environment variable"""
-    return os.environ.get('TODOIT_OUTPUT_FORMAT', 'table').lower()
+    format_value = os.environ.get('TODOIT_OUTPUT_FORMAT', 'table').lower()
+    valid_formats = ['table', 'vertical', 'json', 'yaml', 'xml']
+    return format_value if format_value in valid_formats else 'table'
 
 
 def _format_date(date: datetime) -> str:
@@ -80,13 +86,78 @@ def _display_records_table(data: List[Dict[str, Any]], title: str, columns: Dict
     console.print(table)
 
 
+def _serialize_for_output(obj):
+    """Convert objects to serializable format for JSON/YAML/XML"""
+    if isinstance(obj, datetime):
+        return _format_date(obj)
+    elif hasattr(obj, 'value'):  # Enum objects
+        return obj.value
+    elif hasattr(obj, '__dict__'):  # Pydantic models
+        return obj.__dict__
+    else:
+        return str(obj)
+
+
+def _prepare_data_for_serialization(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Prepare data for JSON/YAML/XML serialization"""
+    serialized_data = []
+    for record in data:
+        serialized_record = {}
+        for key, value in record.items():
+            serialized_record[key] = _serialize_for_output(value)
+        serialized_data.append(serialized_record)
+    return serialized_data
+
+
+def _display_records_json(data: List[Dict[str, Any]], title: str):
+    """Display records in JSON format"""
+    output = {
+        "title": title,
+        "count": len(data),
+        "data": _prepare_data_for_serialization(data)
+    }
+    print(json.dumps(output, indent=2, ensure_ascii=False))
+
+
+def _display_records_yaml(data: List[Dict[str, Any]], title: str):
+    """Display records in YAML format"""
+    output = {
+        "title": title,
+        "count": len(data),
+        "data": _prepare_data_for_serialization(data)
+    }
+    print(yaml.dump(output, default_flow_style=False, allow_unicode=True, indent=2))
+
+
+def _display_records_xml(data: List[Dict[str, Any]], title: str):
+    """Display records in XML format"""
+    output = {
+        "title": title,
+        "count": len(data),
+        "data": _prepare_data_for_serialization(data)
+    }
+    xml_data = dicttoxml.dicttoxml(
+        output, 
+        custom_root='todoit_output',
+        attr_type=False,
+        item_func=lambda x: 'record' if x == 'data' else x
+    )
+    print(xml_data.decode('utf-8'))
+
+
 def _display_records(data: List[Dict[str, Any]], title: str, columns: Dict[str, Dict] = None):
-    """Unified record display - switches between table and vertical format"""
+    """Unified record display - switches between all supported formats"""
     output_format = _get_output_format()
     
     if output_format == 'vertical':
         _display_records_vertical(data, title)
-    else:
+    elif output_format == 'json':
+        _display_records_json(data, title)
+    elif output_format == 'yaml':
+        _display_records_yaml(data, title)
+    elif output_format == 'xml':
+        _display_records_xml(data, title)
+    else:  # default to table
         _display_records_table(data, title, columns)
 
 

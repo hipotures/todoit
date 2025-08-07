@@ -150,10 +150,12 @@ def list_show(ctx, list_key, tree):
         else:
             _render_table_view(todo_list, items, properties, manager)
             
-            # Show progress
-            progress = manager.get_progress(actual_list_key)
-            console.print(f"\n[bold]Progress:[/] {progress.completion_percentage:.1f}% "
-                         f"({progress.completed}/{progress.total})")
+            # Show progress only in table/vertical modes
+            from .display import _get_output_format
+            if _get_output_format() in ['table', 'vertical']:
+                progress = manager.get_progress(actual_list_key)
+                console.print(f"\n[bold]Progress:[/] {progress.completion_percentage:.1f}% "
+                             f"({progress.completed}/{progress.total})")
         
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
@@ -218,7 +220,11 @@ def list_all(ctx, limit, tree, details):
             
             # Use unified display system
             _display_records(data, "📋 All TODO Lists", columns)
-        console.print(f"\n[bold]Total lists:[/] {len(lists)}")
+        
+        # Only show total count in table/vertical modes (not in JSON/YAML/XML)
+        from .display import _get_output_format
+        if _get_output_format() in ['table', 'vertical']:
+            console.print(f"\n[bold]Total lists:[/] {len(lists)}")
         
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
