@@ -20,7 +20,7 @@ TODOIT (Todo It) is a comprehensive task management platform that scales from si
 
 ### 🔗 **Integration Capabilities**
 - **45 MCP Tools** - Complete API for Claude Code integration
-- **Rich CLI Interface** - Beautiful tables with blocked status indicators (🚫)
+- **Rich CLI Interface** - Icon-based columns (⏳ ✅ 📊 📋) with blocked status indicators (🚫)
 - **SQLite Database** - Robust schema with foreign key relationships
 - **Import/Export** - Markdown format with checkbox support
 
@@ -144,6 +144,8 @@ python -m interfaces.mcp_server
 - **"Permission denied"**: Ensure the config directory has proper permissions
 
 #### Advanced Configuration
+See [docs/configuration.md](docs/configuration.md) for environment variables and CLI options.
+
 ```json
 {
   "servers": {

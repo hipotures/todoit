@@ -2,34 +2,6 @@
 
 ## Current Version: 1.7.0
 
-### Recently Completed ✅
-
-#### Version 1.5.0 - CLI Modularization
-- **Major CLI Refactoring**: Split monolithic `cli.py` (2043 lines → 64 lines)
-- **Modular Architecture**: Created 6 specialized modules:
-  - `display.py`: Rich formatting and display functions (507 lines)
-  - `list_commands.py`: List management operations (564 lines)
-  - `item_commands.py`: Item CRUD and status operations (404 lines)
-  - `property_commands.py`: Property management (180 lines)
-  - `dependency_commands.py`: Cross-list dependency handling (262 lines)
-  - `io_stats_commands.py`: Import/export and statistics (234 lines)
-- **Package Configuration**: Fixed setuptools package discovery
-- **Documentation**: Added installation guide for dev vs production
-
-#### Version 1.5.1 - Output Formats
-- **Multiple Output Formats**: Added JSON, YAML, XML support via `TODOIT_OUTPUT_FORMAT` env var
-- **Smart Serialization**: Automatic datetime and enum conversion
-- **Comprehensive Testing**: 20+ test cases for all output formats
-- **New Dependencies**: Added `dicttoxml>=1.7.0` for XML support
-
-#### Version 1.7.0 - Icon-based UI
-- **Text-to-Icon Replacement**: Replaced text labels with intuitive icons in CLI tables
-- **Column Icons**: Added ✅ (completed), ⏳ (progress/pending), 📋 (list info), 🔀 (list type)
-- **Improved Column Alignment**: Right-aligned numeric columns, centered single characters
-- **Compact Display**: Removed verbose text descriptions, kept only essential icons
-- **Documentation Updates**: Added icon explanations and list type documentation
-- **Space Optimization**: Better column width management for cleaner tables
-
 ### Planned Features 🚧
 
 #### Version 1.8.0 - Enhanced Export/Import

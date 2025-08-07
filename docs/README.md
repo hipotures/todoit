@@ -9,8 +9,8 @@ Welcome to the official documentation for TODOIT MCP, an intelligent TODO list m
 - **[Database Schema](database.md)** - Complete database structure and relationships  
 - **[Installation & Setup](installation.md)** - Get started quickly
 
-### User Guides  
-- **[CLI User Guide](CLI_GUIDE.md)** - Comprehensive command-line interface guide
+### User Guides
+- **[CLI User Guide](CLI_GUIDE.md)** - Command reference for list, item, stats, io, property, dep, and interactive commands
 - **[MCP Tools](MCP_TOOLS.md)** - All 45 MCP tools for Claude Code integration
 - **[Programmatic API](api.md)** - TodoManager class reference
 

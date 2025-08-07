@@ -4,6 +4,16 @@
 
 TODOIT provides a comprehensive command-line interface with beautiful visualizations, rich tables, and intelligent workflow management.
 
+The CLI is implemented in `interfaces/cli.py` using the `click` library and offers the following core commands:
+
+- `list`: Manage TODO lists.
+- `item`: Manage TODO items.
+- `stats`: View statistics and reports.
+- `io`: Import and export data.
+- `property`: Manage list properties.
+- `dep`: Manage cross-list dependencies.
+- `interactive`: Enter interactive mode.
+
 ## Installation & Setup
 
 ```bash
@@ -245,6 +255,17 @@ python -m interfaces.cli interactive
 - **Progress Bars**: Visual completion indicators
 - **Dependency Indicators**: 🚫 for blocked items
 - **Hierarchy Visualization**: Tree-style subtask display
+
+### Column Icons
+- **⏳** - Pending items (total tasks - completed tasks)
+- **✅** - Completed items count
+- **📊** - Progress percentage
+- **📋** - List type: S (Sequential), P (Parallel), H (Hierarchical)
+
+### List Types
+- **S** - Sequential: Tasks must be completed in order
+- **P** - Parallel: Tasks can be completed in any order
+- **H** - Hierarchical: Tasks have parent-child relationships
 
 ### Color Coding
 - **Green**: Success messages and completed items
