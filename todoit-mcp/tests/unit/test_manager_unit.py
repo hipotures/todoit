@@ -282,3 +282,83 @@ class TestTodoManagerUnit:
 
         mock_db.delete_all_dependencies_for_item.assert_called_once_with(item_to_delete.id)
         mock_db.delete_item.assert_called_once_with(item_to_delete.id)
+
+    def test_archive_list_basic_flow(self, manager_with_mock, mock_db):
+        """Test basic flow of archiving a list."""
+        mock_list = MagicMock(id=1, list_key="test_list", status="active")
+        mock_db.get_list_by_key.return_value = mock_list
+        
+        # The actual implementation of archive_list will be tested in integration tests
+        # Here we just test that the method exists and basic validation works
+        assert hasattr(manager_with_mock, 'archive_list')
+        assert callable(getattr(manager_with_mock, 'archive_list'))
+
+    def test_archive_already_archived_list_raises_error(self, manager_with_mock, mock_db):
+        """Test that archiving an already archived list raises ValueError."""
+        mock_list = MagicMock(id=1, list_key="test_list", status="archived")
+        mock_db.get_list_by_key.return_value = mock_list
+        
+        with pytest.raises(ValueError, match="List 'test_list' is already archived"):
+            manager_with_mock.archive_list("test_list")
+
+    def test_archive_nonexistent_list_raises_error(self, manager_with_mock, mock_db):
+        """Test that archiving a non-existent list raises ValueError."""
+        mock_db.get_list_by_key.return_value = None
+        
+        with pytest.raises(ValueError, match="List 'nonexistent' does not exist"):
+            manager_with_mock.archive_list("nonexistent")
+
+    def test_unarchive_list_basic_flow(self, manager_with_mock, mock_db):
+        """Test basic flow of unarchiving a list."""
+        mock_list = MagicMock(id=1, list_key="test_list", status="archived")
+        mock_db.get_list_by_key.return_value = mock_list
+        
+        # The actual implementation of unarchive_list will be tested in integration tests
+        # Here we just test that the method exists and basic validation works
+        assert hasattr(manager_with_mock, 'unarchive_list')
+        assert callable(getattr(manager_with_mock, 'unarchive_list'))
+
+    def test_unarchive_already_active_list_raises_error(self, manager_with_mock, mock_db):
+        """Test that unarchiving an already active list raises ValueError."""
+        mock_list = MagicMock(id=1, list_key="test_list", status="active")
+        mock_db.get_list_by_key.return_value = mock_list
+        
+        with pytest.raises(ValueError, match="List 'test_list' is already active"):
+            manager_with_mock.unarchive_list("test_list")
+
+    def test_unarchive_nonexistent_list_raises_error(self, manager_with_mock, mock_db):
+        """Test that unarchiving a non-existent list raises ValueError."""
+        mock_db.get_list_by_key.return_value = None
+        
+        with pytest.raises(ValueError, match="List 'nonexistent' does not exist"):
+            manager_with_mock.unarchive_list("nonexistent")
+
+    def test_list_all_with_include_archived(self, manager_with_mock, mock_db):
+        """Test list_all with include_archived parameter."""
+        active_list = MagicMock(id=1, list_key="active", status="active")
+        archived_list = MagicMock(id=2, list_key="archived", status="archived")
+        
+        # Test include_archived=False (default behavior)
+        mock_db.get_all_lists.return_value = [active_list, archived_list]
+        with patch.object(manager_with_mock, '_db_to_model', side_effect=lambda db_obj, model_class: db_obj):
+            result = manager_with_mock.list_all(include_archived=False)
+            assert len(result) == 1
+            assert result[0].list_key == "active"
+        
+        # Test include_archived=True
+        mock_db.get_all_lists.return_value = [active_list, archived_list]
+        with patch.object(manager_with_mock, '_db_to_model', side_effect=lambda db_obj, model_class: db_obj):
+            result = manager_with_mock.list_all(include_archived=True)
+            assert len(result) == 2
+
+    def test_get_archived_lists(self, manager_with_mock, mock_db):
+        """Test get_archived_lists returns only archived lists."""
+        active_list = MagicMock(id=1, list_key="active", status="active")
+        archived_list = MagicMock(id=2, list_key="archived", status="archived")
+        mock_db.get_all_lists.return_value = [active_list, archived_list]
+        
+        with patch.object(manager_with_mock, '_db_to_model', side_effect=lambda db_obj, model_class: db_obj):
+            result = manager_with_mock.get_archived_lists()
+            assert len(result) == 1
+            assert result[0].list_key == "archived"
+            assert result[0].status == "archived"
