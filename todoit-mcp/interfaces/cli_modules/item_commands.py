@@ -1,0 +1,405 @@
+"""
+Item management commands for TODOIT CLI
+Handles add, status, subtasks, tree operations
+"""
+import click
+import json
+from rich.console import Console
+from rich.panel import Panel
+from rich.prompt import Confirm
+
+from .display import (
+    _get_status_icon, _get_status_display, _render_tree_view, 
+    _display_records, console
+)
+
+def get_manager(db_path):
+    """Get TodoManager instance - imported from main cli.py"""
+    from core.manager import TodoManager
+    if db_path == 'todoit.db':
+        return TodoManager()
+    return TodoManager(db_path)
+
+
+@click.group()
+def item():
+    """Manage TODO items"""
+    pass
+
+
+@item.command('add')
+@click.argument('list_key')
+@click.argument('item_key')
+@click.argument('content')
+@click.option('--metadata', '-m', help='Metadata JSON')
+@click.pass_context
+def item_add(ctx, list_key, item_key, content, metadata):
+    """Add item to TODO list"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        meta = json.loads(metadata) if metadata else {}
+        item = manager.add_item(
+            list_key=list_key,
+            item_key=item_key,
+            content=content,
+            metadata=meta
+        )
+        console.print(f"[green]✅ Added item '{item_key}' to list '{list_key}'[/]")
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command('status')
+@click.argument('list_key')
+@click.argument('item_key')
+@click.option('--status', type=click.Choice(['pending', 'in_progress', 'completed', 'failed']))
+@click.option('--state', '-s', multiple=True, help='State in format key=value')
+@click.pass_context
+def item_status(ctx, list_key, item_key, status, state):
+    """Update item status"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        states = {}
+        for s in state:
+            k, v = s.split('=', 1)
+            states[k] = v.lower() in ['true', '1', 'yes']
+        
+        item = manager.update_item_status(
+            list_key=list_key,
+            item_key=item_key,
+            status=status,
+            completion_states=states if states else None
+        )
+        
+        console.print(f"[green]✅ Updated '{item_key}'[/]")
+        if states:
+            console.print("States:")
+            for k, v in states.items():
+                icon = '✅' if v else '❌'
+                console.print(f"  {icon} {k}")
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command('next')
+@click.argument('list_key')
+@click.option('--start', is_flag=True, help='Start the task')
+@click.pass_context
+def item_next(ctx, list_key, start):
+    """Get next pending item"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        item = manager.get_next_pending(list_key)
+        if not item:
+            console.print(f"[yellow]No pending items in list '{list_key}'[/]")
+            return
+        
+        panel = Panel(
+            f"[bold cyan]Task:[/] {item.content}\n"
+            f"[bold cyan]Key:[/] {item.item_key}\n"
+            f"[bold cyan]Position:[/] {item.position}",
+            title="⏭️ Next Task",
+            border_style="cyan"
+        )
+        console.print(panel)
+        
+        if start and Confirm.ask("Start this task?"):
+            manager.update_item_status(list_key, item.item_key, status='in_progress')
+            console.print("[green]✅ Task started[/]")
+            
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command('add-subtask')
+@click.argument('list_key')
+@click.argument('parent_key')
+@click.argument('subtask_key')
+@click.argument('content')
+@click.option('--metadata', '-m', help='Metadata JSON')
+@click.pass_context
+def item_add_subtask(ctx, list_key, parent_key, subtask_key, content, metadata):
+    """Add subtask to existing task"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        meta = json.loads(metadata) if metadata else {}
+        subtask = manager.add_subtask(
+            list_key=list_key,
+            parent_key=parent_key,
+            subtask_key=subtask_key,
+            content=content,
+            metadata=meta
+        )
+        console.print(f"[green]✅ Added subtask '{subtask_key}' to '{parent_key}' in list '{list_key}'[/]")
+        
+        # Show hierarchy for parent
+        try:
+            hierarchy = manager.get_item_hierarchy(list_key, parent_key)
+            console.print(f"\n[dim]Current hierarchy:[/]")
+            console.print(f"📋 {parent_key}: {hierarchy['item']['content']}")
+            for subtask_info in hierarchy['subtasks']:
+                st = subtask_info['item']
+                status_icon = _get_status_icon(st['status'])
+                console.print(f"  └─ {status_icon} {st['item_key']}: {st['content']}")
+        except:
+            pass  # Skip hierarchy display if error
+            
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command('tree')
+@click.argument('list_key')
+@click.argument('item_key', required=False)
+@click.pass_context
+def item_tree(ctx, list_key, item_key):
+    """Show hierarchy tree for item or entire list"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        if item_key:
+            # Show hierarchy for specific item
+            hierarchy = manager.get_item_hierarchy(list_key, item_key)
+            
+            def print_hierarchy(item_info, depth=0):
+                item = item_info['item']
+                indent = "  " * depth
+                status_icon = _get_status_icon(item['status'])
+                
+                if depth == 0:
+                    console.print(f"📋 {item['item_key']}: {item['content']}")
+                else:
+                    console.print(f"{indent}└─ {status_icon} {item['item_key']}: {item['content']}")
+                
+                for subtask_info in item_info['subtasks']:
+                    print_hierarchy(subtask_info, depth + 1)
+            
+            print_hierarchy(hierarchy)
+        else:
+            # Show entire list in tree view
+            todo_list = manager.get_list(list_key)
+            if not todo_list:
+                console.print(f"[red]List '{list_key}' not found[/]")
+                return
+            
+            items = manager.get_list_items(list_key)
+            properties = manager.get_list_properties(list_key)
+            tree_view = _render_tree_view(todo_list, items, properties)
+            console.print(tree_view)
+            
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command('move-to-subtask')
+@click.argument('list_key')
+@click.argument('item_key')
+@click.argument('new_parent_key')
+@click.option('--force', is_flag=True, help='Skip confirmation prompt')
+@click.pass_context
+def item_move_to_subtask(ctx, list_key, item_key, new_parent_key, force):
+    """Convert existing task to be a subtask of another task"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        # Show current state
+        item = manager.get_item(list_key, item_key)
+        parent = manager.get_item(list_key, new_parent_key)
+        
+        if not item or not parent:
+            console.print("[red]Item or parent not found[/]")
+            return
+        
+        console.print(f"[yellow]Moving '{item.item_key}: {item.content}'[/]")
+        console.print(f"[yellow]To be subtask of '{parent.item_key}: {parent.content}'[/]")
+        
+        if not force and not Confirm.ask("Proceed with move?"):
+            return
+        
+        moved_item = manager.move_to_subtask(list_key, item_key, new_parent_key)
+        console.print(f"[green]✅ Moved '{item_key}' to be subtask of '{new_parent_key}'[/]")
+        
+        # Show updated hierarchy
+        try:
+            hierarchy = manager.get_item_hierarchy(list_key, new_parent_key)
+            console.print(f"\n[dim]Updated hierarchy:[/]")
+            console.print(f"📋 {new_parent_key}: {hierarchy['item']['content']}")
+            for subtask_info in hierarchy['subtasks']:
+                st = subtask_info['item']
+                status_icon = _get_status_icon(st['status'])
+                console.print(f"  └─ {status_icon} {st['item_key']}: {st['content']}")
+        except:
+            pass
+            
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command('subtasks')
+@click.argument('list_key')
+@click.argument('parent_key')
+@click.pass_context
+def item_subtasks(ctx, list_key, parent_key):
+    """List all subtasks for a parent task"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        subtasks = manager.get_subtasks(list_key, parent_key)
+        
+        if not subtasks:
+            console.print(f"[yellow]No subtasks found for '{parent_key}' in list '{list_key}'[/]")
+            return
+        
+        # Show parent info
+        parent = manager.get_item(list_key, parent_key)
+        console.print(f"📋 Parent: {parent.item_key} - {parent.content}")
+        console.print()
+        
+        # Prepare subtasks data for unified display
+        data = []
+        
+        for subtask in subtasks:
+            status_display = _get_status_display(subtask.status.value)
+            
+            states_str = ""
+            if subtask.completion_states:
+                states = []
+                for k, v in subtask.completion_states.items():
+                    if isinstance(v, bool):
+                        icon = '✅' if v else '❌'
+                        states.append(f"{icon}{k}")
+                    else:
+                        states.append(f"📝{k}")
+                states_str = " ".join(states)
+            
+            record = {
+                "Key": subtask.item_key,
+                "Task": subtask.content,
+                "Status": status_display,
+                "States": states_str
+            }
+            data.append(record)
+        
+        # Define column styling
+        columns = {
+            "Key": {"style": "magenta"},
+            "Task": {"style": "white"},
+            "Status": {"style": "yellow"},
+            "States": {"style": "blue"}
+        }
+        
+        # Use unified display system
+        _display_records(data, f"Subtasks for '{parent_key}'", columns)
+        
+        # Show completion info
+        completed = sum(1 for st in subtasks if st.status.value == 'completed')
+        total = len(subtasks)
+        percentage = (completed / total * 100) if total > 0 else 0
+        console.print(f"\n[bold]Progress:[/] {percentage:.1f}% ({completed}/{total} completed)")
+        
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command('next-smart')
+@click.argument('list_key')
+@click.option('--start', is_flag=True, help='Start the task')
+@click.pass_context
+def item_next_smart(ctx, list_key, start):
+    """Get next pending item with smart subtask logic"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        item = manager.get_next_pending(list_key, smart_subtasks=True)
+        if not item:
+            console.print(f"[yellow]No pending items in list '{list_key}'[/]")
+            return
+        
+        # Check if this is a subtask
+        is_subtask = getattr(item, 'parent_item_id', None) is not None
+        task_type = "Subtask" if is_subtask else "Task"
+        
+        panel = Panel(
+            f"[bold cyan]Type:[/] {task_type}\n"
+            f"[bold cyan]Task:[/] {item.content}\n"
+            f"[bold cyan]Key:[/] {item.item_key}\n"
+            f"[bold cyan]Position:[/] {item.position}",
+            title="⏭️ Next Smart Task",
+            border_style="cyan"
+        )
+        console.print(panel)
+        
+        if start and Confirm.ask("Start this task?"):
+            manager.update_item_status(list_key, item.item_key, status='in_progress')
+            console.print("[green]✅ Task started[/]")
+            
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command('delete')
+@click.argument('list_key')
+@click.argument('item_key')
+@click.option('--force', is_flag=True, help='Skip confirmation prompt')
+@click.pass_context
+def item_delete(ctx, list_key, item_key, force):
+    """Delete an item from a TODO list permanently"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        # Get item details for confirmation
+        item = manager.get_item(list_key, item_key)
+        if not item:
+            console.print(f"[red]Item '{item_key}' not found in list '{list_key}'[/]")
+            return
+        
+        # Show what will be deleted
+        console.print(f"[yellow]About to delete:[/] {item.content}")
+        console.print(f"[yellow]From list:[/] {list_key}")
+        
+        # Confirm deletion unless force flag is used
+        if not force and not Confirm.ask("[red]Are you sure you want to delete this item? This cannot be undone"):
+            console.print("[yellow]Deletion cancelled[/]")
+            return
+        
+        # Delete the item
+        success = manager.delete_item(list_key, item_key)
+        if success:
+            console.print(f"[green]✅ Item '{item_key}' deleted from list '{list_key}'[/]")
+        else:
+            console.print(f"[red]❌ Failed to delete item '{item_key}'[/]")
+            
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command('edit')
+@click.argument('list_key')
+@click.argument('item_key')
+@click.argument('new_content')
+@click.pass_context
+def item_edit(ctx, list_key, item_key, new_content):
+    """Edit the content/description of a TODO item"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        # Get current item
+        current_item = manager.get_item(list_key, item_key)
+        if not current_item:
+            console.print(f"[red]Item '{item_key}' not found in list '{list_key}'[/]")
+            return
+        
+        # Show changes
+        console.print(f"[yellow]Old content:[/] {current_item.content}")
+        console.print(f"[green]New content:[/] {new_content}")
+        
+        # Update the content
+        updated_item = manager.update_item_content(list_key, item_key, new_content)
+        console.print(f"[green]✅ Content updated for item '{item_key}' in list '{list_key}'[/]")
+        
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")

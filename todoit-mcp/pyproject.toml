@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "todoit-mcp"
-version = "1.4.4"
+version = "1.5.0"
 description = "TODOIT MCP - Universal TODO list management system with MCP integration for Claude Code"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -53,7 +53,7 @@ Issues = "https://github.com/hipotures/todoit/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["core*", "interfaces*"]
+include = ["core*", "interfaces*", "interfaces.cli_modules*"]
 
 [tool.black]
 line-length = 88
