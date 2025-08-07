@@ -2,7 +2,6 @@
 TODOIT MCP - Database Layer
 SQLAlchemy models and database operations
 """
-import json
 import os
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime, timezone
