@@ -25,10 +25,10 @@ def get_manager(db_path: Optional[str]) -> TodoManager:
     """Get TodoManager instance"""
     # Detect if running from source vs installed package
     try:
-        import pkg_resources
-        pkg_resources.get_distribution('todoit-mcp')
+        import importlib.metadata
+        importlib.metadata.distribution('todoit-mcp')
         is_production = True
-    except:
+    except (importlib.metadata.PackageNotFoundError, ImportError):
         is_production = False
     
     # Development mode: use dev database
@@ -55,10 +55,10 @@ def cli(ctx, db):
     
     # Always check if in development mode and show warning
     try:
-        import pkg_resources
-        pkg_resources.get_distribution('todoit-mcp')
+        import importlib.metadata
+        importlib.metadata.distribution('todoit-mcp')
         is_production = True
-    except:
+    except (importlib.metadata.PackageNotFoundError, ImportError):
         is_production = False
     
     if not is_production:
