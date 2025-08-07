@@ -29,6 +29,8 @@ def mcp_error_handler(func: Callable) -> Callable:
         try:
             # Initialize manager and inject it into the function namespace
             mgr = init_manager()
+            # Remove mgr from kwargs to avoid conflicts
+            kwargs.pop('mgr', None)
             # Call the function with manager available in local scope
             return await func(*args, mgr=mgr, **kwargs)
         except ValueError as e:
