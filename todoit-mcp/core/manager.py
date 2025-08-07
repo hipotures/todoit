@@ -1436,7 +1436,7 @@ class TodoManager:
         target_list = self.create_list(
             list_key=target_list_key,
             title=target_title,
-            list_type=source_list.list_type,
+            list_type="linked",
             metadata=source_list.metadata or {}
         )
         

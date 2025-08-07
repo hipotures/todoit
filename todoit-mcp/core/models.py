@@ -13,6 +13,7 @@ class ListType(str, Enum):
     SEQUENTIAL = "sequential"
     PARALLEL = "parallel"
     HIERARCHICAL = "hierarchical"
+    LINKED = "linked"
 
 
 class ItemStatus(str, Enum):

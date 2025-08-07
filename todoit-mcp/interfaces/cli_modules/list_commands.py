@@ -44,7 +44,7 @@ def list_group():
 @click.option('--filter-ext', help='Filter files by extension (e.g., .yaml, .py, .md)')
 @click.option('--task-prefix', default='Process', help='Task name prefix (default: Process)')
 @click.option('--type', 'list_type', default='sequential', 
-              type=click.Choice(['sequential', 'parallel', 'hierarchical']))
+              type=click.Choice(['sequential', 'parallel', 'hierarchical', 'linked']))
 @click.option('--metadata', '-m', help='Metadata JSON')
 @click.pass_context
 def list_create(ctx, list_key, title, items, from_folder, filter_ext, task_prefix, list_type, metadata):
@@ -239,7 +239,7 @@ def list_all(ctx, limit, tree, details):
                 
                 # Show first letter of type for clarity
                 list_type_str = str(todo_list.list_type).replace('ListType.', '').lower()
-                type_short = list_type_str[0].upper()  # S, P, H
+                type_short = list_type_str[0].upper()  # S, P, H, L
                 
                 record = {
                     "ID": str(todo_list.id),
