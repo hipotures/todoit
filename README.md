@@ -328,6 +328,8 @@ This project is released into the public domain under the [CC0 1.0 Universal](ht
 
 ## 🤝 Contributing
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development environment setup, code style, commit conventions, and testing instructions.
+
 Contributions are welcome! This project uses:
 - **Modern Python** development practices
 - **Claude Code** for AI-assisted development
