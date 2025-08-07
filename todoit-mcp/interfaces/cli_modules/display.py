@@ -198,7 +198,10 @@ def _display_lists_tree(lists, manager):
         progress = manager.get_progress(todo_list.list_key)
         
         list_text = f"[cyan]{todo_list.list_key}[/] - [white]{todo_list.title}[/] "
-        list_text += f"([yellow]{todo_list.list_type.value if hasattr(todo_list.list_type, 'value') else str(todo_list.list_type)}[/]) "
+        # Show first letter of type for clarity  
+        list_type_str = str(todo_list.list_type.value if hasattr(todo_list.list_type, 'value') else todo_list.list_type)
+        type_short = list_type_str[0].upper()  # S, P, H, L
+        list_text += f"([yellow]{type_short}[/]) "
         list_text += f"[green]{progress.total}[/]/[blue]{progress.completed}[/] "
         list_text += f"([magenta]{progress.completion_percentage:.1f}%[/])"
         
