@@ -323,6 +323,7 @@ Complete documentation available in the [docs/](docs/) directory:
 - **[MCP Tools Reference](docs/MCP_TOOLS.md)** - All 44 MCP tools for Claude Code
 - **[Architecture](docs/architecture.md)** - System design and patterns
 - **[API Reference](docs/api.md)** - TodoManager class documentation
+- **[CHANGELOG](CHANGELOG.md)** - Version history and release notes
 
 ## 📄 License
 
