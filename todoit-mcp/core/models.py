@@ -398,6 +398,44 @@ class BulkOperationResult(BaseModel):
         }
 
 
+# ===== ITEM PROPERTIES MODELS =====
+
+class ItemPropertyBase(BaseModel):
+    """Base model for item properties"""
+    property_key: str = Field(..., min_length=1, max_length=100, pattern=r'^[a-zA-Z0-9_-]+$')
+    property_value: str = Field(..., min_length=1, max_length=1000)
+
+
+class ItemPropertyCreate(ItemPropertyBase):
+    """Model for creating item properties"""
+    item_id: int
+
+
+class ItemPropertyUpdate(BaseModel):
+    """Model for updating item properties"""
+    property_value: str = Field(..., min_length=1, max_length=1000)
+
+
+class ItemProperty(ItemPropertyBase):
+    """Complete item property model"""
+    id: int
+    item_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "item_id": self.item_id,
+            "property_key": self.property_key,
+            "property_value": self.property_value,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat()
+        }
+
+
 # ===== PHASE 2: CROSS-LIST DEPENDENCIES MODELS =====
 
 class ItemDependencyBase(BaseModel):

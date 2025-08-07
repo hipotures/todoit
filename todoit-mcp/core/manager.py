@@ -7,9 +7,9 @@ import os
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime, timezone
 
-from .database import Database, TodoListDB, TodoItemDB, ListRelationDB, TodoHistoryDB, ListPropertyDB, ItemDependencyDB
+from .database import Database, TodoListDB, TodoItemDB, ListRelationDB, TodoHistoryDB, ListPropertyDB, ItemPropertyDB, ItemDependencyDB
 from .models import (
-    TodoList, TodoItem, ListRelation, TodoHistory, ProgressStats, ListProperty,
+    TodoList, TodoItem, ListRelation, TodoHistory, ProgressStats, ListProperty, ItemProperty,
     TodoListCreate, TodoItemCreate, ListRelationCreate, TodoHistoryCreate,  
     ItemDependency, DependencyType,
     ItemStatus, ListType, RelationType, HistoryAction
@@ -626,6 +626,60 @@ class TodoManager:
         
         # Delete property
         return self.db.delete_list_property(db_list.id, property_key)
+    
+    # ===== ITEM PROPERTIES METHODS =====
+    
+    def set_item_property(self, list_key: str, item_key: str, property_key: str, property_value: str) -> ItemProperty:
+        """Set property for an item (create or update)"""
+        # Get list
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
+        
+        # Get item
+        db_item = self.db.get_item_by_key(db_list.id, item_key)
+        if not db_item:
+            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+        
+        # Create/update property
+        db_property = self.db.create_item_property(db_item.id, property_key, property_value)
+        return self._db_to_model(db_property, ItemProperty)
+
+    def get_item_property(self, list_key: str, item_key: str, property_key: str) -> Optional[str]:
+        """Get single property value for an item"""
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
+        
+        db_item = self.db.get_item_by_key(db_list.id, item_key)
+        if not db_item:
+            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+        
+        return self.db.get_item_property(db_item.id, property_key)
+
+    def get_item_properties(self, list_key: str, item_key: str) -> Dict[str, str]:
+        """Get all properties for an item"""
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
+        
+        db_item = self.db.get_item_by_key(db_list.id, item_key)
+        if not db_item:
+            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+        
+        return self.db.get_item_properties(db_item.id)
+
+    def delete_item_property(self, list_key: str, item_key: str, property_key: str) -> bool:
+        """Delete property from an item"""
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
+        
+        db_item = self.db.get_item_by_key(db_list.id, item_key)
+        if not db_item:
+            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+        
+        return self.db.delete_item_property(db_item.id, property_key)
     
     # ===== SUBTASK MANAGEMENT METHODS (Phase 1) =====
     

@@ -2,7 +2,7 @@
 
 ## Overview
 
-TODOIT MCP provides 40 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
+TODOIT MCP provides 44 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
 
 ## Tool Categories
 
@@ -28,7 +28,7 @@ Core functionality for list and item management.
 - **`todo_mark_completed`** - Quick completion shortcut
 - **`todo_start_item`** - Quick start shortcut
 
-### 🏗️ Advanced Operations (11 tools)
+### 🏗️ Advanced Operations (15 tools)
 Extended functionality for complex workflows.
 
 #### Import/Export
@@ -42,6 +42,12 @@ Extended functionality for complex workflows.
 - **`todo_get_list_property`** - Get specific property value
 - **`todo_get_list_properties`** - Get all properties for list
 - **`todo_delete_list_property`** - Remove property from list
+
+#### Item Properties
+- **`todo_set_item_property`** - Set key-value properties on items (create/update)
+- **`todo_get_item_property`** - Get specific property value from item
+- **`todo_get_item_properties`** - Get all properties for item
+- **`todo_delete_item_property`** - Remove property from item
 
 #### Project Management
 - **`todo_project_overview`** - Get comprehensive project status across related lists
@@ -103,6 +109,27 @@ progress = await todo_get_cross_list_progress("my-project")
 
 # Visualize dependencies
 graph = await todo_get_dependency_graph("my-project")
+```
+
+### Item Properties Management
+```python
+# Set properties for runtime tracking
+await todo_set_item_property("project", "task1", "priority", "high")
+await todo_set_item_property("project", "task1", "estimated_hours", "8")
+await todo_set_item_property("project", "task1", "assignee", "john_doe")
+
+# Get specific property
+priority = await todo_get_item_property("project", "task1", "priority")
+
+# Get all properties for an item
+props = await todo_get_item_properties("project", "task1")
+# Returns: {"priority": "high", "estimated_hours": "8", "assignee": "john_doe"}
+
+# Update property (automatically overwrites existing)
+await todo_set_item_property("project", "task1", "priority", "critical")
+
+# Remove property when no longer needed
+await todo_delete_item_property("project", "task1", "assignee")
 ```
 
 ## Error Handling

@@ -107,3 +107,27 @@ CREATE TRIGGER update_list_properties_timestamp
     BEGIN
         UPDATE list_properties SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
     END;
+
+-- Table: item_properties (key-value storage for items)
+CREATE TABLE item_properties (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id INTEGER NOT NULL,
+    property_key TEXT NOT NULL,
+    property_value TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (item_id) REFERENCES todo_items (id) ON DELETE CASCADE,
+    UNIQUE(item_id, property_key)
+);
+
+-- Indexes for performance
+CREATE INDEX idx_item_properties_item_id ON item_properties(item_id);
+CREATE INDEX idx_item_properties_key ON item_properties(property_key);
+
+-- Trigger for updated_at
+CREATE TRIGGER update_item_properties_timestamp 
+    AFTER UPDATE ON item_properties
+    FOR EACH ROW
+    BEGIN
+        UPDATE item_properties SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+    END;

@@ -15,7 +15,7 @@ from sqlalchemy.engine import Engine
 from .models import (
     TodoList as TodoListModel, TodoItem as TodoItemModel, 
     ListRelation as ListRelationModel, TodoHistory as TodoHistoryModel,
-    ListProperty as ListPropertyModel, ItemDependency as ItemDependencyModel,
+    ListProperty as ListPropertyModel, ItemProperty as ItemPropertyModel, ItemDependency as ItemDependencyModel,
     ProgressStats, ListType, ItemStatus, RelationType, HistoryAction, DependencyType
 )
 
@@ -125,6 +125,28 @@ class ListPropertyDB(Base):
         Index('idx_list_properties_list_id', 'list_id'),
         Index('idx_list_properties_key', 'property_key'),
         Index('idx_list_properties_unique', 'list_id', 'property_key', unique=True),
+    )
+
+
+class ItemPropertyDB(Base):
+    """SQLAlchemy model for item_properties table"""
+    __tablename__ = 'item_properties'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    item_id = Column(Integer, ForeignKey('todo_items.id'), nullable=False)
+    property_key = Column(String(100), nullable=False)
+    property_value = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    todo_item = relationship("TodoItemDB", foreign_keys=[item_id])
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_item_properties_item_id', 'item_id'),
+        Index('idx_item_properties_key', 'property_key'),
+        Index('idx_item_properties_unique', 'item_id', 'property_key', unique=True),
     )
 
 
@@ -585,6 +607,63 @@ class Database:
             property_obj = session.query(ListPropertyDB).filter(
                 ListPropertyDB.list_id == list_id,
                 ListPropertyDB.property_key == property_key
+            ).first()
+            
+            if property_obj:
+                session.delete(property_obj)
+                session.commit()
+                return True
+            return False
+    
+    # Item properties CRUD operations
+    def create_item_property(self, item_id: int, property_key: str, property_value: str) -> ItemPropertyDB:
+        """Create or update item property (UPSERT)"""
+        with self.get_session() as session:
+            existing = session.query(ItemPropertyDB).filter(
+                ItemPropertyDB.item_id == item_id,
+                ItemPropertyDB.property_key == property_key
+            ).first()
+            
+            if existing:
+                existing.property_value = property_value
+                existing.updated_at = datetime.utcnow()
+                session.commit()
+                session.refresh(existing)
+                return existing
+            else:
+                property_obj = ItemPropertyDB(
+                    item_id=item_id,
+                    property_key=property_key,
+                    property_value=property_value
+                )
+                session.add(property_obj)
+                session.commit()
+                session.refresh(property_obj)
+                return property_obj
+
+    def get_item_property(self, item_id: int, property_key: str) -> Optional[str]:
+        """Get single item property value"""
+        with self.get_session() as session:
+            property_obj = session.query(ItemPropertyDB).filter(
+                ItemPropertyDB.item_id == item_id,
+                ItemPropertyDB.property_key == property_key
+            ).first()
+            return property_obj.property_value if property_obj else None
+
+    def get_item_properties(self, item_id: int) -> Dict[str, str]:
+        """Get all properties for an item"""
+        with self.get_session() as session:
+            properties = session.query(ItemPropertyDB).filter(
+                ItemPropertyDB.item_id == item_id
+            ).all()
+            return {prop.property_key: prop.property_value for prop in properties}
+
+    def delete_item_property(self, item_id: int, property_key: str) -> bool:
+        """Delete item property"""
+        with self.get_session() as session:
+            property_obj = session.query(ItemPropertyDB).filter(
+                ItemPropertyDB.item_id == item_id,
+                ItemPropertyDB.property_key == property_key
             ).first()
             
             if property_obj:
