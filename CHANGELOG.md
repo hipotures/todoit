@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.1] - 2025-08-08
+
+### Added
+- **Comprehensive Test Suite for Archiving**: Complete test coverage for list archiving functionality
+  - Unit tests for archiving business logic with proper mocking
+  - 13 CLI integration tests covering all archiving scenarios
+  - End-to-end workflow testing from archive to unarchive
+  - Error handling validation for edge cases
+
+### Enhanced  
+- **Test Coverage**: Enhanced unit test suite with archiving functionality tests
+- **Quality Assurance**: All archiving features now fully tested and validated
+
+### Fixed
+- **Unit Test Dependencies**: Fixed mock database method calls in archiving unit tests
+- **Test Reliability**: Improved test stability and mock object configuration
+
+### Technical
+- Added `test_archive_cli.py` with 13 comprehensive CLI integration tests
+- Enhanced `test_manager_unit.py` with 8 new archiving unit tests
+- All tests passing with 100% archiving feature coverage
+- Validated archiving workflow from CLI commands to database operations
+
+## [1.9.0] - 2025-08-08
+
+### Added
+- **List Archiving**: Complete archiving system for lists
+  - Archive lists to hide them from normal view without deletion
+  - New CLI commands: `list archive <key>` and `list unarchive <key>`
+  - New MCP tools: `todo_archive_list` and `todo_unarchive_list`
+  - List status system with `ListStatus` enum (active, archived)
+- **Enhanced List Display**: 
+  - New status column 📦 showing A (active) or Z (archived)
+  - Archive indicators in tree view with dimmed colors
+  - Filter options: `--archived` (only archived) and `--include-archived` (all lists)
+- **Database Migration**: Added status column with proper indexing
+- **MCP Integration**: Extended `todo_list_all` with `include_archived` parameter
+
+### Enhanced
+- **List Management**: Lists now have persistent status (active by default)
+- **UI Improvements**: Visual distinction between active and archived lists
+- **Filtering System**: Smart filtering hides archived lists by default
+
+### Technical
+- Added `ListStatus` enum to models
+- Database schema update with migration 003_add_list_status.sql
+- 50 MCP tools total (added 2 new archiving tools)
+- Comprehensive error handling and validation
+
+## [1.8.2] - 2025-08-07
+
+### Improved
+- **MCP Documentation**: Enhanced `todo_update_item_status` documentation with complete status descriptions
+- **Status Clarity**: Replaced "etc." with explicit list of all valid status values and their meanings
+
 ## [1.8.1] - 2025-08-07
 
 ### Fixed
