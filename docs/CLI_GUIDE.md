@@ -69,6 +69,32 @@ python -m interfaces.cli list delete "old-project"
 python -m interfaces.cli list delete "old-project" --force  # Skip confirmation
 ```
 
+#### Archive Management
+```bash
+# Archive completed list (requires all tasks to be completed)
+python -m interfaces.cli list archive "completed-project"
+
+# Force archive list with incomplete tasks
+python -m interfaces.cli list archive "incomplete-project" --force
+
+# Unarchive list (restore to active status)
+python -m interfaces.cli list unarchive "archived-project"
+
+# View archived lists only
+python -m interfaces.cli list all --archived
+
+# View all lists including archived ones
+python -m interfaces.cli list all --include-archived
+
+# Example workflow with archive validation
+python -m interfaces.cli list create "sprint-1" --title "Sprint 1" --items "Feature A" "Bug fix" "Testing"
+python -m interfaces.cli item status "sprint-1" "item_1" --status completed  # Complete some tasks
+python -m interfaces.cli list archive "sprint-1"  # Will fail - shows incomplete tasks count
+python -m interfaces.cli item status "sprint-1" "item_2" --status completed  # Complete more
+python -m interfaces.cli item status "sprint-1" "item_3" --status completed  # Complete all
+python -m interfaces.cli list archive "sprint-1"  # Now succeeds
+```
+
 #### Live Monitoring
 ```bash
 # Real-time monitoring of list changes

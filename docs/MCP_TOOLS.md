@@ -13,7 +13,7 @@ Core functionality for list and item management.
 - **`todo_create_list`** - Create new TODO list with optional initial items
 - **`todo_get_list`** - Retrieve list details by key or ID  
 - **`todo_delete_list`** - Delete list with dependency validation
-- **`todo_archive_list`** - Archive list (hide from normal view) 
+- **`todo_archive_list`** - Archive list (hide from normal view) with completion validation 
 - **`todo_unarchive_list`** - Unarchive list (restore to normal view)
 - **`todo_list_all`** - List all TODO lists with optional limit and archive filtering
 - **`todo_link_list_1to1`** - Create linked copy of list with 1:1 task mapping and automatic relation
@@ -103,6 +103,31 @@ await todo_add_item_dependency("frontend", "ui_task", "backend", "api_task")
 
 # Get smart next task
 next_task = await todo_get_next_pending_enhanced("project", smart_subtasks=True)
+```
+
+### Archive Management with Completion Validation
+```python
+# Create project and work on tasks
+await todo_create_list("sprint-1", "Sprint 1 Tasks", items=["Feature A", "Feature B", "Bug fixes"])
+
+# Complete some tasks
+await todo_update_item_status("sprint-1", "item_1", "completed")
+await todo_update_item_status("sprint-1", "item_2", "completed") 
+
+# Try to archive with incomplete tasks (will fail)
+result = await todo_archive_list("sprint-1", force=False)
+# Returns: {"success": False, "error": "Cannot archive list with incomplete tasks. Incomplete: 1/3 tasks. Use force=True to archive anyway."}
+
+# Complete remaining tasks
+await todo_update_item_status("sprint-1", "item_3", "completed")
+
+# Archive completed list (will succeed)
+result = await todo_archive_list("sprint-1", force=False)
+# Returns: {"success": True, "list": {"status": "archived", ...}}
+
+# Or force archive with incomplete tasks
+result = await todo_archive_list("sprint-1", force=True)
+# Always succeeds regardless of task completion status
 ```
 
 ### List Linking (1:1 Relationships)

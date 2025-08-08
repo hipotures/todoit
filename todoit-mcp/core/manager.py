@@ -195,8 +195,13 @@ class TodoManager:
             session.commit()
         return True
     
-    def archive_list(self, key: Union[str, int]) -> TodoList:
-        """Archive a TODO list (sets status to 'archived')"""
+    def archive_list(self, key: Union[str, int], force: bool = False) -> TodoList:
+        """Archive a TODO list (sets status to 'archived')
+        
+        Args:
+            key: List key or ID to archive
+            force: If False, prevents archiving lists with incomplete tasks
+        """
         # Get the list
         if isinstance(key, int) or (isinstance(key, str) and key.isdigit()):
             db_list = self.db.get_list_by_id(int(key))
@@ -208,6 +213,17 @@ class TodoManager:
         
         if db_list.status == 'archived':
             raise ValueError(f"List '{key}' is already archived")
+        
+        # Check if all tasks are completed unless force=True
+        if not force:
+            progress = self.get_progress(db_list.list_key)
+            if progress.total > 0 and progress.completed < progress.total:
+                incomplete_count = progress.total - progress.completed
+                raise ValueError(
+                    f"Cannot archive list with incomplete tasks. "
+                    f"Incomplete: {incomplete_count}/{progress.total} tasks. "
+                    f"Use force=True to archive anyway."
+                )
 
         with self.db.get_session() as session:
             # Re-fetch the list in the current session

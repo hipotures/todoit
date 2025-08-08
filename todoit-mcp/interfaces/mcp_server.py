@@ -120,18 +120,19 @@ async def todo_delete_list(key: str) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 @mcp.tool()
-async def todo_archive_list(list_key: str) -> Dict[str, Any]:
+async def todo_archive_list(list_key: str, force: bool = False) -> Dict[str, Any]:
     """Archive a TODO list (hide from normal view).
     
     Args:
         list_key: Key of the list to archive (required)
+        force: If True, force archiving even with incomplete tasks (default: False)
         
     Returns:
         Dictionary with success status and archived list details
     """
     try:
         mgr = init_manager()
-        archived_list = mgr.archive_list(list_key)
+        archived_list = mgr.archive_list(list_key, force=force)
         return {
             "success": True,
             "list": {

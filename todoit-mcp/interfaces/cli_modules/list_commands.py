@@ -651,13 +651,18 @@ def _create_changes_panel(changes_history):
 
 @list_group.command('archive')
 @click.argument('list_key')
+@click.option('--force', is_flag=True, help='Force archiving even with incomplete tasks')
 @click.pass_context
-def list_archive(ctx, list_key):
-    """Archive a TODO list (hide from normal view)"""
+def list_archive(ctx, list_key, force):
+    """Archive a TODO list (hide from normal view)
+    
+    By default, only lists with all tasks completed can be archived.
+    Use --force to archive lists with incomplete tasks.
+    """
     manager = get_manager(ctx.obj['db_path'])
     
     try:
-        archived_list = manager.archive_list(list_key)
+        archived_list = manager.archive_list(list_key, force=force)
         console.print(f"✅ List '[cyan]{list_key}[/]' has been archived")
         console.print(f"   Title: [white]{archived_list.title}[/]")
         console.print(f"   Status: [yellow]{archived_list.status}[/]")
@@ -666,6 +671,8 @@ def list_archive(ctx, list_key):
         console.print("💡 Use [cyan]todoit list unarchive {list_key}[/] to restore it")
     except ValueError as e:
         console.print(f"[red]❌ Error: {e}[/]")
+        if "incomplete tasks" in str(e).lower() and not force:
+            console.print(f"[yellow]💡 Use [cyan]todoit list archive {list_key} --force[/] to archive anyway[/]")
 
 
 @list_group.command('unarchive')

@@ -39,6 +39,9 @@ class TestArchiveCLI:
         manager, lists = setup_test_lists
         runner = CliRunner()
         
+        # Complete the task first so we can archive without force
+        manager.update_item_status("archive-me", "item_1", "completed")
+        
         # Archive a list
         result = runner.invoke(cli, ['--db', temp_db_path, 'list', 'archive', 'archive-me'])
         
@@ -57,7 +60,8 @@ class TestArchiveCLI:
         manager, lists = setup_test_lists
         runner = CliRunner()
         
-        # First archive a list
+        # First complete the task and archive a list
+        manager.update_item_status("archive-me", "item_1", "completed")
         manager.archive_list("archive-me")
         
         # Then unarchive it
@@ -77,7 +81,8 @@ class TestArchiveCLI:
         manager, lists = setup_test_lists
         runner = CliRunner()
         
-        # Archive one list
+        # Complete the task and archive one list
+        manager.update_item_status("archive-me", "item_1", "completed")
         manager.archive_list("archive-me")
         
         # List all (should not show archived)
@@ -94,7 +99,8 @@ class TestArchiveCLI:
         manager, lists = setup_test_lists
         runner = CliRunner()
         
-        # Archive one list
+        # Complete the task and archive one list
+        manager.update_item_status("archive-me", "item_1", "completed")
         manager.archive_list("archive-me")
         
         # List all including archived
@@ -113,7 +119,10 @@ class TestArchiveCLI:
         manager, lists = setup_test_lists
         runner = CliRunner()
         
-        # Archive two lists
+        # Archive two lists - complete their tasks first
+        manager.update_item_status("archive-me", "item_1", "completed")
+        manager.update_item_status("test-list-1", "item_1", "completed")
+        manager.update_item_status("test-list-1", "item_2", "completed")
         manager.archive_list("archive-me")
         manager.archive_list("test-list-1")
         
@@ -140,7 +149,8 @@ class TestArchiveCLI:
         manager, lists = setup_test_lists
         runner = CliRunner()
         
-        # Archive a list first
+        # Complete the task and archive a list first
+        manager.update_item_status("archive-me", "item_1", "completed")
         manager.archive_list("archive-me")
         
         # Try to archive again
@@ -178,7 +188,8 @@ class TestArchiveCLI:
         assert result.exit_code == 0
         assert "📦" not in result.output  # Status column should not appear
         
-        # Archive one list
+        # Complete the task and archive one list
+        manager.update_item_status("archive-me", "item_1", "completed")
         manager.archive_list("archive-me")
         
         # With --include-archived, status column should appear
@@ -196,7 +207,8 @@ class TestArchiveCLI:
         manager, lists = setup_test_lists
         runner = CliRunner()
         
-        # Archive one list
+        # Complete the task and archive one list
+        manager.update_item_status("archive-me", "item_1", "completed")
         manager.archive_list("archive-me")
         
         # Check status values in output
@@ -226,7 +238,8 @@ class TestArchiveCLI:
         manager, lists = setup_test_lists
         runner = CliRunner()
         
-        # Archive one list
+        # Complete the task and archive one list
+        manager.update_item_status("archive-me", "item_1", "completed")
         manager.archive_list("archive-me")
         
         # Test tree view with archived included
@@ -280,3 +293,83 @@ class TestArchiveCLI:
         result = runner.invoke(cli, ['--db', temp_db_path, 'list', 'all', '--archived'])
         assert result.exit_code == 0
         assert "workflow-test" not in result.output or "Total lists: 0" in result.output
+
+    def test_archive_with_incomplete_tasks_fails(self, temp_db_path):
+        """Test that archiving list with incomplete tasks fails without --force"""
+        runner = CliRunner()
+        manager = TodoManager(temp_db_path)
+        
+        # Create a list with incomplete tasks
+        list_with_tasks = manager.create_list("incomplete-tasks", "List with incomplete tasks", 
+                                            items=["Task 1", "Task 2", "Task 3"])
+        
+        # Complete only one task
+        manager.update_item_status("incomplete-tasks", "item_1", "completed")
+        
+        # Try to archive without --force (should fail)
+        result = runner.invoke(cli, ['--db', temp_db_path, 'list', 'archive', 'incomplete-tasks'])
+        
+        assert result.exit_code == 0
+        assert "Cannot archive list with incomplete tasks" in result.output
+        assert "Incomplete: 2/3 tasks" in result.output
+        assert "Use" in result.output and "force=True" in result.output and "archive anyway" in result.output
+        assert "todoit list archive incomplete-tasks --force" in result.output
+
+    def test_archive_with_force_flag_succeeds(self, temp_db_path):
+        """Test that archiving list with incomplete tasks succeeds with --force"""
+        runner = CliRunner()
+        manager = TodoManager(temp_db_path)
+        
+        # Create a list with incomplete tasks
+        list_with_tasks = manager.create_list("force-archive", "List to force archive", 
+                                            items=["Task 1", "Task 2"])
+        
+        # Archive with --force (should succeed)
+        result = runner.invoke(cli, ['--db', temp_db_path, 'list', 'archive', 'force-archive', '--force'])
+        
+        assert result.exit_code == 0
+        assert "List 'force-archive' has been archived" in result.output
+        assert ("Status: archived" in result.output or "Status: ListStatus.ARCHIVED" in result.output)
+        
+        # Verify list is actually archived
+        archived_list = manager.get_list("force-archive")
+        assert archived_list.status == "archived"
+
+    def test_archive_completed_list_succeeds_without_force(self, temp_db_path):
+        """Test that archiving list with all completed tasks succeeds without --force"""
+        runner = CliRunner()
+        manager = TodoManager(temp_db_path)
+        
+        # Create a list and complete all tasks
+        list_completed = manager.create_list("completed-list", "Completed list", 
+                                           items=["Task 1", "Task 2"])
+        manager.update_item_status("completed-list", "item_1", "completed")
+        manager.update_item_status("completed-list", "item_2", "completed")
+        
+        # Archive without --force (should succeed)
+        result = runner.invoke(cli, ['--db', temp_db_path, 'list', 'archive', 'completed-list'])
+        
+        assert result.exit_code == 0
+        assert "List 'completed-list' has been archived" in result.output
+        
+        # Verify list is actually archived
+        archived_list = manager.get_list("completed-list")
+        assert archived_list.status == "archived"
+
+    def test_archive_empty_list_succeeds(self, temp_db_path):
+        """Test that archiving empty list succeeds without --force"""
+        runner = CliRunner()
+        manager = TodoManager(temp_db_path)
+        
+        # Create an empty list
+        empty_list = manager.create_list("empty-list", "Empty list")
+        
+        # Archive without --force (should succeed)
+        result = runner.invoke(cli, ['--db', temp_db_path, 'list', 'archive', 'empty-list'])
+        
+        assert result.exit_code == 0
+        assert "List 'empty-list' has been archived" in result.output
+        
+        # Verify list is actually archived
+        archived_list = manager.get_list("empty-list")
+        assert archived_list.status == "archived"

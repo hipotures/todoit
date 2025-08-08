@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2025-08-08
+
+### Added
+- **Archive Validation System**: Lists can only be archived when all tasks are completed
+  - New `force` parameter in `archive_list()` core manager method
+  - CLI `--force` flag for `list archive` command to bypass validation
+  - MCP `force: bool = False` parameter for `todo_archive_list` tool
+  - Comprehensive error messages showing incomplete task counts
+  - Automatic completion validation with detailed feedback
+
+### Enhanced
+- **Archive Safety**: Prevents accidental archiving of incomplete projects
+- **User Experience**: Clear error messages with guidance on using `--force`
+- **Documentation**: Updated MCP_TOOLS.md and CLI_GUIDE.md with new archive validation examples
+- **Error Handling**: Informative messages showing "Incomplete: X/Y tasks. Use force=True to archive anyway."
+
+### Technical
+- Added comprehensive test suite for archive validation (19 new tests)
+- Unit tests in `test_archive_validation.py` covering all validation scenarios
+- Integration tests in `test_mcp_archive.py` for MCP interface validation
+- Enhanced CLI tests in `test_archive_cli.py` with force flag coverage
+- Backward compatible: `force` parameter defaults to `False`
+
 ## [1.9.1] - 2025-08-08
 
 ### Added
