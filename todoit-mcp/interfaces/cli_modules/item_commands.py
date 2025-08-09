@@ -12,6 +12,21 @@ from .display import (
     _get_status_icon, _get_status_display, _render_tree_view, 
     _display_records, console
 )
+from .tag_commands import _get_filter_tags
+
+def _check_list_access(manager, list_key):
+    """Check if list is accessible based on FORCE_TAGS (environment isolation)"""
+    filter_tags = _get_filter_tags()
+    if not filter_tags:
+        return True  # No filtering, all lists accessible
+    
+    # Get lists with required tags
+    try:
+        tagged_lists = manager.get_lists_by_tags(filter_tags)
+        allowed_list_keys = {l.list_key for l in tagged_lists}
+        return list_key in allowed_list_keys
+    except Exception:
+        return False
 
 def get_manager(db_path):
     """Get TodoManager instance - imported from main cli.py"""
@@ -36,6 +51,12 @@ def item():
 def item_add(ctx, list_key, item_key, content, metadata):
     """Add item to TODO list"""
     manager = get_manager(ctx.obj['db_path'])
+    
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
     
     try:
         meta = json.loads(metadata) if metadata else {}
@@ -97,6 +118,12 @@ def item_status(ctx, list_key, item_key, status, state):
     
     manager = get_manager(ctx.obj['db_path'])
     
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
+    
     try:
         states = {}
         for s in state:
@@ -127,6 +154,12 @@ def item_status(ctx, list_key, item_key, status, state):
 def item_next(ctx, list_key, start):
     """Get next pending item"""
     manager = get_manager(ctx.obj['db_path'])
+    
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
     
     try:
         item = manager.get_next_pending(list_key)
@@ -162,6 +195,12 @@ def item_add_subtask(ctx, list_key, parent_key, subtask_key, content, metadata):
     """Add subtask to existing task"""
     manager = get_manager(ctx.obj['db_path'])
     
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
+    
     try:
         meta = json.loads(metadata) if metadata else {}
         subtask = manager.add_subtask(
@@ -196,6 +235,12 @@ def item_add_subtask(ctx, list_key, parent_key, subtask_key, content, metadata):
 def item_tree(ctx, list_key, item_key):
     """Show hierarchy tree for item or entire list"""
     manager = get_manager(ctx.obj['db_path'])
+    
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
     
     try:
         if item_key:
@@ -242,6 +287,12 @@ def item_move_to_subtask(ctx, list_key, item_key, new_parent_key, force):
     """Convert existing task to be a subtask of another task"""
     manager = get_manager(ctx.obj['db_path'])
     
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
+    
     try:
         # Show current state
         item = manager.get_item(list_key, item_key)
@@ -283,6 +334,12 @@ def item_move_to_subtask(ctx, list_key, item_key, new_parent_key, force):
 def item_subtasks(ctx, list_key, parent_key):
     """List all subtasks for a parent task"""
     manager = get_manager(ctx.obj['db_path'])
+    
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
     
     try:
         subtasks = manager.get_subtasks(list_key, parent_key)
@@ -350,6 +407,12 @@ def item_next_smart(ctx, list_key, start):
     """Get next pending item with smart subtask logic"""
     manager = get_manager(ctx.obj['db_path'])
     
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
+    
     try:
         item = manager.get_next_pending(list_key, smart_subtasks=True)
         if not item:
@@ -392,6 +455,12 @@ def state_list(ctx, list_key, item_key):
     """Show all completion states for an item"""
     manager = get_manager(ctx.obj['db_path'])
     
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
+    
     try:
         item = manager.get_item(list_key, item_key)
         if not item:
@@ -420,6 +489,12 @@ def state_list(ctx, list_key, item_key):
 def state_clear(ctx, list_key, item_key, force):
     """Clear all completion states from an item"""
     manager = get_manager(ctx.obj['db_path'])
+    
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
     
     try:
         item = manager.get_item(list_key, item_key)
@@ -457,6 +532,12 @@ def state_clear(ctx, list_key, item_key, force):
 def state_remove(ctx, list_key, item_key, state_keys, force):
     """Remove specific completion states from an item"""
     manager = get_manager(ctx.obj['db_path'])
+    
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
     
     try:
         item = manager.get_item(list_key, item_key)
@@ -511,6 +592,12 @@ def item_delete(ctx, list_key, item_key, force):
     """Delete an item from a TODO list permanently"""
     manager = get_manager(ctx.obj['db_path'])
     
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
+    
     try:
         # Get item details for confirmation
         item = manager.get_item(list_key, item_key)
@@ -546,6 +633,12 @@ def item_delete(ctx, list_key, item_key, force):
 def item_edit(ctx, list_key, item_key, new_content):
     """Edit the content/description of a TODO item"""
     manager = get_manager(ctx.obj['db_path'])
+    
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
     
     try:
         # Get current item
