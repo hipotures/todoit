@@ -2,7 +2,7 @@
 
 ## Overview
 
-TODOIT MCP provides 46 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
+TODOIT MCP provides 55 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
 
 ## Tool Categories
 
@@ -15,7 +15,7 @@ Core functionality for list and item management.
 - **`todo_delete_list`** - Delete list with dependency validation
 - **`todo_archive_list`** - Archive list (hide from normal view) with completion validation 
 - **`todo_unarchive_list`** - Unarchive list (restore to normal view)
-- **`todo_list_all`** - List all TODO lists with progress statistics including failed status counts
+- **`todo_list_all`** - List all TODO lists with progress statistics and optional tag filtering
 - **`todo_link_list_1to1`** - Create linked copy of list with 1:1 task mapping and automatic relation
 
 #### Item Management  
@@ -91,7 +91,7 @@ Advanced algorithms for intelligent task management.
 ### 📊 Reports & Analytics (1 tool)
 Generate comprehensive reports for project management and troubleshooting.
 
-- **`todo_report_errors`** - Generate report of all failed tasks across active lists with regex filtering
+- **`todo_report_errors`** - Generate report of all failed tasks with regex and tag filtering
 
 ## Usage Examples
 
@@ -256,7 +256,7 @@ Error responses include:
 
 ## Integration with Claude Code
 
-All 50 tools are automatically available in Claude Code through MCP integration:
+All 55 tools are automatically available in Claude Code through MCP integration:
 
 1. **List Management** - Create, organize, and manage task lists
 2. **Task Operations** - Add, update, and track individual tasks
@@ -296,6 +296,40 @@ The `todo_list_all` tool now provides comprehensive progress statistics for each
 
 This enhanced data enables better project management visibility, including failed task tracking and dependency-aware progress monitoring.
 
+### 🏷️ Tag Operations (4 tools)
+Organize and categorize lists using tags for better project management.
+
+- **`todo_create_tag`** - Create new tag with optional color
+- **`todo_add_list_tag`** - Add tag to list (auto-creates if needed) 
+- **`todo_remove_list_tag`** - Remove tag from list
+- **`todo_get_lists_by_tag`** - Get all lists with specified tags
+
+### Tag Management
+```python
+# Create tags for organization
+await todo_create_tag("work", "blue")
+await todo_create_tag("urgent", "red") 
+await todo_create_tag("client", "green")
+
+# Tag lists for categorization
+await todo_add_list_tag("project-alpha", "work")
+await todo_add_list_tag("project-alpha", "client")
+await todo_add_list_tag("hotfix-123", "urgent")
+
+# Find lists by tags (OR logic - lists with ANY of the tags)
+result = await todo_get_lists_by_tag(["work", "urgent"])
+# Returns lists tagged with either "work" OR "urgent" 
+
+# Use enhanced todo_list_all with tag filtering
+result = await todo_list_all(filter_tags=["client"])
+# Returns only lists tagged with "client"
+
+# Remove tag from list
+await todo_remove_list_tag("project-alpha", "urgent")
+```
+
+**Note**: Tag filtering in MCP uses explicit parameters only. Environment variables like `TODOIT_FILTER_TAGS` are CLI-only features and do not affect MCP tools.
+
 ## Performance Considerations
 
 - **Database Optimization** - All queries use proper indexes and foreign keys
@@ -305,7 +339,7 @@ This enhanced data enables better project management visibility, including faile
 
 ## Testing Status
 
-✅ **All 50 MCP tools tested and verified working**
+✅ **All 55 MCP tools tested and verified working**
 - 100% functional coverage
 - Error handling validated  
 - Integration tested with real workflows

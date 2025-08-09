@@ -8,6 +8,8 @@ The CLI is implemented in `interfaces/cli.py` using the `click` library and offe
 
 - `list`: Manage TODO lists.
 - `item`: Manage TODO items.
+- `tag`: Global tag management.
+- `tags`: Quick tag overview (alias for `tag list`).
 - `stats`: View statistics and reports.
 - `io`: Import and export data.
 - `property`: Manage list properties.
@@ -221,6 +223,69 @@ python -m interfaces.cli item next "my-project"
 # Get next with smart subtask logic
 python -m interfaces.cli item next-smart "my-project"
 ```
+
+### 🏷️ Tag Management (`tag` and `tags`)
+
+#### Global Tag Management
+```bash
+# Quick overview of all tags (shortcut command)
+todoit tags
+
+# Create new tags for organization
+todoit tag create work --color blue
+todoit tag create urgent --color red
+todoit tag create client --color green
+todoit tag create personal --color yellow
+
+# List all available tags (explicit command)
+todoit tag list
+
+# Delete unused tags
+todoit tag delete old-tag --force  # Skip confirmation
+```
+
+#### List Tagging
+```bash
+# Add tags to lists for categorization
+todoit list tag add project-alpha work
+todoit list tag add project-alpha client
+todoit list tag add hotfix-123 urgent
+
+# Remove tags from lists
+todoit list tag remove project-alpha urgent
+
+# Show all tags for a specific list
+todoit list tag show project-alpha
+```
+
+#### Tag Filtering
+```bash
+# Filter lists by tags using CLI options
+todoit list all --tag work              # Lists tagged with "work"
+todoit list all --tag work --tag urgent # Lists with "work" OR "urgent"
+
+# Use environment variable for automatic filtering
+export TODOIT_FILTER_TAGS=work,urgent
+todoit list all                         # Automatically filtered by work,urgent
+
+# Combine environment and CLI tags (unique union)
+export TODOIT_FILTER_TAGS=work,urgent
+todoit list all --tag client           # Shows lists with work, urgent, OR client
+```
+
+#### Environment Variable Support
+```bash
+# Create .env file for persistent filtering
+echo "TODOIT_FILTER_TAGS=work,urgent,client" > .env
+
+# The CLI will automatically load .env and apply filters
+todoit list all    # Filtered by tags from .env
+
+# Override or extend with --tag option
+todoit list all --tag personal  # Shows work,urgent,client,personal
+```
+
+**Note**: Environment variables only affect CLI commands. MCP tools use explicit parameters only.
 
 ### 🔗 Dependency Management (`dep`)
 

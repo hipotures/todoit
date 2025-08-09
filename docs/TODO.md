@@ -6,18 +6,19 @@ This document tracks functionality gaps between the core manager/database layer 
 
 ## Critical Missing Features
 
-### 1. 🗑️ **Item Deletion**
-**Status:** ❌ Missing from both MCP and CLI  
+### 1. 🗑️ **Item Deletion** ✅ COMPLETED
+**Status:** ✅ **IMPLEMENTED** - Available in current version
 **Backend:** ✅ Available (`manager.delete_item()`, `database.delete_item()`)
 
-**Impact:** Users cannot remove tasks from lists once created
-**Priority:** HIGH
+**Impact:** ✅ **RESOLVED** - Users can remove tasks from lists with proper confirmation
+**Priority:** ~~HIGH~~ **COMPLETED**
 
-**Needed:**
-- [ ] `todo_delete_item` MCP tool
-- [ ] `todoit item delete <list> <item>` CLI command
-- [ ] Confirmation prompts for safety
-- [ ] Cascade deletion handling for subtasks
+**Implemented:**
+- [x] `todo_delete_item` MCP tool (interfaces/mcp_server.py:1443)
+- [x] `todoit item delete <list> <item> [--force]` CLI command (cli_modules/item_commands.py:344)  
+- [x] Confirmation prompts for safety (with --force flag to skip)
+- [x] Cascade deletion handling for subtasks and dependencies
+- [x] Comprehensive test coverage in test_item_management.py
 
 ### 2. ✏️ **Item Content Editing**
 **Status:** ❌ No content editing capability  
@@ -138,7 +139,7 @@ This document tracks functionality gaps between the core manager/database layer 
 
 ### MCP Tools Missing
 ```
-todo_delete_item          - Remove task from list
+~~todo_delete_item~~      - ✅ COMPLETED - Remove task from list
 todo_update_item_content  - Edit task description  
 todo_bulk_update_status   - Update multiple items
 todo_bulk_delete         - Delete multiple items
@@ -153,7 +154,7 @@ todo_get_lists_by_tag    - Get lists filtered by tag
 
 ### CLI Commands Missing
 ```
-todoit item delete       - Remove tasks
+~~todoit item delete~~   - ✅ COMPLETED - Remove tasks
 todoit item edit         - Edit task content
 todoit item copy         - Duplicate tasks  
 todoit item move         - Transfer between lists
@@ -191,7 +192,7 @@ TODOIT_OUTPUT_FORMAT=json - Extend JSON support to all commands
 
 ### Phase 1: Critical CRUD Operations
 1. **Reset Commands** - List and item reset functionality (errors/all modes)  
-2. **Item Deletion** - Both MCP and CLI
+2. ~~**Item Deletion**~~ - ✅ **COMPLETED** - Both MCP and CLI implemented
 3. **Content Editing** - Manager + interfaces
 4. **Basic Search** - Content filtering
 
@@ -214,9 +215,9 @@ TODOIT_OUTPUT_FORMAT=json - Extend JSON support to all commands
 - Maintain backward compatibility with existing data
 - Add comprehensive tests for all new functionality
 
-## Current Status: 45/50+ Expected Tools
+## Current Status: 46/50+ Expected Tools  
 
-The system currently provides 45 MCP tools but lacks several fundamental CRUD operations that users expect from a task management system.
+The system currently provides 46 MCP tools (including completed `todo_delete_item`). Main gaps are now content editing, bulk operations, and advanced search features.
 
 ---
 

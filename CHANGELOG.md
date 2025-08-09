@@ -5,6 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2025-08-09
+
+### Added
+- **🏷️ Complete Tag System for Lists**: Comprehensive tagging functionality for organizing and categorizing TODO lists
+  - Global tag management: Create, list, delete tags with color support
+  - List tagging: Add/remove tags from lists, view tags per list
+  - Advanced filtering: Filter lists by tags in both CLI and MCP interfaces
+  - Environment variable support: `TODOIT_FILTER_TAGS` for automatic CLI filtering with `.env` file support
+  - Union logic: CLI `--tag` and environment variables combine for flexible filtering
+
+### CLI Enhancements
+- **New Commands**: 
+  - `todoit tag` group: `create`, `list`, `delete` for global tag management
+  - `todoit tags` alias: Quick overview shortcut (alias for `tag list`)
+  - `todoit list tag` subgroup: `add`, `remove`, `show` for list-specific tagging
+  - `todoit list all --tag` option: Filter lists by tags with multiple tag support
+- **Environment Integration**: Automatic `.env` loading with `python-dotenv` dependency
+- **Smart Filtering**: Tags from environment and CLI combine as unique union
+
+### MCP Interface Expansion (46→55 tools)
+- **New MCP Tools**:
+  - `todo_create_tag`: Create new tags with color customization
+  - `todo_add_list_tag`: Add tags to lists (auto-creates tags if needed)
+  - `todo_remove_list_tag`: Remove tags from lists
+  - `todo_get_lists_by_tag`: Filter lists by tags with comprehensive metadata
+- **Enhanced Existing Tools**:
+  - `todo_list_all`: Added `filter_tags` parameter with tag information in responses
+  - `todo_report_errors`: Added `tag_filter` parameter for targeted error reporting
+
+### Database & Architecture
+- **New Tables**: `list_tags`, `list_tag_assignments` with proper indexing and foreign keys
+- **Pydantic Models**: `ListTag`, `ListTagCreate`, `ListTagAssignment` with validation
+- **Manager Methods**: Complete tag CRUD operations and filtering logic
+- **Tag Normalization**: Consistent lowercase handling across all interfaces
+
+### Security & Isolation
+- **Environment Isolation**: MCP tools ignore environment variables for security
+- **Explicit Parameters**: MCP uses only explicit parameters, CLI respects environment
+- **Input Validation**: Comprehensive tag name validation with reserved word protection
+
+### Testing & Quality
+- **Comprehensive Test Coverage**: 21+ new tests covering unit, integration, and edge cases
+- **CLI Integration Tests**: Environment variable handling and tag filtering validation
+- **MCP Integration Tests**: Full workflow testing for all new tools
+- **Backward Compatibility**: All existing functionality preserved, new parameters optional
+
+### Documentation
+- **MCP_TOOLS.md**: Updated with 4 new tools and enhanced existing tool descriptions
+- **CLI_GUIDE.md**: Complete tag management section with examples and best practices
+- **API Documentation**: Full coverage of tag system architecture and usage patterns
+
+### Technical Details
+- **Dependencies**: Added `python-dotenv>=1.0.0` for `.env` support
+- **Performance**: Optimized queries with proper database indexing
+- **Consistency**: Unified tag handling between CLI and MCP with clear separation
+
 ## [1.12.0] - 2025-08-09
 
 ### Added
