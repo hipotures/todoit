@@ -53,13 +53,25 @@ def item_add(ctx, list_key, item_key, content, metadata):
 @item.command('status')
 @click.argument('list_key')
 @click.argument('item_key')
-@click.option('--status', 
-              type=click.Choice(['pending', 'in_progress', 'completed', 'failed']),
+@click.option('--status', is_flag=False, flag_value='_show_help', default=None,
               help='Status: pending, in_progress, completed, failed')
 @click.option('--state', '-s', multiple=True, help='State in format key=value')
 @click.pass_context
 def item_status(ctx, list_key, item_key, status, state):
     """Update item status"""
+    
+    # Check if --status was provided without value (flag_value will be '_show_help')
+    if status == '_show_help':
+        console.print("[bold red]❌ Error:[/] Option '--status' requires an argument.")
+        console.print("[yellow]Available status options:[/]")
+        console.print("  • [green]pending[/] - Task is waiting to be started")
+        console.print("  • [blue]in_progress[/] - Task is currently being worked on") 
+        console.print("  • [green]completed[/] - Task has been finished")
+        console.print("  • [red]failed[/] - Task failed or was cancelled")
+        console.print("\n[dim]Example:[/] todoit item status mylist task001 --status pending")
+        console.print("\n[dim]For more help:[/] todoit item status --help")
+        return
+    
     # Check if status option was provided
     if status is None:
         console.print("[bold red]❌ Error:[/] Option '--status' requires an argument.")
@@ -70,6 +82,17 @@ def item_status(ctx, list_key, item_key, status, state):
         console.print("  • [red]failed[/] - Task failed or was cancelled")
         console.print("\n[dim]Example:[/] todoit item status mylist task001 --status pending")
         console.print("\n[dim]For more help:[/] todoit item status --help")
+        return
+    
+    # Validate status value
+    valid_statuses = ['pending', 'in_progress', 'completed', 'failed']
+    if status not in valid_statuses:
+        console.print(f"[bold red]❌ Error:[/] Invalid status '{status}'.")
+        console.print("[yellow]Available status options:[/]")
+        console.print("  • [green]pending[/] - Task is waiting to be started")
+        console.print("  • [blue]in_progress[/] - Task is currently being worked on") 
+        console.print("  • [green]completed[/] - Task has been finished")
+        console.print("  • [red]failed[/] - Task failed or was cancelled")
         return
     
     manager = get_manager(ctx.obj['db_path'])
