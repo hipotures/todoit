@@ -5,9 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.14.2] - 2025-08-09
+## [1.14.3] - 2025-08-09
+
+### Added
+- **🔒 Complete Environment Isolation**: Comprehensive FORCE_TAGS implementation across ALL CLI commands
+  - **Item Commands**: All 15+ item operations now respect FORCE_TAGS environment isolation
+    - `item add`, `item status`, `item next`, `item tree`, `item subtasks`, `item edit`, `item delete`
+    - `item add-subtask`, `item move-to-subtask`, `item next-smart`, `item state` (list/clear/remove)
+  - **List Commands**: All 8+ list operations now respect FORCE_TAGS environment isolation  
+    - `list show`, `list delete`, `list archive`, `list unarchive`, `list live`
+  - **Complete Environment Separation**: When `TODOIT_FORCE_TAGS=env_name` is set, users can only access lists with matching tags
+  - **Security**: Prevents accidental cross-environment operations (dev/staging/production isolation)
 
 ### Fixed
+- **✨ CLI Status Command**: Implemented proper `--status` option handling using Click flag_value
+  - `--status` without argument now shows helpful error message with available options
+  - Added validation for invalid status values with suggestions
+  - Maintains backward compatibility for normal usage (`--status pending`, etc.)
+  - Uses Click's `is_flag=False, flag_value='_show_help'` pattern for optional arguments
+
+### Technical  
+- Added `_check_list_access()` helper function for consistent FORCE_TAGS validation across all CLI modules
+- Enhanced test coverage with 14 comprehensive unit tests for FORCE_TAGS functionality
+- Added 7 unit tests for item commands environment isolation
+- Added 7 unit tests for list commands environment isolation
+- Comprehensive manual testing verified complete isolation works correctly
+- Added `test_helpers.py` with utilities for mocking FORCE_TAGS in future tests
+
+### Testing
+- ✅ All item commands tested with FORCE_TAGS isolation (blocking and allowing access)
+- ✅ All list commands tested with FORCE_TAGS isolation (blocking and allowing access)
+- ✅ Normal operation verified without FORCE_TAGS (no restrictions)
+- ✅ Multi-environment isolation verified (`dev` vs `production` tags)
+
+## [1.14.2] - 2025-08-09
+
+### Fixed  
 - **✨ CLI Status Command**: Implemented proper `--status` option handling using Click flag_value
   - `--status` without argument now shows helpful error message with available options
   - Added validation for invalid status values with suggestions

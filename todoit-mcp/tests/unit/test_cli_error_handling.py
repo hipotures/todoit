@@ -42,12 +42,14 @@ class TestCLIErrorHandling:
     def test_status_command_with_valid_status_works(self, runner):
         """Test that valid status argument works correctly"""
         
-        with patch('interfaces.cli_modules.item_commands.get_manager') as mock_get_manager:
+        with patch('interfaces.cli_modules.item_commands.get_manager') as mock_get_manager, \
+             patch('interfaces.cli_modules.item_commands._check_list_access') as mock_check_access:
             mock_manager = MagicMock()
             mock_item = MagicMock()
             mock_item.item_key = 'test_item'
             mock_manager.update_item_status.return_value = mock_item
             mock_get_manager.return_value = mock_manager
+            mock_check_access.return_value = True  # Allow access
             
             result = runner.invoke(item_status, [
                 'test_list', 'test_item', '--status', 'completed'
@@ -68,12 +70,14 @@ class TestCLIErrorHandling:
     def test_status_command_with_states(self, runner):
         """Test status command with completion states"""
         
-        with patch('interfaces.cli_modules.item_commands.get_manager') as mock_get_manager:
+        with patch('interfaces.cli_modules.item_commands.get_manager') as mock_get_manager, \
+             patch('interfaces.cli_modules.item_commands._check_list_access') as mock_check_access:
             mock_manager = MagicMock()
             mock_item = MagicMock()
             mock_item.item_key = 'test_item'
             mock_manager.update_item_status.return_value = mock_item
             mock_get_manager.return_value = mock_manager
+            mock_check_access.return_value = True  # Allow access
             
             result = runner.invoke(item_status, [
                 'test_list', 'test_item', 
@@ -99,10 +103,12 @@ class TestCLIErrorHandling:
     def test_status_command_handles_manager_errors(self, runner):
         """Test that manager errors are properly displayed"""
         
-        with patch('interfaces.cli_modules.item_commands.get_manager') as mock_get_manager:
+        with patch('interfaces.cli_modules.item_commands.get_manager') as mock_get_manager, \
+             patch('interfaces.cli_modules.item_commands._check_list_access') as mock_check_access:
             mock_manager = MagicMock()
             mock_manager.update_item_status.side_effect = ValueError("Item not found")
             mock_get_manager.return_value = mock_manager
+            mock_check_access.return_value = True  # Allow access
             
             result = runner.invoke(item_status, [
                 'test_list', 'test_item', '--status', 'completed'  
