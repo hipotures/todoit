@@ -69,6 +69,28 @@ python -m interfaces.cli list delete "old-project"
 python -m interfaces.cli list delete "old-project" --force  # Skip confirmation
 ```
 
+#### List Display Columns
+
+The `list all` command shows enhanced status breakdown with separate columns for each task state:
+
+- **🔀** - List type (S=Sequential, P=Parallel, H=Hierarchical, L=Linked)
+- **📋** - Pending tasks (not yet started)
+- **🔄** - In-progress tasks (currently being worked on) 
+- **❌** - Failed tasks (encountered errors or failures)
+- **✅** - Completed tasks (successfully finished)
+- **⏳** - Overall completion percentage
+
+Example output:
+```
+┌────┬─────────┬──────────┬───┬───┬───┬───┬───┬────┐
+│ ID │ Key     │ Title    │🔀 │📋 │🔄 │❌ │✅ │⏳  │
+├────┼─────────┼──────────┼───┼───┼───┼───┼───┼────┤
+│ 1  │ project │ My Tasks │ S │ 5 │ 2 │ 1 │ 7 │70% │
+└────┴─────────┴──────────┴───┴───┴───┴───┴───┴────┘
+```
+
+The **❌ Failed** column is always visible (shows "0" when no tasks have failed), providing consistent visibility into task status distribution across all projects.
+
 #### Archive Management
 ```bash
 # Archive completed list (requires all tasks to be completed)

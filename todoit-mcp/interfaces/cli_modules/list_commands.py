@@ -261,7 +261,9 @@ def list_all(ctx, limit, tree, details, archived, include_archived):
                     "Key": todo_list.list_key,
                     "Title": todo_list.title,
                     "🔀": type_short,
-                    "📋": str(progress.total - progress.completed),
+                    "📋": str(progress.pending),
+                    "🔄": str(progress.in_progress),
+                    "❌": str(progress.failed),
                     "✅": str(progress.completed),
                     "⏳": f"{progress.completion_percentage:.0f}%"
                 }
@@ -283,8 +285,10 @@ def list_all(ctx, limit, tree, details, archived, include_archived):
                 "Key": {"style": "cyan"},
                 "Title": {"style": "white"},
                 "🔀": {"style": "yellow", "justify": "center", "width": 3},
-                "📋": {"style": "yellow", "justify": "right"},
-                "✅": {"style": "green", "justify": "right"},
+                "📋": {"style": "blue", "justify": "right", "width": 3},
+                "🔄": {"style": "yellow", "justify": "right", "width": 3},
+                "❌": {"style": "red", "justify": "right", "width": 3},
+                "✅": {"style": "green", "justify": "right", "width": 3},
                 "⏳": {"style": "magenta", "justify": "right"}
             }
             

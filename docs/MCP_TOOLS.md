@@ -15,7 +15,7 @@ Core functionality for list and item management.
 - **`todo_delete_list`** - Delete list with dependency validation
 - **`todo_archive_list`** - Archive list (hide from normal view) with completion validation 
 - **`todo_unarchive_list`** - Unarchive list (restore to normal view)
-- **`todo_list_all`** - List all TODO lists with optional limit and archive filtering
+- **`todo_list_all`** - List all TODO lists with progress statistics including failed status counts
 - **`todo_link_list_1to1`** - Create linked copy of list with 1:1 task mapping and automatic relation
 
 #### Item Management  
@@ -218,6 +218,37 @@ All 50 tools are automatically available in Claude Code through MCP integration:
 4. **Dependency Management** - Coordinate work across different lists
 5. **Progress Tracking** - Monitor completion across projects
 6. **Smart Algorithms** - Intelligent task prioritization and workflow optimization
+
+### Enhanced List Overview
+
+The `todo_list_all` tool now provides comprehensive progress statistics for each list:
+
+```json
+{
+  "success": true,
+  "lists": [
+    {
+      "id": 1,
+      "list_key": "my_project",
+      "title": "My Project Tasks",
+      "list_type": "sequential",
+      "progress": {
+        "total": 10,
+        "completed": 6,
+        "in_progress": 2,
+        "pending": 1,
+        "failed": 1,
+        "completion_percentage": 60.0,
+        "blocked": 0,
+        "available": 3
+      }
+    }
+  ],
+  "count": 1
+}
+```
+
+This enhanced data enables better project management visibility, including failed task tracking and dependency-aware progress monitoring.
 
 ## Performance Considerations
 

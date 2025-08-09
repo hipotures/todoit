@@ -206,14 +206,23 @@ async def todo_list_all(limit: Optional[int] = None, include_archived: bool = Fa
         include_archived: Whether to include archived lists (default: False)
         
     Returns:
-        Dictionary with success status, list of all todo lists, and count
+        Dictionary with success status, list of all todo lists with progress statistics, and count
     """
     try:
         mgr = init_manager()
         lists = mgr.list_all(limit=limit, include_archived=include_archived)
+        
+        # Enhance each list with progress statistics including failed status
+        enhanced_lists = []
+        for todo_list in lists:
+            list_data = todo_list.to_dict()
+            progress = mgr.get_progress(todo_list.list_key)
+            list_data["progress"] = progress.to_dict()
+            enhanced_lists.append(list_data)
+        
         return {
             "success": True,
-            "lists": [todo_list.to_dict() for todo_list in lists],
+            "lists": enhanced_lists,
             "count": len(lists)
         }
     except Exception as e:

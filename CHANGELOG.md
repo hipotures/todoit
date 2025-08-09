@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2025-08-09
+
+### Added
+- **Enhanced Failed Status Display**: Always-visible failed task column in `list all` views
+  - CLI `list all` now shows separate status columns: 📋 (pending), 🔄 (in_progress), ❌ (failed), ✅ (completed)
+  - MCP `todo_list_all` tool enhanced with comprehensive progress statistics including failed counts
+  - Failed column (❌) always visible even when no tasks are failed (shows "0")
+  - Better project management visibility with detailed status breakdown
+
+### Enhanced
+- **CLI List Display**: Improved table layout with dedicated status columns for better task overview
+- **MCP Integration**: Enhanced `todo_list_all` response includes full progress statistics with failed task tracking
+- **Documentation**: Updated CLI_GUIDE.md with column descriptions and example table layout
+- **Documentation**: Enhanced MCP_TOOLS.md with progress statistics example and JSON response format
+
+### Technical
+- Added comprehensive test suite for enhanced list display (6 new unit tests)
+- Tests cover both CLI column display and MCP progress statistics enhancement
+- Enhanced column styling with proper color coding and width management
+- Backward compatible: existing API structure maintained with additive enhancements
+- All output formats (table, JSON, YAML, XML) support new status breakdown
+
 ## [1.10.0] - 2025-08-08
 
 ### Added
