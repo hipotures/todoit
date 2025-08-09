@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.1] - 2025-08-09
+
+### Enhanced
+- **📋 Improved CLI Error Handling**: Better user experience for `item status` command
+  - Enhanced error messages when `--status` argument is missing
+  - Display available status options with descriptions (pending, in_progress, completed, failed)
+  - Added helpful examples and reference to help command
+  - Improved help text for better discoverability
+
+### Fixed  
+- **CLI UX**: Status command now shows available options instead of generic error message
+
 ## [1.14.0] - 2025-08-09
 
 ### Added
