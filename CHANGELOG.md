@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.1] - 2025-08-09
+
+### Added
+- **🔄 Completion State Management**: CLI tools for managing item completion states
+  - `todoit item state list` - View all completion states for an item
+  - `todoit item state clear` - Clear all completion states from item
+  - `todoit item state remove` - Remove specific completion states by key
+  - Fixes table formatting issues caused by long state names
+  - Full confirmation prompts and `--force` flag support
+
+### Enhanced
+- **Core Manager**: New `clear_item_completion_states()` method with selective key removal
+- **History Tracking**: Added `STATES_CLEARED` action type for audit trail
+- **Error Handling**: Comprehensive validation for state management operations
+
+### Technical
+- Added `HistoryAction.STATES_CLEARED` enum value for proper history recording
+- 13 comprehensive unit tests covering all state management scenarios
+- Rich CLI formatting with visual state indicators (✅/❌)
+
 ## [1.13.0] - 2025-08-09
 
 ### Added

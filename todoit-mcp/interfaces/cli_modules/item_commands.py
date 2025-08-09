@@ -341,6 +341,130 @@ def item_next_smart(ctx, list_key, start):
         console.print(f"[bold red]❌ Error:[/] {e}")
 
 
+@item.group('state')
+def item_state():
+    """Manage completion states for TODO items"""
+    pass
+
+
+@item_state.command('list')
+@click.argument('list_key')
+@click.argument('item_key')
+@click.pass_context
+def state_list(ctx, list_key, item_key):
+    """Show all completion states for an item"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        item = manager.get_item(list_key, item_key)
+        if not item:
+            console.print(f"[red]Item '{item_key}' not found in list '{list_key}'[/]")
+            return
+        
+        console.print(f"[bold]Completion states for '{item_key}':[/]")
+        
+        if not item.completion_states:
+            console.print("[dim]No completion states set[/]")
+            return
+        
+        for key, value in item.completion_states.items():
+            icon = "✅" if value else "❌"
+            console.print(f"  {icon} {key}: {value}")
+            
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item_state.command('clear')
+@click.argument('list_key')
+@click.argument('item_key')
+@click.option('--force', is_flag=True, help='Skip confirmation prompt')
+@click.pass_context
+def state_clear(ctx, list_key, item_key, force):
+    """Clear all completion states from an item"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        item = manager.get_item(list_key, item_key)
+        if not item:
+            console.print(f"[red]Item '{item_key}' not found in list '{list_key}'[/]")
+            return
+        
+        if not item.completion_states:
+            console.print("[dim]No completion states to clear[/]")
+            return
+        
+        # Show current states
+        console.print(f"[yellow]Current states for '{item_key}':[/]")
+        for key, value in item.completion_states.items():
+            icon = "✅" if value else "❌"
+            console.print(f"  {icon} {key}")
+        
+        if not force and not Confirm.ask("Clear all completion states?"):
+            return
+        
+        # Clear all states
+        updated_item = manager.clear_item_completion_states(list_key, item_key)
+        console.print(f"[green]✅ Cleared all completion states from '{item_key}'[/]")
+        
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item_state.command('remove')
+@click.argument('list_key')
+@click.argument('item_key')
+@click.argument('state_keys', nargs=-1, required=True)
+@click.option('--force', is_flag=True, help='Skip confirmation prompt')
+@click.pass_context
+def state_remove(ctx, list_key, item_key, state_keys, force):
+    """Remove specific completion states from an item"""
+    manager = get_manager(ctx.obj['db_path'])
+    
+    try:
+        item = manager.get_item(list_key, item_key)
+        if not item:
+            console.print(f"[red]Item '{item_key}' not found in list '{list_key}'[/]")
+            return
+        
+        if not item.completion_states:
+            console.print("[dim]No completion states to remove[/]")
+            return
+        
+        # Check which keys exist
+        existing_keys = []
+        missing_keys = []
+        for key in state_keys:
+            if key in item.completion_states:
+                existing_keys.append(key)
+            else:
+                missing_keys.append(key)
+        
+        if missing_keys:
+            console.print(f"[yellow]Warning: Keys not found: {', '.join(missing_keys)}[/]")
+        
+        if not existing_keys:
+            console.print("[red]No valid state keys found to remove[/]")
+            return
+        
+        # Show states to be removed
+        console.print(f"[yellow]Removing states from '{item_key}':[/]")
+        for key in existing_keys:
+            value = item.completion_states[key]
+            icon = "✅" if value else "❌"
+            console.print(f"  {icon} {key}")
+        
+        if not force and not Confirm.ask(f"Remove {len(existing_keys)} state(s)?"):
+            return
+        
+        # Remove specific states
+        updated_item = manager.clear_item_completion_states(list_key, item_key, existing_keys)
+        console.print(f"[green]✅ Removed {len(existing_keys)} completion state(s) from '{item_key}'[/]")
+        
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
 @item.command('delete')
 @click.argument('list_key')
 @click.argument('item_key')

@@ -45,6 +45,7 @@ class HistoryAction(str, Enum):
     COMPLETED = "completed" 
     FAILED = "failed"
     DELETED = "deleted"
+    STATES_CLEARED = "states_cleared"
 
 
 class DependencyType(str, Enum):

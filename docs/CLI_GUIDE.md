@@ -582,6 +582,57 @@ python -m interfaces.cli item add --help
 python -m interfaces.cli dep add --help
 ```
 
+### 🔄 Completion State Management (`item state`)
+
+Manage completion states (flags) that are set alongside task status changes.
+
+#### View Current States
+```bash
+# Show all completion states for an item
+python -m interfaces.cli item state list "my-project" "task1"
+```
+
+#### Clear States
+```bash
+# Clear all completion states from an item
+python -m interfaces.cli item state clear "my-project" "task1"
+
+# Skip confirmation prompt
+python -m interfaces.cli item state clear "my-project" "task1" --force
+```
+
+#### Remove Specific States
+```bash
+# Remove one or more specific completion states
+python -m interfaces.cli item state remove "my-project" "task1" "quality"
+python -m interfaces.cli item state remove "my-project" "task1" "quality" "tested" "reviewed"
+
+# Skip confirmation prompt
+python -m interfaces.cli item state remove "my-project" "task1" "unwanted_state" --force
+```
+
+**Example Workflow:**
+```bash
+# Accidentally set wrong state during status update
+python -m interfaces.cli item status "project" "task1" -s wrong_name=true
+
+# Check what states exist
+python -m interfaces.cli item state list "project" "task1"
+# Shows: ❌ wrong_name: false
+
+# Remove the problematic state
+python -m interfaces.cli item state remove "project" "task1" "wrong_name"
+
+# Set correct status
+python -m interfaces.cli item status "project" "task1" --status completed -s quality=true
+```
+
+**Common Use Cases:**
+- Fix accidentally created states with wrong names
+- Clean up old/unused completion flags
+- Resolve table formatting issues caused by long state names
+- Prepare items for archival by clearing temporary states
+
 ---
 
 *CLI fully tested and production-ready with rich visualizations and comprehensive functionality.*

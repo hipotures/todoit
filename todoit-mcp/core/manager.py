@@ -432,6 +432,46 @@ class TodoManager:
         
         return self._db_to_model(db_item, TodoItem)
     
+    def clear_item_completion_states(self, 
+                                   list_key: str, 
+                                   item_key: str,
+                                   state_keys: Optional[List[str]] = None) -> TodoItem:
+        """Clear completion states from item (all states or specific keys)"""
+        # Get the list
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' does not exist")
+        
+        # Get the item
+        db_item = self.db.get_item_by_key(db_list.id, item_key)
+        if not db_item:
+            raise ValueError(f"Task '{item_key}' does not exist in list '{list_key}'")
+        
+        # Store old states for history
+        old_states = db_item.completion_states or {}
+        
+        if state_keys is None:
+            # Clear all states
+            new_states = {}
+        else:
+            # Remove specific state keys
+            new_states = {k: v for k, v in old_states.items() if k not in state_keys}
+        
+        # Update the item
+        updates = {"completion_states": new_states}
+        db_item = self.db.update_item(db_item.id, updates)
+        
+        # Record history
+        self._record_history(
+            item_id=db_item.id,
+            list_id=db_list.id,
+            action="states_cleared",
+            old_value={"completion_states": old_states},
+            new_value={"completion_states": new_states}
+        )
+        
+        return self._db_to_model(db_item, TodoItem)
+    
     def get_next_pending(self, 
                         list_key: str,
                         respect_dependencies: bool = True,
