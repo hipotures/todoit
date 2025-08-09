@@ -73,7 +73,36 @@ This document tracks functionality gaps between the core manager/database layer 
 - [ ] `todo_archive_list` - hide completed projects
 - [ ] Template system for common task patterns
 
-### 6. 🤖 **JSON Output for Systems/Scripts**
+### 6. 🔄 **Reset Commands for Lists and Items**
+**Status:** ❌ Missing reset functionality
+**Backend:** ❌ Not implemented
+
+**Impact:** No way to quickly reset failed tasks or restore lists to initial state
+**Priority:** HIGH
+
+**Needed:**
+- [ ] `list reset errors` command - changes all "failed" status to "pending" (no confirmation)
+- [ ] `list reset all` command - changes all statuses to "pending" + clears all item properties (with confirmation, --force to skip)
+- [ ] `item reset` command - reset individual items
+- [ ] `manager.reset_list()` methods in core
+- [ ] `todo_reset_list` MCP tools
+
+### 7. 🏷️ **Tags System for Lists**
+**Status:** ❌ Missing tagging system
+**Backend:** ❌ Not implemented
+
+**Impact:** Cannot organize and categorize lists by topics/projects
+**Priority:** MEDIUM
+
+**Needed:**
+- [ ] Database schema for tags (many-to-many relationship)
+- [ ] `manager.add_tag()`, `manager.remove_tag()`, `manager.get_lists_by_tag()` methods
+- [ ] CLI commands: `list tag add/remove/list`
+- [ ] MCP tools for tag management
+- [ ] Tag filtering in list views
+- [ ] Tag-based search and organization
+
+### 8. 🤖 **JSON Output for Systems/Scripts**
 **Status:** ❌ Missing structured output  
 **Backend:** ✅ Available (all data models support JSON)
 
@@ -87,6 +116,20 @@ This document tracks functionality gaps between the core manager/database layer 
 - [ ] Error responses in JSON format when JSON mode is enabled
 - [ ] Documentation for JSON schemas
 
+### 9. 📊 **Enhanced List Overview with Task Status Counts**
+**Status:** ❌ Missing detailed status information in list views
+**Backend:** ✅ Status information available but not aggregated
+
+**Impact:** No quick overview of task distribution across statuses for project management
+**Priority:** MEDIUM
+
+**Needed:**
+- [ ] Enhance `mcp__todoit__todo_list_all` to include task counts by status for each list
+- [ ] Add status count breakdown (pending, in_progress, completed, failed) to list responses
+- [ ] Include percentage completion metrics
+- [ ] Add total task count per list
+- [ ] Consider caching status aggregations for performance
+
 ## Interface-Specific Gaps
 
 ### MCP Tools Missing
@@ -98,6 +141,10 @@ todo_bulk_delete         - Delete multiple items
 todo_search              - Content-based search
 todo_copy_item           - Duplicate tasks
 todo_move_item_to_list   - Transfer between lists
+todo_reset_list          - Reset list items (errors/all modes)
+todo_add_list_tag        - Add tag to list
+todo_remove_list_tag     - Remove tag from list
+todo_get_lists_by_tag    - Get lists filtered by tag
 ```
 
 ### CLI Commands Missing
@@ -106,6 +153,9 @@ todoit item delete       - Remove tasks
 todoit item edit         - Edit task content
 todoit item copy         - Duplicate tasks  
 todoit item move         - Transfer between lists
+todoit list reset        - Reset list (errors/all modes with --force option)
+todoit item reset        - Reset individual items
+todoit list tag          - Tag management (add/remove/list tags)
 todoit search           - Find tasks by content
 todoit bulk             - Bulk operations group
 TODOIT_OUTPUT_FORMAT=json - Extend JSON support to all commands
@@ -113,17 +163,22 @@ TODOIT_OUTPUT_FORMAT=json - Extend JSON support to all commands
 
 ## Data Model Enhancements Needed
 
-### 1. **Soft Deletion**
+### 1. **Tags System**
+- Add `tags` table with many-to-many relationship to lists
+- List-Tag junction table for associations
+- Tag-based filtering and organization
+
+### 2. **Soft Deletion**
 - Add `deleted_at` timestamp field
 - Implement soft delete to prevent data loss
 - Allow recovery of deleted items
 
-### 2. **Item Versioning**
+### 3. **Item Versioning**
 - Track content changes over time
 - Allow rollback to previous versions
 - Enhanced history beyond status changes
 
-### 3. **Templates System**
+### 4. **Templates System**
 - Reusable task templates
 - Project templates with predefined structure
 - Variable substitution in templates
@@ -131,14 +186,16 @@ TODOIT_OUTPUT_FORMAT=json - Extend JSON support to all commands
 ## Implementation Priority
 
 ### Phase 1: Critical CRUD Operations
-1. **Item Deletion** - Both MCP and CLI
-2. **Content Editing** - Manager + interfaces
-3. **Basic Search** - Content filtering
+1. **Reset Commands** - List and item reset functionality (errors/all modes)  
+2. **Item Deletion** - Both MCP and CLI
+3. **Content Editing** - Manager + interfaces
+4. **Basic Search** - Content filtering
 
 ### Phase 2: Productivity Features  
-1. **Bulk Operations** - Multiple item management
-2. **Advanced Search** - Property/date filtering
-3. **Copy/Move Operations**
+1. **Tags System** - List tagging and organization
+2. **Bulk Operations** - Multiple item management
+3. **Advanced Search** - Property/date filtering
+4. **Copy/Move Operations**
 
 ### Phase 3: Advanced Features
 1. **Template System**
