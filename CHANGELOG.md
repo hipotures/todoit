@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2025-08-09
+
+### Added
+- **Reports & Analytics System**: New comprehensive reporting functionality for project management
+  - CLI `reports errors` command shows all failed tasks across active lists with full context
+  - MCP `todo_report_errors` tool provides programmatic access to failed task data
+  - Regex filtering support for list patterns (e.g., `^\d{4}_.*` for NNNN_*, `.*project.*` for containing "project")
+  - Always includes task properties, list context, and metadata for troubleshooting
+  - Automatic exclusion of archived lists from reports (active lists only)
+
+### Enhanced
+- **CLI Interface**: New `reports` command group with analytics capabilities
+- **Core Manager**: Added `get_all_failed_items()` method with regex filtering and comprehensive data aggregation
+- **MCP Integration**: Enhanced API with 46th tool providing structured JSON responses with metadata
+- **Documentation**: Updated CLI_GUIDE.md and MCP_TOOLS.md with comprehensive examples and usage patterns
+
+### Technical
+- Added comprehensive test suite for reports functionality (15 new unit tests)
+- Tests cover CLI display, MCP responses, regex filtering, and edge cases
+- Enhanced error handling for invalid regex patterns with user-friendly messages
+- Full support for all output formats (table, JSON, YAML, XML) in CLI reports
+- Proper datetime serialization in MCP responses for JSON compatibility
+
 ## [1.11.0] - 2025-08-09
 
 ### Added

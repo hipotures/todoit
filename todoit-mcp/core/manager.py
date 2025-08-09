@@ -697,6 +697,53 @@ class TodoManager:
         db_history = self.db.get_item_history(item.id, limit=limit)
         return [self._db_to_model(entry, TodoHistory) for entry in db_history]
     
+    def get_all_failed_items(self, list_filter: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get all failed items from active lists with full context and optional regex filtering
+        
+        Args:
+            list_filter: Optional regex pattern to filter lists by list_key
+            
+        Returns:
+            List of dictionaries containing failed item details with list context and properties
+        """
+        import re
+        from typing import Dict, Any
+        
+        # Get only active lists (not archived)
+        all_lists = self.list_all(include_archived=False)
+        failed_reports = []
+        
+        # Apply regex filter if provided
+        if list_filter:
+            try:
+                pattern = re.compile(list_filter)
+                all_lists = [todo_list for todo_list in all_lists if pattern.match(todo_list.list_key)]
+            except re.error as e:
+                raise ValueError(f"Invalid regex pattern '{list_filter}': {e}")
+        
+        # Collect failed items from all matching lists
+        for todo_list in all_lists:
+            failed_items = self.get_list_items(todo_list.list_key, status="failed")
+            
+            for item in failed_items:
+                # Get properties for each failed item
+                properties = self.get_item_properties(todo_list.list_key, item.item_key)
+                
+                failed_reports.append({
+                    "list_key": todo_list.list_key,
+                    "list_title": todo_list.title,
+                    "list_type": str(todo_list.list_type).replace('ListType.', '').lower(),
+                    "item_key": item.item_key,
+                    "content": item.content,
+                    "position": item.position,
+                    "updated_at": item.updated_at,
+                    "created_at": item.created_at,
+                    "properties": properties
+                })
+        
+        # Sort by list_key first, then by position within each list
+        return sorted(failed_reports, key=lambda x: (x["list_key"], x["position"]))
+    
     # === List Properties Methods ===
     
     def set_list_property(self, list_key: str, property_key: str, property_value: str) -> ListProperty:

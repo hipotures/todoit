@@ -116,19 +116,23 @@ This document tracks functionality gaps between the core manager/database layer 
 - [ ] Error responses in JSON format when JSON mode is enabled
 - [ ] Documentation for JSON schemas
 
-### 9. 📊 **Enhanced List Overview with Task Status Counts**
-**Status:** ❌ Missing detailed status information in list views
-**Backend:** ✅ Status information available but not aggregated
+### 9. 📊 **Enhanced List Overview with Task Status Counts** ✅ COMPLETED
+**Status:** ✅ **IMPLEMENTED** - Enhanced in v1.11.0 (2025-08-09)
+**Backend:** ✅ Status information available and now aggregated
 
-**Impact:** No quick overview of task distribution across statuses for project management
-**Priority:** MEDIUM
+**Impact:** ✅ **RESOLVED** - Full visibility into task distribution across statuses for project management
+**Priority:** ~~MEDIUM~~ **COMPLETED**
 
-**Needed:**
-- [ ] Enhance `mcp__todoit__todo_list_all` to include task counts by status for each list
-- [ ] Add status count breakdown (pending, in_progress, completed, failed) to list responses
-- [ ] Include percentage completion metrics
-- [ ] Add total task count per list
-- [ ] Consider caching status aggregations for performance
+**Implemented:**
+- [x] Enhanced `todo_list_all` MCP tool to include comprehensive progress statistics for each list
+- [x] Added dedicated status columns in CLI: 📋 (pending), 🔄 (in_progress), ❌ (failed), ✅ (completed)
+- [x] Failed column (❌) always visible even when no failed tasks (shows "0")
+- [x] Complete status count breakdown in both CLI table and MCP JSON responses
+- [x] Percentage completion metrics included in progress data
+- [x] Total task count per list with detailed breakdowns
+- [x] Optimized performance with proper progress aggregation
+
+**Release:** Available in v1.11.0 with comprehensive test coverage and documentation updates.
 
 ## Interface-Specific Gaps
 
@@ -216,5 +220,5 @@ The system currently provides 45 MCP tools but lacks several fundamental CRUD op
 
 ---
 
-*Last updated: 2025-08-07*
+*Last updated: 2025-08-09*
 *Status: Planning phase - ready for implementation*

@@ -254,6 +254,64 @@ python -m interfaces.cli dep graph "my-project"
 python -m interfaces.cli stats progress "my-project"
 ```
 
+### 📋 Reports & Analytics (`reports`)
+
+Generate comprehensive reports for project management and troubleshooting.
+
+#### Error Reports
+```bash
+# Show all failed tasks across active lists
+python -m interfaces.cli reports errors
+
+# Filter by list name patterns (regex)
+python -m interfaces.cli reports errors --filter "^\d{4}_.*"     # NNNN_* pattern
+python -m interfaces.cli reports errors --filter ".*project.*"   # Containing "project"
+python -m interfaces.cli reports errors --filter "^sprint_.*"    # Starting with "sprint_"
+
+# JSON output for automation and scripting
+TODOIT_OUTPUT_FORMAT=json python -m interfaces.cli reports errors
+TODOIT_OUTPUT_FORMAT=json python -m interfaces.cli reports errors --filter "^\d{4}_.*"
+```
+
+**Example Output:**
+```
+📊 Failed Tasks Report (filter: ^\d{4}_.*)
+┌──────────────┬──────────┬─────────────────┬─────────────┬─────────────────┐
+│ List         │ Item     │ Content         │ Updated     │ Properties      │
+├──────────────┼──────────┼─────────────────┼─────────────┼─────────────────┤
+│ 0001_proj_a  │ task_001 │ Deploy to prod  │ 2025-08-09  │ retry=3, sev=h  │
+│ 0023_sprint  │ bug_fix  │ Fix auth issue  │ 2025-08-08  │ assignee=john   │
+└──────────────┴──────────┴─────────────────┴─────────────┴─────────────────┘
+
+Total failed tasks: 2 (from 15 active lists)
+Filter applied: ^\d{4}_.*
+💡 Some tasks have additional properties - use JSON output for full details
+```
+
+**Common Filter Patterns:**
+- `^\d{4}_.*` - Lists starting with 4 digits + underscore (e.g., 0001_project, 2023_sprint)
+- `^(sprint|release)_.*` - Lists starting with "sprint_" or "release_"  
+- `.*project.*` - Lists containing "project" anywhere in the name
+- `^0023.*` - Lists starting with "0023"
+- `^dev_.*` - Development lists
+
+**JSON Output Structure:**
+```json
+{
+  "title": "📊 Failed Tasks Report",
+  "count": 2,
+  "data": [
+    {
+      "List": "0001_project_alpha",
+      "Item": "deploy_task",
+      "Content": "Deploy to production server",
+      "Updated": "2025-08-09 14:30",
+      "Properties": "retry_count=3, error_type=timeout"
+    }
+  ]
+}
+```
+
 ### 📄 Import/Export (`io`)
 
 #### Export

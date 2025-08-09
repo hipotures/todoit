@@ -344,6 +344,57 @@ async def todo_get_progress(list_key: str) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 @mcp.tool()
+async def todo_report_errors(list_filter: Optional[str] = None) -> Dict[str, Any]:
+    """Generate report of all failed tasks across active lists with full context.
+    
+    Args:
+        list_filter: Optional regex pattern to filter lists by list_key (e.g. "^\\d{4}_.*" for NNNN_*)
+        
+    Returns:
+        Dictionary with success status, failed tasks data, and filtering metadata
+    """
+    try:
+        mgr = init_manager()
+        
+        # Get all active lists for metadata
+        all_active_lists = mgr.list_all(include_archived=False)
+        
+        # Get failed items with optional filtering
+        failed_items = mgr.get_all_failed_items(list_filter=list_filter)
+        
+        # Count lists that matched the filter (if applied)
+        lists_matched = len(all_active_lists)
+        if list_filter:
+            import re
+            try:
+                pattern = re.compile(list_filter)
+                filtered_lists = [l for l in all_active_lists if pattern.match(l.list_key)]
+                lists_matched = len(filtered_lists)
+            except re.error:
+                lists_matched = 0
+        
+        # Convert datetime objects to strings for JSON serialization
+        for item in failed_items:
+            if item.get('updated_at'):
+                item['updated_at'] = item['updated_at'].isoformat()
+            if item.get('created_at'):
+                item['created_at'] = item['created_at'].isoformat()
+        
+        return {
+            "success": True,
+            "failed_tasks": failed_items,
+            "count": len(failed_items),
+            "metadata": {
+                "filter_applied": list_filter,
+                "lists_scanned": len(all_active_lists), 
+                "lists_matched": lists_matched,
+                "unique_lists_with_failures": len(set(item['list_key'] for item in failed_items))
+            }
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@mcp.tool()
 async def todo_import_from_markdown(file_path: str, base_key: Optional[str] = None) -> Dict[str, Any]:
     """Import todo lists from markdown file with multi-column support.
     

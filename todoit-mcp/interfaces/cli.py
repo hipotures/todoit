@@ -16,6 +16,7 @@ from .cli_modules.item_commands import item
 from .cli_modules.property_commands import list_property_group, item_property_group
 from .cli_modules.dependency_commands import dep
 from .cli_modules.io_stats_commands import stats, io, schema_info, interactive
+from .cli_modules.report_commands import report_group
 
 
 console = Console()
@@ -84,6 +85,7 @@ cli.add_command(io)
 cli.add_command(dep)
 cli.add_command(schema_info)
 cli.add_command(interactive)
+cli.add_command(report_group, name='reports')
 
 # Register property subgroups
 list_group.add_command(list_property_group)

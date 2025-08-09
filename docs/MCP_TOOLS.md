@@ -2,7 +2,7 @@
 
 ## Overview
 
-TODOIT MCP provides 50 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
+TODOIT MCP provides 46 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
 
 ## Tool Categories
 
@@ -87,6 +87,11 @@ Advanced algorithms for intelligent task management.
 - **`todo_get_dependency_graph`** - Get dependency graph for visualization
 - **`todo_get_next_pending_enhanced`** - Enhanced next task with full Phase 2 logic
 - **`todo_get_comprehensive_status`** - Complete status combining all features
+
+### 📊 Reports & Analytics (1 tool)
+Generate comprehensive reports for project management and troubleshooting.
+
+- **`todo_report_errors`** - Generate report of all failed tasks across active lists with regex filtering
 
 ## Usage Examples
 
@@ -190,6 +195,47 @@ await todo_set_item_property("project", "task1", "priority", "critical")
 
 # Remove property when no longer needed
 await todo_delete_item_property("project", "task1", "assignee")
+```
+
+### Reports & Analytics
+```python
+# Generate report of all failed tasks across active lists
+report = await todo_report_errors()
+# Returns all failed tasks from active (non-archived) lists
+
+# Filter by regex patterns for specific list naming schemes
+nnnn_report = await todo_report_errors(list_filter=r"^\d{4}_.*")  # NNNN_* pattern
+project_report = await todo_report_errors(list_filter=r".*project.*")  # Contains "project"
+sprint_report = await todo_report_errors(list_filter=r"^sprint_.*")  # Sprint lists
+
+# Example response structure:
+# {
+#   "success": True,
+#   "failed_tasks": [
+#     {
+#       "list_key": "0001_project_alpha", 
+#       "list_title": "Project Alpha Tasks",
+#       "list_type": "sequential",
+#       "item_key": "deploy_001",
+#       "content": "Deploy to production server",
+#       "position": 5,
+#       "updated_at": "2025-08-09T14:30:00",
+#       "created_at": "2025-08-05T09:00:00",
+#       "properties": {
+#         "retry_count": "3",
+#         "last_error": "connection timeout",
+#         "severity": "high"
+#       }
+#     }
+#   ],
+#   "count": 1,
+#   "metadata": {
+#     "filter_applied": "^\d{4}_.*",
+#     "lists_scanned": 25,
+#     "lists_matched": 8,
+#     "unique_lists_with_failures": 1
+#   }
+# }
 ```
 
 ## Error Handling
