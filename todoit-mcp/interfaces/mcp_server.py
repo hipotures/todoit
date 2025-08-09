@@ -39,9 +39,76 @@ def mcp_error_handler(func: Callable) -> Callable:
             return {"success": False, "error": str(e), "error_type": "internal"}
     return wrapper
 
-# === ETAP 1: 10 kluczowych funkcji ===
 
-@mcp.tool()
+# === MCP TOOLS LEVEL CONFIGURATION ===
+import os
+
+# Get MCP tools level from environment variable (default: standard)
+MCP_TOOLS_LEVEL = os.getenv('TODOIT_MCP_TOOLS_LEVEL', 'standard').lower()
+
+# Define tool sets for each level
+TOOLS_MINIMAL = [
+    # Core list operations (3)
+    "todo_create_list", "todo_get_list", "todo_list_all",
+    # Core item operations (4)  
+    "todo_add_item", "todo_update_item_status", "todo_get_list_items", "todo_get_item",
+    # Essential workflow (3)
+    "todo_get_next_pending", "todo_get_progress", "todo_update_item_content"
+]
+
+TOOLS_STANDARD = TOOLS_MINIMAL + [
+    # Convenience operations (3)
+    "todo_quick_add", "todo_mark_completed", "todo_start_item",
+    # Basic subtasks (2) 
+    "todo_add_subtask", "todo_get_subtasks",
+    # Archive management (2)
+    "todo_archive_list", "todo_unarchive_list", 
+    # Basic properties (4)
+    "todo_set_list_property", "todo_get_list_property",
+    "todo_set_item_property", "todo_get_item_property",
+    # Basic tagging (2)
+    "todo_create_tag", "todo_add_list_tag"
+]
+
+# MAX level includes all tools (defined by registration, not exclusion)
+TOOLS_MAX = "all"  # Special value meaning all registered tools
+
+def should_register_tool(tool_name: str) -> bool:
+    """Check if tool should be registered based on current MCP_TOOLS_LEVEL"""
+    if MCP_TOOLS_LEVEL == "max":
+        return True
+    elif MCP_TOOLS_LEVEL == "standard":
+        return tool_name in TOOLS_STANDARD
+    elif MCP_TOOLS_LEVEL == "minimal":
+        return tool_name in TOOLS_MINIMAL
+    else:
+        # Default to standard for unknown levels
+        return tool_name in TOOLS_STANDARD
+
+def conditional_tool(func: Callable) -> Callable:
+    """Decorator to conditionally register MCP tool based on level configuration"""
+    tool_name = func.__name__
+    
+    if should_register_tool(tool_name):
+        # Register the tool normally
+        return mcp.tool()(func)
+    else:
+        # Return the function undecorated (not registered with MCP)
+        return func
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ███ MCP TOOLS IMPLEMENTATION - ORGANIZED BY LEVEL
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ████ MINIMAL LEVEL TOOLS (10 tools) - Core functionality only
+# ═══════════════════════════════════════════════════════════════════════════════
+# Essential list operations: create, get, list_all
+# Essential item operations: add, update_status, get_list_items, get_item  
+# Essential workflow: get_next_pending, get_progress, update_item_content
+
+@conditional_tool
 async def todo_create_list(list_key: str, title: str, items: Optional[List[str]] = None, list_type: str = "sequential", metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Create a new TODO list with optional initial items.
     
@@ -73,7 +140,7 @@ async def todo_create_list(list_key: str, title: str, items: Optional[List[str]]
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 async def todo_get_list(key: str) -> Dict[str, Any]:
     """Get TODO list by key or ID.
     
@@ -99,7 +166,7 @@ async def todo_get_list(key: str) -> Dict[str, Any]:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 async def todo_delete_list(key: str) -> Dict[str, Any]:
     """Delete TODO list with dependency validation.
     
@@ -119,7 +186,7 @@ async def todo_delete_list(key: str) -> Dict[str, Any]:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 async def todo_archive_list(list_key: str, force: bool = False) -> Dict[str, Any]:
     """Archive a TODO list (hide from normal view).
     
@@ -147,7 +214,7 @@ async def todo_archive_list(list_key: str, force: bool = False) -> Dict[str, Any
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 async def todo_unarchive_list(list_key: str) -> Dict[str, Any]:
     """Unarchive a TODO list (restore to normal view).
     
@@ -174,7 +241,7 @@ async def todo_unarchive_list(list_key: str) -> Dict[str, Any]:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 async def todo_link_list_1to1(source_list_key: str, target_list_key: str, target_title: Optional[str] = None) -> Dict[str, Any]:
     """Create a linked copy of a list with 1:1 task mapping and automatic relation.
     
@@ -197,7 +264,7 @@ async def todo_link_list_1to1(source_list_key: str, target_list_key: str, target
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_list_all(limit: Optional[int] = None, include_archived: bool = False, filter_tags: Optional[List[str]] = None, mgr=None) -> Dict[str, Any]:
     """List all TODO lists in the database with optional tag filtering.
@@ -242,7 +309,7 @@ async def todo_list_all(limit: Optional[int] = None, include_archived: bool = Fa
     
     return response
 
-@mcp.tool()
+@conditional_tool
 async def todo_add_item(list_key: str, item_key: str, content: str, position: Optional[int] = None, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Add item to TODO list.
     
@@ -274,7 +341,7 @@ async def todo_add_item(list_key: str, item_key: str, content: str, position: Op
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 async def todo_update_item_status(list_key: str, item_key: str, status: Optional[str] = None, completion_states: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Update item status with multi-state support.
     
@@ -306,7 +373,7 @@ async def todo_update_item_status(list_key: str, item_key: str, status: Optional
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 async def todo_get_next_pending(list_key: str, respect_dependencies: bool = True) -> Dict[str, Any]:
     """Get next pending item to work on from a list.
     
@@ -337,7 +404,7 @@ async def todo_get_next_pending(list_key: str, respect_dependencies: bool = True
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 async def todo_get_progress(list_key: str) -> Dict[str, Any]:
     """Get progress statistics for a todo list.
     
@@ -357,7 +424,7 @@ async def todo_get_progress(list_key: str) -> Dict[str, Any]:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_report_errors(list_filter: Optional[str] = None, tag_filter: Optional[List[str]] = None, mgr=None) -> Dict[str, Any]:
     """Generate report of all failed tasks across active lists with full context.
@@ -413,7 +480,7 @@ async def todo_report_errors(list_filter: Optional[str] = None, tag_filter: Opti
         "metadata": metadata
     }
 
-@mcp.tool()
+@conditional_tool
 async def todo_import_from_markdown(file_path: str, base_key: Optional[str] = None) -> Dict[str, Any]:
     """Import todo lists from markdown file with multi-column support.
     
@@ -439,7 +506,7 @@ async def todo_import_from_markdown(file_path: str, base_key: Optional[str] = No
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 async def todo_export_to_markdown(list_key: str, file_path: str) -> Dict[str, Any]:
     """Export todo list to markdown format with [x] checkboxes.
     
@@ -465,7 +532,7 @@ async def todo_export_to_markdown(list_key: str, file_path: str) -> Dict[str, An
 
 # === Funkcje pomocnicze ===
 
-@mcp.tool()
+@conditional_tool
 async def todo_get_item(list_key: str, item_key: str) -> Dict[str, Any]:
     """Get specific todo item from a list.
     
@@ -495,7 +562,7 @@ async def todo_get_item(list_key: str, item_key: str) -> Dict[str, Any]:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 async def todo_get_list_items(list_key: str, status: Optional[str] = None) -> Dict[str, Any]:
     """Get all items from a todo list with optional status filtering.
     
@@ -520,7 +587,7 @@ async def todo_get_list_items(list_key: str, status: Optional[str] = None) -> Di
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 async def todo_create_list_relation(source_list_id: int, target_list_id: int, relation_type: str, relation_key: Optional[str] = None, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Create a relationship between two todo lists.
     
@@ -552,7 +619,7 @@ async def todo_create_list_relation(source_list_id: int, target_list_id: int, re
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 async def todo_get_lists_by_relation(relation_type: str, relation_key: str) -> Dict[str, Any]:
     """Get todo lists filtered by relation type and key.
     
@@ -577,7 +644,7 @@ async def todo_get_lists_by_relation(relation_type: str, relation_key: str) -> D
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 async def todo_get_item_history(list_key: str, item_key: str, limit: Optional[int] = None) -> Dict[str, Any]:
     """Get complete change history for a specific todo item.
     
@@ -604,9 +671,16 @@ async def todo_get_item_history(list_key: str, item_key: str, limit: Optional[in
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-# === Convenient wrapper tools ===
+# ═══════════════════════════════════════════════════════════════════════════════
+# ████ STANDARD LEVEL TOOLS (+13 tools) - Useful extensions 
+# ═══════════════════════════════════════════════════════════════════════════════
+# Convenience: quick_add, mark_completed, start_item
+# Basic subtasks: add_subtask, get_subtasks  
+# Archive management: archive_list, unarchive_list
+# Basic properties: set/get list & item properties
+# Basic tagging: create_tag, add_list_tag
 
-@mcp.tool()
+@conditional_tool
 async def todo_quick_add(list_key: str, items: List[str]) -> Dict[str, Any]:
     """Quick add multiple todo items to a list at once.
     
@@ -637,7 +711,7 @@ async def todo_quick_add(list_key: str, items: List[str]) -> Dict[str, Any]:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 async def todo_mark_completed(list_key: str, item_key: str) -> Dict[str, Any]:
     """Mark a todo item as completed (convenience shortcut).
     
@@ -663,7 +737,7 @@ async def todo_mark_completed(list_key: str, item_key: str) -> Dict[str, Any]:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 async def todo_start_item(list_key: str, item_key: str) -> Dict[str, Any]:
     """Start working on a todo item (convenience shortcut).
     
@@ -689,7 +763,7 @@ async def todo_start_item(list_key: str, item_key: str) -> Dict[str, Any]:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@mcp.tool()
+@conditional_tool
 async def todo_project_overview(project_key: str) -> Dict[str, Any]:
     """Get comprehensive overview of a project with multiple todo lists.
     
@@ -746,7 +820,7 @@ async def todo_project_overview(project_key: str) -> Dict[str, Any]:
 
 # === List Properties Functions ===
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_set_list_property(list_key: str, property_key: str, property_value: str, mgr=None) -> Dict[str, Any]:
     """Set a property for a list (create or update).
@@ -765,7 +839,7 @@ async def todo_set_list_property(list_key: str, property_key: str, property_valu
         "property": property_obj.to_dict()
     }
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_get_list_property(list_key: str, property_key: str, mgr=None) -> Dict[str, Any]:
     """Get a property value for a list.
@@ -790,7 +864,7 @@ async def todo_get_list_property(list_key: str, property_key: str, mgr=None) -> 
             "error": f"Property '{property_key}' not found for list '{list_key}'"
         }
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_get_list_properties(list_key: str, mgr=None) -> Dict[str, Any]:
     """Get all properties for a list.
@@ -809,7 +883,7 @@ async def todo_get_list_properties(list_key: str, mgr=None) -> Dict[str, Any]:
         "count": len(properties)
     }
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_delete_list_property(list_key: str, property_key: str, mgr=None) -> Dict[str, Any]:
     """Delete a property from a list.
@@ -836,7 +910,7 @@ async def todo_delete_list_property(list_key: str, property_key: str, mgr=None) 
 
 # ===== ITEM PROPERTIES MCP TOOLS =====
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_set_item_property(list_key: str, item_key: str, property_key: str, property_value: str, mgr=None) -> Dict[str, Any]:
     """Set a property for an item (create or update).
@@ -858,7 +932,7 @@ async def todo_set_item_property(list_key: str, item_key: str, property_key: str
     }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_get_item_property(list_key: str, item_key: str, property_key: str, mgr=None) -> Dict[str, Any]:
     """Get a property value for an item.
@@ -887,7 +961,7 @@ async def todo_get_item_property(list_key: str, item_key: str, property_key: str
         }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_get_item_properties(list_key: str, item_key: str, mgr=None) -> Dict[str, Any]:
     """Get all properties for an item.
@@ -909,7 +983,7 @@ async def todo_get_item_properties(list_key: str, item_key: str, mgr=None) -> Di
     }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_delete_item_property(list_key: str, item_key: str, property_key: str, mgr=None) -> Dict[str, Any]:
     """Delete a property from an item.
@@ -937,7 +1011,7 @@ async def todo_delete_item_property(list_key: str, item_key: str, property_key: 
 
 # ===== SUBTASK MANAGEMENT MCP TOOLS (Phase 1) =====
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_add_subtask(list_key: str, parent_key: str, subtask_key: str, content: str, metadata: Optional[Dict[str, Any]] = None, mgr=None) -> Dict[str, Any]:
     """Add a subtask to an existing task.
@@ -960,7 +1034,7 @@ async def todo_add_subtask(list_key: str, parent_key: str, subtask_key: str, con
     }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_get_subtasks(list_key: str, parent_key: str, mgr=None) -> Dict[str, Any]:
     """Get all subtasks for a parent task.
@@ -981,7 +1055,7 @@ async def todo_get_subtasks(list_key: str, parent_key: str, mgr=None) -> Dict[st
     }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_get_item_hierarchy(list_key: str, item_key: str, mgr=None) -> Dict[str, Any]:
     """Get full hierarchy for an item (item + all subtasks recursively).
@@ -1002,7 +1076,7 @@ async def todo_get_item_hierarchy(list_key: str, item_key: str, mgr=None) -> Dic
     }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_move_to_subtask(list_key: str, item_key: str, new_parent_key: str, mgr=None) -> Dict[str, Any]:
     """Convert an existing task to be a subtask of another task.
@@ -1023,7 +1097,7 @@ async def todo_move_to_subtask(list_key: str, item_key: str, new_parent_key: str
     }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_get_next_pending_smart(list_key: str, mgr=None) -> Dict[str, Any]:
     """Get next pending item using smart subtask logic (subtasks before parents).
@@ -1050,7 +1124,7 @@ async def todo_get_next_pending_smart(list_key: str, mgr=None) -> Dict[str, Any]
         }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_can_complete_item(list_key: str, item_key: str, mgr=None) -> Dict[str, Any]:
     """Check if an item can be completed (no pending subtasks).
@@ -1073,7 +1147,7 @@ async def todo_can_complete_item(list_key: str, item_key: str, mgr=None) -> Dict
 
 # Enhanced existing tools to support hierarchy
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler  
 async def todo_get_list_items_hierarchical(list_key: str, status: Optional[str] = None, mgr=None) -> Dict[str, Any]:
     """Get all items from a list with hierarchical organization.
@@ -1121,9 +1195,15 @@ async def todo_get_list_items_hierarchical(list_key: str, status: Optional[str] 
     }
 
 
-# ===== PHASE 2: CROSS-LIST DEPENDENCIES MCP TOOLS =====
+# ═══════════════════════════════════════════════════════════════════════════════
+# ████ MAX LEVEL TOOLS (+32 tools) - Advanced & specialized functionality
+# ═══════════════════════════════════════════════════════════════════════════════
+# Cross-list dependencies, advanced subtask ops, smart algorithms, 
+# import/export, relations, comprehensive analytics, destructive operations
 
-@mcp.tool()
+# ===== CROSS-LIST DEPENDENCIES =====
+
+@conditional_tool
 @mcp_error_handler
 async def todo_add_item_dependency(dependent_list: str, dependent_item: str, 
                                   required_list: str, required_item: str,
@@ -1157,7 +1237,7 @@ async def todo_add_item_dependency(dependent_list: str, dependent_item: str,
     }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_remove_item_dependency(dependent_list: str, dependent_item: str,
                                      required_list: str, required_item: str, mgr=None) -> Dict[str, Any]:
@@ -1184,7 +1264,7 @@ async def todo_remove_item_dependency(dependent_list: str, dependent_item: str,
     }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_get_item_blockers(list_key: str, item_key: str, mgr=None) -> Dict[str, Any]:
     """Get all items that block this item (uncompleted required items).
@@ -1209,7 +1289,7 @@ async def todo_get_item_blockers(list_key: str, item_key: str, mgr=None) -> Dict
     }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_get_items_blocked_by(list_key: str, item_key: str, mgr=None) -> Dict[str, Any]:
     """Get all items blocked by this item.
@@ -1232,7 +1312,7 @@ async def todo_get_items_blocked_by(list_key: str, item_key: str, mgr=None) -> D
     }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_is_item_blocked(list_key: str, item_key: str, mgr=None) -> Dict[str, Any]:
     """Check if item is blocked by uncompleted cross-list dependencies.
@@ -1260,7 +1340,7 @@ async def todo_is_item_blocked(list_key: str, item_key: str, mgr=None) -> Dict[s
     return result
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_can_start_item(list_key: str, item_key: str, mgr=None) -> Dict[str, Any]:
     """Check if item can be started (combines Phase 1 + Phase 2 logic).
@@ -1282,7 +1362,7 @@ async def todo_can_start_item(list_key: str, item_key: str, mgr=None) -> Dict[st
     }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_get_cross_list_progress(project_key: str, mgr=None) -> Dict[str, Any]:
     """Get progress for all lists in a project with dependency information.
@@ -1301,7 +1381,7 @@ async def todo_get_cross_list_progress(project_key: str, mgr=None) -> Dict[str, 
     }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_get_dependency_graph(project_key: str, mgr=None) -> Dict[str, Any]:
     """Get dependency graph for visualization.
@@ -1321,7 +1401,7 @@ async def todo_get_dependency_graph(project_key: str, mgr=None) -> Dict[str, Any
     }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_get_next_pending_enhanced(list_key: str, respect_dependencies: bool = True,
                                         smart_subtasks: bool = False, mgr=None) -> Dict[str, Any]:
@@ -1364,7 +1444,7 @@ async def todo_get_next_pending_enhanced(list_key: str, respect_dependencies: bo
         }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler  
 async def todo_get_comprehensive_status(list_key: str, mgr=None) -> Dict[str, Any]:
     """Get comprehensive Phase 3 status: hierarchies, dependencies, progress, and next task.
@@ -1457,7 +1537,7 @@ async def todo_get_comprehensive_status(list_key: str, mgr=None) -> Dict[str, An
 
 # ===== ITEM MANAGEMENT MCP TOOLS =====
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_delete_item(list_key: str, item_key: str, mgr=None) -> Dict[str, Any]:
     """Delete a todo item from a list permanently.
@@ -1482,7 +1562,7 @@ async def todo_delete_item(list_key: str, item_key: str, mgr=None) -> Dict[str, 
         }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_update_item_content(list_key: str, item_key: str, new_content: str, mgr=None) -> Dict[str, Any]:
     """Update the content/description of a todo item.
@@ -1505,7 +1585,7 @@ async def todo_update_item_content(list_key: str, item_key: str, new_content: st
 
 # ===== SYSTEM METADATA MCP TOOL =====
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_get_schema_info(mgr=None) -> Dict[str, Any]:
     """Get system schema information including available enums and constants.
@@ -1550,7 +1630,7 @@ async def todo_get_schema_info(mgr=None) -> Dict[str, Any]:
 
 # ===== LIST TAG MANAGEMENT MCP TOOLS =====
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler 
 async def todo_create_tag(name: str, color: str = 'blue', mgr=None) -> Dict[str, Any]:
     """Create a new tag in the system.
@@ -1570,7 +1650,7 @@ async def todo_create_tag(name: str, color: str = 'blue', mgr=None) -> Dict[str,
     }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_add_list_tag(list_key: str, tag_name: str, mgr=None) -> Dict[str, Any]:
     """Add a tag to a list (creates tag if it doesn't exist).
@@ -1590,7 +1670,7 @@ async def todo_add_list_tag(list_key: str, tag_name: str, mgr=None) -> Dict[str,
     }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_remove_list_tag(list_key: str, tag_name: str, mgr=None) -> Dict[str, Any]:
     """Remove a tag from a list.
@@ -1609,7 +1689,7 @@ async def todo_remove_list_tag(list_key: str, tag_name: str, mgr=None) -> Dict[s
     }
 
 
-@mcp.tool()
+@conditional_tool
 @mcp_error_handler
 async def todo_get_lists_by_tag(tag_names: List[str], mgr=None) -> Dict[str, Any]:
     """Get all lists that have ANY of the specified tags.

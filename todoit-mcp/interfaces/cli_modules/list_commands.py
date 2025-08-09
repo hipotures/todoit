@@ -162,6 +162,17 @@ def list_link(ctx, source_key, target_key, title):
         result = manager.link_list_1to1(source_key, target_key, title)
         
         if result.get('success'):
+            # Auto-tag target list with TODOIT_FORCE_TAGS if set (same as create command)
+            from .tag_commands import _get_force_tags
+            force_tags = _get_force_tags()
+            if force_tags:
+                for tag_name in force_tags:
+                    try:
+                        manager.add_tag_to_list(target_key, tag_name)
+                    except ValueError:
+                        # Tag doesn't exist, create it
+                        manager.create_tag(tag_name, 'blue')
+                        manager.add_tag_to_list(target_key, tag_name)
             # Display success message with statistics
             console.print(f"[bold green]✅ Successfully linked list![/]")
             console.print(f"[dim]Source:[/] {result['source_list']}")

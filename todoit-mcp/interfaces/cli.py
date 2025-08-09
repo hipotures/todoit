@@ -53,12 +53,15 @@ def get_manager(db_path: Optional[str]) -> TodoManager:
 def cli(ctx, db):
     """TODOIT - Intelligent TODO list management system"""
     # Load environment variables from .env file (CLI only, not MCP)
-    try:
-        from dotenv import load_dotenv
-        load_dotenv()
-    except ImportError:
-        # python-dotenv is optional, gracefully handle if not installed
-        pass
+    # Skip loading .env during pytest tests to avoid FORCE_TAGS conflicts
+    import sys
+    if 'pytest' not in sys.modules:
+        try:
+            from dotenv import load_dotenv
+            load_dotenv()
+        except ImportError:
+            # python-dotenv is optional, gracefully handle if not installed
+            pass
     
     ctx.ensure_object(dict)
     ctx.obj['db_path'] = db

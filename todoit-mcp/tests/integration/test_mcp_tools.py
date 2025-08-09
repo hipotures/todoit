@@ -24,7 +24,7 @@ class TestMCPToolsBasic:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         mcp_server_path = os.path.join(current_dir, '..', '..', 'interfaces', 'mcp_server.py')
         
-        result = subprocess.run(['grep', '-c', '@mcp.tool()', mcp_server_path], 
+        result = subprocess.run(['grep', '-c', '@conditional_tool', mcp_server_path], 
                               capture_output=True, text=True)
         
         if result.returncode != 0:

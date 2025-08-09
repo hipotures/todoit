@@ -9,6 +9,23 @@ from core.manager import TodoManager
 from core.database import Database
 
 
+@pytest.fixture(scope="session", autouse=True)
+def disable_force_tags_for_tests():
+    """Disable FORCE_TAGS environment isolation during tests"""
+    # Save original value if it exists
+    original_force_tags = os.environ.get('TODOIT_FORCE_TAGS')
+    
+    # Remove FORCE_TAGS to disable environment isolation during tests
+    if 'TODOIT_FORCE_TAGS' in os.environ:
+        del os.environ['TODOIT_FORCE_TAGS']
+    
+    yield
+    
+    # Restore original value if it existed
+    if original_force_tags is not None:
+        os.environ['TODOIT_FORCE_TAGS'] = original_force_tags
+
+
 @pytest.fixture
 def temp_db():
     """Create temporary database for testing"""

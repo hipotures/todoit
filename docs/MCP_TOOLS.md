@@ -4,6 +4,52 @@
 
 TODOIT MCP provides 55 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
 
+## 🎛️ Tools Level Configuration
+
+**NEW**: MCP tools can now be configured at 3 different levels to optimize token usage and system complexity:
+
+### 📦 Levels Available
+
+| Level | Tools Count | Token Savings | Use Case |
+|-------|-------------|---------------|----------|
+| **MINIMAL** | 10 tools | 82% savings | Essential operations only, maximum performance |
+| **STANDARD** | 23 tools | 58% savings | Balanced functionality (default) | 
+| **MAX** | 55 tools | 0% savings | Complete feature set |
+
+### 🔧 Configuration
+
+Set the environment variable to choose your level:
+
+```bash
+# Minimal set (10 tools) - Essential operations only
+export TODOIT_MCP_TOOLS_LEVEL=minimal
+
+# Standard set (23 tools) - Balanced functionality (DEFAULT)
+export TODOIT_MCP_TOOLS_LEVEL=standard
+
+# Complete set (55 tools) - All features
+export TODOIT_MCP_TOOLS_LEVEL=max
+```
+
+**Default**: `STANDARD` level (23 tools) for optimal balance of functionality vs performance.
+
+### ⚡ Performance Impact
+
+- **MINIMAL**: ~500-1000 tokens context vs 3000+ for MAX
+- **STANDARD**: ~1500-2000 tokens context 
+- **MAX**: ~3000+ tokens context (full feature set)
+
+### 🛡️ Security Benefits
+
+**MINIMAL** and **STANDARD** levels exclude destructive operations:
+- ❌ `todo_delete_list` - List deletion blocked
+- ❌ `todo_delete_item` - Item deletion blocked
+- ✅ All read/update operations available
+
+Perfect for production environments or when safety is paramount.
+
+---
+
 ## Tool Categories
 
 ### 🔧 Basic Operations (17 tools)
@@ -330,6 +376,61 @@ await todo_remove_list_tag("project-alpha", "urgent")
 
 **Note**: Tag filtering in MCP uses explicit parameters only. Environment variables like `TODOIT_FILTER_TAGS` are CLI-only features and do not affect MCP tools.
 
+## 📋 Detailed Tools by Level
+
+### 🥇 MINIMAL Level (10 tools)
+**Essential operations only - Maximum performance**
+
+| Tool | Purpose |
+|------|---------|
+| `todo_create_list` | Create new TODO list |
+| `todo_get_list` | Retrieve list details |
+| `todo_list_all` | List all TODO lists |
+| `todo_add_item` | Add new item to list |
+| `todo_update_item_status` | Update item status |
+| `todo_get_list_items` | Get all items from list |
+| `todo_get_item` | Get specific item details |
+| `todo_get_next_pending` | Get next available task |
+| `todo_get_progress` | Get progress statistics |
+| `todo_update_item_content` | Update item description |
+
+### 🥈 STANDARD Level (+13 tools)
+**Includes MINIMAL + useful extensions**
+
+**Additional tools in STANDARD:**
+
+| Tool | Purpose |
+|------|---------|
+| `todo_quick_add` | Add multiple items at once |
+| `todo_mark_completed` | Quick completion shortcut |
+| `todo_start_item` | Quick start shortcut |
+| `todo_add_subtask` | Add subtask to existing task |
+| `todo_get_subtasks` | Get all subtasks for parent |
+| `todo_archive_list` | Archive list (hide from view) |
+| `todo_unarchive_list` | Unarchive list (restore) |
+| `todo_set_list_property` | Set key-value properties on lists |
+| `todo_get_list_property` | Get specific list property |
+| `todo_set_item_property` | Set key-value properties on items |
+| `todo_get_item_property` | Get specific item property |
+| `todo_create_tag` | Create new system tag |
+| `todo_add_list_tag` | Add tag to list |
+
+### 🥉 MAX Level (+32 tools)  
+**Includes STANDARD + advanced features**
+
+**Additional advanced tools (32 more):**
+- **Cross-list dependencies** (6 tools): `todo_add_item_dependency`, `todo_remove_item_dependency`, etc.
+- **Advanced subtask operations** (4 tools): `todo_get_item_hierarchy`, `todo_move_to_subtask`, etc.
+- **Smart algorithms** (5 tools): `todo_get_next_pending_enhanced`, `todo_get_comprehensive_status`, etc.
+- **Import/Export** (2 tools): `todo_import_from_markdown`, `todo_export_to_markdown`
+- **Relations & Projects** (3 tools): `todo_create_list_relation`, `todo_project_overview`, etc.
+- **Advanced properties** (4 tools): `todo_get_list_properties`, `todo_delete_item_property`, etc.
+- **Analytics & Reports** (1 tool): `todo_report_errors`
+- **Advanced tagging** (3 tools): `todo_remove_list_tag`, `todo_get_lists_by_tag`, etc.
+- **System metadata** (1 tool): `todo_get_schema_info`
+- **Destructive operations** (2 tools): `todo_delete_list`, `todo_delete_item`
+- **Other specialized tools** (1 tool): `todo_get_item_history`
+
 ## Performance Considerations
 
 - **Database Optimization** - All queries use proper indexes and foreign keys
@@ -347,4 +448,4 @@ await todo_remove_list_tag("project-alpha", "urgent")
 
 ---
 
-*Last updated: August 6, 2025 - All tools production ready*
+*Last updated: August 10, 2025 - All 55 tools production ready with 3-level configuration system*
