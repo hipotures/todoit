@@ -18,16 +18,16 @@ class TestCLIErrorHandling:
         return CliRunner()
 
     def test_status_command_missing_status_shows_help(self, runner):
-        """Test that missing --status argument shows helpful error message"""
+        """Test that --status flag without value shows helpful error message"""
         
         # Mock the manager and context
         with patch('interfaces.cli_modules.item_commands.get_manager') as mock_get_manager:
             mock_manager = MagicMock()
             mock_get_manager.return_value = mock_manager
             
-            # Create a mock context object
+            # Test --status flag without value (uses flag_value='_show_help')
             result = runner.invoke(item_status, [
-                'test_list', 'test_item'
+                'test_list', 'test_item', '--status'
             ], obj={'db_path': 'test.db'})
             
             # Should show our custom error message with available options
@@ -111,3 +111,21 @@ class TestCLIErrorHandling:
             # Should show error message
             assert "Error:" in result.output
             assert "Item not found" in result.output
+
+    def test_status_command_with_invalid_status_shows_help(self, runner):
+        """Test that invalid status value shows helpful error message"""
+        
+        with patch('interfaces.cli_modules.item_commands.get_manager') as mock_get_manager:
+            mock_manager = MagicMock()
+            mock_get_manager.return_value = mock_manager
+            
+            result = runner.invoke(item_status, [
+                'test_list', 'test_item', '--status', 'invalid_status'
+            ], obj={'db_path': 'test.db'})
+            
+            # Should show validation error with available options
+            assert "Invalid status 'invalid_status'" in result.output
+            assert "pending" in result.output
+            assert "in_progress" in result.output  
+            assert "completed" in result.output
+            assert "failed" in result.output

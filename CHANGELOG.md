@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.2] - 2025-08-09
+
+### Fixed
+- **✨ CLI Status Command**: Implemented proper `--status` option handling using Click flag_value
+  - `--status` without argument now shows helpful error message with available options
+  - Added validation for invalid status values with suggestions
+  - Maintains backward compatibility for normal usage (`--status pending`, etc.)
+  - Uses Click's `is_flag=False, flag_value='_show_help'` pattern for optional arguments
+
+### Technical
+- Enhanced test coverage with 5 comprehensive unit tests for status command edge cases
+- Added validation for invalid status values (shows available options)
+- Improved error messages with examples and help references
+
 ## [1.14.1] - 2025-08-09
 
 ### Enhanced
