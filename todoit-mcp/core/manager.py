@@ -7,11 +7,11 @@ import os
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime, timezone
 
-from .database import Database, TodoListDB, TodoItemDB, ListRelationDB, TodoHistoryDB, ListPropertyDB, ItemPropertyDB, ItemDependencyDB, utc_now
+from .database import Database, TodoListDB, TodoItemDB, ListRelationDB, TodoHistoryDB, ListPropertyDB, ItemPropertyDB, ItemDependencyDB, ListTagDB, ListTagAssignmentDB, utc_now
 from .models import (
     TodoList, TodoItem, ListRelation, TodoHistory, ProgressStats, ListProperty, ItemProperty,
     TodoListCreate, TodoItemCreate, ListRelationCreate, TodoHistoryCreate,  
-    ItemDependency, DependencyType,
+    ItemDependency, DependencyType, ListTag, ListTagCreate, ListTagAssignment,
     ItemStatus, ListType, RelationType, HistoryAction
 )
 
@@ -289,15 +289,32 @@ class TodoManager:
                 updated_at=db_list_in_session.updated_at
             )
     
-    def list_all(self, limit: Optional[int] = None, include_archived: bool = False) -> List[TodoList]:
-        """4. Lists all TODO lists"""
-        db_lists = self.db.get_all_lists(limit=limit)
-        
-        # Filter by status unless include_archived is True
-        if not include_archived:
-            db_lists = [db_list for db_list in db_lists if db_list.status != 'archived']
-        
-        return [self._db_to_model(db_list, TodoList) for db_list in db_lists]
+    def list_all(self, limit: Optional[int] = None, include_archived: bool = False, 
+                 filter_tags: Optional[List[str]] = None) -> List[TodoList]:
+        """4. Lists all TODO lists with optional tag filtering"""
+        if filter_tags:
+            # Get lists by tags
+            lists = self.get_lists_by_tags(filter_tags)
+            
+            # Apply archived filter if needed
+            if not include_archived:
+                lists = [l for l in lists if l.status != 'archived']
+            
+            # Apply limit if specified
+            if limit and len(lists) > limit:
+                lists = lists[:limit]
+            
+            return lists
+        else:
+            # Use original implementation without tag filtering
+            db_lists = self.db.get_all_lists(limit)
+            lists = [self._db_to_model(db_list, TodoList) for db_list in db_lists]
+            
+            # Filter archived if requested
+            if not include_archived:
+                lists = [l for l in lists if l.status != 'archived']
+            
+            return lists
     
     def get_archived_lists(self, limit: Optional[int] = None) -> List[TodoList]:
         """Get only archived lists"""
@@ -697,11 +714,12 @@ class TodoManager:
         db_history = self.db.get_item_history(item.id, limit=limit)
         return [self._db_to_model(entry, TodoHistory) for entry in db_history]
     
-    def get_all_failed_items(self, list_filter: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Get all failed items from active lists with full context and optional regex filtering
+    def get_all_failed_items(self, list_filter: Optional[str] = None, tag_filter: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+        """Get all failed items from active lists with full context and optional filtering
         
         Args:
             list_filter: Optional regex pattern to filter lists by list_key
+            tag_filter: Optional list of tag names to filter lists by
             
         Returns:
             List of dictionaries containing failed item details with list context and properties
@@ -709,8 +727,8 @@ class TodoManager:
         import re
         from typing import Dict, Any
         
-        # Get only active lists (not archived)
-        all_lists = self.list_all(include_archived=False)
+        # Get only active lists (not archived) with optional tag filtering
+        all_lists = self.list_all(include_archived=False, filter_tags=tag_filter)
         failed_reports = []
         
         # Apply regex filter if provided
@@ -1735,3 +1753,104 @@ class TodoManager:
                 # Log error but don't fail the main operation
                 print(f"Warning: Failed to sync item '{item_key}' to child list {relation.target_list_id}: {e}")
                 continue
+
+    # ===== LIST TAG MANAGEMENT METHODS =====
+
+    def create_tag(self, name: str, color: str = 'blue') -> ListTag:
+        """Create a new tag"""
+        # Check if tag already exists
+        existing_tag = self.db.get_tag_by_name(name)
+        if existing_tag:
+            raise ValueError(f"Tag '{name}' already exists")
+        
+        # Create tag data
+        tag_data = {
+            "name": name.lower(),
+            "color": color.lower()
+        }
+        
+        # Create tag in database
+        db_tag = self.db.create_tag(tag_data)
+        
+        # Convert to Pydantic model and return
+        return self._db_to_model(db_tag, ListTag)
+
+    def get_tag(self, tag_identifier: Union[int, str]) -> Optional[ListTag]:
+        """Get tag by ID or name"""
+        if isinstance(tag_identifier, int):
+            db_tag = self.db.get_tag_by_id(tag_identifier)
+        else:
+            db_tag = self.db.get_tag_by_name(tag_identifier)
+        
+        if db_tag:
+            return self._db_to_model(db_tag, ListTag)
+        return None
+
+    def get_all_tags(self) -> List[ListTag]:
+        """Get all available tags"""
+        db_tags = self.db.get_all_tags()
+        return [self._db_to_model(tag, ListTag) for tag in db_tags]
+
+    def delete_tag(self, tag_identifier: Union[int, str]) -> bool:
+        """Delete tag by ID or name"""
+        # First get the tag to get its ID
+        tag = self.get_tag(tag_identifier)
+        if not tag:
+            return False
+        
+        # Delete tag from database (will also delete all assignments)
+        return self.db.delete_tag(tag.id)
+
+    def add_tag_to_list(self, list_key: str, tag_name: str) -> ListTagAssignment:
+        """Add tag to a list"""
+        # Get list
+        list_obj = self.get_list(list_key)
+        if not list_obj:
+            raise ValueError(f"List '{list_key}' not found")
+        
+        # Get or create tag
+        tag = self.get_tag(tag_name)
+        if not tag:
+            tag = self.create_tag(tag_name)
+        
+        # Create assignment
+        db_assignment = self.db.add_tag_to_list(list_obj.id, tag.id)
+        
+        # Convert to Pydantic model and return
+        return self._db_to_model(db_assignment, ListTagAssignment)
+
+    def remove_tag_from_list(self, list_key: str, tag_name: str) -> bool:
+        """Remove tag from a list"""
+        # Get list
+        list_obj = self.get_list(list_key)
+        if not list_obj:
+            return False
+        
+        # Get tag
+        tag = self.get_tag(tag_name)
+        if not tag:
+            return False
+        
+        # Remove assignment
+        return self.db.remove_tag_from_list(list_obj.id, tag.id)
+
+    def get_tags_for_list(self, list_key: str) -> List[ListTag]:
+        """Get all tags assigned to a list"""
+        # Get list
+        list_obj = self.get_list(list_key)
+        if not list_obj:
+            return []
+        
+        # Get tags for list
+        db_tags = self.db.get_tags_for_list(list_obj.id)
+        return [self._db_to_model(tag, ListTag) for tag in db_tags]
+
+    def get_lists_by_tags(self, tag_names: List[str]) -> List[TodoList]:
+        """Get all lists that have ANY of the specified tags"""
+        if not tag_names:
+            return []
+        
+        # Get lists from database
+        db_lists = self.db.get_lists_by_tags(tag_names)
+        return [self._db_to_model(list_obj, TodoList) for list_obj in db_lists]
+

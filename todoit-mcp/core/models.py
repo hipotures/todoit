@@ -539,3 +539,83 @@ class BlockedItemsResult(BaseModel):
             "blockers": self.blockers,
             "is_blocked": self.is_blocked
         }
+
+
+# ===== LIST TAGS MODELS =====
+
+class ListTagBase(BaseModel):
+    """Base model for list tags"""
+    name: str = Field(..., min_length=1, max_length=50, pattern=r'^[a-zA-Z0-9_-]+$')
+    color: str = Field(default='blue', max_length=20, pattern=r'^[a-zA-Z0-9#]+$')
+    
+    @field_validator('name')
+    def validate_tag_name(cls, v):
+        """Validate tag name format"""
+        if v.lower() in ['all', 'none', 'null', 'undefined']:
+            raise ValueError('Tag name cannot be a reserved word')
+        return v.lower()  # Normalize to lowercase
+    
+    @field_validator('color')
+    def validate_color(cls, v):
+        """Validate color format"""
+        valid_colors = ['red', 'green', 'blue', 'yellow', 'orange', 'purple', 'cyan', 'magenta', 'white', 'black']
+        if not (v.lower() in valid_colors or v.startswith('#')):
+            return 'blue'  # Default fallback
+        return v.lower()
+
+
+class ListTagCreate(ListTagBase):
+    """Model for creating list tags"""
+    pass
+
+
+class ListTag(ListTagBase):
+    """Complete list tag model"""
+    id: int
+    created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization"""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "color": self.color,
+            "created_at": self.created_at.isoformat()
+        }
+
+
+class ListTagAssignmentBase(BaseModel):
+    """Base model for list tag assignments"""
+    list_id: int = Field(..., gt=0)
+    tag_id: int = Field(..., gt=0)
+    
+    @field_validator('list_id', 'tag_id')
+    def validate_ids(cls, v):
+        """Validate IDs are positive"""
+        if v <= 0:
+            raise ValueError('IDs must be positive integers')
+        return v
+
+
+class ListTagAssignmentCreate(ListTagAssignmentBase):
+    """Model for creating list tag assignments"""
+    pass
+
+
+class ListTagAssignment(ListTagAssignmentBase):
+    """Complete list tag assignment model"""
+    id: int
+    assigned_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization"""
+        return {
+            "id": self.id,
+            "list_id": self.list_id,
+            "tag_id": self.tag_id,
+            "assigned_at": self.assigned_at.isoformat()
+        }

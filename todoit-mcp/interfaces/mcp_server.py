@@ -198,35 +198,49 @@ async def todo_link_list_1to1(source_list_key: str, target_list_key: str, target
         return {"success": False, "error": str(e)}
 
 @mcp.tool()
-async def todo_list_all(limit: Optional[int] = None, include_archived: bool = False) -> Dict[str, Any]:
-    """List all TODO lists in the database.
+@mcp_error_handler
+async def todo_list_all(limit: Optional[int] = None, include_archived: bool = False, filter_tags: Optional[List[str]] = None, mgr=None) -> Dict[str, Any]:
+    """List all TODO lists in the database with optional tag filtering.
     
     Args:
         limit: Optional maximum number of lists to return
         include_archived: Whether to include archived lists (default: False)
+        filter_tags: Optional list of tag names to filter by (lists with ANY of these tags)
         
     Returns:
-        Dictionary with success status, list of all todo lists with progress statistics, and count
+        Dictionary with success status, list of all todo lists with progress statistics, tags, and count
     """
-    try:
-        mgr = init_manager()
-        lists = mgr.list_all(limit=limit, include_archived=include_archived)
+    lists = mgr.list_all(limit=limit, include_archived=include_archived, filter_tags=filter_tags)
+    
+    # Enhance each list with progress statistics and tag information
+    enhanced_lists = []
+    for todo_list in lists:
+        list_data = todo_list.to_dict()
         
-        # Enhance each list with progress statistics including failed status
-        enhanced_lists = []
-        for todo_list in lists:
-            list_data = todo_list.to_dict()
-            progress = mgr.get_progress(todo_list.list_key)
-            list_data["progress"] = progress.to_dict()
-            enhanced_lists.append(list_data)
+        # Add progress statistics
+        progress = mgr.get_progress(todo_list.list_key)
+        list_data["progress"] = progress.to_dict()
         
-        return {
-            "success": True,
-            "lists": enhanced_lists,
-            "count": len(lists)
+        # Add tags information
+        tags = mgr.get_tags_for_list(todo_list.list_key)
+        list_data["tags"] = [tag.to_dict() for tag in tags]
+        
+        enhanced_lists.append(list_data)
+    
+    response = {
+        "success": True,
+        "lists": enhanced_lists,
+        "count": len(lists)
+    }
+    
+    # Add filtering metadata if tags were used
+    if filter_tags:
+        response["filter_applied"] = {
+            "tag_filter": filter_tags,
+            "message": f"Filtered by tags: {', '.join(filter_tags)}"
         }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    
+    return response
 
 @mcp.tool()
 async def todo_add_item(list_key: str, item_key: str, content: str, position: Optional[int] = None, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -344,55 +358,60 @@ async def todo_get_progress(list_key: str) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 @mcp.tool()
-async def todo_report_errors(list_filter: Optional[str] = None) -> Dict[str, Any]:
+@mcp_error_handler
+async def todo_report_errors(list_filter: Optional[str] = None, tag_filter: Optional[List[str]] = None, mgr=None) -> Dict[str, Any]:
     """Generate report of all failed tasks across active lists with full context.
     
     Args:
         list_filter: Optional regex pattern to filter lists by list_key (e.g. "^\\d{4}_.*" for NNNN_*)
+        tag_filter: Optional list of tag names to filter lists by
         
     Returns:
         Dictionary with success status, failed tasks data, and filtering metadata
     """
-    try:
-        mgr = init_manager()
-        
-        # Get all active lists for metadata
-        all_active_lists = mgr.list_all(include_archived=False)
-        
-        # Get failed items with optional filtering
-        failed_items = mgr.get_all_failed_items(list_filter=list_filter)
-        
-        # Count lists that matched the filter (if applied)
-        lists_matched = len(all_active_lists)
-        if list_filter:
-            import re
-            try:
-                pattern = re.compile(list_filter)
-                filtered_lists = [l for l in all_active_lists if pattern.match(l.list_key)]
-                lists_matched = len(filtered_lists)
-            except re.error:
-                lists_matched = 0
-        
-        # Convert datetime objects to strings for JSON serialization
-        for item in failed_items:
-            if item.get('updated_at'):
-                item['updated_at'] = item['updated_at'].isoformat()
-            if item.get('created_at'):
-                item['created_at'] = item['created_at'].isoformat()
-        
-        return {
-            "success": True,
-            "failed_tasks": failed_items,
-            "count": len(failed_items),
-            "metadata": {
-                "filter_applied": list_filter,
-                "lists_scanned": len(all_active_lists), 
-                "lists_matched": lists_matched,
-                "unique_lists_with_failures": len(set(item['list_key'] for item in failed_items))
-            }
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    # Get all active lists for metadata (with tag filtering if specified)
+    all_active_lists = mgr.list_all(include_archived=False, filter_tags=tag_filter)
+    
+    # Get failed items with optional filtering
+    failed_items = mgr.get_all_failed_items(list_filter=list_filter, tag_filter=tag_filter)
+    
+    # Count lists that matched the filter (if applied)
+    lists_matched = len(all_active_lists)
+    if list_filter:
+        import re
+        try:
+            pattern = re.compile(list_filter)
+            filtered_lists = [l for l in all_active_lists if pattern.match(l.list_key)]
+            lists_matched = len(filtered_lists)
+        except re.error:
+            lists_matched = 0
+    
+    # Convert datetime objects to strings for JSON serialization
+    for item in failed_items:
+        if item.get('updated_at'):
+            item['updated_at'] = item['updated_at'].isoformat()
+        if item.get('created_at'):
+            item['created_at'] = item['created_at'].isoformat()
+    
+    metadata = {
+        "lists_scanned": len(all_active_lists), 
+        "lists_matched": lists_matched,
+        "unique_lists_with_failures": len(set(item['list_key'] for item in failed_items))
+    }
+    
+    # Add filter metadata
+    if list_filter:
+        metadata["list_filter_applied"] = list_filter
+    if tag_filter:
+        metadata["tag_filter_applied"] = tag_filter
+        metadata["message"] = f"Filtered by tags: {', '.join(tag_filter)}"
+    
+    return {
+        "success": True,
+        "failed_tasks": failed_items,
+        "count": len(failed_items),
+        "metadata": metadata
+    }
 
 @mcp.tool()
 async def todo_import_from_markdown(file_path: str, base_key: Optional[str] = None) -> Dict[str, Any]:
@@ -1526,6 +1545,104 @@ async def todo_get_schema_info(mgr=None) -> Dict[str, Any]:
                 "related": "Items are related but not blocking"
             }
         }
+    }
+
+
+# ===== LIST TAG MANAGEMENT MCP TOOLS =====
+
+@mcp.tool()
+@mcp_error_handler 
+async def todo_create_tag(name: str, color: str = 'blue', mgr=None) -> Dict[str, Any]:
+    """Create a new tag in the system.
+    
+    Args:
+        name: Tag name (required, will be normalized to lowercase)
+        color: Tag color (default: blue, supports: red, green, blue, yellow, orange, purple, cyan, magenta)
+        
+    Returns:
+        Dictionary with success status and created tag details
+    """
+    tag = mgr.create_tag(name, color)
+    return {
+        "success": True,
+        "tag": tag.to_dict(),
+        "message": f"Tag '{name}' created successfully"
+    }
+
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_add_list_tag(list_key: str, tag_name: str, mgr=None) -> Dict[str, Any]:
+    """Add a tag to a list (creates tag if it doesn't exist).
+    
+    Args:
+        list_key: Key of the list to tag (required)
+        tag_name: Name of the tag to add (required, will be normalized to lowercase)
+        
+    Returns:
+        Dictionary with success status and assignment details
+    """
+    assignment = mgr.add_tag_to_list(list_key, tag_name)
+    return {
+        "success": True, 
+        "assignment": assignment.to_dict(),
+        "message": f"Tag '{tag_name}' added to list '{list_key}'"
+    }
+
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_remove_list_tag(list_key: str, tag_name: str, mgr=None) -> Dict[str, Any]:
+    """Remove a tag from a list.
+    
+    Args:
+        list_key: Key of the list to remove tag from (required)
+        tag_name: Name of the tag to remove (required)
+        
+    Returns:
+        Dictionary with success status and removal confirmation
+    """
+    success = mgr.remove_tag_from_list(list_key, tag_name)
+    return {
+        "success": success,
+        "message": f"Tag '{tag_name}' {'removed from' if success else 'was not assigned to'} list '{list_key}'"
+    }
+
+
+@mcp.tool()
+@mcp_error_handler
+async def todo_get_lists_by_tag(tag_names: List[str], mgr=None) -> Dict[str, Any]:
+    """Get all lists that have ANY of the specified tags.
+    
+    Args:
+        tag_names: List of tag names to filter by (required)
+        
+    Returns:
+        Dictionary with success status, matching lists, and metadata
+    """
+    lists = mgr.get_lists_by_tags(tag_names)
+    
+    # Enhance lists with tag information
+    enhanced_lists = []
+    for todo_list in lists:
+        list_data = todo_list.to_dict()
+        
+        # Get tags for this list
+        tags = mgr.get_tags_for_list(todo_list.list_key)
+        list_data["tags"] = [tag.to_dict() for tag in tags]
+        
+        # Get progress stats
+        progress = mgr.get_progress(todo_list.list_key)
+        list_data["progress"] = progress.to_dict()
+        
+        enhanced_lists.append(list_data)
+    
+    return {
+        "success": True,
+        "lists": enhanced_lists,
+        "count": len(lists),
+        "filter_tags": tag_names,
+        "message": f"Found {len(lists)} list(s) with tags: {', '.join(tag_names)}"
     }
 
 

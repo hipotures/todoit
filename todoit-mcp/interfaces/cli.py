@@ -17,6 +17,7 @@ from .cli_modules.property_commands import list_property_group, item_property_gr
 from .cli_modules.dependency_commands import dep
 from .cli_modules.io_stats_commands import stats, io, schema_info, interactive
 from .cli_modules.report_commands import report_group
+from .cli_modules.tag_commands import tag, tags
 
 
 console = Console()
@@ -51,6 +52,14 @@ def get_manager(db_path: Optional[str]) -> TodoManager:
 @click.pass_context
 def cli(ctx, db):
     """TODOIT - Intelligent TODO list management system"""
+    # Load environment variables from .env file (CLI only, not MCP)
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        # python-dotenv is optional, gracefully handle if not installed
+        pass
+    
     ctx.ensure_object(dict)
     ctx.obj['db_path'] = db
     
@@ -80,6 +89,8 @@ def cli(ctx, db):
 # Register command groups from modules
 cli.add_command(list_group, name='list')
 cli.add_command(item)
+cli.add_command(tag)
+cli.add_command(tags)
 cli.add_command(stats)
 cli.add_command(io)
 cli.add_command(dep)

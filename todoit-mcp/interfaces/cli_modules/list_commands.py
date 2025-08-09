@@ -21,6 +21,7 @@ from .display import (
     _render_tree_view, _render_table_view, _display_lists_tree, 
     _display_records, _format_date, console
 )
+from .tag_commands import _get_filter_tags
 
 def get_manager(db_path):
     """Get TodoManager instance - imported from main cli.py"""
@@ -218,18 +219,30 @@ def list_show(ctx, list_key, tree):
 @click.option('--details', is_flag=True, help='Show detailed information including creation date')
 @click.option('--archived', is_flag=True, help='Show only archived lists')
 @click.option('--include-archived', is_flag=True, help='Include archived lists in results')
+@click.option('--tag', 'filter_tags', multiple=True, help='Filter by tags (can use multiple times)')
 @click.pass_context
-def list_all(ctx, limit, tree, details, archived, include_archived):
+def list_all(ctx, limit, tree, details, archived, include_archived, filter_tags):
     """List all TODO lists"""
     manager = get_manager(ctx.obj['db_path'])
     
     try:
+        # Get combined filter tags from environment and CLI
+        combined_filter_tags = _get_filter_tags(list(filter_tags)) if filter_tags else _get_filter_tags()
+        
         if archived:
             # Show only archived lists
             lists = manager.get_archived_lists(limit=limit)
+            # Apply tag filtering to archived lists if tags specified
+            if combined_filter_tags:
+                tagged_lists = manager.get_lists_by_tags(combined_filter_tags)
+                lists = [l for l in lists if l.id in [tl.id for tl in tagged_lists]]
         else:
-            # Show active lists, optionally including archived
-            lists = manager.list_all(limit=limit, include_archived=include_archived)
+            # Show active lists with optional tag filtering
+            lists = manager.list_all(
+                limit=limit, 
+                include_archived=include_archived, 
+                filter_tags=combined_filter_tags if combined_filter_tags else None
+            )
         
         # Sort lists by ID (lowest first) for consistent ordering
         lists = sorted(lists, key=lambda x: x.id)
@@ -695,3 +708,104 @@ def list_unarchive(ctx, list_key):
         console.print("💡 The list is now visible in normal [cyan]todoit list all[/] view")
     except ValueError as e:
         console.print(f"[red]❌ Error: {e}[/]")
+
+
+# ===== LIST TAG MANAGEMENT =====
+
+@list_group.group()
+def tag():
+    """Tag management for lists"""
+    pass
+
+
+@tag.command("add")
+@click.argument('list_key')
+@click.argument('tag_name')
+@click.pass_context
+def add_tag_to_list(ctx, list_key, tag_name):
+    """Add tag to a list"""
+    try:
+        manager = get_manager(ctx.obj['db_path'])
+        assignment = manager.add_tag_to_list(list_key, tag_name)
+        
+        console.print(f"✅ Added tag '[cyan]{tag_name}[/]' to list '[white]{list_key}[/]'")
+        
+    except ValueError as e:
+        console.print(f"❌ Error: {e}")
+        raise click.ClickException(str(e))
+    except Exception as e:
+        console.print(f"❌ Unexpected error: {e}")
+        raise click.ClickException(str(e))
+
+
+@tag.command("remove")
+@click.argument('list_key')
+@click.argument('tag_name')
+@click.pass_context
+def remove_tag_from_list(ctx, list_key, tag_name):
+    """Remove tag from a list"""
+    try:
+        manager = get_manager(ctx.obj['db_path'])
+        success = manager.remove_tag_from_list(list_key, tag_name)
+        
+        if success:
+            console.print(f"✅ Removed tag '[cyan]{tag_name}[/]' from list '[white]{list_key}[/]'")
+        else:
+            console.print(f"❌ Tag '[cyan]{tag_name}[/]' was not assigned to list '[white]{list_key}[/]'")
+            
+    except Exception as e:
+        console.print(f"❌ Error removing tag: {e}")
+        raise click.ClickException(str(e))
+
+
+@tag.command("show")
+@click.argument('list_key')
+@click.pass_context
+def show_list_tags(ctx, list_key):
+    """Show all tags assigned to a list"""
+    try:
+        manager = get_manager(ctx.obj['db_path'])
+        
+        # Verify list exists
+        list_obj = manager.get_list(list_key)
+        if not list_obj:
+            console.print(f"❌ List '{list_key}' not found")
+            return
+        
+        # Get tags for list
+        tags = manager.get_tags_for_list(list_key)
+        
+        if not tags:
+            console.print(f"📭 List '[white]{list_key}[/]' has no tags assigned")
+            return
+        
+        # Display tags
+        from rich.table import Table
+        from rich import box
+        
+        table = Table(
+            title=f"🏷️ Tags for List: {list_obj.title}",
+            box=box.ROUNDED,
+            show_header=True,
+            header_style="bold cyan"
+        )
+        
+        table.add_column("Tag Name", style="bold white")
+        table.add_column("Color", style="dim")
+        table.add_column("Assigned", style="dim")
+        
+        for tag in tags:
+            # Add color indicator
+            color_indicator = f"[{tag.color}]●[/{tag.color}]" if tag.color != 'blue' else "●"
+            
+            table.add_row(
+                tag.name,
+                f"{color_indicator} {tag.color}",
+                "✓"
+            )
+        
+        console.print(table)
+        
+    except Exception as e:
+        console.print(f"❌ Error showing tags: {e}")
+        raise click.ClickException(str(e))

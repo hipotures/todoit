@@ -15,6 +15,7 @@ from .models import (
     TodoList as TodoListModel, TodoItem as TodoItemModel, 
     ListRelation as ListRelationModel, TodoHistory as TodoHistoryModel,
     ListProperty as ListPropertyModel, ItemProperty as ItemPropertyModel, ItemDependency as ItemDependencyModel,
+    ListTag as ListTagModel, ListTagAssignment as ListTagAssignmentModel,
     ProgressStats, ListType, ListStatus, ItemStatus, RelationType, HistoryAction, DependencyType
 )
 
@@ -152,6 +153,42 @@ class ItemPropertyDB(Base):
         Index('idx_item_properties_item_id', 'item_id'),
         Index('idx_item_properties_key', 'property_key'),
         Index('idx_item_properties_unique', 'item_id', 'property_key', unique=True),
+    )
+
+
+class ListTagDB(Base):
+    """SQLAlchemy model for list_tags table"""
+    __tablename__ = 'list_tags'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(50), unique=True, nullable=False)
+    color = Column(String(20), default='blue')
+    created_at = Column(DateTime, default=utc_now)
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_list_tags_name', 'name'),
+    )
+
+
+class ListTagAssignmentDB(Base):
+    """SQLAlchemy model for list_tag_assignments table - many-to-many relationship"""
+    __tablename__ = 'list_tag_assignments'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    list_id = Column(Integer, ForeignKey('todo_lists.id'), nullable=False)
+    tag_id = Column(Integer, ForeignKey('list_tags.id'), nullable=False)
+    assigned_at = Column(DateTime, default=utc_now)
+    
+    # Relationships
+    todo_list = relationship("TodoListDB", foreign_keys=[list_id])
+    tag = relationship("ListTagDB", foreign_keys=[tag_id])
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_list_tag_assignments_list_id', 'list_id'),
+        Index('idx_list_tag_assignments_tag_id', 'tag_id'),
+        Index('idx_list_tag_assignments_unique', 'list_id', 'tag_id', unique=True),
     )
 
 
@@ -992,6 +1029,107 @@ class Database:
         with self.get_session() as session:
             deleted_count = session.query(TodoHistoryDB).filter(
                 TodoHistoryDB.item_id == item_id
+            ).delete(synchronize_session=False)
+            session.commit()
+            return deleted_count
+
+    # ===== LIST TAG OPERATIONS =====
+
+    def create_tag(self, tag_data: Dict[str, Any]) -> ListTagDB:
+        """Create a new tag"""
+        with self.get_session() as session:
+            tag = ListTagDB(**tag_data)
+            session.add(tag)
+            session.commit()
+            session.refresh(tag)
+            return tag
+
+    def get_tag_by_id(self, tag_id: int) -> Optional[ListTagDB]:
+        """Get tag by ID"""
+        with self.get_session() as session:
+            return session.query(ListTagDB).filter(ListTagDB.id == tag_id).first()
+
+    def get_tag_by_name(self, name: str) -> Optional[ListTagDB]:
+        """Get tag by name"""
+        with self.get_session() as session:
+            return session.query(ListTagDB).filter(ListTagDB.name == name.lower()).first()
+
+    def get_all_tags(self) -> List[ListTagDB]:
+        """Get all tags"""
+        with self.get_session() as session:
+            return session.query(ListTagDB).order_by(ListTagDB.name).all()
+
+    def delete_tag(self, tag_id: int) -> bool:
+        """Delete tag and all its assignments"""
+        with self.get_session() as session:
+            # First delete all assignments
+            session.query(ListTagAssignmentDB).filter(
+                ListTagAssignmentDB.tag_id == tag_id
+            ).delete(synchronize_session=False)
+            
+            # Then delete the tag
+            deleted_count = session.query(ListTagDB).filter(
+                ListTagDB.id == tag_id
+            ).delete(synchronize_session=False)
+            
+            session.commit()
+            return deleted_count > 0
+
+    def add_tag_to_list(self, list_id: int, tag_id: int) -> ListTagAssignmentDB:
+        """Add tag to list (create assignment)"""
+        with self.get_session() as session:
+            # Check if assignment already exists
+            existing = session.query(ListTagAssignmentDB).filter(
+                ListTagAssignmentDB.list_id == list_id,
+                ListTagAssignmentDB.tag_id == tag_id
+            ).first()
+            
+            if existing:
+                return existing
+            
+            assignment = ListTagAssignmentDB(list_id=list_id, tag_id=tag_id)
+            session.add(assignment)
+            session.commit()
+            session.refresh(assignment)
+            return assignment
+
+    def remove_tag_from_list(self, list_id: int, tag_id: int) -> bool:
+        """Remove tag from list (delete assignment)"""
+        with self.get_session() as session:
+            deleted_count = session.query(ListTagAssignmentDB).filter(
+                ListTagAssignmentDB.list_id == list_id,
+                ListTagAssignmentDB.tag_id == tag_id
+            ).delete(synchronize_session=False)
+            session.commit()
+            return deleted_count > 0
+
+    def get_tags_for_list(self, list_id: int) -> List[ListTagDB]:
+        """Get all tags for a specific list"""
+        with self.get_session() as session:
+            return session.query(ListTagDB).join(
+                ListTagAssignmentDB, ListTagDB.id == ListTagAssignmentDB.tag_id
+            ).filter(ListTagAssignmentDB.list_id == list_id).order_by(ListTagDB.name).all()
+
+    def get_lists_by_tags(self, tag_names: List[str]) -> List[TodoListDB]:
+        """Get lists that have ANY of the specified tags"""
+        if not tag_names:
+            return []
+        
+        with self.get_session() as session:
+            # Normalize tag names to lowercase
+            normalized_names = [name.lower() for name in tag_names]
+            
+            return session.query(TodoListDB).join(
+                ListTagAssignmentDB, TodoListDB.id == ListTagAssignmentDB.list_id
+            ).join(
+                ListTagDB, ListTagAssignmentDB.tag_id == ListTagDB.id
+            ).filter(ListTagDB.name.in_(normalized_names)).distinct().all()
+
+    def delete_all_tag_assignments_for_list(self, list_id: int) -> int:
+        """Delete all tag assignments for a list"""
+        with self.get_session() as session:
+            deleted_count = session.query(ListTagAssignmentDB).filter(
+                ListTagAssignmentDB.list_id == list_id
             ).delete(synchronize_session=False)
             session.commit()
             return deleted_count
