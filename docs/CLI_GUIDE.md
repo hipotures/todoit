@@ -285,6 +285,62 @@ todoit list all    # Filtered by tags from .env
 todoit list all --tag personal  # Shows work,urgent,client,personal
 ```
 
+### 🔒 Environment Isolation with FORCE_TAGS
+
+For complete environment separation (dev/test/prod), use `TODOIT_FORCE_TAGS` instead of `TODOIT_FILTER_TAGS`:
+
+```bash
+# Development environment - everything isolated to 'dev' tag
+export TODOIT_FORCE_TAGS=dev
+
+# Create new list - automatically gets 'dev' tag
+todoit list create my-feature "My Feature"  # Auto-tagged with 'dev'
+
+# View lists - only shows lists tagged with 'dev'
+todoit list all                             # Only 'dev' tagged lists
+
+# Reports - only include 'dev' environment
+todoit reports errors                       # Only errors from 'dev' lists
+```
+
+```bash
+# Test environment - can see dev+test but not prod
+export TODOIT_FORCE_TAGS=dev,test
+
+# Create lists - automatically get both tags
+todoit list create integration "Integration Tests"  # Tagged: dev,test
+
+# View all - shows lists with dev OR test tags
+todoit list all                             # Shows dev and test lists
+```
+
+#### Environment Variables Comparison
+
+| Variable | Purpose | New Lists | Filtering | Priority |
+|----------|---------|-----------|-----------|----------|
+| `TODOIT_FILTER_TAGS` | **Filtering only** | No auto-tags | Combines with `--tag` | Low |
+| `TODOIT_FORCE_TAGS` | **Environment isolation** | Auto-tagged | Overrides `FILTER_TAGS` | High |
+
+#### Best Practices
+```bash
+# .env for development
+echo "TODOIT_FORCE_TAGS=dev" > .env
+
+# .env.test for testing
+echo "TODOIT_FORCE_TAGS=dev,test" > .env.test
+
+# .env.prod for production (if needed)
+echo "TODOIT_FORCE_TAGS=prod" > .env.prod
+
+# Load different environments
+source .env      # Dev mode
+source .env.test # Test mode  
+```
+
+#### Use Cases
+- **FORCE_TAGS**: Complete environment separation, automatic tagging, dev/test/prod isolation
+- **FILTER_TAGS**: Simple filtering, temporary views, additional constraints
+
 **Note**: Environment variables only affect CLI commands. MCP tools use explicit parameters only.
 
 ### 🔗 Dependency Management (`dep`)

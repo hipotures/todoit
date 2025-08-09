@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2025-08-09
+
+### Added
+- **🔒 Environment Isolation with TODOIT_FORCE_TAGS**: Complete environment separation for dev/test/prod workflows
+  - New `TODOIT_FORCE_TAGS` environment variable for automatic tagging and filtering
+  - Auto-tagging: New lists automatically receive tags from `TODOIT_FORCE_TAGS`
+  - Environment isolation: All operations limited to lists with forced tags
+  - Priority system: `FORCE_TAGS` overrides `FILTER_TAGS` for complete control
+
+### Enhanced
+- **CLI Tag Filtering**: Redesigned tag filtering with priority-based logic
+  - `_get_force_tags()` helper function for environment tag extraction
+  - `_get_filter_tags()` enhanced with FORCE_TAGS priority handling
+  - Auto-tagging in `list create` command when FORCE_TAGS is set
+- **Command Integration**: All filtering commands now respect FORCE_TAGS
+  - `todoit list all` - Environment-aware list display
+  - `todoit reports errors` - Filtered error reports by environment
+  - Interactive mode lists - Environment-scoped list display
+
+### Environment Features
+- **Automatic Tag Creation**: Missing tags from FORCE_TAGS are auto-created
+- **Complete Isolation**: Environment tags enforce strict separation between dev/test/prod
+- **Flexible Configuration**: Support for multiple tags (e.g., `dev,test`) for shared access
+- **Dotenv Integration**: Works seamlessly with `.env` files for persistent environments
+
+### Technical
+- 14 comprehensive unit tests covering all FORCE_TAGS scenarios
+- Enhanced documentation with environment setup examples and best practices
+- Backward compatibility: Empty FORCE_TAGS maintains existing FILTER_TAGS behavior
+- CLI-only feature: MCP tools unaffected, maintaining explicit parameter control
+
+### Use Cases
+- **Development Isolation**: `export TODOIT_FORCE_TAGS=dev` - only see and create dev lists
+- **Testing Environment**: `export TODOIT_FORCE_TAGS=dev,test` - access dev+test lists
+- **Production Safety**: `export TODOIT_FORCE_TAGS=prod` - complete prod isolation
+- **Team Workflows**: Different `.env` files for different team members/roles
+
 ## [1.13.1] - 2025-08-09
 
 ### Added

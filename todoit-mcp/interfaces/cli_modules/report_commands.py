@@ -58,8 +58,15 @@ def report_errors(ctx, list_filter):
                 console.print(f"[dim]  ^(sprint|release)_.* - Lists starting with 'sprint_' or 'release_'[/]")
                 return
         
+        # Apply FORCE_TAGS filtering for environment isolation
+        from .tag_commands import _get_force_tags
+        force_tags = _get_force_tags()
+        
         # Get all failed items with filtering
-        failed_items = manager.get_all_failed_items(list_filter=list_filter)
+        failed_items = manager.get_all_failed_items(
+            list_filter=list_filter,
+            tag_filter=force_tags if force_tags else None
+        )
         
         if not failed_items:
             if list_filter:

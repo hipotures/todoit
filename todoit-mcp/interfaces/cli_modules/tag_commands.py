@@ -19,14 +19,35 @@ def get_manager(db_path):
     return TodoManager(db_path)
 
 
+def _get_force_tags() -> List[str]:
+    """Get forced tags from TODOIT_FORCE_TAGS environment variable
+    
+    FORCE_TAGS creates environment isolation - all operations are limited
+    to lists with these tags, and new lists automatically get these tags.
+    Used only in CLI, never in MCP tools.
+    """
+    env_tags = os.environ.get('TODOIT_FORCE_TAGS', '').split(',')
+    return [tag.strip().lower() for tag in env_tags if tag.strip()]
+
+
 def _get_filter_tags(cli_tags: Optional[List[str]] = None) -> List[str]:
     """Get combined filter tags from environment and CLI parameters
     
-    This function combines tags from TODOIT_FILTER_TAGS environment variable
-    with tags specified via CLI --tag parameter, returning unique union.
+    Priority order:
+    1. TODOIT_FORCE_TAGS (if set) - overrides everything for environment isolation
+    2. TODOIT_FILTER_TAGS + CLI --tag parameters - normal filtering mode
+    
     Used only in CLI, never in MCP tools.
     """
-    # Get tags from environment variable
+    # Check for forced tags first (environment isolation)
+    force_tags = _get_force_tags()
+    if force_tags:
+        # In force mode, CLI tags are added to forced tags
+        cli_tags = cli_tags or []
+        cli_tags = [tag.strip().lower() for tag in cli_tags]
+        return list(set(force_tags + cli_tags))
+    
+    # Normal filtering mode - combine FILTER_TAGS and CLI tags
     env_tags = os.environ.get('TODOIT_FILTER_TAGS', '').split(',')
     env_tags = [tag.strip().lower() for tag in env_tags if tag.strip()]
     

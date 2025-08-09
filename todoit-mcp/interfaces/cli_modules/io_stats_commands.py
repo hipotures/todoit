@@ -201,7 +201,11 @@ def interactive(ctx):
   exit          - Exit
                 """)
             elif command.startswith('lists'):
-                lists = manager.list_all()
+                # Apply FORCE_TAGS filtering for environment isolation
+                from .tag_commands import _get_force_tags
+                force_tags = _get_force_tags()
+                
+                lists = manager.list_all(filter_tags=force_tags if force_tags else None)
                 for lst in lists:
                     console.print(f"  {lst.list_key} - {lst.title}")
             elif command.startswith('show '):

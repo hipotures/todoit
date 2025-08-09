@@ -96,6 +96,19 @@ def list_create(ctx, list_key, title, items, from_folder, filter_ext, task_prefi
                 list_type=list_type,
                 metadata=meta
             )
+            
+            # Auto-tag with TODOIT_FORCE_TAGS if set (environment isolation)
+            from .tag_commands import _get_force_tags
+            force_tags = _get_force_tags()
+            if force_tags:
+                for tag_name in force_tags:
+                    try:
+                        manager.add_tag_to_list(list_key, tag_name)
+                    except ValueError:
+                        # Tag doesn't exist, create it
+                        manager.create_tag(tag_name, 'blue')
+                        manager.add_tag_to_list(list_key, tag_name)
+                console.print(f"[dim]Auto-tagged with: {', '.join(force_tags)}[/dim]")
         
         # Display created list
         panel = Panel(
