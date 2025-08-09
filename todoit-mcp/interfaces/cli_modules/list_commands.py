@@ -23,6 +23,20 @@ from .display import (
 )
 from .tag_commands import _get_filter_tags
 
+def _check_list_access(manager, list_key):
+    """Check if list is accessible based on FORCE_TAGS (environment isolation)"""
+    filter_tags = _get_filter_tags()
+    if not filter_tags:
+        return True  # No filtering, all lists accessible
+    
+    # Get lists with required tags
+    try:
+        tagged_lists = manager.get_lists_by_tags(filter_tags)
+        allowed_list_keys = {l.list_key for l in tagged_lists}
+        return list_key in allowed_list_keys
+    except Exception:
+        return False
+
 def get_manager(db_path):
     """Get TodoManager instance - imported from main cli.py"""
     from core.manager import TodoManager
@@ -184,6 +198,22 @@ def list_link(ctx, source_key, target_key, title):
 def list_show(ctx, list_key, tree):
     """Show list details"""
     manager = get_manager(ctx.obj['db_path'])
+    
+    # First resolve list_key if it's an ID
+    actual_list_key = list_key
+    if list_key.isdigit():
+        list_id = int(list_key)
+        with manager.db.get_session() as session:
+            from core.database import TodoListDB
+            db_list = session.query(TodoListDB).filter(TodoListDB.id == list_id).first()
+            if db_list:
+                actual_list_key = db_list.list_key
+    
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, actual_list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
     
     try:
         # Support both ID and key lookup
@@ -364,6 +394,17 @@ def list_delete(ctx, list_keys, force):
         console.print("[red]No list keys provided[/]")
         return
     
+    # Check if all lists are accessible based on FORCE_TAGS (environment isolation)
+    inaccessible_lists = []
+    for list_key in all_keys:
+        if not _check_list_access(manager, list_key):
+            inaccessible_lists.append(list_key)
+    
+    if inaccessible_lists:
+        console.print(f"[red]Lists not found or not accessible: {', '.join(inaccessible_lists)}[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
+    
     # Show what will be deleted
     console.print(f"[yellow]Will delete {len(all_keys)} list(s):[/]")
     deleted_count = 0
@@ -465,6 +506,12 @@ def list_live(ctx, list_key, refresh, show_history, filter_status, no_heartbeat)
     todoit list live my-project --filter-status pending
     """
     manager = get_manager(ctx.obj['db_path'])
+    
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
     
     # Verify list exists
     todo_list = manager.get_list(list_key)
@@ -691,6 +738,12 @@ def list_archive(ctx, list_key, force):
     """
     manager = get_manager(ctx.obj['db_path'])
     
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
+    
     try:
         archived_list = manager.archive_list(list_key, force=force)
         console.print(f"✅ List '[cyan]{list_key}[/]' has been archived")
@@ -711,6 +764,12 @@ def list_archive(ctx, list_key, force):
 def list_unarchive(ctx, list_key):
     """Unarchive a TODO list (restore to normal view)"""
     manager = get_manager(ctx.obj['db_path'])
+    
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
     
     try:
         restored_list = manager.unarchive_list(list_key)
