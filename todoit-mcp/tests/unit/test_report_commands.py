@@ -154,7 +154,6 @@ class TestReportCommands:
         
         # Check metadata
         metadata = result["metadata"]
-        assert "filter_applied" in metadata
         assert "lists_scanned" in metadata
         assert "lists_matched" in metadata
         assert "unique_lists_with_failures" in metadata
@@ -169,7 +168,7 @@ class TestReportCommands:
         
         assert result["success"] is True
         assert result["count"] == 2
-        assert result["metadata"]["filter_applied"] == r"^\d{4}_.*"
+        assert result["metadata"]["list_filter_applied"] == r"^\d{4}_.*"
         assert result["metadata"]["lists_matched"] == 2  # Both NNNN_ lists
 
     @pytest.mark.asyncio
