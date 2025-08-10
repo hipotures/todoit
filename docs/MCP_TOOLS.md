@@ -219,25 +219,35 @@ status = await todo_get_comprehensive_status("project")
 progress = await todo_get_cross_list_progress("my-project")
 ```
 
-## 🏷️ Tag System with 12-Color Limit
+## 🏷️ Tag System with Dynamic 12-Color Assignment
 
-TODOIT features an intelligent tag system with automatic color assignment and visual recognition optimization:
+TODOIT features an intelligent tag system with dynamic color assignment based on alphabetical sorting for consistent visual organization:
 
-### Color Management
+### Dynamic Color Management
 - **12 Distinct Colors**: `red`, `green`, `blue`, `yellow`, `orange`, `purple`, `cyan`, `magenta`, `pink`, `grey`, `bright_green`, `bright_red`
-- **Automatic Assignment**: New tags automatically receive the next available color in sequence
+- **Alphabetical Assignment**: Colors assigned dynamically based on alphabetical position of tag names
+- **Real-time Recalculation**: Colors automatically shift when tags are deleted to maintain sequence
 - **Maximum Limit**: System prevents creation of more than 12 tags to maintain visual clarity
 - **Visual Display**: Tags appear as colored dots (●) in CLI tables and MCP responses
 
-### Tag Creation and Management
+### Dynamic Color Examples
 ```python
-# Create tags with automatic color assignment
-tag1 = await todo_create_tag("frontend")     # Gets red (index 0)
-tag2 = await todo_create_tag("backend")      # Gets green (index 1)  
-tag3 = await todo_create_tag("testing")      # Gets blue (index 2)
+# Create tags - colors assigned by alphabetical position
+await todo_create_tag("zebra")      # Created first, but gets blue (position 2 alphabetically)
+await todo_create_tag("alpha")      # Gets red (position 0 alphabetically)  
+await todo_create_tag("beta")       # Gets green (position 1 alphabetically)
 
-# Explicit color specification (overrides auto-assignment)
-tag4 = await todo_create_tag("urgent", "bright_red")
+# Get all tags - colors based on alphabetical order
+all_tags = await todo_get_all_tags()
+# Result: [{"name": "alpha", "color": "red"}, 
+#          {"name": "beta", "color": "green"}, 
+#          {"name": "zebra", "color": "blue"}]
+
+# Delete middle tag - colors shift dynamically
+await todo_delete_tag("beta")
+updated_tags = await todo_get_all_tags()
+# Result: [{"name": "alpha", "color": "red"}, 
+#          {"name": "zebra", "color": "green"}]  # Shifted from blue to green
 
 # Tag limit enforcement - 13th tag fails
 try:
@@ -259,10 +269,10 @@ await todo_add_list_tag("project-alpha", "testing")
 
 ### Tag System Benefits
 - **Visual Clarity**: 12-color limit ensures tags remain easily distinguishable
-- **Automatic Organization**: No manual color management required
-- **Performance Optimized**: Color assignment is O(1) based on tag count
-- **User-Friendly**: Intuitive color progression and clear error messages
-- **Cross-Interface**: Same colors in CLI and MCP tools for consistency
+- **Predictable Colors**: Alphabetical ordering provides consistent color assignment
+- **Dynamic Adaptation**: Colors automatically recalculate when tags are deleted
+- **No Color Conflicts**: System prevents duplicate colors through smart assignment
+- **Cross-Interface Consistency**: Same dynamic colors in CLI and MCP tools
 
 # Visualize dependencies
 graph = await todo_get_dependency_graph("my-project")

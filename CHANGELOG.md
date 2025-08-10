@@ -5,6 +5,122 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.1] - 2025-08-10
+
+### 🎨 Revolutionary Tag System Update
+
+**Major Enhancement**: Complete implementation of dynamic 12-color tag system with alphabetical-based color assignment.
+
+#### ✨ What's New
+
+**🎨 Dynamic Color Assignment**
+- **Alphabetical Colors**: Tag colors now assigned dynamically based on alphabetical position of tag names
+- **Real-time Recalculation**: Colors automatically shift when tags are deleted to maintain consistency
+- **Smart Sequencing**: Colors: `red` → `green` → `blue` → `yellow` → `orange` → `purple` → `cyan` → `magenta` → `pink` → `grey` → `bright_green` → `bright_red`
+- **No Static Storage**: Colors calculated on-the-fly, eliminating storage of color data in database
+
+**📋 Enhanced CLI Display**
+- **Dynamic Tags Column**: Width automatically adjusts based on number of tags per list (3-12 characters)
+- **Colored Dots Display**: Tags appear as colored dots (●) with proper Rich text formatting
+- **Interactive Legend**: Automatic legend below tables showing all tags with their dynamic colors
+- **Optimal Layout**: Intelligent column sizing for perfect visual presentation
+
+**🔧 Improved System Architecture**
+- **Performance Optimized**: O(n log n) color calculation with minimal database queries
+- **Memory Efficient**: No color caching required, calculated per request
+- **Consistent Ordering**: Alphabetical sorting ensures predictable color assignment across sessions
+
+#### 💡 User Experience
+
+**Before v1.16.1:**
+```bash
+todoit tag create frontend    # Always got stored color (e.g., blue)
+todoit tag create backend     # Always got stored color (e.g., blue)
+todoit tag create testing     # Always got stored color (e.g., blue)
+# Colors were static and could become inconsistent
+```
+
+**After v1.16.1:**
+```bash
+todoit tag create zebra       # Gets blue (3rd alphabetically)
+todoit tag create alpha       # Gets red (1st alphabetically)  
+todoit tag create beta        # Gets green (2nd alphabetically)
+
+# CLI Display with dynamic width:
+╭──────┬──────────┬───────────┬──────┬─────╮
+│ ID   │ Key      │ Title     │ 🏷️    │ ... │
+├──────┼──────────┼───────────┼──────┼─────┤  
+│ 1    │ frontend │ Frontend  │ ● ●  │ ... │  # alpha=red, beta=green
+│ 2    │ backend  │ Backend   │ ●    │ ... │  # zebra=blue
+╰──────┴──────────┴───────────┴──────┴─────╯
+
+🏷️ Tags Legend:
+● alpha ● beta ● zebra
+```
+
+#### 🎯 Key Benefits
+
+- **🔍 Predictable Colors**: Same tag name always gets same color position regardless of creation order
+- **📈 Dynamic Adaptation**: System automatically adjusts when tags are deleted
+- **⚡ Zero Configuration**: No manual color management required
+- **🔄 Self-Healing**: Colors recalculate automatically to fill gaps
+- **🎨 Professional Display**: Optimal column sizing and consistent visual presentation
+
+#### 🛠️ Technical Improvements
+
+**Core Algorithm Changes:**
+- Implemented `_get_tag_color_by_index()` method with alphabetical sorting
+- Modified `get_all_tags()` and `get_tags_for_list()` to use dynamic color assignment
+- Added circular dependency prevention in color calculation methods
+- Dynamic column width calculation based on maximum tags per list
+
+**Enhanced Testing:**
+- 12 comprehensive unit tests for dynamic color system (`test_dynamic_tag_colors.py`)
+- Updated existing tag system tests to work with dynamic assignment
+- Full edge case coverage including tag deletion scenarios and alphabetical ordering
+- Cross-method color consistency validation
+
+**Documentation Updates:**
+- Updated `MCP_TOOLS.md` with dynamic color assignment examples
+- Added detailed explanations of alphabetical color assignment
+- Comprehensive examples showing color shifts after deletions
+
+#### 🔄 Migration Guide
+
+**For Existing Users:**
+- **Zero action required** - automatic upgrade with dynamic color recalculation
+- **All existing tags supported** - colors will be reassigned alphabetically
+- **No data loss** - tag names and associations preserved perfectly
+
+**For Developers:**
+- **MCP Integration**: All tag tools now use dynamic colors from alphabetical positions
+- **CLI Changes**: Tag display automatically optimizes column width
+- **API Consistency**: Dynamic colors available in all tag-related responses
+
+#### ⚠️ Breaking Changes
+
+**Color Assignment Logic:**
+- Tags no longer retain static colors stored in database
+- Color assignment now based on alphabetical position, not creation order
+- When tags are deleted, remaining tags may change colors to fill sequence
+
+**Table Layout:**
+- Tags column width now dynamic (3-12 characters) instead of fixed 8 characters
+- Column headers may appear different due to width optimization
+
+#### ✅ Quality Assurance
+
+- **428 tests passing** - comprehensive test coverage maintained 
+- **Dynamic color system** - 12 new tests specifically for alphabetical assignment
+- **Performance optimized** - efficient alphabetical sorting and color calculation
+- **Cross-platform validated** - consistent behavior across all environments
+
+---
+
+**Full Changelog**: [v1.14.3...v1.16.1](https://github.com/hipotures/todoit/compare/v1.14.3...v1.16.1)
+
+🚀 **Revolutionary Update**: This version fundamentally changes how tag colors work, introducing a predictable, self-healing color system that maintains visual consistency while adapting dynamically to tag changes!
+
 ## [1.14.3] - 2025-08-09
 
 ### Added

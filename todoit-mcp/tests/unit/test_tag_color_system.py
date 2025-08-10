@@ -10,24 +10,35 @@ from core.models import ListTag
 class TestTagColorSystem:
     """Test suite for tag color system with 12-color limit"""
 
-    def test_automatic_color_assignment_sequence(self, manager):
-        """Test that tags get colors assigned in correct sequence"""
+    def test_dynamic_color_assignment_sequence(self, manager):
+        """Test that tags get colors assigned dynamically by alphabetical position"""
         expected_colors = [
             'red', 'green', 'blue', 'yellow', 'orange', 'purple', 
             'cyan', 'magenta', 'pink', 'grey', 'bright_green', 'bright_red'
         ]
         
+        # Create tags in non-alphabetical order to test dynamic assignment
+        tag_names = [f"tag_{i:02d}" for i in range(12)]
         created_tags = []
-        for i, expected_color in enumerate(expected_colors):
-            tag = manager.create_tag(f"tag_{i}")
+        
+        for i, tag_name in enumerate(tag_names):
+            tag = manager.create_tag(tag_name)
             created_tags.append(tag)
-            assert tag.color == expected_color, f"Tag {i} should have color {expected_color}, got {tag.color}"
+        
+        # Get all tags - should be colored by alphabetical position
+        all_tags = manager.get_all_tags()
+        sorted_tags = sorted(all_tags, key=lambda x: x.name)
+        
+        # Verify colors match alphabetical order
+        for i, tag in enumerate(sorted_tags):
+            expected_color = expected_colors[i]
+            assert tag.color == expected_color, f"Tag {tag.name} at position {i} should have color {expected_color}, got {tag.color}"
         
         # Verify all 12 tags created successfully
-        assert len(created_tags) == 12
+        assert len(all_tags) == 12
         
         # Verify all colors are unique
-        colors = [tag.color for tag in created_tags]
+        colors = [tag.color for tag in all_tags]
         assert len(set(colors)) == 12, "All 12 colors should be unique"
 
     def test_12_tag_limit_enforcement(self, manager):
@@ -49,14 +60,21 @@ class TestTagColorSystem:
         assert len(all_tags_after) == 12
 
     def test_explicit_color_override(self, manager):
-        """Test that explicit color specification works and bypasses auto-assignment"""
-        # Create tag with explicit color
+        """Test that dynamic system overrides colors during retrieval"""
+        # Create tag with explicit color - stored in database as blue
         tag = manager.create_tag("custom_tag", color="blue")
+        # During creation, explicit color is stored
         assert tag.color == "blue"
         
-        # Next tag should get color based on index (1 = green since we have 1 existing tag)
+        # Create second tag
         next_tag = manager.create_tag("auto_tag")
-        assert next_tag.color == "green"  # Second color in sequence
+        
+        # But when getting all tags, dynamic system calculates colors by alphabetical position
+        all_tags = manager.get_all_tags()
+        tag_colors = {t.name: t.color for t in all_tags}
+        # Dynamic system assigns colors alphabetically regardless of stored color
+        assert tag_colors["auto_tag"] == "red"      # First alphabetically (index 0)
+        assert tag_colors["custom_tag"] == "green"  # Second alphabetically (index 1)
 
     def test_color_validation_with_underscores(self, manager):
         """Test that bright_green and bright_red colors are valid"""
@@ -73,34 +91,37 @@ class TestTagColorSystem:
         assert tag.color == "blue"
 
     def test_color_assignment_after_deletion(self, manager):
-        """Test color assignment behavior after tag deletion"""
+        """Test dynamic color assignment behavior after tag deletion"""
         # Create 3 tags
-        tag1 = manager.create_tag("tag1")  # red (index 0)
-        tag2 = manager.create_tag("tag2")  # green (index 1) 
-        tag3 = manager.create_tag("tag3")  # blue (index 2)
+        tag1 = manager.create_tag("tag1")  
+        tag2 = manager.create_tag("tag2")  
+        tag3 = manager.create_tag("tag3")  
         
-        assert tag1.color == "red"
-        assert tag2.color == "green"
-        assert tag3.color == "blue"
+        # With dynamic system, colors are based on alphabetical order
+        # Alphabetical: tag1, tag2, tag3 -> red, green, blue
+        initial_tags = manager.get_all_tags()
+        initial_colors = {t.name: t.color for t in initial_tags}
+        assert initial_colors["tag1"] == "red"    # Index 0
+        assert initial_colors["tag2"] == "green"  # Index 1
+        assert initial_colors["tag3"] == "blue"   # Index 2
         
         # Delete middle tag
         manager.delete_tag("tag2")
         
-        # Create new tag - should get color based on remaining count (2 tags = index 2 = blue)
-        # But tag3 already has blue, so it gets next index (3 = yellow)
-        # Actually, the logic is: current count (2) -> index 2 -> blue
-        # But blue is taken by tag3, so it continues based on total count
+        # Remaining tags shift colors: tag1, tag3 -> red, green
+        remaining_tags = manager.get_all_tags()
+        remaining_colors = {t.name: t.color for t in remaining_tags}
+        assert remaining_colors["tag1"] == "red"   # Still index 0
+        assert remaining_colors["tag3"] == "green" # Shifted to index 1
+        
+        # Create new tag - alphabetical position determines color
         tag4 = manager.create_tag("tag4")
-        # After deletion we have 2 tags, so next index is 2, but that's blue which exists
-        # System assigns based on len(existing_tags) which is 2, so index 2 = blue
-        # But tag3 still has blue, so the logic works by count, not gaps
         all_tags = manager.get_all_tags()
-        assert len(all_tags) == 3  # tag1, tag3, tag4
-        # tag4 should get color at index len(existing_before_creation) = 2 = blue
-        # But this creates conflict, let's verify actual behavior
-        expected_colors = ["red", "blue"]  # remaining after deletion
-        actual_colors = [tag.color for tag in all_tags]
-        assert tag4.color in ["blue", "yellow"]  # Either blue or next in sequence
+        final_colors = {t.name: t.color for t in all_tags}
+        # Final order: tag1, tag3, tag4 -> red, green, blue
+        assert final_colors["tag1"] == "red"
+        assert final_colors["tag3"] == "green" 
+        assert final_colors["tag4"] == "blue"
 
     def test_list_tags_display_formatting(self, manager):
         """Test that list tags can be formatted for display"""
@@ -129,20 +150,24 @@ class TestTagColorSystem:
         with pytest.raises(ValueError, match="Tag 'duplicate_tag' already exists"):
             manager.create_tag("duplicate_tag")
 
-    def test_get_next_available_color_edge_cases(self, manager):
-        """Test _get_next_available_color method edge cases"""
+    def test_dynamic_color_calculation_edge_cases(self, manager):
+        """Test dynamic color calculation with edge cases"""
         # Test with empty database
-        color = manager._get_next_available_color()
-        assert color == "red"
+        all_tags = manager.get_all_tags()
+        assert len(all_tags) == 0
         
-        # Create some tags and test progression
-        manager.create_tag("tag1")  # Uses red
-        color = manager._get_next_available_color()
-        assert color == "green"
+        # Create tags and test dynamic color assignment
+        tag1 = manager.create_tag("zebra")  # Will be last alphabetically
+        tag2 = manager.create_tag("alpha")  # Will be first alphabetically
+        tag3 = manager.create_tag("beta")   # Will be second alphabetically
         
-        manager.create_tag("tag2")  # Uses green
-        color = manager._get_next_available_color()
-        assert color == "blue"
+        # Get all tags and verify colors by alphabetical position
+        all_tags = manager.get_all_tags()
+        tag_colors = {t.name: t.color for t in all_tags}
+        
+        assert tag_colors["alpha"] == "red"    # Index 0 (first alphabetically)
+        assert tag_colors["beta"] == "green"   # Index 1 (second alphabetically) 
+        assert tag_colors["zebra"] == "blue"   # Index 2 (third alphabetically)
 
     def test_all_12_colors_are_valid_rich_colors(self, manager):
         """Test that all 12 defined colors are valid Rich color names"""
