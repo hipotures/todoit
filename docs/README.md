@@ -11,7 +11,7 @@ Welcome to the official documentation for TODOIT MCP, an intelligent TODO list m
 
 ### User Guides
 - **[CLI User Guide](CLI_GUIDE.md)** - Command reference for list, item, stats, io, property, dep, and interactive commands
-- **[MCP Tools](MCP_TOOLS.md)** - All 45 MCP tools for Claude Code integration
+- **[MCP Tools](MCP_TOOLS.md)** - All 55 MCP tools for Claude Code integration
 - **[Programmatic API](api.md)** - TodoManager class reference
 
 ### Advanced Topics
@@ -25,7 +25,7 @@ Welcome to the official documentation for TODOIT MCP, an intelligent TODO list m
 ## 🚀 Quick Start
 
 ### Using with Claude Code (MCP)
-All 45 MCP tools are automatically available - no additional setup required!
+All 55 MCP tools are automatically available - no additional setup required!
 
 ### Command Line Interface
 ```bash
@@ -43,7 +43,7 @@ python -m interfaces.cli item next-smart "project"
 
 ## 🎯 Key Features
 
-- **44 MCP Tools** - Complete Claude Code integration
+- **55 MCP Tools** - Complete Claude Code integration
 - **Hierarchical Tasks** - Subtasks with parent-child relationships  
 - **Cross-List Dependencies** - Coordinate work across multiple lists
 - **Smart Algorithms** - Intelligent next task selection
@@ -54,7 +54,7 @@ python -m interfaces.cli item next-smart "project"
 
 ✅ **Production Ready**
 - 136/136 tests passing (100%)
-- All 45 MCP tools tested and verified
+- All 55 MCP tools tested and verified
 - CLI fully functional with --force flags
 - Markdown import/export working with all formats
 - Complete documentation coverage

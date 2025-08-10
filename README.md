@@ -122,7 +122,7 @@ Close and reopen Claude Code for changes to take effect.
 > 💡 **Need more help with MCP setup?** Check the [official Claude Code MCP documentation](https://docs.anthropic.com/en/docs/claude-code/mcp) for detailed setup instructions.
 
 #### Step 5: Verify Installation
-In Claude Code, you should now have access to 45 TODOIT MCP tools:
+In Claude Code, you should now have access to 55 TODOIT MCP tools:
 - `todo_create_list` - Create new task lists
 - `todo_add_item` - Add tasks to lists
 - `todo_add_subtask` - Create hierarchical subtasks
@@ -170,7 +170,7 @@ todoit-mcp/
 │   ├── database.py        # Database layer (SQLAlchemy)
 │   └── validators.py      # Business rules
 ├── interfaces/            # User Interfaces  
-│   ├── mcp_server.py     # MCP Server (44 tools)
+│   ├── mcp_server.py     # MCP Server (55 tools)
 │   └── cli.py            # Command-line interface
 ├── migrations/           # Database migrations
 ├── docs/                 # Documentation & examples
@@ -269,7 +269,7 @@ todoit list show "my-project" --tree
 ```
 
 ### Using with Claude Code (MCP)
-After MCP setup, all 44 tools are available directly in Claude Code:
+After MCP setup, all 55 tools are available directly in Claude Code:
 
 **Example conversation with Claude Code:**
 ```
@@ -320,7 +320,7 @@ todoit item next "backend"   # Will suggest api task
 Complete documentation available in the [docs/](docs/) directory:
 
 - **[CLI User Guide](docs/CLI_GUIDE.md)** - Comprehensive command-line interface guide
-- **[MCP Tools Reference](docs/MCP_TOOLS.md)** - All 44 MCP tools for Claude Code
+- **[MCP Tools Reference](docs/MCP_TOOLS.md)** - All 55 MCP tools for Claude Code
 - **[Architecture](docs/architecture.md)** - System design and patterns
 - **[API Reference](docs/api.md)** - TodoManager class documentation
 - **[CHANGELOG](CHANGELOG.md)** - Version history and release notes
