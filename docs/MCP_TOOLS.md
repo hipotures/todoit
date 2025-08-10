@@ -70,7 +70,7 @@ Core functionality for list and item management.
 - **`todo_update_item_content`** - Update item description/content text
 - **`todo_delete_item`** - Delete item permanently from list
 - **`todo_get_item`** - Get specific item details
-- **`todo_get_list_items`** - Get all items from list with optional status filter and limit
+- **`todo_get_list_items`** - Get all items from list with optional status filter and pagination limit
 
 #### Core Operations
 - **`todo_get_next_pending`** - Get next available task with dependency consideration
@@ -173,6 +173,11 @@ pending = await todo_get_list_items("project", status="pending", limit=3)
 # Get completed items with limit
 completed = await todo_get_list_items("project", status="completed", limit=0)
 # Returns: {"success": True, "items": [], "count": 0, "total_count": 3, "more_available": True}
+
+# Advanced limit usage with hierarchical items
+hierarchical = await todo_get_list_items("project", limit=10)
+# Limit applies to flat result ordering by position, includes parents and subtasks
+# Returns first 10 items regardless of hierarchy level
 ```
 
 ### Archive Management with Completion Validation

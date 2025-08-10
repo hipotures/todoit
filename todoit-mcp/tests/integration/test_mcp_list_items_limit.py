@@ -15,10 +15,10 @@ class TestMCPListItemsLimit:
     async def test_mcp_get_list_items_no_limit(self, temp_db):
         """Test MCP interface without limit"""
         # Initialize manager with temp database
-        with patch('interfaces.mcp_server.manager', init_manager(temp_db)):
+        with patch('interfaces.mcp_server.init_manager', return_value=init_manager(temp_db)):
             # Create list
             list_result = await todo_create_list("test_list", "Test List")
-        assert list_result["success"]
+            assert list_result["success"]
         
         # Add multiple items
         for i in range(6):
