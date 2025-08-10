@@ -739,13 +739,13 @@ class TodoManager:
         db_item = self.db.get_item_by_key(db_list.id, item_key)
         return self._db_to_model(db_item, TodoItem)
     
-    def get_list_items(self, list_key: str, status: Optional[str] = None) -> List[TodoItem]:
-        """Gets all tasks from a list"""
+    def get_list_items(self, list_key: str, status: Optional[str] = None, limit: Optional[int] = None) -> List[TodoItem]:
+        """Gets all tasks from a list with optional limit"""
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             return []
         
-        db_items = self.db.get_list_items(db_list.id, status=status)
+        db_items = self.db.get_list_items(db_list.id, status=status, limit=limit)
         return [self._db_to_model(db_item, TodoItem) for db_item in db_items]
     
     def get_item_history(self, list_key: str, item_key: str, limit: Optional[int] = None) -> List[TodoHistory]:

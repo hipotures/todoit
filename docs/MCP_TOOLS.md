@@ -70,7 +70,7 @@ Core functionality for list and item management.
 - **`todo_update_item_content`** - Update item description/content text
 - **`todo_delete_item`** - Delete item permanently from list
 - **`todo_get_item`** - Get specific item details
-- **`todo_get_list_items`** - Get all items from list with optional status filter
+- **`todo_get_list_items`** - Get all items from list with optional status filter and limit
 
 #### Core Operations
 - **`todo_get_next_pending`** - Get next available task with dependency consideration
@@ -154,6 +154,25 @@ await todo_add_item_dependency("frontend", "ui_task", "backend", "api_task")
 
 # Get smart next task
 next_task = await todo_get_next_pending_enhanced("project", smart_subtasks=True)
+```
+
+### List Items with Limit and Filtering
+```python
+# Get all items from a list
+all_items = await todo_get_list_items("project")
+# Returns: {"success": True, "items": [...], "count": 10, "total_count": 10, "more_available": False}
+
+# Get limited number of items (pagination)
+first_5 = await todo_get_list_items("project", limit=5)
+# Returns: {"success": True, "items": [...], "count": 5, "total_count": 10, "more_available": True}
+
+# Get limited pending items only
+pending = await todo_get_list_items("project", status="pending", limit=3)  
+# Returns: {"success": True, "items": [...], "count": 3, "total_count": 7, "more_available": True}
+
+# Get completed items with limit
+completed = await todo_get_list_items("project", status="completed", limit=0)
+# Returns: {"success": True, "items": [], "count": 0, "total_count": 3, "more_available": True}
 ```
 
 ### Archive Management with Completion Validation

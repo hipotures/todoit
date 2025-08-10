@@ -391,13 +391,16 @@ class Database:
                 TodoItemDB.item_key == item_key
             ).first()
     
-    def get_list_items(self, list_id: int, status: Optional[str] = None) -> List[TodoItemDB]:
-        """Get all items for a list"""
+    def get_list_items(self, list_id: int, status: Optional[str] = None, limit: Optional[int] = None) -> List[TodoItemDB]:
+        """Get all items for a list with optional limit"""
         with self.get_session() as session:
             query = session.query(TodoItemDB).filter(TodoItemDB.list_id == list_id)
             if status:
                 query = query.filter(TodoItemDB.status == status)
-            return query.order_by(TodoItemDB.position).all()
+            query = query.order_by(TodoItemDB.position)
+            if limit is not None and limit >= 0:
+                query = query.limit(limit)
+            return query.all()
     
     def get_items_by_status(self, list_id: int, status: str) -> List[TodoItemDB]:
         """Get items by status"""

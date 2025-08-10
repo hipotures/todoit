@@ -563,26 +563,38 @@ async def todo_get_item(list_key: str, item_key: str) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 @conditional_tool
-async def todo_get_list_items(list_key: str, status: Optional[str] = None) -> Dict[str, Any]:
-    """Get all items from a todo list with optional status filtering.
+async def todo_get_list_items(list_key: str, status: Optional[str] = None, limit: Optional[int] = None) -> Dict[str, Any]:
+    """Get all items from a todo list with optional status filtering and limit.
     
     Args:
         list_key: Key of the list to get items from (required)
         status: Optional status filter (pending, completed, in_progress, etc.)
+        limit: Optional maximum number of items to return
         
     Returns:
-        Dictionary with success status, list of items, and count
+        Dictionary with success status, list of items, count, and whether more items exist
     """
     try:
         mgr = init_manager()
         items = mgr.get_list_items(
             list_key=list_key,
-            status=status
+            status=status,
+            limit=limit
         )
+        
+        # Check if there are more items available when limit is used
+        more_available = False
+        if limit and len(items) == limit:
+            # Check if there's at least one more item
+            all_items = mgr.get_list_items(list_key=list_key, status=status, limit=limit + 1)
+            more_available = len(all_items) > limit
+        
         return {
             "success": True,
             "items": [item.to_dict() for item in items],
-            "count": len(items)
+            "count": len(items),
+            "more_available": more_available,
+            "total_count": len(mgr.get_list_items(list_key=list_key, status=status)) if limit else len(items)
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -1149,17 +1161,18 @@ async def todo_can_complete_item(list_key: str, item_key: str, mgr=None) -> Dict
 
 @conditional_tool
 @mcp_error_handler  
-async def todo_get_list_items_hierarchical(list_key: str, status: Optional[str] = None, mgr=None) -> Dict[str, Any]:
+async def todo_get_list_items_hierarchical(list_key: str, status: Optional[str] = None, limit: Optional[int] = None, mgr=None) -> Dict[str, Any]:
     """Get all items from a list with hierarchical organization.
     
     Args:
         list_key: Key of the list to get items from (required)
         status: Optional status filter (pending, completed, in_progress, etc.)
+        limit: Optional maximum number of root items to return (subtasks are always included)
         
     Returns:
         Dictionary with success status, hierarchically organized items, and count
     """
-    items = mgr.get_list_items(list_key, status)
+    items = mgr.get_list_items(list_key, status, limit)
     
     # Organize items hierarchically
     items_by_id = {item.id: item for item in items}
