@@ -356,7 +356,7 @@ def list_all(ctx, limit, tree, details, archived, include_archived, filter_tags)
                 "ID": {"style": "dim", "width": 4},
                 "Key": {"style": "cyan"},
                 "Title": {"style": "white"},
-                "🏷️": {"style": "white", "justify": "left", "width": 8},
+                "🏷️": {"style": "white", "justify": "left", "width": 4},
                 "🔀": {"style": "yellow", "justify": "center", "width": 3},
                 "📋": {"style": "blue", "justify": "right", "width": 3},
                 "🔄": {"style": "yellow", "justify": "right", "width": 3},
