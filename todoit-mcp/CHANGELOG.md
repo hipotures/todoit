@@ -5,6 +5,54 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0] - 2025-08-10
+
+### Added
+- **🏷️ 12-Color Tag System**: Complete visual tag system with automatic color assignment
+  - **12 Distinct Colors**: `red`, `green`, `blue`, `yellow`, `orange`, `purple`, `cyan`, `magenta`, `pink`, `grey`, `bright_green`, `bright_red`
+  - **Automatic Color Assignment**: New tags automatically receive next available color in sequence (index-based)
+  - **Tag Limit Enforcement**: System prevents creation of more than 12 tags to maintain visual clarity
+  - **Error Messaging**: Clear error message when attempting to create 13th tag: "Maximum number of tags reached (12). Cannot create more tags with distinct colors."
+
+### Changed
+- **🎨 Enhanced CLI Display**: Added tags column (🏷️) to `list all` commands showing colored dots
+  - **Tags Legend**: Automatic legend displays below tables showing all used tags with colors
+  - **Visual Recognition**: Tags appear as colored dots (●) for immediate identification
+  - **Consistent Ordering**: Tags displayed alphabetically for predictable organization
+- **🔧 Improved Tag Creation**: Default tag creation now uses automatic color assignment instead of always defaulting to blue
+  - **CLI**: `todoit tag create <name>` automatically assigns next available color
+  - **MCP**: `todo_create_tag` with no color parameter uses automatic assignment
+  - **Override**: Explicit color specification still available and overrides auto-assignment
+
+### Fixed
+- **🐛 Rich Color Display**: Fixed colored tag dots not displaying correctly in CLI
+  - **Issue**: Tags showed as plain text "● blue" instead of colored dots
+  - **Solution**: Removed special case handling for blue color, added underscore support to color validation regex
+  - **Result**: All 12 colors now display properly with Rich formatting
+- **✅ Test Compatibility**: Updated integration tests to handle new table format with tags column
+  - **Issue**: Archive CLI tests failing due to changed table structure after adding 🏷️ column
+  - **Solution**: Modified test assertions to handle multi-line table entries and truncated names
+  - **Coverage**: All archive workflow tests now pass with new display format
+
+### Technical Details
+- **Model Validation**: Updated `ListTag` color field regex to accept underscores for `bright_green`/`bright_red`
+- **Automatic Color Logic**: Implemented index-based color assignment in `_get_next_available_color()` method
+- **Display System**: Added tag retrieval and formatting logic to list display components
+- **Database**: No schema changes required - existing tag system extended with color management
+- **Performance**: O(1) color assignment based on tag count, efficient legend generation
+
+### Developer Impact
+- **11 New Unit Tests**: Comprehensive test suite for tag color system including edge cases
+- **Documentation Updated**: MCP_TOOLS.md includes new tag system documentation with examples
+- **Backward Compatibility**: Existing tags retain their colors, no migration needed
+- **API Consistency**: All MCP tools include color information in tag responses
+
+### User Benefits
+- **Visual Clarity**: Easy tag identification with 12 distinct, visually optimized colors
+- **Zero Configuration**: Automatic color management requires no user intervention  
+- **Predictable Workflow**: Consistent color assignment and display across all interfaces
+- **Professional Appearance**: Clean, organized tag display with legend support
+
 ## [1.15.2] - 2025-08-10
 
 ### Changed

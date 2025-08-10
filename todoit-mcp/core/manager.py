@@ -1799,12 +1799,16 @@ class TodoManager:
 
     # ===== LIST TAG MANAGEMENT METHODS =====
 
-    def create_tag(self, name: str, color: str = 'blue') -> ListTag:
-        """Create a new tag"""
+    def create_tag(self, name: str, color: str = None) -> ListTag:
+        """Create a new tag with automatic color assignment"""
         # Check if tag already exists
         existing_tag = self.db.get_tag_by_name(name)
         if existing_tag:
             raise ValueError(f"Tag '{name}' already exists")
+        
+        # Auto-assign color if not provided
+        if color is None:
+            color = self._get_next_available_color()
         
         # Create tag data
         tag_data = {
@@ -1817,6 +1821,24 @@ class TodoManager:
         
         # Convert to Pydantic model and return
         return self._db_to_model(db_tag, ListTag)
+    
+    def _get_next_available_color(self) -> str:
+        """Get next available color for new tags (assigns colors by index, max 12)"""
+        available_colors = [
+            'red', 'green', 'blue', 'yellow', 'orange', 'purple', 
+            'cyan', 'magenta', 'pink', 'grey', 'bright_green', 'bright_red'
+        ]
+        
+        # Get existing tags count to determine next color index
+        existing_tags = self.get_all_tags()
+        next_index = len(existing_tags)
+        
+        # Check if we exceed the 12 color limit
+        if next_index >= len(available_colors):
+            raise ValueError(f"Maximum number of tags reached ({len(available_colors)}). Cannot create more tags with distinct colors.")
+        
+        # Return color by index
+        return available_colors[next_index]
 
     def get_tag(self, tag_identifier: Union[int, str]) -> Optional[ListTag]:
         """Get tag by ID or name"""

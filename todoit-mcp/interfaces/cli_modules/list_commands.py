@@ -311,6 +311,10 @@ def list_all(ctx, limit, tree, details, archived, include_archived, filter_tags)
             for todo_list in lists:
                 progress = manager.get_progress(todo_list.list_key)
                 
+                # Get tags for this list and format as colored dots
+                list_tags = manager.get_tags_for_list(todo_list.list_key)
+                tags_display = " ".join([f"[{tag.color}]●[/{tag.color}]" for tag in list_tags]) if list_tags else ""
+                
                 # Show first letter of type for clarity
                 list_type_str = str(todo_list.list_type).replace('ListType.', '').lower()
                 type_short = list_type_str[0].upper()  # S, P, H, L
@@ -327,6 +331,7 @@ def list_all(ctx, limit, tree, details, archived, include_archived, filter_tags)
                     "ID": str(todo_list.id),
                     "Key": todo_list.list_key,
                     "Title": todo_list.title,
+                    "🏷️": tags_display,
                     "🔀": type_short,
                     "📋": str(progress.pending),
                     "🔄": str(progress.in_progress),
@@ -351,6 +356,7 @@ def list_all(ctx, limit, tree, details, archived, include_archived, filter_tags)
                 "ID": {"style": "dim", "width": 4},
                 "Key": {"style": "cyan"},
                 "Title": {"style": "white"},
+                "🏷️": {"style": "white", "justify": "left", "width": 8},
                 "🔀": {"style": "yellow", "justify": "center", "width": 3},
                 "📋": {"style": "blue", "justify": "right", "width": 3},
                 "🔄": {"style": "yellow", "justify": "right", "width": 3},
@@ -370,9 +376,24 @@ def list_all(ctx, limit, tree, details, archived, include_archived, filter_tags)
             # Use unified display system
             _display_records(data, "📋 All TODO Lists", columns)
         
-        # Only show total count in table/vertical modes (not in JSON/YAML/XML)
+        # Show tags legend if any lists have tags
         from .display import _get_output_format
         if _get_output_format() in ['table', 'vertical']:
+            all_tags = {}  # Use dict to store unique tags by name
+            for todo_list in lists:
+                list_tags = manager.get_tags_for_list(todo_list.list_key)
+                for tag in list_tags:
+                    all_tags[tag.name] = tag  # Store by name as key
+            
+            if all_tags:
+                console.print("\n[bold]🏷️ Tags Legend:[/]")
+                sorted_tags = sorted(all_tags.values(), key=lambda x: x.name)
+                legend_parts = []
+                for tag in sorted_tags:
+                    colored_dot = f"[{tag.color}]●[/{tag.color}]"
+                    legend_parts.append(f"{colored_dot} {tag.name}")
+                console.print(" ".join(legend_parts))
+            
             console.print(f"\n[bold]Total lists:[/] {len(lists)}")
         
     except Exception as e:
@@ -879,7 +900,7 @@ def show_list_tags(ctx, list_key):
         
         for tag in tags:
             # Add color indicator
-            color_indicator = f"[{tag.color}]●[/{tag.color}]" if tag.color != 'blue' else "●"
+            color_indicator = f"[{tag.color}]●[/{tag.color}]"
             
             table.add_row(
                 tag.name,

@@ -217,6 +217,52 @@ status = await todo_get_comprehensive_status("project")
 
 # Check cross-list progress  
 progress = await todo_get_cross_list_progress("my-project")
+```
+
+## 🏷️ Tag System with 12-Color Limit
+
+TODOIT features an intelligent tag system with automatic color assignment and visual recognition optimization:
+
+### Color Management
+- **12 Distinct Colors**: `red`, `green`, `blue`, `yellow`, `orange`, `purple`, `cyan`, `magenta`, `pink`, `grey`, `bright_green`, `bright_red`
+- **Automatic Assignment**: New tags automatically receive the next available color in sequence
+- **Maximum Limit**: System prevents creation of more than 12 tags to maintain visual clarity
+- **Visual Display**: Tags appear as colored dots (●) in CLI tables and MCP responses
+
+### Tag Creation and Management
+```python
+# Create tags with automatic color assignment
+tag1 = await todo_create_tag("frontend")     # Gets red (index 0)
+tag2 = await todo_create_tag("backend")      # Gets green (index 1)  
+tag3 = await todo_create_tag("testing")      # Gets blue (index 2)
+
+# Explicit color specification (overrides auto-assignment)
+tag4 = await todo_create_tag("urgent", "bright_red")
+
+# Tag limit enforcement - 13th tag fails
+try:
+    tag13 = await todo_create_tag("overflow")  # Raises error
+except ValueError as e:
+    # "Maximum number of tags reached (12). Cannot create more tags with distinct colors."
+    pass
+
+# Add tags to lists
+await todo_add_list_tag("project-alpha", "frontend")
+await todo_add_list_tag("project-alpha", "testing")
+```
+
+### Visual Display Features
+- **CLI Tables**: List all commands show tags as colored dots in 🏷️ column
+- **Legend**: Automatic legend displays below tables: "● frontend ● testing"  
+- **MCP Integration**: All tag-related MCP tools include color information
+- **Consistent Ordering**: Tags displayed alphabetically for predictable organization
+
+### Tag System Benefits
+- **Visual Clarity**: 12-color limit ensures tags remain easily distinguishable
+- **Automatic Organization**: No manual color management required
+- **Performance Optimized**: Color assignment is O(1) based on tag count
+- **User-Friendly**: Intuitive color progression and clear error messages
+- **Cross-Interface**: Same colors in CLI and MCP tools for consistency
 
 # Visualize dependencies
 graph = await todo_get_dependency_graph("my-project")

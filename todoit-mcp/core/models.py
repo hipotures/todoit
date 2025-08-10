@@ -547,7 +547,7 @@ class BlockedItemsResult(BaseModel):
 class ListTagBase(BaseModel):
     """Base model for list tags"""
     name: str = Field(..., min_length=1, max_length=50, pattern=r'^[a-zA-Z0-9_-]+$')
-    color: str = Field(default='blue', max_length=20, pattern=r'^[a-zA-Z0-9#]+$')
+    color: str = Field(default='blue', max_length=20, pattern=r'^[a-zA-Z0-9_#]+$')
     
     @field_validator('name')
     def validate_tag_name(cls, v):
@@ -558,8 +558,11 @@ class ListTagBase(BaseModel):
     
     @field_validator('color')
     def validate_color(cls, v):
-        """Validate color format"""
-        valid_colors = ['red', 'green', 'blue', 'yellow', 'orange', 'purple', 'cyan', 'magenta', 'white', 'black']
+        """Validate color format - 12 distinct colors for visual recognition"""
+        valid_colors = [
+            'red', 'green', 'blue', 'yellow', 'orange', 'purple', 
+            'cyan', 'magenta', 'pink', 'grey', 'bright_green', 'bright_red'
+        ]
         if not (v.lower() in valid_colors or v.startswith('#')):
             return 'blue'  # Default fallback
         return v.lower()

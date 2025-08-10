@@ -69,7 +69,7 @@ def tag():
 
 @tag.command("create")
 @click.argument('name')
-@click.option('--color', default='blue', help='Tag color (default: blue)')
+@click.option('--color', default=None, help='Tag color (auto-assigned if not specified)')
 @click.pass_context
 def create_tag(ctx, name, color):
     """Create a new tag in the system"""
@@ -115,8 +115,8 @@ def list_tags(ctx):
             # Format date
             created_date = tag.created_at.strftime('%Y-%m-%d %H:%M') if tag.created_at else 'Unknown'
             
-            # Add color indicator
-            color_indicator = f"[{tag.color}]●[/{tag.color}]" if tag.color != 'blue' else "●"
+            # Add color indicator with Rich color formatting
+            color_indicator = f"[{tag.color}]●[/{tag.color}]"
             
             table.add_row(
                 tag.name,
