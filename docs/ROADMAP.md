@@ -1,20 +1,28 @@
 # TODOIT Development Roadmap
 
-## Current Version: 1.7.0
+## Current Version: 1.16.1
+
+### Recently Completed ✅
+
+#### Version 1.16.1 - Dynamic Tag Color System
+- ✅ **Dynamic Color Assignment**: Colors assigned by alphabetical position
+- ✅ **Self-Healing Colors**: Automatic recalculation when tags deleted
+- ✅ **Smart Column Layout**: Dynamic width based on tag count  
+- ✅ **Professional Display**: Colored dots with interactive legends
+
+#### Versions 1.13.0-1.16.0 - Tag & Environment Systems
+- ✅ **Complete Tag System**: Global tag management with 12-color visual system
+- ✅ **Environment Isolation**: FORCE_TAGS for dev/staging/prod separation
+- ✅ **Archive Management**: List archiving with completion validation
+- ✅ **Enhanced CLI**: Rich tables with dynamic columns and status indicators
 
 ### Planned Features 🚧
 
-#### Version 1.8.0 - Enhanced Export/Import
-- **Structured Export**: Export with full hierarchy and dependencies preserved
-- **Import Validation**: Schema validation for imported data
-- **Backup/Restore**: Complete database backup and restore functionality
-- **Migration Tools**: Import from other TODO applications (Todoist, Trello, etc.)
-
-#### Version 1.9.0 - Advanced Scheduling
+#### Version 1.17.0 - Advanced Scheduling  
 - **Due Dates**: Add due date support to tasks
 - **Recurring Tasks**: Support for recurring task patterns
 - **Calendar Integration**: iCal export and import
-- **Reminders**: Basic notification system
+- **Time Tracking**: Basic time logging for tasks
 
 #### Version 2.0.0 - Collaboration Features
 - **Shared Lists**: Multi-user list sharing
