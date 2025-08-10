@@ -1822,23 +1822,41 @@ class TodoManager:
         # Convert to Pydantic model and return
         return self._db_to_model(db_tag, ListTag)
     
-    def _get_next_available_color(self) -> str:
-        """Get next available color for new tags (assigns colors by index, max 12)"""
+    def _get_tag_color_by_index(self, tag_name: str) -> str:
+        """Get tag color based on its position in sorted tag list (dynamic assignment)"""
         available_colors = [
             'red', 'green', 'blue', 'yellow', 'orange', 'purple', 
             'cyan', 'magenta', 'pink', 'grey', 'bright_green', 'bright_red'
         ]
         
-        # Get existing tags count to determine next color index
-        existing_tags = self.get_all_tags()
-        next_index = len(existing_tags)
+        # Get all existing tags from database (avoid recursion)
+        db_tags = self.db.get_all_tags()
+        sorted_tag_names = sorted([tag.name for tag in db_tags])
+        
+        # Find position of this tag in sorted list
+        try:
+            tag_index = sorted_tag_names.index(tag_name)
+        except ValueError:
+            # Tag not found, return default
+            return available_colors[0]
+        
+        # Return color by index (cycle if more than 12 tags)
+        return available_colors[tag_index % len(available_colors)]
+    
+    def _get_next_available_color(self) -> str:
+        """Get next available color for new tags (checks 12 tag limit)"""
+        available_colors = [
+            'red', 'green', 'blue', 'yellow', 'orange', 'purple', 
+            'cyan', 'magenta', 'pink', 'grey', 'bright_green', 'bright_red'
+        ]
         
         # Check if we exceed the 12 color limit
-        if next_index >= len(available_colors):
+        db_tags = self.db.get_all_tags()
+        if len(db_tags) >= len(available_colors):
             raise ValueError(f"Maximum number of tags reached ({len(available_colors)}). Cannot create more tags with distinct colors.")
         
-        # Return color by index
-        return available_colors[next_index]
+        # Return placeholder - actual color will be determined dynamically
+        return available_colors[0]
 
     def get_tag(self, tag_identifier: Union[int, str]) -> Optional[ListTag]:
         """Get tag by ID or name"""
@@ -1852,9 +1870,16 @@ class TodoManager:
         return None
 
     def get_all_tags(self) -> List[ListTag]:
-        """Get all available tags"""
+        """Get all available tags with dynamic color assignment"""
         db_tags = self.db.get_all_tags()
-        return [self._db_to_model(tag, ListTag) for tag in db_tags]
+        tags = []
+        for tag in db_tags:
+            # Convert to model
+            tag_model = self._db_to_model(tag, ListTag)
+            # Override with dynamic color
+            tag_model.color = self._get_tag_color_by_index(tag_model.name)
+            tags.append(tag_model)
+        return tags
 
     def delete_tag(self, tag_identifier: Union[int, str]) -> bool:
         """Delete tag by ID or name"""
@@ -1900,7 +1925,7 @@ class TodoManager:
         return self.db.remove_tag_from_list(list_obj.id, tag.id)
 
     def get_tags_for_list(self, list_key: str) -> List[ListTag]:
-        """Get all tags assigned to a list"""
+        """Get all tags assigned to a list with dynamic color assignment"""
         # Get list
         list_obj = self.get_list(list_key)
         if not list_obj:
@@ -1908,7 +1933,14 @@ class TodoManager:
         
         # Get tags for list
         db_tags = self.db.get_tags_for_list(list_obj.id)
-        return [self._db_to_model(tag, ListTag) for tag in db_tags]
+        tags = []
+        for tag in db_tags:
+            # Convert to model
+            tag_model = self._db_to_model(tag, ListTag)
+            # Override with dynamic color
+            tag_model.color = self._get_tag_color_by_index(tag_model.name)
+            tags.append(tag_model)
+        return tags
 
     def get_lists_by_tags(self, tag_names: List[str]) -> List[TodoList]:
         """Get all lists that have ANY of the specified tags"""
