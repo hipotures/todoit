@@ -298,8 +298,8 @@ def list_all(ctx, limit, tree, details, archived, include_archived, filter_tags)
                 filter_tags=combined_filter_tags if combined_filter_tags else None
             )
         
-        # Sort lists by ID (lowest first) for consistent ordering
-        lists = sorted(lists, key=lambda x: x.id)
+        # Sort lists alphabetically by list key for consistent ordering
+        lists = sorted(lists, key=lambda x: x.list_key)
         
         if tree:
             # Show hierarchical view with relations

@@ -147,7 +147,7 @@ def _display_lists_tree(lists, manager):
         for child_list in children_by_parent.get(todo_list.list_key, []):
             add_list_to_tree(list_node, child_list, level + 1)
     
-    for root_list in sorted(root_lists, key=lambda x: x.id):
+    for root_list in sorted(root_lists, key=lambda x: x.list_key):
         add_list_to_tree(tree, root_list)
     
     console.print(tree)
@@ -622,7 +622,7 @@ def list_all(ctx, limit, tree, details):
         lists = manager.list_all(limit=limit)
         
         # Sort lists by ID (lowest first) for consistent ordering
-        lists = sorted(lists, key=lambda x: x.id)
+        lists = sorted(lists, key=lambda x: x.list_key)
         
         if tree:
             # Show hierarchical view with relations

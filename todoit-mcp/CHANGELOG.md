@@ -5,6 +5,26 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.2] - 2025-08-10
+
+### Changed
+- **📋 Improved List Sorting**: Changed default list sorting from ID to alphabetical by list key
+  - **CLI Tables**: All `todoit list all` commands now show lists sorted alphabetically by list key
+  - **MCP Tools**: `todo_list_all` and related MCP tools return lists in alphabetical order by key
+  - **Tree View**: Hierarchical list displays also use alphabetical sorting
+  - **Consistency**: Both CLI and MCP interfaces now use the same predictable sorting order
+
+### Technical Details
+- **Database Layer**: Modified `get_all_lists()` and `get_lists_by_tags()` to use `ORDER BY list_key ASC`
+- **CLI Layer**: Updated sorting logic from `key=lambda x: x.id` to `key=lambda x: x.list_key`
+- **Display Layer**: Tree views and all list displays now consistently use alphabetical sorting
+- **Backward Compatibility**: No breaking changes, only improved user experience
+
+### User Impact
+- **Before**: Lists displayed in creation order (ID-based): `zebra`, `alpha`, `beta` (IDs: 1, 2, 3)
+- **After**: Lists displayed alphabetically: `alpha`, `beta`, `zebra` (more intuitive ordering)
+- **Benefit**: Easier to find lists in large projects with many lists
+
 ## [1.15.1] - 2025-08-10
 
 ### Fixed

@@ -328,7 +328,7 @@ class Database:
     def get_all_lists(self, limit: Optional[int] = None) -> List[TodoListDB]:
         """Get all lists"""
         with self.get_session() as session:
-            query = session.query(TodoListDB).order_by(TodoListDB.created_at.desc())
+            query = session.query(TodoListDB).order_by(TodoListDB.list_key.asc())
             if limit:
                 query = query.limit(limit)
             return query.all()
@@ -1123,7 +1123,7 @@ class Database:
                 ListTagAssignmentDB, TodoListDB.id == ListTagAssignmentDB.list_id
             ).join(
                 ListTagDB, ListTagAssignmentDB.tag_id == ListTagDB.id
-            ).filter(ListTagDB.name.in_(normalized_names)).distinct().all()
+            ).filter(ListTagDB.name.in_(normalized_names)).distinct().order_by(TodoListDB.list_key.asc()).all()
 
     def delete_all_tag_assignments_for_list(self, list_id: int) -> int:
         """Delete all tag assignments for a list"""
