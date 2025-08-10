@@ -308,6 +308,15 @@ def list_all(ctx, limit, tree, details, archived, include_archived, filter_tags)
             # Prepare data for unified display
             data = []
             
+            # Calculate optimal tags column width based on maximum tags per list
+            max_tags_per_list = 0
+            for todo_list in lists:
+                list_tags = manager.get_tags_for_list(todo_list.list_key)
+                max_tags_per_list = max(max_tags_per_list, len(list_tags))
+            
+            # Dynamic width: minimum 3, each tag needs ~2 chars (● + space), max 12
+            tags_column_width = max(3, min(12, max_tags_per_list * 2))
+            
             for todo_list in lists:
                 progress = manager.get_progress(todo_list.list_key)
                 
@@ -356,7 +365,7 @@ def list_all(ctx, limit, tree, details, archived, include_archived, filter_tags)
                 "ID": {"style": "dim", "width": 4},
                 "Key": {"style": "cyan"},
                 "Title": {"style": "white"},
-                "🏷️": {"style": "white", "justify": "left", "width": 4},
+                "🏷️": {"style": "white", "justify": "left", "width": tags_column_width},
                 "🔀": {"style": "yellow", "justify": "center", "width": 3},
                 "📋": {"style": "blue", "justify": "right", "width": 3},
                 "🔄": {"style": "yellow", "justify": "right", "width": 3},
