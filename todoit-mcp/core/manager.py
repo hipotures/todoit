@@ -1825,8 +1825,8 @@ class TodoManager:
     def _get_tag_color_by_index(self, tag_name: str) -> str:
         """Get tag color based on its position in sorted tag list (dynamic assignment)"""
         available_colors = [
-            'red', 'green', 'blue', 'yellow', 'orange', 'purple', 
-            'cyan', 'magenta', 'pink', 'grey', 'bright_green', 'bright_red'
+            'dim red', 'dim green', 'dim blue', 'dim yellow', 'dim white', 'purple', 
+            'cyan', 'magenta', 'pink', 'grey', 'green', 'red'
         ]
         
         # Get all existing tags from database (avoid recursion)
@@ -1846,8 +1846,8 @@ class TodoManager:
     def _get_next_available_color(self) -> str:
         """Get next available color for new tags (checks 12 tag limit)"""
         available_colors = [
-            'red', 'green', 'blue', 'yellow', 'orange', 'purple', 
-            'cyan', 'magenta', 'pink', 'grey', 'bright_green', 'bright_red'
+            'dim red', 'dim green', 'dim blue', 'dim yellow', 'dim white', 'purple', 
+            'cyan', 'magenta', 'pink', 'grey', 'green', 'red'
         ]
         
         # Check if we exceed the 12 color limit

@@ -248,7 +248,7 @@ progress = await todo_get_cross_list_progress("my-project")
 TODOIT features an intelligent tag system with dynamic color assignment based on alphabetical sorting for consistent visual organization:
 
 ### Dynamic Color Management
-- **12 Distinct Colors**: `red`, `green`, `blue`, `yellow`, `orange`, `purple`, `cyan`, `magenta`, `pink`, `grey`, `bright_green`, `bright_red`
+- **12 Distinct Colors**: `dim red`, `dim green`, `dim blue`, `dim yellow`, `dim white`, `purple`, `cyan`, `magenta`, `pink`, `grey`, `green`, `red`
 - **Alphabetical Assignment**: Colors assigned dynamically based on alphabetical position of tag names
 - **Real-time Recalculation**: Colors automatically shift when tags are deleted to maintain sequence
 - **Maximum Limit**: System prevents creation of more than 12 tags to maintain visual clarity

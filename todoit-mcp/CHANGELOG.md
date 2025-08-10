@@ -5,7 +5,15 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.16.2] - 2025-08-10
+## [1.16.4] - 2025-08-10
+
+### Changed
+- **🎨 Improved Tag Colors**: Updated tag color palette for better visual comfort
+  - **Dimmed Primary Colors**: Changed first 5 colors to `dim red`, `dim green`, `dim blue`, `dim yellow`, `dim white` for subtler appearance
+  - **Balanced Final Colors**: Changed last 2 colors from `bright_green`, `bright_red` to standard `green`, `red`
+  - **Enhanced Readability**: More consistent and less aggressive color scheme across all tag displays
+
+## [1.16.3] - 2025-08-10
 
 ### Added
 - **📄 List Items Pagination**: Added `limit` parameter to `todo_get_list_items` MCP tool for pagination support
