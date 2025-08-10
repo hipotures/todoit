@@ -5,6 +5,26 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.1] - 2025-08-10
+
+### Fixed
+- **🐛 Critical Fix: List deletion with tags** - Fixed FOREIGN KEY constraint error when deleting lists with tags
+  - **Issue**: `todoit list delete` command failed with `sqlite3.IntegrityError: FOREIGN KEY constraint failed`
+  - **Root Cause**: Missing cleanup of `ListTagAssignmentDB` records before list deletion
+  - **Solution**: Added proper tag assignment cleanup in `delete_list()` method
+  - **Impact**: All lists with tags can now be deleted successfully via CLI and MCP tools
+
+### Added
+- **🧪 Comprehensive Test Coverage**: New unit tests for list deletion scenarios with tags
+  - `tests/unit/test_delete_list_with_tags.py` - 5 test cases covering all tag deletion scenarios
+  - Tests single tag, multiple tags, complex data combinations, and CLI reproduction scenarios
+  - Ensures future regression prevention for tag-related list operations
+
+### Technical Details
+- **File Modified**: `core/manager.py:193` - Added `ListTagAssignmentDB` cleanup
+- **Test Coverage**: 393 tests passing (5 new tests added)
+- **Backward Compatibility**: No breaking changes, existing functionality preserved
+
 ## [1.15.0] - 2025-08-10
 
 ### Added

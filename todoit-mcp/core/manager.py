@@ -189,6 +189,9 @@ class TodoManager:
                 (ListRelationDB.target_list_id == db_list.id)
             ).delete(synchronize_session=False)
             
+            # Delete list tag assignments
+            session.query(ListTagAssignmentDB).filter(ListTagAssignmentDB.list_id == db_list.id).delete(synchronize_session=False)
+            
             # Items are deleted via cascade="all, delete-orphan" on the list's items relationship.
             # Deleting the list will trigger the deletion of its items.
             session.delete(db_list_in_session)
