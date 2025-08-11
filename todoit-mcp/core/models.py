@@ -547,7 +547,7 @@ class BlockedItemsResult(BaseModel):
 class ListTagBase(BaseModel):
     """Base model for list tags"""
     name: str = Field(..., min_length=1, max_length=50, pattern=r'^[a-zA-Z0-9_-]+$')
-    color: str = Field(default='blue', max_length=20, pattern=r'^[a-zA-Z0-9_#]+$')
+    color: str = Field(default='blue', max_length=20, pattern=r'^[a-zA-Z0-9_#\s]+$')
     
     @field_validator('name')
     def validate_tag_name(cls, v):

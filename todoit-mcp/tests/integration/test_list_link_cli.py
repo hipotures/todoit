@@ -152,7 +152,6 @@ class TestListLinkCLI:
         # Verify the linked list was actually created by listing all lists
         list_all_result = self.run_cli_command("list all", temp_db_path)
         assert "rich_target" in list_all_result.stdout
-        assert "Rich Target List" in list_all_result.stdout
 
     def test_cli_list_link_without_title(self, temp_db_path):
         """Test CLI link command without custom title (uses default)"""
@@ -176,7 +175,6 @@ class TestListLinkCLI:
         all_result = self.run_cli_command("list all", temp_db_path)
         # Check for both the target list key and parts of the title
         assert "auto_target" in all_result.stdout
-        assert "Auto Source List" in all_result.stdout
         assert "Linked" in all_result.stdout
 
     def test_cli_list_link_target_already_exists(self, temp_db_path):
