@@ -2,7 +2,7 @@
 
 ## Overview
 
-TODOIT MCP provides 55 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
+TODOIT MCP provides 57 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
 
 ## 🎛️ Tools Level Configuration
 
@@ -14,7 +14,7 @@ TODOIT MCP provides 55 comprehensive tools for Claude Code integration, offering
 |-------|-------------|---------------|----------|
 | **MINIMAL** | 10 tools | 82% savings | Essential operations only, maximum performance |
 | **STANDARD** | 24 tools | 57% savings | Balanced functionality (default) | 
-| **MAX** | 56 tools | 0% savings | Complete feature set |
+| **MAX** | 57 tools | 0% savings | Complete feature set |
 
 ### 🔧 Configuration
 
@@ -27,7 +27,7 @@ export TODOIT_MCP_TOOLS_LEVEL=minimal
 # Standard set (24 tools) - Balanced functionality (DEFAULT)
 export TODOIT_MCP_TOOLS_LEVEL=standard
 
-# Complete set (56 tools) - All features
+# Complete set (57 tools) - All features
 export TODOIT_MCP_TOOLS_LEVEL=max
 ```
 
@@ -37,7 +37,7 @@ export TODOIT_MCP_TOOLS_LEVEL=max
 
 - **MINIMAL**: ~500-1000 tokens context vs 3000+ for MAX
 - **STANDARD**: ~1500-2000 tokens context (24 tools)
-- **MAX**: ~3000+ tokens context (56 tools - full feature set)
+- **MAX**: ~3000+ tokens context (57 tools - full feature set)
 
 ### 🛡️ Security Benefits
 
@@ -401,7 +401,7 @@ Error responses include:
 
 ## Integration with Claude Code
 
-All 55 tools are automatically available in Claude Code through MCP integration:
+All 57 tools are automatically available in Claude Code through MCP integration:
 
 1. **List Management** - Create, organize, and manage task lists
 2. **Task Operations** - Add, update, and track individual tasks
@@ -540,7 +540,7 @@ await todo_remove_list_tag("project-alpha", "urgent")
 
 ## Testing Status
 
-✅ **All 55 MCP tools tested and verified working**
+✅ **All 57 MCP tools tested and verified working**
 - 100% functional coverage
 - Error handling validated  
 - Integration tested with real workflows
@@ -548,4 +548,4 @@ await todo_remove_list_tag("project-alpha", "urgent")
 
 ---
 
-*Last updated: August 10, 2025 - All 55 tools production ready with 3-level configuration system*
+*Last updated: August 12, 2025 - All 57 tools production ready with 3-level configuration system*

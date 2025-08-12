@@ -61,9 +61,9 @@ class TestMCPToolsLevels:
             assert should_register_tool('todo_delete_list') == False
             assert should_register_tool('todo_delete_item') == False
             
-            # Verify STANDARD has 23 tools (10 MINIMAL + 13 additional)
-            assert len(TOOLS_STANDARD) == 23
-            assert len(TOOLS_STANDARD) - len(TOOLS_MINIMAL) == 13
+            # Verify STANDARD has 24 tools (10 MINIMAL + 14 additional)
+            assert len(TOOLS_STANDARD) == 24
+            assert len(TOOLS_STANDARD) - len(TOOLS_MINIMAL) == 14
 
     def test_tools_max_level(self):
         """Test that MAX level registers all tools"""
