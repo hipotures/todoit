@@ -1,7 +1,7 @@
 """
 Unit tests for property search functionality.
 
-Tests the find_items_by_property and find_item_by_property functions
+Tests the find_items_by_property function
 in isolation with mocked database operations.
 """
 import pytest
@@ -98,39 +98,6 @@ class TestPropertySearchUnit:
         assert result == []
         mock_db.find_items_by_property.assert_called_once_with(1, "nonexistent", "value", None)
     
-    def test_find_item_by_property_success(self, manager_with_mock, mock_db):
-        """Test finding single item by property."""
-        mock_item = MagicMock(
-            id=1, item_key="task1", content="First task", status="pending"
-        )
-        mock_db.find_items_by_property.return_value = [mock_item]
-        
-        mock_todo = TodoItem(
-            id=1, list_id=1, item_key="task1", content="First task", status=ItemStatus.PENDING,
-            position=1, created_at=datetime(2024, 1, 1), updated_at=datetime(2024, 1, 1)
-        )
-        
-        with patch.object(manager_with_mock, '_db_to_model', return_value=mock_todo):
-            result = manager_with_mock.find_item_by_property("test", "issue_id", "123")
-        
-        assert result is not None
-        assert result.item_key == "task1"
-        mock_db.find_items_by_property.assert_called_once_with(1, "issue_id", "123", 1)
-    
-    def test_find_item_by_property_not_found(self, manager_with_mock, mock_db):
-        """Test finding single item when no match exists."""
-        mock_db.find_items_by_property.return_value = []
-        
-        result = manager_with_mock.find_item_by_property("test", "nonexistent", "value")
-        
-        assert result is None
-    
-    def test_find_item_by_property_list_not_found(self, manager_with_mock, mock_db):
-        """Test finding single item when list doesn't exist."""
-        mock_db.get_list_by_key.return_value = None
-        
-        with pytest.raises(ValueError, match="List 'nonexistent' not found"):
-            manager_with_mock.find_item_by_property("nonexistent", "priority", "high")
     
     def test_database_find_items_by_property_query(self):
         """Test that database query is constructed correctly."""

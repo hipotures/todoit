@@ -1081,59 +1081,6 @@ async def todo_find_items_by_property(list_key: str, property_key: str, property
         }
     }
 
-@conditional_tool
-@mcp_error_handler
-async def todo_find_item_by_property(list_key: str, property_key: str, property_value: str, mgr=None) -> Dict[str, Any]:
-    """Find first item by property value (convenience wrapper).
-    
-    Args:
-        list_key: Key of the list to search in (required)
-        property_key: Name of the property to match (required)
-        property_value: Value of the property to match (required)
-        
-    Returns:
-        Dictionary with success status and found item or null
-    """
-    item = mgr.find_item_by_property(list_key, property_key, property_value)
-    
-    if item:
-        item_dict = {
-            "item_key": item.item_key,
-            "content": item.content,
-            "status": item.status.value,
-            "position": item.position,
-            "created_at": item.created_at.isoformat() if item.created_at else None,
-            "updated_at": item.updated_at.isoformat() if item.updated_at else None
-        }
-        
-        # Add optional fields if present
-        if hasattr(item, 'metadata') and item.metadata:
-            item_dict["metadata"] = item.metadata
-        if hasattr(item, 'completion_states') and item.completion_states:
-            item_dict["completion_states"] = item.completion_states
-        if hasattr(item, 'parent_item_id') and item.parent_item_id:
-            item_dict["parent_item_id"] = item.parent_item_id
-            
-        return {
-            "success": True,
-            "item": item_dict,
-            "list_key": list_key,
-            "search_criteria": {
-                "property_key": property_key,
-                "property_value": property_value
-            }
-        }
-    else:
-        return {
-            "success": False,
-            "item": None,
-            "list_key": list_key,
-            "search_criteria": {
-                "property_key": property_key,
-                "property_value": property_value
-            },
-            "message": f"No item found with property '{property_key}' = '{property_value}' in list '{list_key}'"
-        }
 
 
 # ===== SUBTASK MANAGEMENT MCP TOOLS (Phase 1) =====

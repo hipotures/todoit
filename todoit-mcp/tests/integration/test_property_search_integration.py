@@ -9,7 +9,7 @@ import json
 import os
 from click.testing import CliRunner
 from core.manager import TodoManager
-from interfaces.mcp_server import todo_find_items_by_property, todo_find_item_by_property
+from interfaces.mcp_server import todo_find_items_by_property
 from interfaces.cli_modules.item_commands import item_find
 
 
@@ -96,20 +96,6 @@ class TestPropertySearchIntegration:
         assert len(results) == 1
         assert results[0].item_key == "task1"
     
-    def test_manager_find_item_by_property_integration(self, manager, setup_test_data):
-        """Test manager find_item_by_property (single result)."""
-        # Search for unique property
-        result = manager.find_item_by_property("testlist", "issue_id", "456")
-        
-        assert result is not None
-        assert result.item_key == "task2"
-        assert result.content == "Second task"
-    
-    def test_manager_find_item_by_property_not_found(self, manager, setup_test_data):
-        """Test manager search when no item found."""
-        result = manager.find_item_by_property("testlist", "nonexistent", "value")
-        
-        assert result is None
     
     def test_manager_find_items_by_property_list_not_found(self, manager):
         """Test manager search with non-existent list."""
@@ -171,18 +157,18 @@ class TestPropertySearchIntegration:
         assert len(items) == 0
     
     def test_mcp_logic_simulation_find_single_item(self, manager, setup_test_data):
-        """Test MCP logic simulation - find single item."""
-        item = manager.find_item_by_property("testlist", "issue_id", "123")
+        """Test MCP logic simulation - find single item using limit=1."""
+        items = manager.find_items_by_property("testlist", "issue_id", "123", limit=1)
         
-        assert item is not None
-        assert item.item_key == "task1"
-        assert item.content == "First task"
+        assert len(items) == 1
+        assert items[0].item_key == "task1"
+        assert items[0].content == "First task"
     
     def test_mcp_logic_simulation_find_single_not_found(self, manager, setup_test_data):
         """Test MCP logic simulation - single item search with no result."""
-        item = manager.find_item_by_property("testlist", "nonexistent", "value")
+        items = manager.find_items_by_property("testlist", "nonexistent", "value", limit=1)
         
-        assert item is None
+        assert len(items) == 0
     
     def test_cli_item_find_integration(self, manager, setup_test_data):
         """Test CLI item find command."""
