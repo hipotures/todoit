@@ -81,8 +81,10 @@ todoit list show project1  # This will also output JSON
 ## Command Structure
 
 ```
-python -m interfaces.cli [OPTIONS] COMMAND [ARGS]...
+todoit [OPTIONS] COMMAND [ARGS]...
 ```
+
+**Note:** You can also use the module form `todoit` if needed for development.
 
 ### Global Options
 - `--db TEXT` - Path to database file (default: ~/.todoit/todoit.db)
@@ -95,90 +97,90 @@ python -m interfaces.cli [OPTIONS] COMMAND [ARGS]...
 #### Create Lists
 ```bash
 # Basic list creation
-python -m interfaces.cli list create "my-project" --title "My Project"
+todoit list create "my-project" --title "My Project"
 
 # With initial items
-python -m interfaces.cli list create "tasks" --title "Daily Tasks" --items "Task 1" --items "Task 2"
+todoit list create "tasks" --title "Daily Tasks" --items "Task 1" --items "Task 2"
 
 # From folder contents
-python -m interfaces.cli list create "docs" --title "Documentation" --from-folder ./docs --filter-ext .md
+todoit list create "docs" --title "Documentation" --from-folder ./docs --filter-ext .md
 
 # With metadata
-python -m interfaces.cli list create "project" --title "Project" -m '{"priority": "high", "team": "backend"}'
+todoit list create "project" --title "Project" -m '{"priority": "high", "team": "backend"}'
 ```
 
 #### List Operations
 ```bash
 # Show all lists
-python -m interfaces.cli list all
+todoit list all
 
 # Show specific list with beautiful table
-python -m interfaces.cli list show "my-project"
+todoit list show "my-project"
 
 # Delete list
-python -m interfaces.cli list delete "old-project"
-python -m interfaces.cli list delete "old-project" --force  # Skip confirmation
+todoit list delete "old-project"
+todoit list delete "old-project" --force  # Skip confirmation
 ```
 
 
 #### Archive Management
 ```bash
 # Archive completed list (requires all tasks to be completed)
-python -m interfaces.cli list archive "completed-project"
+todoit list archive "completed-project"
 
 # Force archive list with incomplete tasks
-python -m interfaces.cli list archive "incomplete-project" --force
+todoit list archive "incomplete-project" --force
 
 # Unarchive list (restore to active status)
-python -m interfaces.cli list unarchive "archived-project"
+todoit list unarchive "archived-project"
 
 # View archived lists only
-python -m interfaces.cli list all --archived
+todoit list all --archived
 
 # View all lists including archived ones
-python -m interfaces.cli list all --include-archived
+todoit list all --include-archived
 
 # Example workflow with archive validation
-python -m interfaces.cli list create "sprint-1" --title "Sprint 1" --items "Feature A" "Bug fix" "Testing"
-python -m interfaces.cli item status "sprint-1" "item_1" --status completed  # Complete some tasks
-python -m interfaces.cli list archive "sprint-1"  # Will fail - shows incomplete tasks count
-python -m interfaces.cli item status "sprint-1" "item_2" --status completed  # Complete more
-python -m interfaces.cli item status "sprint-1" "item_3" --status completed  # Complete all
-python -m interfaces.cli list archive "sprint-1"  # Now succeeds
+todoit list create "sprint-1" --title "Sprint 1" --items "Feature A" "Bug fix" "Testing"
+todoit item status "sprint-1" "item_1" --status completed  # Complete some tasks
+todoit list archive "sprint-1"  # Will fail - shows incomplete tasks count
+todoit item status "sprint-1" "item_2" --status completed  # Complete more
+todoit item status "sprint-1" "item_3" --status completed  # Complete all
+todoit list archive "sprint-1"  # Now succeeds
 ```
 
 #### Live Monitoring
 ```bash
 # Real-time monitoring of list changes
-python -m interfaces.cli list live "my-project"
+todoit list live "my-project"
 
 # With faster refresh rate
-python -m interfaces.cli list live "my-project" --refresh 1
+todoit list live "my-project" --refresh 1
 
 # Show change history panel
-python -m interfaces.cli list live "my-project" --show-history
+todoit list live "my-project" --show-history
 
 # Filter by status
-python -m interfaces.cli list live "my-project" --filter-status pending
-python -m interfaces.cli list live "my-project" --filter-status in_progress
+todoit list live "my-project" --filter-status pending
+todoit list live "my-project" --filter-status in_progress
 
 # Disable heartbeat animation (reduces flicker)
-python -m interfaces.cli list live "my-project" --no-heartbeat
+todoit list live "my-project" --no-heartbeat
 ```
 
 #### Link Lists (1:1 Relationships)
 ```bash
 # Create a linked copy of a list with 1:1 task mapping
-python -m interfaces.cli list link "source-list" "target-list"
+todoit list link "source-list" "target-list"
 
 # Link with custom title for the target list
-python -m interfaces.cli list link "api-dev" "api-test" --title "API Testing Tasks"
+todoit list link "api-dev" "api-test" --title "API Testing Tasks"
 
 # Example workflow: Create development and testing lists
-python -m interfaces.cli list create "frontend-dev" --title "Frontend Development"
-python -m interfaces.cli item add "frontend-dev" "component1" "Build user dashboard"
-python -m interfaces.cli item add "frontend-dev" "component2" "Implement authentication"
-python -m interfaces.cli list link "frontend-dev" "frontend-test" --title "Frontend Testing"
+todoit list create "frontend-dev" --title "Frontend Development"
+todoit item add "frontend-dev" "component1" "Build user dashboard"
+todoit item add "frontend-dev" "component2" "Implement authentication"
+todoit list link "frontend-dev" "frontend-test" --title "Frontend Testing"
 ```
 
 **What the link command does:**
@@ -195,61 +197,61 @@ python -m interfaces.cli list link "frontend-dev" "frontend-test" --title "Front
 #### Add Items
 ```bash
 # Add item to list
-python -m interfaces.cli item add "my-project" "task1" "Implement feature X"
+todoit item add "my-project" "task1" "Implement feature X"
 
 # Add with metadata
-python -m interfaces.cli item add "my-project" "task2" "Write tests" -m '{"priority": "high"}'
+todoit item add "my-project" "task2" "Write tests" -m '{"priority": "high"}'
 ```
 
 #### Update Status
 ```bash
 # Update item status
-python -m interfaces.cli item status "my-project" "task1" --status in_progress
-python -m interfaces.cli item status "my-project" "task1" --status completed
+todoit item status "my-project" "task1" --status in_progress
+todoit item status "my-project" "task1" --status completed
 
 # Add completion states
-python -m interfaces.cli item status "my-project" "task1" --status completed -s "quality=excellent"
+todoit item status "my-project" "task1" --status completed -s "quality=excellent"
 ```
 
 #### Edit Item Content
 ```bash
 # Edit item description/content
-python -m interfaces.cli item edit "my-project" "task1" "Updated task description"
+todoit item edit "my-project" "task1" "Updated task description"
 ```
 
 #### Delete Items
 ```bash
 # Delete item with confirmation prompt
-python -m interfaces.cli item delete "my-project" "task1"
+todoit item delete "my-project" "task1"
 
 # Force delete without confirmation
-python -m interfaces.cli item delete "my-project" "task1" --force
+todoit item delete "my-project" "task1" --force
 ```
 
 #### Subtask Operations
 ```bash
 # Add subtask
-python -m interfaces.cli item add-subtask "my-project" "task1" "subtask1" "Backend implementation"
+todoit item add-subtask "my-project" "task1" "subtask1" "Backend implementation"
 
 # Show subtasks
-python -m interfaces.cli item subtasks "my-project" "task1"
+todoit item subtasks "my-project" "task1"
 
 # Move task to become subtask
-python -m interfaces.cli item move-to-subtask "my-project" "task2" "task1"
-python -m interfaces.cli item move-to-subtask "my-project" "task2" "task1" --force  # Skip confirmation
+todoit item move-to-subtask "my-project" "task2" "task1"
+todoit item move-to-subtask "my-project" "task2" "task1" --force  # Skip confirmation
 
 # Show hierarchy tree
-python -m interfaces.cli item tree "my-project"
-python -m interfaces.cli item tree "my-project" "task1"  # Specific item tree
+todoit item tree "my-project"
+todoit item tree "my-project" "task1"  # Specific item tree
 ```
 
 #### Smart Task Selection
 ```bash
 # Get next pending task
-python -m interfaces.cli item next "my-project"
+todoit item next "my-project"
 
 # Get next with smart subtask logic
-python -m interfaces.cli item next-smart "my-project"
+todoit item next-smart "my-project"
 ```
 
 ### 🏷️ Tag Management (`tag` and `tags`)
@@ -376,31 +378,31 @@ source .env.test # Test mode
 #### Add Dependencies
 ```bash
 # Create dependency between tasks from different lists
-python -m interfaces.cli dep add "frontend:ui-component" requires "backend:api-endpoint"
-python -m interfaces.cli dep add "frontend:ui-component" requires "backend:api-endpoint" --force  # Skip confirmation
+todoit dep add "frontend:ui-component" requires "backend:api-endpoint"
+todoit dep add "frontend:ui-component" requires "backend:api-endpoint" --force  # Skip confirmation
 
 # With custom dependency type
-python -m interfaces.cli dep add "task1:item1" requires "task2:item2" --type "related"
+todoit dep add "task1:item1" requires "task2:item2" --type "related"
 ```
 
 #### Manage Dependencies
 ```bash
 # Show dependencies for item
-python -m interfaces.cli dep show "frontend:ui-component"
+todoit dep show "frontend:ui-component"
 
 # Remove dependency
-python -m interfaces.cli dep remove "frontend:ui-component" "backend:api-endpoint" 
-python -m interfaces.cli dep remove "frontend:ui-component" "backend:api-endpoint" --force  # Skip confirmation
+todoit dep remove "frontend:ui-component" "backend:api-endpoint" 
+todoit dep remove "frontend:ui-component" "backend:api-endpoint" --force  # Skip confirmation
 
 # Show dependency graph
-python -m interfaces.cli dep graph "my-project"
+todoit dep graph "my-project"
 ```
 
 ### 📊 Statistics & Reports (`stats`)
 
 ```bash
 # Show progress for list
-python -m interfaces.cli stats progress "my-project"
+todoit stats progress "my-project"
 ```
 
 ### 📋 Reports & Analytics (`reports`)
@@ -410,16 +412,16 @@ Generate comprehensive reports for project management and troubleshooting.
 #### Error Reports
 ```bash
 # Show all failed tasks across active lists
-python -m interfaces.cli reports errors
+todoit reports errors
 
 # Filter by list name patterns (regex)
-python -m interfaces.cli reports errors --filter "^\d{4}_.*"     # NNNN_* pattern
-python -m interfaces.cli reports errors --filter ".*project.*"   # Containing "project"
-python -m interfaces.cli reports errors --filter "^sprint_.*"    # Starting with "sprint_"
+todoit reports errors --filter "^\d{4}_.*"     # NNNN_* pattern
+todoit reports errors --filter ".*project.*"   # Containing "project"
+todoit reports errors --filter "^sprint_.*"    # Starting with "sprint_"
 
 # JSON output for automation and scripting
-TODOIT_OUTPUT_FORMAT=json python -m interfaces.cli reports errors
-TODOIT_OUTPUT_FORMAT=json python -m interfaces.cli reports errors --filter "^\d{4}_.*"
+TODOIT_OUTPUT_FORMAT=json todoit reports errors
+TODOIT_OUTPUT_FORMAT=json todoit reports errors --filter "^\d{4}_.*"
 ```
 
 **Example Output:**
@@ -466,14 +468,14 @@ Filter applied: ^\d{4}_.*
 #### Export
 ```bash
 # Export to markdown
-python -m interfaces.cli io export "my-project" "/path/to/export.md"
+todoit io export "my-project" "/path/to/export.md"
 ```
 
 #### Import
 ```bash
 # Import from markdown (supports both formats)
-python -m interfaces.cli io import "/path/to/tasks.md"
-python -m interfaces.cli io import "/path/to/tasks.md" --key "imported"
+todoit io import "/path/to/tasks.md"
+todoit io import "/path/to/tasks.md" --key "imported"
 
 # Supported markdown formats:
 # [x] Completed task
@@ -487,33 +489,65 @@ python -m interfaces.cli io import "/path/to/tasks.md" --key "imported"
 #### List Properties (`list property`)
 ```bash
 # Set list property
-python -m interfaces.cli list property set "my-project" "priority" "high"
+todoit list property set "my-project" "priority" "high"
 
 # Get list property
-python -m interfaces.cli list property get "my-project" "priority"
+todoit list property get "my-project" "priority"
 
 # List all list properties
-python -m interfaces.cli list property list "my-project"
+todoit list property list "my-project"
 
 # Delete list property
-python -m interfaces.cli list property delete "my-project" "old-property"
+todoit list property delete "my-project" "old-property"
 ```
 
 #### Item Properties (`item property`)
 ```bash
 # Set item property for runtime tracking
-python -m interfaces.cli item property set "my-project" "task1" "priority" "high"
-python -m interfaces.cli item property set "my-project" "task1" "estimated_hours" "8"
-python -m interfaces.cli item property set "my-project" "task1" "assignee" "john_doe"
+todoit item property set "my-project" "task1" "priority" "high"
+todoit item property set "my-project" "task1" "estimated_hours" "8"
+todoit item property set "my-project" "task1" "assignee" "john_doe"
 
 # Get item property
-python -m interfaces.cli item property get "my-project" "task1" "priority"
+todoit item property get "my-project" "task1" "priority"
 
-# List all properties for an item
-python -m interfaces.cli item property list "my-project" "task1"
+# List all properties for a specific item
+todoit item property list "my-project" "task1"
+
+# List ALL properties for ALL items in the list (NEW!)
+todoit item property list "my-project"
+
+# Display properties in tree format grouped by item (NEW!)
+todoit item property list "my-project" --tree
 
 # Delete item property when no longer needed
-python -m interfaces.cli item property delete "my-project" "task1" "assignee"
+todoit item property delete "my-project" "task1" "assignee"
+```
+
+**Example Output:**
+
+**Table format (default):**
+```
+      📋 All Item Properties for list 'my-project'       
+╭──────────────────────┬──────────────────────┬────────╮
+│ Item Key             │ Property Key         │ Value  │
+├──────────────────────┼──────────────────────┼────────┤
+│ task1                │ assignee             │ john   │
+│ task1                │ priority             │ high   │
+│ task2                │ priority             │ low    │
+│ task2                │ status               │ active │
+╰──────────────────────┴──────────────────────┴────────╯
+```
+
+**Tree format (with --tree):**
+```
+📋 All Item Properties for list 'my-project'
+├── 📝 task1
+│   ├── assignee: john
+│   └── priority: high
+└── 📝 task2
+    ├── priority: low
+    └── status: active
 ```
 
 **Property Use Cases:**
@@ -524,7 +558,7 @@ python -m interfaces.cli item property delete "my-project" "task1" "assignee"
 
 ```bash
 # Enter interactive mode with menu
-python -m interfaces.cli interactive
+todoit interactive
 ```
 
 ## Visual Features
@@ -584,40 +618,40 @@ The `list all` command provides a rich, at-a-glance view of all your projects us
 ### Complex Project Setup
 ```bash
 # Create related lists
-python -m interfaces.cli list create "backend" --title "Backend Development"
-python -m interfaces.cli list create "frontend" --title "Frontend Development"  
-python -m interfaces.cli list create "testing" --title "QA Testing"
+todoit list create "backend" --title "Backend Development"
+todoit list create "frontend" --title "Frontend Development"  
+todoit list create "testing" --title "QA Testing"
 
 # Add tasks with hierarchies
-python -m interfaces.cli item add "backend" "api" "Implement REST API"
-python -m interfaces.cli item add-subtask "backend" "api" "auth" "Authentication endpoint"
-python -m interfaces.cli item add-subtask "backend" "api" "crud" "CRUD operations"
+todoit item add "backend" "api" "Implement REST API"
+todoit item add-subtask "backend" "api" "auth" "Authentication endpoint"
+todoit item add-subtask "backend" "api" "crud" "CRUD operations"
 
 # Create dependencies
-python -m interfaces.cli dep add "frontend:components" requires "backend:api" --force
-python -m interfaces.cli dep add "testing:integration" requires "backend:api" --force
-python -m interfaces.cli dep add "testing:e2e" requires "frontend:components" --force
+todoit dep add "frontend:components" requires "backend:api" --force
+todoit dep add "testing:integration" requires "backend:api" --force
+todoit dep add "testing:e2e" requires "frontend:components" --force
 
 # Monitor progress
-python -m interfaces.cli item next-smart "backend"  # Get next backend task
-python -m interfaces.cli stats progress "backend"   # Check backend progress
-python -m interfaces.cli dep graph "project"        # Visualize dependencies
+todoit item next-smart "backend"  # Get next backend task
+todoit stats progress "backend"   # Check backend progress
+todoit dep graph "project"        # Visualize dependencies
 ```
 
 ### Development-Testing Workflow with List Linking
 ```bash
 # Create development list with tasks
-python -m interfaces.cli list create "feature-dev" --title "Feature Development"
-python -m interfaces.cli item add "feature-dev" "setup" "Setup development environment"
-python -m interfaces.cli item add "feature-dev" "implement" "Implement core functionality"
-python -m interfaces.cli item add "feature-dev" "review" "Code review and cleanup"
+todoit list create "feature-dev" --title "Feature Development"
+todoit item add "feature-dev" "setup" "Setup development environment"
+todoit item add "feature-dev" "implement" "Implement core functionality"
+todoit item add "feature-dev" "review" "Code review and cleanup"
 
 # Add properties to development list
-python -m interfaces.cli list property set "feature-dev" "project_id" "proj-123"
-python -m interfaces.cli list property set "feature-dev" "team" "backend"
+todoit list property set "feature-dev" "project_id" "proj-123"
+todoit list property set "feature-dev" "team" "backend"
 
 # Link to create testing list with 1:1 task mapping
-python -m interfaces.cli list link "feature-dev" "feature-test" --title "Feature Testing"
+todoit list link "feature-dev" "feature-test" --title "Feature Testing"
 
 # Both lists now have identical tasks and properties, but testing tasks are all pending
 # Development list maintains original task statuses
@@ -627,16 +661,16 @@ python -m interfaces.cli list link "feature-dev" "feature-test" --title "Feature
 ### Daily Workflow
 ```bash
 # Morning routine: check what to work on
-python -m interfaces.cli item next-smart "my-project"
+todoit item next-smart "my-project"
 
 # Start working on task
-python -m interfaces.cli item status "my-project" "current-task" --status in_progress
+todoit item status "my-project" "current-task" --status in_progress
 
 # Complete task
-python -m interfaces.cli item status "my-project" "current-task" --status completed
+todoit item status "my-project" "current-task" --status completed
 
 # Check overall progress
-python -m interfaces.cli stats progress "my-project"
+todoit stats progress "my-project"
 ```
 
 ## Tips & Best Practices
@@ -662,7 +696,7 @@ python -m interfaces.cli stats progress "my-project"
 ## Troubleshooting
 
 ### Common Issues
-1. **Command not found**: Make sure you're in the correct directory and using `python -m interfaces.cli`
+1. **Command not found**: Make sure you're in the correct directory and using `todoit`
 2. **Database errors**: Check database path and permissions
 3. **Interactive prompts hang**: Use `--force` flags for automation
 4. **Import fails**: Verify markdown format matches supported patterns
@@ -670,12 +704,12 @@ python -m interfaces.cli stats progress "my-project"
 ### Getting Help
 ```bash
 # General help
-python -m interfaces.cli --help
+todoit --help
 
 # Command-specific help  
-python -m interfaces.cli list --help
-python -m interfaces.cli item add --help
-python -m interfaces.cli dep add --help
+todoit list --help
+todoit item add --help
+todoit dep add --help
 ```
 
 ### 🔄 Completion State Management (`item state`)
@@ -685,42 +719,42 @@ Manage completion states (flags) that are set alongside task status changes.
 #### View Current States
 ```bash
 # Show all completion states for an item
-python -m interfaces.cli item state list "my-project" "task1"
+todoit item state list "my-project" "task1"
 ```
 
 #### Clear States
 ```bash
 # Clear all completion states from an item
-python -m interfaces.cli item state clear "my-project" "task1"
+todoit item state clear "my-project" "task1"
 
 # Skip confirmation prompt
-python -m interfaces.cli item state clear "my-project" "task1" --force
+todoit item state clear "my-project" "task1" --force
 ```
 
 #### Remove Specific States
 ```bash
 # Remove one or more specific completion states
-python -m interfaces.cli item state remove "my-project" "task1" "quality"
-python -m interfaces.cli item state remove "my-project" "task1" "quality" "tested" "reviewed"
+todoit item state remove "my-project" "task1" "quality"
+todoit item state remove "my-project" "task1" "quality" "tested" "reviewed"
 
 # Skip confirmation prompt
-python -m interfaces.cli item state remove "my-project" "task1" "unwanted_state" --force
+todoit item state remove "my-project" "task1" "unwanted_state" --force
 ```
 
 **Example Workflow:**
 ```bash
 # Accidentally set wrong state during status update
-python -m interfaces.cli item status "project" "task1" -s wrong_name=true
+todoit item status "project" "task1" -s wrong_name=true
 
 # Check what states exist
-python -m interfaces.cli item state list "project" "task1"
+todoit item state list "project" "task1"
 # Shows: ❌ wrong_name: false
 
 # Remove the problematic state
-python -m interfaces.cli item state remove "project" "task1" "wrong_name"
+todoit item state remove "project" "task1" "wrong_name"
 
 # Set correct status
-python -m interfaces.cli item status "project" "task1" --status completed -s quality=true
+todoit item status "project" "task1" --status completed -s quality=true
 ```
 
 **Common Use Cases:**
