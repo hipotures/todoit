@@ -5,14 +5,29 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.1] - 2025-08-12
+
+### Changed
+- **🔧 API Simplification**: Removed redundant `todo_find_item_by_property` MCP tool
+  - **Unified Interface**: Use `todo_find_items_by_property` with `limit=1` for single results
+  - **Better Design**: One function with optional parameters > multiple functions
+  - **Cleaner API**: Reduced from 57 to 56 total MCP tools
+  - **Updated Examples**: Documentation shows `limit=1` usage instead of separate function
+  - **Backward Compatibility**: All functionality preserved with cleaner interface
+
+### Technical
+- **Code Reduction**: Removed ~126 lines of redundant code
+- **Test Updates**: Integrated tests now use unified approach
+- **Documentation**: Updated MCP_TOOLS.md with simplified examples
+
 ## [1.18.0] - 2025-08-12
 
 ### Added
 - **🔍 Property-Based Item Search**: New comprehensive search functionality for finding items by custom properties
   - **Database Layer**: `find_items_by_property()` function with optimized SQL JOIN queries and optional LIMIT support
-  - **Core Manager**: `find_items_by_property()` and `find_item_by_property()` business logic functions
+  - **Core Manager**: `find_items_by_property()` business logic function
   - **CLI Command**: `todoit item find` with options: `--property`, `--value`, `--limit`, `--first`
-  - **MCP Tools**: `todo_find_items_by_property` and `todo_find_item_by_property` for external integration
+  - **MCP Tools**: `todo_find_items_by_property` for external integration
   - **Standard MCP Integration**: Added `todo_find_items_by_property` to basic MCP tool set (~20 essential tools)
   - **Performance Optimization**: Added composite database index `idx_item_properties_key_value` for fast property searches
   - **JSON Output Support**: Full support for `TODOIT_OUTPUT_FORMAT` environment variable (JSON/YAML/XML)
