@@ -142,22 +142,38 @@ def item_property_get(ctx, list_key, item_key, property_key):
 
 @item_property_group.command('list')
 @click.argument('list_key')
-@click.argument('item_key')
+@click.argument('item_key', required=False)
+@click.option('--tree', is_flag=True, help='Display properties in tree format grouped by item')
 @click.pass_context
-def item_property_list(ctx, list_key, item_key):
-    """List all properties for an item"""
+def item_property_list(ctx, list_key, item_key, tree):
+    """List all properties for an item (or all items if item_key not provided)"""
     manager = get_manager(ctx.obj['db_path'])
     
     try:
-        properties = manager.get_item_properties(list_key, item_key)
-        if properties:
-            # Prepare properties data for unified display
-            data = [{"Key": k, "Value": v} for k, v in properties.items()]
-            columns = {"Key": {"style": "cyan", "width": 20}, "Value": {"style": "white"}}
+        if item_key:
+            # Original behavior: show properties for single item
+            if tree:
+                console.print("[yellow]⚠️  --tree option ignored when showing single item properties[/]")
             
-            _display_records(data, f"Properties for item '{item_key}' in list '{list_key}'", columns)
+            properties = manager.get_item_properties(list_key, item_key)
+            if properties:
+                # Prepare properties data for unified display
+                data = [{"Key": k, "Value": v} for k, v in properties.items()]
+                columns = {"Key": {"style": "cyan", "width": 20}, "Value": {"style": "white"}}
+                
+                _display_records(data, f"Properties for item '{item_key}' in list '{list_key}'", columns)
+            else:
+                console.print(f"[yellow]No properties found for item '{item_key}' in list '{list_key}'[/]")
         else:
-            console.print(f"[yellow]No properties found for item '{item_key}' in list '{list_key}'[/]")
+            # New behavior: show properties for all items in the list
+            all_properties = manager.get_all_items_properties(list_key)
+            if all_properties:
+                if tree:
+                    _display_item_properties_tree(all_properties, list_key)
+                else:
+                    _display_item_properties_table(all_properties, list_key)
+            else:
+                console.print(f"[yellow]No item properties found in list '{list_key}'[/]")
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
 
@@ -179,3 +195,55 @@ def item_property_delete(ctx, list_key, item_key, property_key):
             console.print(f"[yellow]Property '{property_key}' not found for item '{item_key}' in list '{list_key}'[/]")
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+def _display_item_properties_table(properties_data, list_key):
+    """Display item properties in table format with alternating row styles"""
+    from rich.table import Table
+    from rich import box
+    
+    table = Table(title=f"📋 All Item Properties for list '{list_key}'", box=box.ROUNDED)
+    table.add_column("Item Key", style="cyan", width=20)
+    table.add_column("Property Key", style="magenta", width=20)
+    table.add_column("Value", style="white")
+    
+    current_item = None
+    use_dim_style = False
+    
+    for prop in properties_data:
+        if prop['item_key'] != current_item:
+            current_item = prop['item_key']
+            use_dim_style = not use_dim_style  # Toggle style for each new item
+        
+        style = "dim" if use_dim_style else None
+        table.add_row(
+            prop['item_key'], 
+            prop['property_key'], 
+            prop['property_value'],
+            style=style
+        )
+    
+    console.print(table)
+
+
+def _display_item_properties_tree(properties_data, list_key):
+    """Display item properties in tree format grouped by item"""
+    from rich.tree import Tree
+    
+    tree = Tree(f"📋 All Item Properties for list '{list_key}'")
+    
+    # Group properties by item
+    items_properties = {}
+    for prop in properties_data:
+        item_key = prop['item_key']
+        if item_key not in items_properties:
+            items_properties[item_key] = []
+        items_properties[item_key].append((prop['property_key'], prop['property_value']))
+    
+    # Add each item as a branch
+    for item_key, properties in items_properties.items():
+        item_branch = tree.add(f"📝 {item_key}")
+        for prop_key, prop_value in properties:
+            item_branch.add(f"[cyan]{prop_key}[/]: [white]{prop_value}[/]")
+    
+    console.print(tree)

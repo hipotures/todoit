@@ -980,6 +980,41 @@ class TodoManager:
         
         return self.db.get_item_properties(db_item.id)
 
+    def get_all_items_properties(self, list_key: str) -> List[Dict[str, Any]]:
+        """Get all properties for all items in a list.
+
+        Args:
+            list_key: The key of the list.
+
+        Returns:
+            A list of dictionaries, each containing 'item_key', 'property_key', and 'property_value'.
+            Returns an empty list if no items have properties.
+
+        Raises:
+            ValueError: If the specified list is not found.
+        """
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
+        
+        # Get all items in the list
+        items = self.db.get_list_items(db_list.id)
+        
+        result = []
+        for item in items:
+            # Get all properties for this item
+            properties = self.db.get_item_properties(item.id)
+            for prop_key, prop_value in properties.items():
+                result.append({
+                    'item_key': item.item_key,
+                    'property_key': prop_key,
+                    'property_value': prop_value
+                })
+        
+        # Sort by item_key first, then by property_key for consistent ordering
+        result.sort(key=lambda x: (x['item_key'], x['property_key']))
+        return result
+
     def delete_item_property(self, list_key: str, item_key: str, property_key: str) -> bool:
         """Delete a specific property from an item.
 
