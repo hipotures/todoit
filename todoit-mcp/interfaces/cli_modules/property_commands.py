@@ -73,7 +73,8 @@ def list_property_list(ctx, list_key):
             
             _display_records(data, f"Properties for list '{list_key}'", columns)
         else:
-            console.print(f"[yellow]No properties found for list '{list_key}'[/]")
+            # Use unified display for empty message
+            _display_records([], f"Properties for list '{list_key}'", {})
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
 
@@ -163,7 +164,8 @@ def item_property_list(ctx, list_key, item_key, tree):
                 
                 _display_records(data, f"Properties for item '{item_key}' in list '{list_key}'", columns)
             else:
-                console.print(f"[yellow]No properties found for item '{item_key}' in list '{list_key}'[/]")
+                # Use unified display for empty message
+                _display_records([], f"Properties for item '{item_key}' in list '{list_key}'", {})
         else:
             # New behavior: show properties for all items in the list
             all_properties = manager.get_all_items_properties(list_key)
@@ -173,7 +175,8 @@ def item_property_list(ctx, list_key, item_key, tree):
                 else:
                     _display_item_properties_table(all_properties, list_key)
             else:
-                console.print(f"[yellow]No item properties found in list '{list_key}'[/]")
+                # Use unified display for empty message
+                _display_records([], f"Item Properties for list '{list_key}'", {})
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
 
@@ -198,32 +201,25 @@ def item_property_delete(ctx, list_key, item_key, property_key):
 
 
 def _display_item_properties_table(properties_data, list_key):
-    """Display item properties in table format with alternating row styles"""
-    from rich.table import Table
-    from rich import box
-    
-    table = Table(title=f"📋 All Item Properties for list '{list_key}'", box=box.ROUNDED)
-    table.add_column("Item Key", style="cyan", width=20)
-    table.add_column("Property Key", style="magenta", width=20)
-    table.add_column("Value", style="white")
-    
-    current_item = None
-    use_dim_style = False
-    
+    """Display item properties in table format using unified display system"""
+    # Transform data for unified display
+    data = []
     for prop in properties_data:
-        if prop['item_key'] != current_item:
-            current_item = prop['item_key']
-            use_dim_style = not use_dim_style  # Toggle style for each new item
-        
-        style = "dim" if use_dim_style else None
-        table.add_row(
-            prop['item_key'], 
-            prop['property_key'], 
-            prop['property_value'],
-            style=style
-        )
+        data.append({
+            "Item Key": prop['item_key'],
+            "Property Key": prop['property_key'],
+            "Value": prop['property_value']
+        })
     
-    console.print(table)
+    # Define columns for unified display
+    columns = {
+        "Item Key": {"style": "cyan", "width": 20},
+        "Property Key": {"style": "magenta", "width": 20},
+        "Value": {"style": "white"}
+    }
+    
+    # Use unified display system
+    _display_records(data, f"All Item Properties for list '{list_key}'", columns)
 
 
 def _display_item_properties_tree(properties_data, list_key):
