@@ -60,5 +60,3 @@ python -m interfaces.cli item next-smart "project"
 - Complete documentation coverage
 
 ---
-
-*Documentation last updated: August 6, 2025*

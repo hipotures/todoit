@@ -576,25 +576,36 @@ async def todo_get_list_items(list_key: str, status: Optional[str] = None, limit
     """
     try:
         mgr = init_manager()
+
+        # First, check if the list exists
+        if not mgr.get_list(list_key):
+            return {"success": False, "error": f"List '{list_key}' not found"}
+
         items = mgr.get_list_items(
             list_key=list_key,
             status=status,
             limit=limit
         )
         
-        # Check if there are more items available when limit is used
-        more_available = False
-        if limit and len(items) == limit:
-            # Check if there's at least one more item
-            all_items = mgr.get_list_items(list_key=list_key, status=status, limit=limit + 1)
-            more_available = len(all_items) > limit
-        
+        # Get the total count of items matching the filter, regardless of the limit
+        total_count = len(mgr.get_list_items(list_key=list_key, status=status))
+
+        # Determine if more items are available
+        more_available = total_count > len(items)
+
+        # Add list_key to each item's dict
+        items_with_list_key = []
+        for item in items:
+            item_dict = item.to_dict()
+            item_dict['list_key'] = list_key
+            items_with_list_key.append(item_dict)
+
         return {
             "success": True,
-            "items": [item.to_dict() for item in items],
+            "items": items_with_list_key,
             "count": len(items),
             "more_available": more_available,
-            "total_count": len(mgr.get_list_items(list_key=list_key, status=status)) if limit else len(items)
+            "total_count": total_count
         }
     except Exception as e:
         return {"success": False, "error": str(e)}

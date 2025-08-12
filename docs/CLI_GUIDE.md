@@ -18,15 +18,64 @@ The CLI is implemented in `interfaces/cli.py` using the `click` library and offe
 
 ## Installation & Setup
 
+For detailed installation instructions, please see the [**Comprehensive Installation Guide**](installation.md).
+
+### Basic Usage
+
 ```bash
-# Navigate to project directory
-cd todoit-mcp
+# Get help for all commands
+todoit --help
 
-# Basic usage
-python -m interfaces.cli --help
+# Use a custom database for a specific command
+todoit --db /path/to/custom.db list all
+```
 
-# With custom database
-python -m interfaces.cli --db /path/to/custom.db <command>
+## Global CLI Features
+
+### Output Formats
+
+TODOIT supports multiple output formats for most commands, controlled by the `TODOIT_OUTPUT_FORMAT` environment variable. This is useful for scripting and integration with other tools.
+
+**Available Formats:**
+- `table` (default) - Richly formatted tables with colors and icons.
+- `vertical` - Key-value pairs, useful for easy parsing in scripts.
+- `json` - JSON output for modern applications and APIs.
+- `yaml` - YAML output, often more human-readable than JSON.
+- `xml` - XML format for legacy systems.
+
+**Examples:**
+
+**Default `table` format:**
+```bash
+todoit list all
+```
+
+**JSON output:**
+You can set the environment variable for a single command or export it for the session.
+```bash
+TODOIT_OUTPUT_FORMAT=json todoit list all
+```
+```json
+{
+  "title": "📋 All TODO Lists",
+  "count": 2,
+  "data": [
+    {
+      "ID": "1",
+      "Key": "work_tasks",
+      "Title": "Work Tasks",
+      "Items": "5",
+      "Progress": "60.0%"
+    }
+  ]
+}
+```
+
+**Persistent format setting:**
+```bash
+export TODOIT_OUTPUT_FORMAT=json
+todoit list all          # This will output JSON
+todoit list show project1  # This will also output JSON
 ```
 
 ## Command Structure
@@ -71,27 +120,6 @@ python -m interfaces.cli list delete "old-project"
 python -m interfaces.cli list delete "old-project" --force  # Skip confirmation
 ```
 
-#### List Display Columns
-
-The `list all` command shows enhanced status breakdown with separate columns for each task state:
-
-- **🔀** - List type (S=Sequential, P=Parallel, H=Hierarchical, L=Linked)
-- **📋** - Pending tasks (not yet started)
-- **🔄** - In-progress tasks (currently being worked on) 
-- **❌** - Failed tasks (encountered errors or failures)
-- **✅** - Completed tasks (successfully finished)
-- **⏳** - Overall completion percentage
-
-Example output:
-```
-┌────┬─────────┬──────────┬───┬───┬───┬───┬───┬────┐
-│ ID │ Key     │ Title    │🔀 │📋 │🔄 │❌ │✅ │⏳  │
-├────┼─────────┼──────────┼───┼───┼───┼───┼───┼────┤
-│ 1  │ project │ My Tasks │ S │ 5 │ 2 │ 1 │ 7 │70% │
-└────┴─────────┴──────────┴───┴───┴───┴───┴───┴────┘
-```
-
-The **❌ Failed** column is always visible (shows "0" when no tasks have failed), providing consistent visibility into task status distribution across all projects.
 
 #### Archive Management
 ```bash
@@ -507,16 +535,28 @@ python -m interfaces.cli interactive
 - **Dependency Indicators**: 🚫 for blocked items
 - **Hierarchy Visualization**: Tree-style subtask display
 
-### Column Icons
-- **⏳** - Pending items (total tasks - completed tasks)
-- **✅** - Completed items count
-- **📊** - Progress percentage
-- **📋** - List type: S (Sequential), P (Parallel), H (Hierarchical)
+### List Types & Table Icons
 
-### List Types
-- **S** - Sequential: Tasks must be completed in order
-- **P** - Parallel: Tasks can be completed in any order
-- **H** - Hierarchical: Tasks have parent-child relationships
+TODOIT supports several list types, each with a corresponding icon in the `list all` table view.
+
+- **S (Sequential)**: Tasks must be completed in their defined order.
+- **P (Parallel)**: Tasks can be worked on simultaneously in any order.
+- **H (Hierarchical)**: Tasks are organized in parent-child relationships (subtasks).
+- **L (Linked)**: A list that is a 1:1 copy of another list.
+
+The `list all` command provides a rich, at-a-glance view of all your projects using these icons:
+
+- **`ID`**: The numeric ID of the list.
+- **`Key`**: The unique string identifier for the list.
+- **`Title`**: The human-readable title of the list.
+- **`🏷️`**: Tags associated with the list, displayed as colored dots.
+- **`🔀`**: The **List Type** (S, P, H, or L).
+- **`📋`**: The number of **pending** tasks.
+- **`🔄`**: The number of **in-progress** tasks.
+- **`❌`**: The number of **failed** tasks.
+- **`✅`**: The number of **completed** tasks.
+- **`⏳`**: The overall completion **progress percentage**.
+- **`📦`**: The list's **status** (A for Active, Z for Archived). This column only appears when viewing archived lists.
 
 ### Color Coding
 - **Green**: Success messages and completed items

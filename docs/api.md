@@ -1,249 +1,263 @@
 # Programmatic API (TodoManager)
 
-The `TodoManager` class in `core/manager.py` provides a programmatic API for managing TODO lists and items. It encapsulates all business logic and interacts with the database layer.
+The `TodoManager` class in `core/manager.py` provides the core programmatic API for interacting with the TODOIT system. It encapsulates all business logic and interacts with the database layer.
 
-Below is a reference of the most commonly used methods. Each section lists parameters, return values, a short usage example and a link to the implementation.
+This document serves as a reference for the main methods available in the `TodoManager` class.
+
+## Core Object Management
 
 ### `create_list`
+Creates a new TODO list.
 
-**Parameters**
+**Parameters:**
+- `list_key: str`: A unique key for the list.
+- `title: str`: A human-readable title.
+- `items: Optional[List[str]]`: A list of strings to create as initial tasks.
+- `list_type: str`: The list's ordering and behavior strategy (`"sequential"`, `"parallel"`, `"hierarchical"`).
+- `metadata: Optional[Dict]`: A dictionary for custom metadata.
 
-* `list_key: str` – unique key for the list.
-* `title: str` – human‑readable title.
-* `items: Optional[List[str]]` – optional initial task contents.
-* `list_type: str` – list ordering strategy (`"sequential"` by default).
-* `metadata: Optional[Dict]` – optional custom metadata.
+**Returns:** `TodoList` – The created list object.
 
-**Returns**
-
-`TodoList` – the created list object.
-
-**Example**
-
-```python
-from core.manager import TodoManager
-
-mgr = TodoManager()
-todo_list = mgr.create_list("work", "Work tasks", items=["Docs", "Tests"])
-```
-
-[Source](../todoit-mcp/core/manager.py#L69-L117)
-
-### `get_list`
-
-**Parameters**
-
-* `key: Union[str, int]` – list key or numeric ID.
-
-**Returns**
-
-`Optional[TodoList]` – the matching list or `None`.
-
-**Example**
-
-```python
-todo_list = mgr.get_list("work")
-```
-
-[Source](../todoit-mcp/core/manager.py#L119-L126)
-
-### `delete_list`
-
-**Parameters**
-
-* `key: Union[str, int]` – list key or ID to delete.
-
-**Returns**
-
-`bool` – `True` if the list was removed.
-
-**Example**
-
-```python
-mgr.delete_list("work")
-```
-
-[Source](../todoit-mcp/core/manager.py#L128-L196)
-
-### `list_all`
-
-**Parameters**
-
-* `limit: Optional[int]` – maximum number of lists to return.
-
-**Returns**
-
-`List[TodoList]` – all lists ordered by creation.
-
-**Example**
-
-```python
-all_lists = mgr.list_all()
-```
-
-[Source](../todoit-mcp/core/manager.py#L198-L201)
+[Source](../todoit-mcp/core/manager.py)
 
 ### `add_item`
+Adds a new task to a list.
 
-**Parameters**
+**Parameters:**
+- `list_key: str`: The key of the target list.
+- `item_key: str`: A unique key for the item within the list.
+- `content: str`: The task's description.
+- `position: Optional[int]`: The insertion position. If omitted, it's added to the end.
+- `metadata: Optional[Dict]`: A dictionary for custom metadata.
 
-* `list_key: str` – key of the target list.
-* `item_key: str` – unique key for the item.
-* `content: str` – task description.
-* `position: Optional[int]` – insertion position (auto‑incremented when omitted).
-* `metadata: Optional[Dict]` – optional metadata.
+**Returns:** `TodoItem` – The created item object.
 
-**Returns**
-
-`TodoItem` – the created item.
-
-**Example**
-
-```python
-item = mgr.add_item("work", "write_docs", "Write API docs")
-```
-
-[Source](../todoit-mcp/core/manager.py#L203-L244)
+[Source](../todoit-mcp/core/manager.py)
 
 ### `update_item_status`
+Updates the status of a task.
 
-**Parameters**
+**Parameters:**
+- `list_key: str`: The key of the list containing the item.
+- `item_key: str`: The key of the item to update.
+- `status: Optional[str]`: The new status (e.g., `"pending"`, `"in_progress"`, `"completed"`, `"failed"`).
+- `completion_states: Optional[Dict[str, Any]]`: Custom key-value pairs for completion metadata.
 
-* `list_key: str` – list containing the item.
-* `item_key: str` – item identifier.
-* `status: Optional[str]` – new status (`pending`, `in_progress`, `completed`, `failed`).
-* `completion_states: Optional[Dict[str, Any]]` – custom completion info.
+**Returns:** `TodoItem` – The updated item object.
 
-**Returns**
+[Source](../todoit-mcp/core/manager.py)
 
-`TodoItem` – the updated item.
+---
 
-**Example**
+## Subtask and Hierarchy Management
 
-```python
-mgr.update_item_status("work", "write_docs", status="completed")
-```
+### `add_subtask`
+Adds a new subtask to an existing parent task.
 
-[Source](../todoit-mcp/core/manager.py#L246-L304)
+**Parameters:**
+- `list_key: str`: The key of the list.
+- `parent_key: str`: The key of the parent task.
+- `subtask_key: str`: A unique key for the new subtask.
+- `content: str`: The content of the subtask.
+- `metadata: Optional[Dict]`: Custom metadata.
 
-### `get_next_pending`
+**Returns:** `TodoItem` – The created subtask object.
 
-**Parameters**
+[Source](../todoit-mcp/core/manager.py)
 
-* `list_key: str` – list key to inspect.
-* `respect_dependencies: bool` – ignore blocking dependencies if `False`.
-* `smart_subtasks: bool` – when `True`, use the smart subtask algorithm.
+### `get_subtasks`
+Retrieves all direct subtasks for a parent task.
 
-**Returns**
+**Parameters:**
+- `list_key: str`: The key of the list.
+- `parent_key: str`: The key of the parent task.
 
-`Optional[TodoItem]` – next available task or `None`.
+**Returns:** `List[TodoItem]` – A list of subtask objects.
 
-**Example**
+[Source](../todoit-mcp/core/manager.py)
 
-```python
-next_item = mgr.get_next_pending("work")
-```
+### `get_item_hierarchy`
+Retrieves the full hierarchy for an item, including all its subtasks recursively.
 
-[Source](../todoit-mcp/core/manager.py#L306-L356)
+**Parameters:**
+- `list_key: str`: The key of the list.
+- `item_key: str`: The key of the root item of the hierarchy.
 
-### `get_progress`
+**Returns:** `Dict[str, Any]` – A nested dictionary representing the hierarchy.
 
-**Parameters**
+[Source](../todoit-mcp/core/manager.py)
 
-* `list_key: str` – list key to analyze.
+---
 
-**Returns**
+## Dependency Management
 
-`ProgressStats` – aggregated completion statistics.
+### `add_item_dependency`
+Adds a dependency between two items, indicating one must be completed before the other.
 
-**Example**
+**Parameters:**
+- `dependent_list: str`: The list of the item that will be blocked.
+- `dependent_item: str`: The item that will be blocked.
+- `required_list: str`: The list of the item that is required.
+- `required_item: str`: The item that is required.
+- `dependency_type: str`: The type of dependency (e.g., `"blocks"`).
 
-```python
-stats = mgr.get_progress("work")
-```
+**Returns:** `ItemDependency` – The created dependency object.
 
-[Source](../todoit-mcp/core/manager.py#L358-L399)
+[Source](../todoit-mcp/core/manager.py)
+
+### `remove_item_dependency`
+Removes a dependency between two items.
+
+**Parameters:**
+- `dependent_list: str`: The list of the formerly blocked item.
+- `dependent_item: str`: The formerly blocked item.
+- `required_list: str`: The list of the item that was required.
+- `required_item: str`: The item that was required.
+
+**Returns:** `bool` – `True` if the dependency was removed.
+
+[Source](../todoit-mcp/core/manager.py)
+
+### `get_item_blockers`
+Gets a list of all items that are currently blocking a specific item.
+
+**Parameters:**
+- `list_key: str`: The key of the list.
+- `item_key: str`: The key of the item to check.
+
+**Returns:** `List[TodoItem]` – A list of items that are blocking the specified item.
+
+[Source](../todoit-mcp/core/manager.py)
+
+### `is_item_blocked`
+Checks if an item is blocked by any incomplete dependencies.
+
+**Parameters:**
+- `list_key: str`: The key of the list.
+- `item_key: str`: The key of the item to check.
+
+**Returns:** `bool` – `True` if the item is blocked.
+
+[Source](../todoit-mcp/core/manager.py)
+
+---
+
+## Tag Management
+
+### `create_tag`
+Creates a new global tag.
+
+**Parameters:**
+- `name: str`: The name for the new tag.
+- `color: Optional[str]`: A specific color. If `None`, a color is assigned dynamically.
+
+**Returns:** `ListTag` – The created tag object.
+
+[Source](../todoit-mcp/core/manager.py)
+
+### `add_tag_to_list`
+Assigns a tag to a list. If the tag doesn't exist, it's created.
+
+**Parameters:**
+- `list_key: str`: The key of the list to tag.
+- `tag_name: str`: The name of the tag to assign.
+
+**Returns:** `ListTagAssignment` – The created assignment object.
+
+[Source](../todoit-mcp/core/manager.py)
+
+### `get_tags_for_list`
+Gets all tags assigned to a specific list.
+
+**Parameters:**
+- `list_key: str`: The key of the list.
+
+**Returns:** `List[ListTag]` – A list of tags assigned to the list.
+
+[Source](../todoit-mcp/core/manager.py)
+
+### `get_lists_by_tags`
+Gets all lists that have any of the specified tags.
+
+**Parameters:**
+- `tag_names: List[str]`: A list of tag names to filter by.
+
+**Returns:** `List[TodoList]` – A list of lists that have at least one of the specified tags.
+
+[Source](../todoit-mcp/core/manager.py)
+
+---
+
+## Property Management
+
+### `set_list_property`
+Sets a key-value property for a list.
+
+**Parameters:**
+- `list_key: str`: The key of the list.
+- `property_key: str`: The key of the property.
+- `property_value: str`: The value to assign.
+
+**Returns:** `ListProperty` – The created or updated property object.
+
+[Source](../todoit-mcp/core/manager.py)
+
+### `get_list_properties`
+Gets all properties for a list as a dictionary.
+
+**Parameters:**
+- `list_key: str`: The key of the list.
+
+**Returns:** `Dict[str, str]` – A dictionary of the list's properties.
+
+[Source](../todoit-mcp/core/manager.py)
+
+### `set_item_property`
+Sets a key-value property for an item.
+
+**Parameters:**
+- `list_key: str`: The key of the list.
+- `item_key: str`: The key of the item.
+- `property_key: str`: The key of the property.
+- `property_value: str`: The value to assign.
+
+**Returns:** `ItemProperty` – The created or updated property object.
+
+[Source](../todoit-mcp/core/manager.py)
+
+### `get_item_properties`
+Gets all properties for an item as a dictionary.
+
+**Parameters:**
+- `list_key: str`: The key of the list.
+- `item_key: str`: The key of the item.
+
+**Returns:** `Dict[str, str]` – A dictionary of the item's properties.
+
+[Source](../todoit-mcp/core/manager.py)
+
+---
+
+## Import / Export
 
 ### `import_from_markdown`
+Imports lists and tasks from a markdown file.
 
-**Parameters**
+**Parameters:**
+- `file_path: str`: Path to the markdown file.
+- `base_key: Optional[str]`: A base key to use for the created lists.
 
-* `file_path: str` – path to a markdown file.
-* `base_key: Optional[str]` – base key for created lists.
+**Returns:** `List[TodoList]` – A list of the created list objects.
 
-**Returns**
-
-`List[TodoList]` – list objects created from the file.
-
-**Example**
-
-```python
-imported = mgr.import_from_markdown("tasks.md")
-```
-
-[Source](../todoit-mcp/core/manager.py#L414-L503)
+[Source](../todoit-mcp/core/manager.py)
 
 ### `export_to_markdown`
+Exports a list to a markdown file.
 
-**Parameters**
+**Parameters:**
+- `list_key: str`: The key of the list to export.
+- `file_path: str`: The destination file path.
 
-* `list_key: str` – list to export.
-* `file_path: str` – destination file path.
+**Returns:** `None`
 
-**Returns**
-
-`None`
-
-**Example**
-
-```python
-mgr.export_to_markdown("work", "work.md")
-```
-
-[Source](../todoit-mcp/core/manager.py#L505-L533)
-
-### `link_list_1to1`
-
-**Parameters**
-
-* `source_list_key: str` – key of the source list to copy from.
-* `target_list_key: str` – key for the new target list to create.
-* `target_title: Optional[str]` – custom title for target list (defaults to "{source_title} - Linked").
-
-**Returns**
-
-`Dict[str, Any]` – comprehensive result with copy statistics and operation details.
-
-**Example**
-
-```python
-# Basic usage
-result = mgr.link_list_1to1("api-dev", "api-test")
-
-# With custom title
-result = mgr.link_list_1to1("frontend-dev", "frontend-test", "Frontend Testing Tasks")
-
-# Result contains:
-# {
-#   "success": True,
-#   "source_list": "api-dev",
-#   "target_list": "api-test", 
-#   "items_copied": 5,
-#   "list_properties_copied": 2,
-#   "item_properties_copied": 8,
-#   "all_items_set_to_pending": True,
-#   "relation_created": True,
-#   "relation_key": "api-dev_linked"
-# }
-```
-
-**What it does:**
-
-1. **Creates target list** with identical metadata from source
-2. **Copies all tasks 1:1** with same keys and content  
-3. **Resets all target task statuses** to "pending"
-4. **Copies all list properties** from source to target
-5. **Copies all item properties** for each task individually
-6. **Creates automatic project relation** linking both lists
-
-[Source](../todoit-mcp/core/manager.py#L1395-L1499)
+[Source](../todoit-mcp/core/manager.py)

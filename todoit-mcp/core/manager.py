@@ -320,7 +320,14 @@ class TodoManager:
             return lists
     
     def get_archived_lists(self, limit: Optional[int] = None) -> List[TodoList]:
-        """Get only archived lists"""
+        """Retrieves all lists that have been archived.
+
+        Args:
+            limit: The maximum number of archived lists to return.
+
+        Returns:
+            A list of TodoList objects with a status of 'archived'.
+        """
         db_lists = self.db.get_all_lists(limit=limit)
         archived_lists = [db_list for db_list in db_lists if db_list.status == 'archived']
         return [self._db_to_model(db_list, TodoList) for db_list in archived_lists]
@@ -808,7 +815,19 @@ class TodoManager:
     # === List Properties Methods ===
     
     def set_list_property(self, list_key: str, property_key: str, property_value: str) -> ListProperty:
-        """Set a property for a list (create or update)"""
+        """Set a key-value property for a list, creating it if it doesn't exist or updating it if it does.
+
+        Args:
+            list_key: The key of the list to set the property for.
+            property_key: The key of the property to set.
+            property_value: The value to assign to the property.
+
+        Returns:
+            The created or updated ListProperty object.
+
+        Raises:
+            ValueError: If the specified list is not found.
+        """
         
         # Get list
         db_list = self.db.get_list_by_key(list_key)
@@ -820,7 +839,18 @@ class TodoManager:
         return self._db_to_model(db_property, ListProperty)
     
     def get_list_property(self, list_key: str, property_key: str) -> Optional[str]:
-        """Get a property value for a list"""
+        """Get the value of a specific property for a list.
+
+        Args:
+            list_key: The key of the list.
+            property_key: The key of the property to retrieve.
+
+        Returns:
+            The value of the property as a string, or None if the property or list does not exist.
+
+        Raises:
+            ValueError: If the specified list is not found.
+        """
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
@@ -831,7 +861,17 @@ class TodoManager:
         return db_property.property_value if db_property else None
     
     def get_list_properties(self, list_key: str) -> Dict[str, str]:
-        """Get all properties for a list as key-value dict"""
+        """Get all properties for a list as a key-value dictionary.
+
+        Args:
+            list_key: The key of the list.
+
+        Returns:
+            A dictionary containing all properties of the list. Returns an empty dictionary if the list has no properties.
+
+        Raises:
+            ValueError: If the specified list is not found.
+        """
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
@@ -842,7 +882,18 @@ class TodoManager:
         return {prop.property_key: prop.property_value for prop in db_properties}
     
     def delete_list_property(self, list_key: str, property_key: str) -> bool:
-        """Delete a property from a list"""
+        """Delete a specific property from a list.
+
+        Args:
+            list_key: The key of the list.
+            property_key: The key of the property to delete.
+
+        Returns:
+            True if the property was deleted, False if it did not exist.
+
+        Raises:
+            ValueError: If the specified list is not found.
+        """
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
@@ -854,7 +905,20 @@ class TodoManager:
     # ===== ITEM PROPERTIES METHODS =====
     
     def set_item_property(self, list_key: str, item_key: str, property_key: str, property_value: str) -> ItemProperty:
-        """Set property for an item (create or update)"""
+        """Set a key-value property for an item, creating or updating it.
+
+        Args:
+            list_key: The key of the list containing the item.
+            item_key: The key of the item to set the property for.
+            property_key: The key of the property to set.
+            property_value: The value to assign to the property.
+
+        Returns:
+            The created or updated ItemProperty object.
+
+        Raises:
+            ValueError: If the list or item is not found.
+        """
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
@@ -870,7 +934,19 @@ class TodoManager:
         return self._db_to_model(db_property, ItemProperty)
 
     def get_item_property(self, list_key: str, item_key: str, property_key: str) -> Optional[str]:
-        """Get single property value for an item"""
+        """Get the value of a specific property for an item.
+
+        Args:
+            list_key: The key of the list containing the item.
+            item_key: The key of the item.
+            property_key: The key of the property to retrieve.
+
+        Returns:
+            The value of the property as a string, or None if the property, item, or list does not exist.
+
+        Raises:
+            ValueError: If the list or item is not found.
+        """
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             raise ValueError(f"List '{list_key}' not found")
@@ -882,7 +958,18 @@ class TodoManager:
         return self.db.get_item_property(db_item.id, property_key)
 
     def get_item_properties(self, list_key: str, item_key: str) -> Dict[str, str]:
-        """Get all properties for an item"""
+        """Get all properties for an item as a key-value dictionary.
+
+        Args:
+            list_key: The key of the list containing the item.
+            item_key: The key of the item.
+
+        Returns:
+            A dictionary containing all properties of the item. Returns an empty dictionary if the item has no properties.
+
+        Raises:
+            ValueError: If the list or item is not found.
+        """
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             raise ValueError(f"List '{list_key}' not found")
@@ -894,7 +981,19 @@ class TodoManager:
         return self.db.get_item_properties(db_item.id)
 
     def delete_item_property(self, list_key: str, item_key: str, property_key: str) -> bool:
-        """Delete property from an item"""
+        """Delete a specific property from an item.
+
+        Args:
+            list_key: The key of the list containing the item.
+            item_key: The key of the item.
+            property_key: The key of the property to delete.
+
+        Returns:
+            True if the property was deleted, False if it did not exist.
+
+        Raises:
+            ValueError: If the list or item is not found.
+        """
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             raise ValueError(f"List '{list_key}' not found")
@@ -909,7 +1008,21 @@ class TodoManager:
     
     def add_subtask(self, list_key: str, parent_key: str, subtask_key: str, content: str, 
                    metadata: Optional[Dict[str, Any]] = None) -> TodoItem:
-        """Add a subtask to an existing task"""
+        """Add a new subtask to an existing parent task.
+
+        Args:
+            list_key: The key of the list containing the parent task.
+            parent_key: The key of the parent task.
+            subtask_key: The unique key for the new subtask.
+            content: The description or content of the subtask.
+            metadata: Optional dictionary for custom metadata.
+
+        Returns:
+            The newly created TodoItem object for the subtask.
+
+        Raises:
+            ValueError: If the list, parent task, or subtask key already exists.
+        """
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
@@ -961,7 +1074,18 @@ class TodoManager:
         return self._db_to_model(db_item, TodoItem)
     
     def get_subtasks(self, list_key: str, parent_key: str) -> List[TodoItem]:
-        """Get all subtasks for a given parent task"""
+        """Get all direct subtasks for a given parent task.
+
+        Args:
+            list_key: The key of the list containing the parent task.
+            parent_key: The key of the parent task.
+
+        Returns:
+            A list of TodoItem objects representing the subtasks.
+
+        Raises:
+            ValueError: If the list or parent task is not found.
+        """
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
@@ -977,7 +1101,18 @@ class TodoManager:
         return [self._db_to_model(child, TodoItem) for child in children]
     
     def get_item_hierarchy(self, list_key: str, item_key: str) -> Dict[str, Any]:
-        """Get full hierarchy for an item (item + all subtasks recursively)"""
+        """Get the full hierarchy for an item, including all its subtasks recursively.
+
+        Args:
+            list_key: The key of the list containing the item.
+            item_key: The key of the root item of the hierarchy.
+
+        Returns:
+            A dictionary representing the item and its nested subtasks.
+
+        Raises:
+            ValueError: If the list or item is not found.
+        """
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
@@ -1099,8 +1234,18 @@ class TodoManager:
     
     def auto_complete_parent(self, list_key: str, item_key: str) -> bool:
         """
-        Auto-complete parent task if all its subtasks are completed
-        Returns True if parent was auto-completed, False otherwise
+        Automatically completes a parent task if all its subtasks are now completed.
+        This is typically called after a subtask's status is updated to 'completed'.
+
+        Args:
+            list_key: The key of the list containing the item.
+            item_key: The key of the item that was just completed (the subtask).
+
+        Returns:
+            True if the parent task was auto-completed, False otherwise.
+
+        Raises:
+            ValueError: If the list or item is not found.
         """
         # Get list
         db_list = self.db.get_list_by_key(list_key)
@@ -1143,7 +1288,19 @@ class TodoManager:
         return False
     
     def move_to_subtask(self, list_key: str, item_key: str, new_parent_key: str) -> TodoItem:
-        """Convert an existing task to be a subtask of another task"""
+        """Convert an existing root task to be a subtask of another task.
+
+        Args:
+            list_key: The key of the list containing the tasks.
+            item_key: The key of the item to move.
+            new_parent_key: The key of the item that will become the new parent.
+
+        Returns:
+            The updated TodoItem object.
+
+        Raises:
+            ValueError: If the list, item, or new parent is not found, or if the move would create a circular dependency.
+        """
         # Get list  
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
@@ -1185,8 +1342,17 @@ class TodoManager:
     
     def can_complete_item(self, list_key: str, item_key: str) -> Dict[str, Any]:
         """
-        Check if an item can be completed (no pending subtasks)
-        Returns dict with can_complete flag and details
+        Check if an item can be marked as complete (i.e., it has no pending subtasks).
+
+        Args:
+            list_key: The key of the list containing the item.
+            item_key: The key of the item to check.
+
+        Returns:
+            A dictionary containing a boolean 'can_complete' flag and other details about its subtasks.
+
+        Raises:
+            ValueError: If the list or item is not found.
         """
         # Get list
         db_list = self.db.get_list_by_key(list_key)
@@ -1217,7 +1383,24 @@ class TodoManager:
                            required_list: str, required_item: str,
                            dependency_type: str = "blocks",
                            metadata: Optional[Dict[str, Any]] = None) -> 'ItemDependency':
-        """Add dependency between tasks from different lists"""
+        """Add a dependency between two items, potentially across different lists.
+
+        This indicates that the 'dependent' item cannot be completed until the 'required' item is complete.
+
+        Args:
+            dependent_list: The list key of the item that will be blocked.
+            dependent_item: The item key of the item that will be blocked.
+            required_list: The list key of the item that must be completed first.
+            required_item: The item key of the item that must be completed first.
+            dependency_type: The type of dependency (e.g., 'blocks', 'related').
+            metadata: Optional dictionary for custom metadata.
+
+        Returns:
+            The created ItemDependency object.
+
+        Raises:
+            ValueError: If any list or item is not found, or if the dependency would create a circular loop.
+        """
         from .models import ItemDependency, DependencyType
         
         # Get dependent item
@@ -1298,7 +1481,20 @@ class TodoManager:
     
     def remove_item_dependency(self, dependent_list: str, dependent_item: str,
                               required_list: str, required_item: str) -> bool:
-        """Remove dependency between tasks from different lists"""
+        """Remove a specific dependency between two items.
+
+        Args:
+            dependent_list: The list key of the formerly blocked item.
+            dependent_item: The item key of the formerly blocked item.
+            required_list: The list key of the item that was required.
+            required_item: The item key of the item that was required.
+
+        Returns:
+            True if the dependency was successfully removed, False otherwise.
+
+        Raises:
+            ValueError: If any list or item is not found.
+        """
         # Get dependent item
         dependent_db_list = self.db.get_list_by_key(dependent_list)
         if not dependent_db_list:
@@ -1332,7 +1528,20 @@ class TodoManager:
         return success
     
     def get_item_blockers(self, list_key: str, item_key: str) -> List['TodoItem']:
-        """Get all items that block this item (not completed required items)"""
+        """Get a list of all items that are currently blocking a specific item.
+
+        An item is a blocker if it is a required dependency and is not yet 'completed'.
+
+        Args:
+            list_key: The key of the list containing the item.
+            item_key: The key of the item to check for blockers.
+
+        Returns:
+            A list of TodoItem objects that are blocking the specified item.
+
+        Raises:
+            ValueError: If the list or item is not found.
+        """
         # Get item
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
@@ -1347,7 +1556,18 @@ class TodoManager:
         return [self._db_to_model(blocker, TodoItem) for blocker in blockers]
     
     def get_items_blocked_by(self, list_key: str, item_key: str) -> List['TodoItem']:
-        """Get all items blocked by this item"""
+        """Get a list of all items that are dependent on (blocked by) a specific item.
+
+        Args:
+            list_key: The key of the list containing the blocking item.
+            item_key: The key of the item to check.
+
+        Returns:
+            A list of TodoItem objects that depend on the specified item.
+
+        Raises:
+            ValueError: If the list or item is not found.
+        """
         # Get item
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
@@ -1362,7 +1582,18 @@ class TodoManager:
         return [self._db_to_model(item, TodoItem) for item in blocked]
     
     def is_item_blocked(self, list_key: str, item_key: str) -> bool:
-        """Check if item is blocked by uncompleted cross-list dependencies"""
+        """Check if an item is currently blocked by any incomplete dependencies.
+
+        Args:
+            list_key: The key of the list containing the item.
+            item_key: The key of the item to check.
+
+        Returns:
+            True if the item is blocked, False otherwise.
+
+        Raises:
+            ValueError: If the list or item is not found.
+        """
         # Get item
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
@@ -1376,8 +1607,19 @@ class TodoManager:
     
     def can_start_item(self, list_key: str, item_key: str) -> Dict[str, Any]:
         """
-        Check if task can be started (all dependencies completed, no pending subtasks)
-        Combines both Phase 1 (subtasks) and Phase 2 (cross-list dependencies) logic
+        Comprehensive check to see if a task can be started.
+
+        This combines checks for both cross-list dependencies and pending subtasks.
+
+        Args:
+            list_key: The key of the list containing the item.
+            item_key: The key of the item to check.
+
+        Returns:
+            A dictionary with a 'can_start' boolean and detailed reasons if it cannot.
+
+        Raises:
+            ValueError: If the list or item is not found.
         """
         # Get item
         db_list = self.db.get_list_by_key(list_key)
@@ -1445,7 +1687,16 @@ class TodoManager:
         return "; ".join(reasons)
     
     def get_cross_list_progress(self, project_key: str) -> Dict[str, Any]:
-        """Get progress for all lists in a project with dependency information"""
+        """Get aggregated progress for all lists belonging to a specific project.
+
+        A project is defined by lists linked by a 'project' relation.
+
+        Args:
+            project_key: The relation key that identifies the project.
+
+        Returns:
+            A dictionary containing detailed progress statistics for the entire project.
+        """
         # Get project lists
         project_lists = self.get_lists_by_relation("project", project_key)
         if not project_lists:
@@ -1500,7 +1751,14 @@ class TodoManager:
         return result
     
     def get_dependency_graph(self, project_key: str) -> Dict[str, Any]:
-        """Get dependency graph for visualization"""
+        """Get a dependency graph for all items within a project, suitable for visualization.
+
+        Args:
+            project_key: The relation key that identifies the project.
+
+        Returns:
+            A dictionary representing the nodes and edges of the dependency graph.
+        """
         return self.db.get_dependency_graph_for_project(project_key)
 
     def delete_item(self, list_key: str, item_key: str) -> bool:
@@ -1800,7 +2058,22 @@ class TodoManager:
     # ===== LIST TAG MANAGEMENT METHODS =====
 
     def create_tag(self, name: str, color: str = None) -> ListTag:
-        """Create a new tag with automatic color assignment"""
+        """Create a new global tag.
+
+        Tag colors are assigned dynamically based on the alphabetical order of all tags.
+        A maximum of 12 tags is supported due to the fixed color palette.
+
+        Args:
+            name: The name for the new tag (will be converted to lowercase).
+            color: A specific color to assign. If None, a color will be assigned automatically.
+                   This is not recommended as dynamic colors will override it.
+
+        Returns:
+            The created ListTag object.
+
+        Raises:
+            ValueError: If the tag name already exists or if the maximum number of tags (12) has been reached.
+        """
         # Check if tag already exists
         existing_tag = self.db.get_tag_by_name(name)
         if existing_tag:
@@ -1825,8 +2098,8 @@ class TodoManager:
     def _get_tag_color_by_index(self, tag_name: str) -> str:
         """Get tag color based on its position in sorted tag list (dynamic assignment)"""
         available_colors = [
-            'dim red', 'dim green', 'dim blue', 'dim yellow', 'dim white', 'purple', 
-            'cyan', 'magenta', 'pink', 'grey', 'green', 'red'
+            'red', 'green', 'blue', 'yellow', 'orange', 'purple',
+            'cyan', 'magenta', 'pink', 'grey', 'bright_green', 'bright_red'
         ]
         
         # Get all existing tags from database (avoid recursion)
@@ -1846,8 +2119,8 @@ class TodoManager:
     def _get_next_available_color(self) -> str:
         """Get next available color for new tags (checks 12 tag limit)"""
         available_colors = [
-            'dim red', 'dim green', 'dim blue', 'dim yellow', 'dim white', 'purple', 
-            'cyan', 'magenta', 'pink', 'grey', 'green', 'red'
+            'red', 'green', 'blue', 'yellow', 'orange', 'purple',
+            'cyan', 'magenta', 'pink', 'grey', 'bright_green', 'bright_red'
         ]
         
         # Check if we exceed the 12 color limit
@@ -1859,7 +2132,14 @@ class TodoManager:
         return available_colors[0]
 
     def get_tag(self, tag_identifier: Union[int, str]) -> Optional[ListTag]:
-        """Get tag by ID or name"""
+        """Get a specific tag by its ID or name.
+
+        Args:
+            tag_identifier: The ID (integer) or name (string) of the tag to retrieve.
+
+        Returns:
+            A ListTag object if found, otherwise None.
+        """
         if isinstance(tag_identifier, int):
             db_tag = self.db.get_tag_by_id(tag_identifier)
         else:
@@ -1870,7 +2150,14 @@ class TodoManager:
         return None
 
     def get_all_tags(self) -> List[ListTag]:
-        """Get all available tags with dynamic color assignment"""
+        """Get all available tags with their dynamically assigned colors.
+
+        The color of each tag is determined by its alphabetical position among all existing tags,
+        ensuring a consistent and visually distinct color scheme.
+
+        Returns:
+            A list of ListTag objects, sorted alphabetically by name.
+        """
         db_tags = self.db.get_all_tags()
         tags = []
         for tag in db_tags:
@@ -1879,10 +2166,19 @@ class TodoManager:
             # Override with dynamic color
             tag_model.color = self._get_tag_color_by_index(tag_model.name)
             tags.append(tag_model)
-        return tags
+        return sorted(tags, key=lambda t: t.name)
 
     def delete_tag(self, tag_identifier: Union[int, str]) -> bool:
-        """Delete tag by ID or name"""
+        """Delete a tag by its ID or name.
+
+        This will also remove all assignments of this tag from any lists.
+
+        Args:
+            tag_identifier: The ID (integer) or name (string) of the tag to delete.
+
+        Returns:
+            True if the tag was deleted, False if it was not found.
+        """
         # First get the tag to get its ID
         tag = self.get_tag(tag_identifier)
         if not tag:
@@ -1892,7 +2188,20 @@ class TodoManager:
         return self.db.delete_tag(tag.id)
 
     def add_tag_to_list(self, list_key: str, tag_name: str) -> ListTagAssignment:
-        """Add tag to a list"""
+        """Assign a tag to a list.
+
+        If the tag does not already exist, it will be created automatically.
+
+        Args:
+            list_key: The key of the list to tag.
+            tag_name: The name of the tag to assign.
+
+        Returns:
+            The created ListTagAssignment object.
+
+        Raises:
+            ValueError: If the list is not found or if creating a new tag fails (e.g., max tag limit reached).
+        """
         # Get list
         list_obj = self.get_list(list_key)
         if not list_obj:
@@ -1910,7 +2219,15 @@ class TodoManager:
         return self._db_to_model(db_assignment, ListTagAssignment)
 
     def remove_tag_from_list(self, list_key: str, tag_name: str) -> bool:
-        """Remove tag from a list"""
+        """Remove a tag assignment from a list.
+
+        Args:
+            list_key: The key of the list.
+            tag_name: The name of the tag to remove.
+
+        Returns:
+            True if the assignment was removed, False if the list, tag, or assignment did not exist.
+        """
         # Get list
         list_obj = self.get_list(list_key)
         if not list_obj:
@@ -1925,7 +2242,15 @@ class TodoManager:
         return self.db.remove_tag_from_list(list_obj.id, tag.id)
 
     def get_tags_for_list(self, list_key: str) -> List[ListTag]:
-        """Get all tags assigned to a list with dynamic color assignment"""
+        """Get all tags assigned to a specific list, with their dynamic colors.
+
+        Args:
+            list_key: The key of the list.
+
+        Returns:
+            A list of ListTag objects assigned to the list, sorted alphabetically by name.
+            Returns an empty list if the list is not found or has no tags.
+        """
         # Get list
         list_obj = self.get_list(list_key)
         if not list_obj:
@@ -1940,10 +2265,17 @@ class TodoManager:
             # Override with dynamic color
             tag_model.color = self._get_tag_color_by_index(tag_model.name)
             tags.append(tag_model)
-        return tags
+        return sorted(tags, key=lambda t: t.name)
 
     def get_lists_by_tags(self, tag_names: List[str]) -> List[TodoList]:
-        """Get all lists that have ANY of the specified tags"""
+        """Get all lists that are associated with any of the specified tags.
+
+        Args:
+            tag_names: A list of tag names to filter by.
+
+        Returns:
+            A list of TodoList objects that have at least one of the specified tags.
+        """
         if not tag_names:
             return []
         
