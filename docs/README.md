@@ -30,15 +30,15 @@ All 55 MCP tools are automatically available - no additional setup required!
 ### Command Line Interface
 ```bash
 # Create project and add hierarchical tasks
-python -m interfaces.cli list create "project" --title "My Project"
-python -m interfaces.cli item add "project" "feature" "Implement feature"  
-python -m interfaces.cli item add-subtask "project" "feature" "backend" "Backend work"
+todoit list create "project" --title "My Project"
+todoit item add "project" "feature" "Implement feature"  
+todoit item add-subtask "project" "feature" "backend" "Backend work"
 
 # Add cross-list dependencies
-python -m interfaces.cli dep add "frontend:ui" requires "backend:api" --force
+todoit dep add "frontend:ui" requires "backend:api" --force
 
 # Get smart next task
-python -m interfaces.cli item next-smart "project"
+todoit item next-smart "project"
 ```
 
 ## 🎯 Key Features

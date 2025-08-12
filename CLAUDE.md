@@ -63,8 +63,8 @@ black --check core/ interfaces/ && isort --check core/ interfaces/ && mypy core/
 python -m interfaces.mcp_server
 
 # CLI interface (alternative to MCP)
-python -m interfaces.cli --help
-python -m interfaces.cli list create "test" --title "Test List"
+todoit --help
+todoit list create "test" --title "Test List"
 ```
 
 ## Architecture Overview

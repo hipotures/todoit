@@ -258,7 +258,7 @@ todoit item next "backend"   # Will suggest api task
 ```bash
 # Enable verbose output for debugging
 export TODOIT_DEBUG=1
-python -m interfaces.cli --help
+todoit --help
 
 # Check database status
 python -c "from core.manager import TodoManager; mgr = TodoManager(); print(f'DB: {mgr.db_path}')"

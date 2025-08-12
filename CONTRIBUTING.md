@@ -27,7 +27,7 @@ git checkout -b feature/your-feature-name
 
 # Make changes and test
 pytest
-python -m interfaces.cli --help
+todoit --help
 
 # Format code
 black core/ interfaces/ tests/

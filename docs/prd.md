@@ -2020,7 +2020,7 @@ python -m interfaces.mcp_server
 todoit --help
 
 # Lub jeśli nie zainstalowane globalnie
-python -m interfaces.cli --help
+todoit --help
 
 # Tryb interaktywny
 todoit interactive
