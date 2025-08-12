@@ -5,6 +5,23 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.0] - 2025-08-12
+
+### Added
+- **🔍 Property-Based Item Search**: New comprehensive search functionality for finding items by custom properties
+  - **Database Layer**: `find_items_by_property()` function with optimized SQL JOIN queries and optional LIMIT support
+  - **Core Manager**: `find_items_by_property()` and `find_item_by_property()` business logic functions
+  - **CLI Command**: `todoit item find` with options: `--property`, `--value`, `--limit`, `--first`
+  - **MCP Tools**: `todo_find_items_by_property` and `todo_find_item_by_property` for external integration
+  - **Standard MCP Integration**: Added `todo_find_items_by_property` to basic MCP tool set (~20 essential tools)
+  - **Performance Optimization**: Added composite database index `idx_item_properties_key_value` for fast property searches
+  - **JSON Output Support**: Full support for `TODOIT_OUTPUT_FORMAT` environment variable (JSON/YAML/XML)
+  - **Comprehensive Testing**: 29 unit and integration tests covering all search scenarios and edge cases
+
+### Performance
+- **Database Indexing**: Added optimized composite index on `item_properties(property_key, property_value)` for efficient search queries
+- **Query Optimization**: SQL JOIN implementation with position-based ordering and configurable result limits
+
 ## [1.17.0] - 2025-08-12
 
 ### Added

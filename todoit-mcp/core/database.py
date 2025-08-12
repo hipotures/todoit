@@ -152,6 +152,7 @@ class ItemPropertyDB(Base):
     __table_args__ = (
         Index('idx_item_properties_item_id', 'item_id'),
         Index('idx_item_properties_key', 'property_key'),
+        Index('idx_item_properties_key_value', 'property_key', 'property_value'),  # Optimizes property search queries
         Index('idx_item_properties_unique', 'item_id', 'property_key', unique=True),
     )
 
@@ -720,6 +721,31 @@ class Database:
                 session.commit()
                 return True
             return False
+    
+    def find_items_by_property(self, list_id: int, property_key: str, property_value: str, limit: Optional[int] = None) -> List[TodoItemDB]:
+        """Find items by property value with optional limit
+        
+        Args:
+            list_id: List ID to search in
+            property_key: Property name to match
+            property_value: Property value to match
+            limit: Maximum number of results (None = all)
+            
+        Returns:
+            List of TodoItemDB objects matching the criteria
+        """
+        with self.get_session() as session:
+            query = (session.query(TodoItemDB)
+                    .join(ItemPropertyDB, TodoItemDB.id == ItemPropertyDB.item_id)
+                    .filter(TodoItemDB.list_id == list_id)
+                    .filter(ItemPropertyDB.property_key == property_key)
+                    .filter(ItemPropertyDB.property_value == property_value)
+                    .order_by(TodoItemDB.position))
+            
+            if limit is not None:
+                query = query.limit(limit)
+            
+            return query.all()
     
     # Hierarchical item operations (for subtasks)
     def get_item_children(self, item_id: int) -> List[TodoItemDB]:

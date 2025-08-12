@@ -63,9 +63,9 @@ TOOLS_STANDARD = TOOLS_MINIMAL + [
     "todo_add_subtask", "todo_get_subtasks",
     # Archive management (2)
     "todo_archive_list", "todo_unarchive_list", 
-    # Basic properties (4)
+    # Basic properties (5)
     "todo_set_list_property", "todo_get_list_property",
-    "todo_set_item_property", "todo_get_item_property",
+    "todo_set_item_property", "todo_get_item_property", "todo_find_items_by_property",
     # Basic tagging (2)
     "todo_create_tag", "todo_add_list_tag"
 ]
@@ -1029,6 +1029,110 @@ async def todo_delete_item_property(list_key: str, item_key: str, property_key: 
         return {
             "success": False,
             "error": f"Property '{property_key}' not found for item '{item_key}' in list '{list_key}'"
+        }
+
+@conditional_tool
+@mcp_error_handler
+async def todo_find_items_by_property(list_key: str, property_key: str, property_value: str, limit: Optional[int] = None, mgr=None) -> Dict[str, Any]:
+    """Find items by property value with optional limit.
+    
+    Args:
+        list_key: Key of the list to search in (required)
+        property_key: Name of the property to match (required)
+        property_value: Value of the property to match (required)
+        limit: Maximum number of results to return (optional, None = all)
+        
+    Returns:
+        Dictionary with success status, found items, and count
+    """
+    items = mgr.find_items_by_property(list_key, property_key, property_value, limit)
+    
+    # Convert items to dictionaries
+    items_data = []
+    for item in items:
+        item_dict = {
+            "item_key": item.item_key,
+            "content": item.content,
+            "status": item.status.value,
+            "position": item.position,
+            "created_at": item.created_at.isoformat() if item.created_at else None,
+            "updated_at": item.updated_at.isoformat() if item.updated_at else None
+        }
+        
+        # Add optional fields if present
+        if hasattr(item, 'metadata') and item.metadata:
+            item_dict["metadata"] = item.metadata
+        if hasattr(item, 'completion_states') and item.completion_states:
+            item_dict["completion_states"] = item.completion_states
+        if hasattr(item, 'parent_item_id') and item.parent_item_id:
+            item_dict["parent_item_id"] = item.parent_item_id
+            
+        items_data.append(item_dict)
+    
+    return {
+        "success": True,
+        "items": items_data,
+        "count": len(items_data),
+        "list_key": list_key,
+        "search_criteria": {
+            "property_key": property_key,
+            "property_value": property_value,
+            "limit": limit
+        }
+    }
+
+@conditional_tool
+@mcp_error_handler
+async def todo_find_item_by_property(list_key: str, property_key: str, property_value: str, mgr=None) -> Dict[str, Any]:
+    """Find first item by property value (convenience wrapper).
+    
+    Args:
+        list_key: Key of the list to search in (required)
+        property_key: Name of the property to match (required)
+        property_value: Value of the property to match (required)
+        
+    Returns:
+        Dictionary with success status and found item or null
+    """
+    item = mgr.find_item_by_property(list_key, property_key, property_value)
+    
+    if item:
+        item_dict = {
+            "item_key": item.item_key,
+            "content": item.content,
+            "status": item.status.value,
+            "position": item.position,
+            "created_at": item.created_at.isoformat() if item.created_at else None,
+            "updated_at": item.updated_at.isoformat() if item.updated_at else None
+        }
+        
+        # Add optional fields if present
+        if hasattr(item, 'metadata') and item.metadata:
+            item_dict["metadata"] = item.metadata
+        if hasattr(item, 'completion_states') and item.completion_states:
+            item_dict["completion_states"] = item.completion_states
+        if hasattr(item, 'parent_item_id') and item.parent_item_id:
+            item_dict["parent_item_id"] = item.parent_item_id
+            
+        return {
+            "success": True,
+            "item": item_dict,
+            "list_key": list_key,
+            "search_criteria": {
+                "property_key": property_key,
+                "property_value": property_value
+            }
+        }
+    else:
+        return {
+            "success": False,
+            "item": None,
+            "list_key": list_key,
+            "search_criteria": {
+                "property_key": property_key,
+                "property_value": property_value
+            },
+            "message": f"No item found with property '{property_key}' = '{property_value}' in list '{list_key}'"
         }
 
 

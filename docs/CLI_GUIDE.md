@@ -254,6 +254,43 @@ todoit item next "my-project"
 todoit item next-smart "my-project"
 ```
 
+#### Search Items by Properties
+```bash
+# Find all items with specific property value
+todoit item find "my-project" --property "priority" --value "high"
+# Find items by status property 
+todoit item find "my-project" --property "status" --value "reviewed"
+# Find items by issue ID
+todoit item find "my-project" --property "issue_id" --value "123"
+
+# Limit search results
+todoit item find "my-project" --property "priority" --value "high" --limit 5
+# Get only first match (equivalent to --limit 1)
+todoit item find "my-project" --property "assignee" --value "john" --first
+
+# Examples of property-based search
+todoit item find "backend" --property "component" --value "api" --limit 3
+todoit item find "frontend" --property "framework" --value "react" --first
+```
+
+**Example Search Output:**
+```
+🔍 Found 2 item(s) with priority='high' in 'my-project'
+╭────────────────┬──────────────────────────────┬────────────┬──────────┬─────────────────╮
+│ Item Key       │ Content                      │ Status     │ Position │ Created         │
+├────────────────┼──────────────────────────────┼────────────┼──────────┼─────────────────┤
+│ task1          │ Implement authentication     │ pending    │ 1        │ 2025-08-12 10:30 │
+│ task5          │ Database optimization        │ in_progress │ 5        │ 2025-08-12 11:15 │
+╰────────────────┴──────────────────────────────┴────────────┴──────────┴─────────────────╯
+```
+
+**Search Use Cases:**
+- Find all tasks assigned to specific team member: `--property "assignee" --value "john"`
+- Filter by custom status: `--property "review_status" --value "approved"`  
+- Locate tasks by external reference: `--property "jira_ticket" --value "PROJ-123"`
+- Find items by category: `--property "category" --value "bug"`
+- Search by difficulty level: `--property "complexity" --value "low"`
+
 ### 🏷️ Tag Management (`tag` and `tags`)
 
 #### Global Tag Management

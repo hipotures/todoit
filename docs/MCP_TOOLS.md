@@ -13,8 +13,8 @@ TODOIT MCP provides 55 comprehensive tools for Claude Code integration, offering
 | Level | Tools Count | Token Savings | Use Case |
 |-------|-------------|---------------|----------|
 | **MINIMAL** | 10 tools | 82% savings | Essential operations only, maximum performance |
-| **STANDARD** | 23 tools | 58% savings | Balanced functionality (default) | 
-| **MAX** | 55 tools | 0% savings | Complete feature set |
+| **STANDARD** | 24 tools | 57% savings | Balanced functionality (default) | 
+| **MAX** | 56 tools | 0% savings | Complete feature set |
 
 ### 🔧 Configuration
 
@@ -24,20 +24,20 @@ Set the environment variable to choose your level:
 # Minimal set (10 tools) - Essential operations only
 export TODOIT_MCP_TOOLS_LEVEL=minimal
 
-# Standard set (23 tools) - Balanced functionality (DEFAULT)
+# Standard set (24 tools) - Balanced functionality (DEFAULT)
 export TODOIT_MCP_TOOLS_LEVEL=standard
 
-# Complete set (55 tools) - All features
+# Complete set (56 tools) - All features
 export TODOIT_MCP_TOOLS_LEVEL=max
 ```
 
-**Default**: `STANDARD` level (23 tools) for optimal balance of functionality vs performance.
+**Default**: `STANDARD` level (24 tools) for optimal balance of functionality vs performance.
 
 ### ⚡ Performance Impact
 
 - **MINIMAL**: ~500-1000 tokens context vs 3000+ for MAX
-- **STANDARD**: ~1500-2000 tokens context 
-- **MAX**: ~3000+ tokens context (full feature set)
+- **STANDARD**: ~1500-2000 tokens context (24 tools)
+- **MAX**: ~3000+ tokens context (56 tools - full feature set)
 
 ### 🛡️ Security Benefits
 
@@ -99,6 +99,8 @@ Extended functionality for complex workflows.
 - **`todo_get_item_property`** - Get specific property value from item
 - **`todo_get_item_properties`** - Get all properties for item
 - **`todo_delete_item_property`** - Remove property from item
+- **`todo_find_items_by_property`** - 🆕 **STANDARD** Search items by property value with optional limit
+- **`todo_find_item_by_property`** - 🆕 Find first item by property value (convenience wrapper)
 
 #### Project Management
 - **`todo_project_overview`** - Get comprehensive project status across related lists
@@ -321,6 +323,23 @@ await todo_set_item_property("project", "task1", "priority", "critical")
 
 # Remove property when no longer needed
 await todo_delete_item_property("project", "task1", "assignee")
+
+# 🆕 SEARCH for items by property values
+# Find all items with high priority
+high_priority_tasks = await todo_find_items_by_property("project", "priority", "high")
+# Returns: {"success": true, "items": [...], "count": 3, "search_criteria": {...}}
+
+# Find items assigned to specific person (with limit)
+johns_tasks = await todo_find_items_by_property("project", "assignee", "john", limit=5)
+
+# Find first item by issue ID (convenience function)
+task = await todo_find_item_by_property("project", "jira_ticket", "PROJ-123")
+# Returns: {"success": true, "item": {...}} or {"success": true, "item": null}
+
+# Example search use cases:
+# - Find tasks by external references: await todo_find_items_by_property("list", "github_issue", "456")
+# - Filter by review status: await todo_find_items_by_property("list", "review_status", "approved")
+# - Locate by component: await todo_find_items_by_property("backend", "component", "authentication")
 ```
 
 ### Reports & Analytics
@@ -492,6 +511,7 @@ await todo_remove_list_tag("project-alpha", "urgent")
 | `todo_get_list_property` | Get specific list property |
 | `todo_set_item_property` | Set key-value properties on items |
 | `todo_get_item_property` | Get specific item property |
+| `todo_find_items_by_property` | 🆕 Search items by property value |
 | `todo_create_tag` | Create new system tag |
 | `todo_add_list_tag` | Add tag to list |
 

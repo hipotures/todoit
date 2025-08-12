@@ -1014,6 +1014,48 @@ class TodoManager:
         # Sort by item_key first, then by property_key for consistent ordering
         result.sort(key=lambda x: (x['item_key'], x['property_key']))
         return result
+    
+    def find_items_by_property(self, list_key: str, property_key: str, property_value: str, limit: Optional[int] = None) -> List[TodoItem]:
+        """Find items by property value with optional limit.
+        
+        Args:
+            list_key: The key of the list to search in.
+            property_key: The property name to match.
+            property_value: The property value to match.
+            limit: Maximum number of results to return (None = all).
+            
+        Returns:
+            List of TodoItem objects matching the criteria, ordered by position.
+            
+        Raises:
+            ValueError: If the specified list is not found.
+        """
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
+        
+        # Use database layer for efficient search
+        db_items = self.db.find_items_by_property(db_list.id, property_key, property_value, limit)
+        
+        # Convert to Pydantic models
+        return [self._db_to_model(db_item, TodoItem) for db_item in db_items]
+    
+    def find_item_by_property(self, list_key: str, property_key: str, property_value: str) -> Optional[TodoItem]:
+        """Find first item by property value (convenience wrapper).
+        
+        Args:
+            list_key: The key of the list to search in.
+            property_key: The property name to match.
+            property_value: The property value to match.
+            
+        Returns:
+            First TodoItem matching the criteria, or None if not found.
+            
+        Raises:
+            ValueError: If the specified list is not found.
+        """
+        items = self.find_items_by_property(list_key, property_key, property_value, limit=1)
+        return items[0] if items else None
 
     def delete_item_property(self, list_key: str, item_key: str, property_key: str) -> bool:
         """Delete a specific property from an item.

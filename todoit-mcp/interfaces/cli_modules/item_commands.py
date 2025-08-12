@@ -731,3 +731,74 @@ def item_edit(ctx, list_key, item_key, new_content):
         
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command('find')
+@click.argument('list_key')
+@click.option('--property', 'property_key', required=True, help='Property name to search for')
+@click.option('--value', 'property_value', required=True, help='Property value to match')
+@click.option('--limit', type=int, help='Maximum number of results (default: all)')
+@click.option('--first', is_flag=True, help='Return only first result (limit=1)')
+@click.pass_context
+def item_find(ctx, list_key, property_key, property_value, limit, first):
+    """Find items by property value
+    
+    Examples:
+      todoit item find mylist --property status --value reviewed
+      todoit item find mylist --property issue_id --value 123 --first
+      todoit item find mylist --property priority --value high --limit 5
+    """
+    manager = get_manager(ctx.obj['db_path'])
+    
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print("[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]")
+        return
+    
+    try:
+        # Determine actual limit
+        actual_limit = None
+        if first:
+            actual_limit = 1
+        elif limit:
+            actual_limit = limit
+        
+        # Search for items
+        items = manager.find_items_by_property(list_key, property_key, property_value, actual_limit)
+        
+        if not items:
+            # Use unified display for empty result
+            _display_records([], f"🔍 Search Results for {property_key}='{property_value}' in '{list_key}'", {})
+            return
+        
+        # Prepare data for unified display
+        data = []
+        for item in items:
+            data.append({
+                "Item Key": item.item_key,
+                "Content": item.content,
+                "Status": _get_status_display(item.status.value),
+                "Position": str(item.position),
+                "Created": item.created_at.strftime("%Y-%m-%d %H:%M") if item.created_at else "N/A"
+            })
+        
+        # Define column styling
+        columns = {
+            "Item Key": {"style": "cyan", "width": 15},
+            "Content": {"style": "white"},
+            "Status": {"style": "yellow", "width": 12},
+            "Position": {"style": "blue", "width": 8},
+            "Created": {"style": "dim", "width": 16}
+        }
+        
+        # Create title with search info
+        title = f"🔍 Found {len(items)} item(s) with {property_key}='{property_value}' in '{list_key}'"
+        if actual_limit:
+            title += f" (limit: {actual_limit})"
+        
+        # Use unified display system
+        _display_records(data, title, columns)
+        
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
