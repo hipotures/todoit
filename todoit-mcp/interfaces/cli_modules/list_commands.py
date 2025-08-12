@@ -889,35 +889,29 @@ def show_list_tags(ctx, list_key):
         tags = manager.get_tags_for_list(list_key)
         
         if not tags:
-            console.print(f"📭 List '[white]{list_key}[/]' has no tags assigned")
+            # Use unified display for empty case
+            _display_records([], f"Tags for List: {list_obj.title}", {})
             return
         
-        # Display tags
-        from rich.table import Table
-        from rich import box
-        
-        table = Table(
-            title=f"🏷️ Tags for List: {list_obj.title}",
-            box=box.ROUNDED,
-            show_header=True,
-            header_style="bold cyan"
-        )
-        
-        table.add_column("Tag Name", style="bold white")
-        table.add_column("Color", style="dim")
-        table.add_column("Assigned", style="dim")
-        
+        # Prepare data for unified display
+        data = []
         for tag in tags:
-            # Add color indicator
-            color_indicator = f"[{tag.color}]●[/{tag.color}]"
+            # For unified display, use simple color representation
+            color_display = f"● {tag.color}"
             
-            table.add_row(
-                tag.name,
-                f"{color_indicator} {tag.color}",
-                "✓"
-            )
+            data.append({
+                "Tag Name": tag.name,
+                "Color": color_display,
+                "Assigned": "✓"
+            })
         
-        console.print(table)
+        columns = {
+            "Tag Name": {"style": "bold white"},
+            "Color": {"style": "dim"},
+            "Assigned": {"style": "dim"}
+        }
+        
+        _display_records(data, f"🏷️ Tags for List: {list_obj.title}", columns)
         
     except Exception as e:
         console.print(f"❌ Error showing tags: {e}")

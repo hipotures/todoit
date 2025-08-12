@@ -5,6 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.5] - 2025-08-12
+
+### ✨ Enhanced Item Properties Management
+
+**Major Feature**: Extended `item property list` command with bulk viewing and visual formatting options.
+
+#### 🆕 What's New
+
+**📋 Bulk Properties Viewing**
+- **All Items at Once**: `todoit item property list LIST_KEY` now shows properties for ALL items in the list
+- **Backward Compatibility**: Original syntax `todoit item property list LIST_KEY ITEM_KEY` unchanged
+- **Smart Detection**: Automatically detects whether to show single item or all items
+
+**🎨 Visual Display Enhancements**
+- **Alternating Row Styles**: Table rows alternate between normal and dim styling per item for clear visual grouping
+- **Tree View Mode**: New `--tree` option displays properties in hierarchical format grouped by item
+- **Rich Formatting**: Color-coded columns (cyan item keys, magenta property keys, white values)
+
+**🔧 Technical Improvements**
+- **New Core Method**: `TodoManager.get_all_items_properties()` for efficient bulk property retrieval
+- **Sorted Output**: Results sorted by item_key then property_key for consistent ordering
+- **Performance Optimized**: Single database query per list instead of per-item queries
+
+#### 💡 Usage Examples
+
+**Table Format (Default):**
+```bash
+todoit item property list my-project
+# Displays alternating row styles to visually separate items
+```
+
+**Tree Format:**
+```bash
+todoit item property list my-project --tree
+# Shows hierarchical view:
+# 📋 All Item Properties for list 'my-project'
+# ├── 📝 item1
+# │   ├── priority: high
+# │   └── assignee: john
+# └── 📝 item2
+#     └── status: active
+```
+
+#### ✅ Testing & Quality
+- **5 New Unit Tests**: Complete test coverage for new functionality
+- **448 Total Tests**: All existing tests pass, zero regressions
+- **Documentation Updated**: CLI_GUIDE.md includes examples and use cases
+
+#### 🎯 Benefits
+- **Better Overview**: View all item properties at once for project auditing
+- **Visual Clarity**: Easy distinction between items through alternating styles and tree view
+- **Workflow Efficiency**: No need to check properties item by item
+- **Maintained Compatibility**: All existing commands work exactly as before
+
 ## [1.16.1] - 2025-08-10
 
 ### 🎨 Revolutionary Tag System Update

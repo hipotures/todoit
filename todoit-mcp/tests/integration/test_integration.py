@@ -93,7 +93,7 @@ def test_dependency_management(temp_db_path):
 
     # Check if the item is blocked
     result = runner.invoke(cli, ['--db', temp_db_path, 'dep', 'show', 'frontend:ui'])
-    assert "Blocked by" in result.output
+    assert "Blocked By" in result.output  # Updated to match new table header
     assert "api" in result.output
 
     # Remove the dependency

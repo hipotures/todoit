@@ -6,7 +6,7 @@ import click
 from rich.console import Console
 from rich.prompt import Confirm
 
-from .display import _get_status_icon, _get_status_display, console
+from .display import _get_status_icon, _get_status_display, console, _display_records
 
 def get_manager(db_path):
     """Get TodoManager instance - imported from main cli.py"""
@@ -138,46 +138,89 @@ def dep_show(ctx, item_ref):
             console.print(f"[red]Item '{item_key}' not found in list '{list_key}'[/]")
             return
         
-        console.print(f"[bold cyan]Dependencies for:[/] {list_key}:{item_key}")
-        console.print(f"[dim]Content:[/] {item.content}")
-        console.print(f"[dim]Status:[/] {_get_status_display(item.status.value)}")
-        console.print()
-        
-        # Check if blocked
+        # Get dependency information
         is_blocked = manager.is_item_blocked(list_key, item_key)
-        if is_blocked:
-            console.print("[red]🚫 This item is BLOCKED[/]")
-        else:
-            console.print("[green]✅ This item is ready to work on[/]")
-        console.print()
-        
-        # Show what blocks this item
         blockers = manager.get_item_blockers(list_key, item_key)
-        if blockers:
-            console.print(f"[red]📥 Blocked by ({len(blockers)} items):[/]")
-            for blocker in blockers:
-                status_icon = _get_status_icon(blocker.status.value)
-                console.print(f"  → {status_icon} {blocker.item_key}: {blocker.content}")
-        else:
-            console.print("[green]📥 Not blocked by any dependencies[/]")
-        console.print()
-        
-        # Show what this item blocks
         blocked_items = manager.get_items_blocked_by(list_key, item_key)
-        if blocked_items:
-            console.print(f"[yellow]📤 This item blocks ({len(blocked_items)} items):[/]")
-            for blocked in blocked_items:
-                status_icon = _get_status_icon(blocked.status.value)  
-                console.print(f"  → {status_icon} {blocked.item_key}: {blocked.content}")
-        else:
-            console.print("[dim]📤 This item doesn't block anything[/]")
-        
-        # Show can start analysis
         can_start_info = manager.can_start_item(list_key, item_key)
-        console.print()
-        console.print(f"[bold]Can start:[/] {'✅ YES' if can_start_info['can_start'] else '❌ NO'}")
-        if not can_start_info['can_start']:
-            console.print(f"[dim]Reason:[/] {can_start_info['reason']}")
+        
+        # Prepare data for unified display
+        data = []
+        
+        # Item info
+        data.append({
+            "Property": "Item Reference",
+            "Value": f"{list_key}:{item_key}",
+            "Details": ""
+        })
+        
+        data.append({
+            "Property": "Content",
+            "Value": item.content,
+            "Details": ""
+        })
+        
+        data.append({
+            "Property": "Status",
+            "Value": _get_status_display(item.status.value),
+            "Details": ""
+        })
+        
+        data.append({
+            "Property": "Blocked Status",
+            "Value": "🚫 BLOCKED" if is_blocked else "✅ Ready to work",
+            "Details": ""
+        })
+        
+        data.append({
+            "Property": "Can Start",
+            "Value": "✅ YES" if can_start_info['can_start'] else "❌ NO",
+            "Details": can_start_info.get('reason', '') if not can_start_info['can_start'] else ""
+        })
+        
+        # Add blocked by information
+        if blockers:
+            for i, blocker in enumerate(blockers):
+                status_icon = _get_status_icon(blocker.status.value)
+                prop_name = "Blocked By" if i == 0 else ""
+                data.append({
+                    "Property": prop_name,
+                    "Value": f"{status_icon} {blocker.item_key}",
+                    "Details": blocker.content
+                })
+        else:
+            data.append({
+                "Property": "Blocked By",
+                "Value": "None",
+                "Details": "Not blocked by any dependencies"
+            })
+        
+        # Add blocks information
+        if blocked_items:
+            for i, blocked in enumerate(blocked_items):
+                status_icon = _get_status_icon(blocked.status.value)
+                prop_name = "Blocks" if i == 0 else ""
+                data.append({
+                    "Property": prop_name,
+                    "Value": f"{status_icon} {blocked.item_key}",
+                    "Details": blocked.content
+                })
+        else:
+            data.append({
+                "Property": "Blocks",
+                "Value": "None",
+                "Details": "This item doesn't block anything"
+            })
+        
+        # Define column styling
+        columns = {
+            "Property": {"style": "cyan", "width": 15},
+            "Value": {"style": "white", "width": 25},
+            "Details": {"style": "dim"}
+        }
+        
+        # Use unified display system
+        _display_records(data, f"🔗 Dependencies for {list_key}:{item_key}", columns)
         
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
@@ -202,11 +245,27 @@ def dep_graph(ctx, project):
         progress_info = manager.get_cross_list_progress(project)
         
         if not progress_info['lists']:
-            console.print(f"[yellow]No lists found for project '{project}'[/]")
+            _display_records([], f"📊 Dependency Graph for Project: {project}", {})
             return
         
-        console.print(f"[bold cyan]📊 Dependency Graph for Project: {project}[/]")
-        console.print()
+        # Prepare data for unified display
+        data = []
+        
+        # Add project summary
+        data.append({
+            "Type": "Project",
+            "Name": project,
+            "Details": f"Overall Progress: {progress_info['overall_progress']:.1f}%",
+            "Status": f"{progress_info['total_completed']}/{progress_info['total_items']} completed"
+        })
+        
+        # Add separator
+        data.append({
+            "Type": "",
+            "Name": "--- Lists ---",
+            "Details": "",
+            "Status": ""
+        })
         
         # Show lists overview
         for list_info in progress_info['lists']:
@@ -214,19 +273,28 @@ def dep_graph(ctx, project):
             progress_data = list_info['progress']
             blocked_count = list_info['blocked_items']
             
-            console.print(f"📋 [bold]{list_data['title']}[/] ({list_data['list_key']})")
-            console.print(f"   Progress: {progress_data['completion_percentage']:.1f}% "
-                         f"({progress_data['completed']}/{progress_data['total']})")
-            
+            details = f"Progress: {progress_data['completion_percentage']:.1f}% ({progress_data['completed']}/{progress_data['total']})"
             if blocked_count > 0:
-                console.print(f"   [red]🚫 {blocked_count} blocked items[/]")
+                details += f", 🚫 {blocked_count} blocked"
             
-            console.print()
+            data.append({
+                "Type": "List",
+                "Name": f"📋 {list_data['title']} ({list_data['list_key']})",
+                "Details": details,
+                "Status": "Active"
+            })
         
         # Show dependencies
         dependencies = progress_info['dependencies']  
         if dependencies:
-            console.print(f"[bold yellow]🔗 Dependencies ({len(dependencies)}):[/]")
+            # Add separator
+            data.append({
+                "Type": "",
+                "Name": "--- Dependencies ---",
+                "Details": "",
+                "Status": ""
+            })
+            
             for dep in dependencies:
                 # Find items by ID to get their keys
                 dep_item = None
@@ -249,15 +317,38 @@ def dep_graph(ctx, project):
                     req_status = _get_status_icon(req_item['status'])
                     dep_status = _get_status_icon(dep_item['status'])
                     
-                    console.print(f"  {req_status} {req_list_key}:{req_item['key']} → "
-                                f"{dep_status} {dep_list_key}:{dep_item['key']}")
+                    data.append({
+                        "Type": "Dependency",
+                        "Name": f"{req_status} {req_list_key}:{req_item['key']} → {dep_status} {dep_list_key}:{dep_item['key']}",
+                        "Details": f"Required: {req_item.get('content', '')[:30]}{'...' if len(req_item.get('content', '')) > 30 else ''}",
+                        "Status": f"Dep: {dep_item.get('content', '')[:30]}{'...' if len(dep_item.get('content', '')) > 30 else ''}"
+                    })
         else:
-            console.print("[dim]No cross-list dependencies found[/]")
+            # Add separator
+            data.append({
+                "Type": "",
+                "Name": "--- Dependencies ---",
+                "Details": "",
+                "Status": ""
+            })
+            
+            data.append({
+                "Type": "Dependency",
+                "Name": "No cross-list dependencies found",
+                "Details": "",
+                "Status": ""
+            })
         
-        # Overall project stats
-        console.print()
-        console.print(f"[bold]Overall Project Progress:[/] {progress_info['overall_progress']:.1f}%")
-        console.print(f"Total: {progress_info['total_completed']}/{progress_info['total_items']} completed")
+        # Define column styling
+        columns = {
+            "Type": {"style": "yellow", "width": 12},
+            "Name": {"style": "cyan"},
+            "Details": {"style": "white"},
+            "Status": {"style": "green"}
+        }
+        
+        # Use unified display system
+        _display_records(data, f"📊 Dependency Graph for Project: {project}", columns)
         
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")

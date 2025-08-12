@@ -96,35 +96,32 @@ def list_tags(ctx):
         tags = manager.get_all_tags()
         
         if not tags:
-            console.print("📭 No tags found in the system")
+            # Use unified display for empty case
+            _display_records([], "Available Tags", {})
             return
         
-        # Create table for tags
-        table = Table(
-            title=f"🏷️ Available Tags ({len(tags)})",
-            box=box.ROUNDED,
-            show_header=True,
-            header_style="bold cyan"
-        )
-        
-        table.add_column("Name", style="bold white")
-        table.add_column("Color", style="dim")
-        table.add_column("Created", style="dim")
-        
+        # Prepare data for unified display
+        data = []
         for tag in tags:
             # Format date
             created_date = tag.created_at.strftime('%Y-%m-%d %H:%M') if tag.created_at else 'Unknown'
             
-            # Add color indicator with Rich color formatting
-            color_indicator = f"[{tag.color}]●[/{tag.color}]"
+            # For unified display, use simple color representation
+            color_display = f"● {tag.color}"
             
-            table.add_row(
-                tag.name,
-                f"{color_indicator} {tag.color}",
-                created_date
-            )
+            data.append({
+                "Name": tag.name,
+                "Color": color_display,
+                "Created": created_date
+            })
         
-        console.print(table)
+        columns = {
+            "Name": {"style": "bold white"},
+            "Color": {"style": "dim"},
+            "Created": {"style": "dim"}
+        }
+        
+        _display_records(data, f"🏷️ Available Tags ({len(tags)})", columns)
         
     except Exception as e:
         console.print(f"❌ Error listing tags: {e}")

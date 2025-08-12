@@ -5,6 +5,30 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.0] - 2025-08-12
+
+### Added
+- **🚀 Complete JSON Output Support**: All CLI commands now support unified output formats
+  - **New Format Support**: Added JSON, YAML, XML output formats to all remaining commands
+  - **Commands Updated**: `item tree`, `dep show`, `schema`, `dep graph` now support `TODOIT_OUTPUT_FORMAT`
+  - **Unified Display System**: Migrated all commands to consistent display system for better format support
+  - **Rich Documentation**: Added comprehensive output format documentation to README.md
+
+### Fixed
+- **🔧 Advanced Command JSON Output**: Enhanced JSON support for complex display commands
+  - **Item Tree**: `todoit item tree` - Hierarchical task display with proper JSON serialization
+  - **Dependency Show**: `todoit dep show` - Structured dependency analysis in all formats
+  - **System Schema**: `todoit schema` - System information with categorized output
+  - **Dependency Graph**: `todoit dep graph` - Project dependency visualization
+  - **Enhanced Testing**: Added 41 comprehensive integration tests for all new JSON output features
+  - **Backward Compatible**: All existing table format behavior preserved
+
+### Changed
+- **📋 Display System Improvements**: Enhanced unified display architecture
+  - **Consistent Structure**: All commands now use standardized data formatting
+  - **Format Detection**: Automatic format switching based on `TODOIT_OUTPUT_FORMAT` environment variable
+  - **Error Handling**: Improved error handling for malformed references and edge cases
+
 ## [1.16.6] - 2025-08-12
 
 ### Fixed

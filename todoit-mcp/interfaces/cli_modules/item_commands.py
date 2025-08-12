@@ -164,17 +164,26 @@ def item_next(ctx, list_key, start):
     try:
         item = manager.get_next_pending(list_key)
         if not item:
-            console.print(f"[yellow]No pending items in list '{list_key}'[/]")
+            # Use unified display for empty case
+            _display_records([], f"Next Task for list '{list_key}'", {})
             return
         
-        panel = Panel(
-            f"[bold cyan]Task:[/] {item.content}\n"
-            f"[bold cyan]Key:[/] {item.item_key}\n"
-            f"[bold cyan]Position:[/] {item.position}",
-            title="⏭️ Next Task",
-            border_style="cyan"
-        )
-        console.print(panel)
+        # Prepare data for unified display
+        data = [{
+            "Task": item.content,
+            "Key": item.item_key,
+            "Position": str(item.position),
+            "Status": _get_status_display(item.status.value)
+        }]
+        
+        columns = {
+            "Task": {"style": "cyan"},
+            "Key": {"style": "magenta"},
+            "Position": {"style": "yellow"},
+            "Status": {"style": "green"}
+        }
+        
+        _display_records(data, f"⏭️ Next Task for list '{list_key}'", columns)
         
         if start and Confirm.ask("Start this task?"):
             manager.update_item_status(list_key, item.item_key, status='in_progress')
@@ -247,20 +256,43 @@ def item_tree(ctx, list_key, item_key):
             # Show hierarchy for specific item
             hierarchy = manager.get_item_hierarchy(list_key, item_key)
             
-            def print_hierarchy(item_info, depth=0):
+            def flatten_hierarchy(item_info, depth=0, data_list=None):
+                if data_list is None:
+                    data_list = []
+                
                 item = item_info['item']
-                indent = "  " * depth
                 status_icon = _get_status_icon(item['status'])
                 
+                # Create indentation for hierarchy visualization
+                indent = "  " * depth
                 if depth == 0:
-                    console.print(f"📋 {item['item_key']}: {item['content']}")
+                    hierarchy_display = f"📋 {item['item_key']}: {item['content']}"
                 else:
-                    console.print(f"{indent}└─ {status_icon} {item['item_key']}: {item['content']}")
+                    hierarchy_display = f"{indent}└─ {status_icon} {item['item_key']}: {item['content']}"
+                
+                data_list.append({
+                    "Level": str(depth),
+                    "Item": item['item_key'], 
+                    "Content": item['content'],
+                    "Status": status_icon,
+                    "Hierarchy": hierarchy_display
+                })
                 
                 for subtask_info in item_info['subtasks']:
-                    print_hierarchy(subtask_info, depth + 1)
+                    flatten_hierarchy(subtask_info, depth + 1, data_list)
+                
+                return data_list
             
-            print_hierarchy(hierarchy)
+            data = flatten_hierarchy(hierarchy)
+            columns = {
+                "Level": {"style": "dim", "width": 5},
+                "Item": {"style": "cyan"},
+                "Content": {"style": "white"},
+                "Status": {"style": "yellow"},
+                "Hierarchy": {"style": "white"}
+            }
+            
+            _display_records(data, f"📋 Item Tree for '{item_key}' in '{list_key}'", columns)
         else:
             # Show entire list in tree view
             todo_list = manager.get_list(list_key)
@@ -269,9 +301,41 @@ def item_tree(ctx, list_key, item_key):
                 return
             
             items = manager.get_list_items(list_key)
-            properties = manager.get_list_properties(list_key)
-            tree_view = _render_tree_view(todo_list, items, properties)
-            console.print(tree_view)
+            if not items:
+                _display_records([], f"📋 Tree View for '{list_key}'", {})
+                return
+            
+            # Convert items to hierarchical flat structure for unified display
+            data = []
+            for item in items:
+                # Calculate indentation based on parent relationship
+                depth = 0
+                if hasattr(item, 'parent_item_id') and item.parent_item_id:
+                    depth = 1  # Simplified depth calculation
+                
+                indent = "  " * depth
+                status_icon = _get_status_icon(item.status.value)
+                
+                if depth == 0:
+                    hierarchy_display = f"{status_icon} {item.content}"
+                else:
+                    hierarchy_display = f"{indent}└─ {status_icon} {item.content}"
+                
+                data.append({
+                    "Position": str(item.position),
+                    "Key": item.item_key,
+                    "Status": status_icon,
+                    "Task": hierarchy_display
+                })
+            
+            columns = {
+                "Position": {"style": "dim", "width": 8},
+                "Key": {"style": "cyan"},
+                "Status": {"style": "yellow", "width": 6},
+                "Task": {"style": "white"}
+            }
+            
+            _display_records(data, f"📋 Tree View for '{todo_list.title}' ({list_key})", columns)
             
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
@@ -416,22 +480,32 @@ def item_next_smart(ctx, list_key, start):
     try:
         item = manager.get_next_pending(list_key, smart_subtasks=True)
         if not item:
-            console.print(f"[yellow]No pending items in list '{list_key}'[/]")
+            # Use unified display for empty case
+            _display_records([], f"Next Smart Task for list '{list_key}'", {})
             return
         
         # Check if this is a subtask
         is_subtask = getattr(item, 'parent_item_id', None) is not None
         task_type = "Subtask" if is_subtask else "Task"
         
-        panel = Panel(
-            f"[bold cyan]Type:[/] {task_type}\n"
-            f"[bold cyan]Task:[/] {item.content}\n"
-            f"[bold cyan]Key:[/] {item.item_key}\n"
-            f"[bold cyan]Position:[/] {item.position}",
-            title="⏭️ Next Smart Task",
-            border_style="cyan"
-        )
-        console.print(panel)
+        # Prepare data for unified display
+        data = [{
+            "Type": task_type,
+            "Task": item.content,
+            "Key": item.item_key,
+            "Position": str(item.position),
+            "Status": _get_status_display(item.status.value)
+        }]
+        
+        columns = {
+            "Type": {"style": "yellow"},
+            "Task": {"style": "cyan"},
+            "Key": {"style": "magenta"},
+            "Position": {"style": "blue"},
+            "Status": {"style": "green"}
+        }
+        
+        _display_records(data, f"⏭️ Next Smart Task for list '{list_key}'", columns)
         
         if start and Confirm.ask("Start this task?"):
             manager.update_item_status(list_key, item.item_key, status='in_progress')

@@ -48,7 +48,7 @@ class TestE2EWorkflow:
         res_next_frontend_blocked = runner.invoke(cli, [*db_arg, 'item', 'next', 'frontend'])
         assert res_next_frontend_blocked.exit_code == 0
         # The output should indicate that the task is blocked or no tasks are available
-        assert "No pending items in list" in res_next_frontend_blocked.output
+        assert "No next task for list 'frontend' found" in res_next_frontend_blocked.output
 
         # STEP 5: Complete the backend tasks
         # Complete the subtask first

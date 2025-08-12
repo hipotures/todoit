@@ -6,6 +6,8 @@ import click
 from rich.console import Console
 from rich.panel import Panel
 
+from .display import _display_records
+
 from .display import console
 
 def get_manager(db_path):
@@ -36,21 +38,31 @@ def stats_progress(ctx, list_key, detailed):
         progress = manager.get_progress(list_key)
         todo_list = manager.get_list(list_key)
         
-        # Progress panel
-        panel = Panel(
-            f"[bold cyan]List:[/] {todo_list.title}\n"
-            f"[bold cyan]Completed:[/] {progress.completed}/{progress.total} "
-            f"({progress.completion_percentage:.1f}%)\n"
-            f"[bold cyan]In Progress:[/] {progress.in_progress}\n"
-            f"[bold cyan]Pending:[/] {progress.pending}\n"
-            f"[bold cyan]Failed:[/] {progress.failed}",
-            title="📊 Progress Report",
-            border_style="blue"
-        )
-        console.print(panel)
+        # Prepare data for unified display
+        data = [{
+            "List": todo_list.title,
+            "Total": str(progress.total),
+            "Completed": str(progress.completed),
+            "Completion %": f"{progress.completion_percentage:.1f}%",
+            "In Progress": str(progress.in_progress),
+            "Pending": str(progress.pending),
+            "Failed": str(progress.failed)
+        }]
+        
+        columns = {
+            "List": {"style": "cyan"},
+            "Total": {"style": "white"},
+            "Completed": {"style": "green"},
+            "Completion %": {"style": "yellow"},
+            "In Progress": {"style": "blue"},
+            "Pending": {"style": "dim"},
+            "Failed": {"style": "red"}
+        }
+        
+        _display_records(data, f"📊 Progress Report for '{list_key}'", columns)
         
         if detailed:
-            # Progress bar
+            # Progress bar - for detailed mode, still show as console output (not part of unified display)
             total = progress.total
             if total > 0:
                 completed_bar = '█' * int(progress.completed / total * 30)
@@ -150,21 +162,34 @@ def schema_info(ctx):
         }
     }
     
-    console.print(Panel.fit(
-        "[bold cyan]TODOIT System Schema Information[/]",
-        border_style="cyan"
-    ))
+    # Prepare data for unified display
+    data = []
     
     # Display each category
     for category, values in schema_info.items():
-        console.print(f"\n[bold yellow]{category.replace('_', ' ').title()}:[/]")
+        category_name = category.replace('_', ' ').title()
         
-        for value in values:
+        for i, value in enumerate(values):
             description = descriptions.get(category, {}).get(value, "")
-            if description:
-                console.print(f"  [cyan]{value}[/] - {description}")
-            else:
-                console.print(f"  [cyan]{value}[/]")
+            
+            # Use category name only for first item in each category
+            category_display = category_name if i == 0 else ""
+            
+            data.append({
+                "Category": category_display,
+                "Value": value,
+                "Description": description
+            })
+    
+    # Define column styling
+    columns = {
+        "Category": {"style": "yellow", "width": 18},
+        "Value": {"style": "cyan", "width": 15}, 
+        "Description": {"style": "white"}
+    }
+    
+    # Use unified display system
+    _display_records(data, "📋 TODOIT System Schema Information", columns)
 
 
 # === Interactive mode ===
