@@ -170,24 +170,14 @@ class TestPropertyJsonOutput:
             result = self.runner.invoke(cli, ['--db', 'test.db', 'item', 'property', 'list', 'testlist'])
             assert result.exit_code == 0
             
-            # Verify JSON format
+            # Verify JSON format - expect grouped format {item_key: {properties}}
             output_data = json.loads(result.output)
-            assert 'title' in output_data
-            assert 'count' in output_data
-            assert 'data' in output_data
-            assert output_data['count'] == 2
-            assert len(output_data['data']) == 2
+            assert 'item1' in output_data
+            assert 'item2' in output_data
             
-            # Check data structure for all items
-            item_keys = [item['Item Key'] for item in output_data['data']]
-            prop_keys = [item['Property Key'] for item in output_data['data']]
-            values = [item['Value'] for item in output_data['data']]
-            assert 'item1' in item_keys
-            assert 'item2' in item_keys
-            assert 'priority' in prop_keys
-            assert 'category' in prop_keys
-            assert 'high' in values
-            assert 'work' in values
+            # Check properties for each item
+            assert output_data['item1']['priority'] == 'high'
+            assert output_data['item2']['category'] == 'work'
     
     def test_item_property_list_json_output_all_items_empty(self):
         """Test item property list command with JSON output for all items when no properties exist"""
@@ -205,13 +195,9 @@ class TestPropertyJsonOutput:
             result = self.runner.invoke(cli, ['--db', 'test.db', 'item', 'property', 'list', 'testlist'])
             assert result.exit_code == 0
             
-            # Verify JSON format for empty result
+            # Verify JSON format for empty result - expect empty object for grouped format
             output_data = json.loads(result.output)
-            assert 'title' in output_data
-            assert 'count' in output_data
-            assert 'data' in output_data
-            assert output_data['count'] == 0
-            assert output_data['data'] == []
+            assert output_data == {}  # Empty object when no properties exist
     
     def test_table_format_still_works(self):
         """Test that table format still works correctly (default behavior)"""

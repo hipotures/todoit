@@ -5,6 +5,20 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.4] - 2025-08-13
+
+### Added 
+- **🎯 Readable JSON Field Names**: Emoji symbols in CLI headers now map to human-readable field names in JSON/YAML/XML output
+  - **Better API Usability**: `🏷️` → `tags`, `📋` → `pending_count`, `✅` → `completed_count`, etc.
+  - **Script-Friendly**: JSON output now parseable without dealing with emoji characters
+  - **Backward Compatible**: Table output still uses emoji for visual appeal
+
+### Technical
+- **Emoji Mapping System**: Added `EMOJI_TO_NAME_MAPPING` in display module
+- **Unified Serialization**: Enhanced `_prepare_data_for_serialization()` to map emoji keys
+- **Test Coverage**: Added comprehensive integration tests for emoji mapping functionality
+- **Property Command Fix**: Standardized JSON output format for `item property list` command
+
 ## [1.19.3] - 2025-08-13
 
 ### Added

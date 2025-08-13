@@ -203,9 +203,9 @@ class TestListAllEnhancements:
             assert "data" in json_data
             assert len(json_data["data"]) == 2
             
-            # Check that failed column (❌) exists in JSON output
+            # Check that failed column exists in JSON output (mapped from ❌ to failed_count)
             for record in json_data["data"]:
-                assert "❌" in record
+                assert "failed_count" in record
                 
         finally:
             if 'TODOIT_OUTPUT_FORMAT' in os.environ:
