@@ -980,25 +980,36 @@ class TodoManager:
         
         return self.db.get_item_properties(db_item.id)
 
-    def get_all_items_properties(self, list_key: str) -> List[Dict[str, Any]]:
-        """Get all properties for all items in a list.
+    def get_all_items_properties(self, list_key: str, status: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get all properties for all items in a list, optionally filtered by status.
 
         Args:
             list_key: The key of the list.
+            status: Optional status filter ('pending', 'in_progress', 'completed', 'failed'). 
+                   If None, returns properties for all items regardless of status.
 
         Returns:
-            A list of dictionaries, each containing 'item_key', 'property_key', and 'property_value'.
+            A list of dictionaries, each containing 'item_key', 'property_key', 'property_value', and 'status'.
             Returns an empty list if no items have properties.
 
         Raises:
-            ValueError: If the specified list is not found.
+            ValueError: If the specified list is not found or invalid status provided.
         """
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             raise ValueError(f"List '{list_key}' not found")
         
-        # Get all items in the list
-        items = self.db.get_list_items(db_list.id)
+        # Validate status if provided
+        if status is not None:
+            valid_statuses = ['pending', 'in_progress', 'completed', 'failed']
+            if status not in valid_statuses:
+                raise ValueError(f"Invalid status '{status}'. Must be one of: {valid_statuses}")
+        
+        # Get items filtered by status if specified
+        if status is not None:
+            items = self.db.get_items_by_status(db_list.id, status)
+        else:
+            items = self.db.get_list_items(db_list.id)
         
         result = []
         for item in items:
@@ -1008,7 +1019,8 @@ class TodoManager:
                 result.append({
                     'item_key': item.item_key,
                     'property_key': prop_key,
-                    'property_value': prop_value
+                    'property_value': prop_value,
+                    'status': item.status
                 })
         
         # Sort by item_key first, then by property_key for consistent ordering

@@ -5,6 +5,29 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.0] - 2025-08-13
+
+### Added
+- **📊 Bulk Property Analysis**: New comprehensive tool for retrieving all properties across items with status filtering
+  - **Core Function**: `get_all_items_properties(list_key, status=None)` with optional status filter (`pending`, `in_progress`, `completed`, `failed`)
+  - **MCP Tool**: `todo_get_all_items_properties` added to **STANDARD** tool set (25 tools total)
+  - **Enhanced Response**: Includes property data with status, count, and unique items metadata
+  - **Multi-Criteria Filtering**: Enables complex property analysis that single-property search cannot handle
+  - **Status-Based Filtering**: Filter properties by item status for targeted analysis
+  - **Comprehensive Testing**: 10 integration tests covering all scenarios and edge cases
+
+### Technical
+- **Database Optimization**: Leverages existing indexes for efficient property queries
+- **Tool Count Update**: STANDARD level now includes 25 tools (was 24), MAX level 57 tools total
+- **Documentation**: Updated MCP_TOOLS.md with new tool examples and usage patterns
+- **Test Coverage**: Added comprehensive integration test suite for new functionality
+
+### Use Cases
+- **Complex Property Analysis**: Find items matching multiple property criteria (e.g., `image_downloaded=pending` AND `image_generated=completed`)
+- **Status-Based Property Retrieval**: Get properties only for items in specific status states
+- **Bulk Data Export**: Retrieve all properties for external processing and analysis
+- **Multi-Property Workflows**: Enable sophisticated filtering logic in client applications
+
 ## [1.18.1] - 2025-08-12
 
 ### Changed

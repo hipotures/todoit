@@ -63,9 +63,9 @@ TOOLS_STANDARD = TOOLS_MINIMAL + [
     "todo_add_subtask", "todo_get_subtasks",
     # Archive management (2)
     "todo_archive_list", "todo_unarchive_list", 
-    # Basic properties (5)
+    # Basic properties (6)
     "todo_set_list_property", "todo_get_list_property",
-    "todo_set_item_property", "todo_get_item_property", "todo_find_items_by_property",
+    "todo_set_item_property", "todo_get_item_property", "todo_find_items_by_property", "todo_get_all_items_properties",
     # Basic tagging (2)
     "todo_create_tag", "todo_add_list_tag"
 ]
@@ -1003,6 +1003,30 @@ async def todo_get_item_properties(list_key: str, item_key: str, mgr=None) -> Di
         "item_key": item_key,
         "properties": properties,
         "count": len(properties)
+    }
+
+
+@conditional_tool
+@mcp_error_handler
+async def todo_get_all_items_properties(list_key: str, status: Optional[str] = None, mgr=None) -> Dict[str, Any]:
+    """Get all properties for all items in a list, optionally filtered by status.
+    
+    Args:
+        list_key: Key of the list to get item properties from (required)
+        status: Optional status filter ('pending', 'in_progress', 'completed', 'failed'). 
+               If not provided, returns properties for all items regardless of status.
+        
+    Returns:
+        Dictionary with success status, properties list, and metadata
+    """
+    properties = mgr.get_all_items_properties(list_key, status)
+    return {
+        "success": True,
+        "list_key": list_key,
+        "status_filter": status,
+        "properties": properties,
+        "count": len(properties),
+        "unique_items": len(set(prop['item_key'] for prop in properties))
     }
 
 
