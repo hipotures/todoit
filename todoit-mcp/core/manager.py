@@ -980,13 +980,14 @@ class TodoManager:
         
         return self.db.get_item_properties(db_item.id)
 
-    def get_all_items_properties(self, list_key: str, status: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_all_items_properties(self, list_key: str, status: Optional[str] = None, limit: Optional[int] = None) -> List[Dict[str, Any]]:
         """Get all properties for all items in a list, optionally filtered by status.
 
         Args:
             list_key: The key of the list.
             status: Optional status filter ('pending', 'in_progress', 'completed', 'failed'). 
                    If None, returns properties for all items regardless of status.
+            limit: Optional maximum number of items to return properties for.
 
         Returns:
             A list of dictionaries, each containing 'item_key', 'property_key', 'property_value', and 'status'.
@@ -1010,6 +1011,10 @@ class TodoManager:
             items = self.db.get_items_by_status(db_list.id, status)
         else:
             items = self.db.get_list_items(db_list.id)
+        
+        # Apply limit to items if specified
+        if limit is not None:
+            items = items[:limit]
         
         result = []
         for item in items:

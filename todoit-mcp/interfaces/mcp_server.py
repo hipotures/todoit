@@ -1008,18 +1008,19 @@ async def todo_get_item_properties(list_key: str, item_key: str, mgr=None) -> Di
 
 @conditional_tool
 @mcp_error_handler
-async def todo_get_all_items_properties(list_key: str, status: Optional[str] = None, mgr=None) -> Dict[str, Any]:
+async def todo_get_all_items_properties(list_key: str, status: Optional[str] = None, limit: Optional[int] = None, mgr=None) -> Dict[str, Any]:
     """Get all properties for all items in a list, optionally filtered by status.
     
     Args:
         list_key: Key of the list to get item properties from (required)
         status: Optional status filter ('pending', 'in_progress', 'completed', 'failed'). 
                If not provided, returns properties for all items regardless of status.
+        limit: Optional maximum number of items to return properties for
         
     Returns:
         Dictionary with success status, properties grouped by item_key, and metadata
     """
-    properties = mgr.get_all_items_properties(list_key, status)
+    properties = mgr.get_all_items_properties(list_key, status, limit)
     
     # Group properties by item_key
     grouped_data = {}

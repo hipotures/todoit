@@ -5,6 +5,19 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.3] - 2025-08-13
+
+### Added
+- **🆕 Item Limit Parameter**: Added optional `limit` parameter to `todo_get_all_items_properties`
+  - **Performance Optimization**: Limit number of items processed for large lists
+  - **Flexible Querying**: Works with status filters - limit applies to items, not properties
+  - **Backward Compatible**: Optional parameter - existing code continues to work unchanged
+
+### Technical
+- **Core Manager Enhancement**: Updated `get_all_items_properties()` to accept `limit` parameter
+- **MCP Interface Update**: Added `limit` parameter to MCP tool `todo_get_all_items_properties`
+- **Test Coverage**: Added comprehensive unit and integration tests for limit functionality
+
 ## [1.19.2] - 2025-08-13
 
 ### Changed

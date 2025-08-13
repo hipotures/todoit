@@ -160,3 +160,46 @@ class TestGetAllItemsPropertiesIntegration:
         # First item should be task1 with image_downloaded (alphabetically first)
         assert result[0]["item_key"] == "task1"
         assert result[0]["property_key"] == "image_downloaded"
+    
+    def test_get_all_items_properties_with_limit(self, manager, setup_test_data):
+        """Test getting properties with item limit."""
+        result = manager.get_all_items_properties("testlist", limit=2)
+        
+        # Should limit to first 2 items (task1, task2)
+        item_keys = set(prop["item_key"] for prop in result)
+        assert len(item_keys) <= 2
+        
+        # Should have properties from task1 (3) and task2 (2) = 5 total
+        assert len(result) == 5
+        
+        # All properties should be from task1 and task2 only
+        for prop in result:
+            assert prop["item_key"] in ["task1", "task2"]
+    
+    def test_get_all_items_properties_with_limit_and_status(self, manager, setup_test_data):
+        """Test getting properties with both limit and status filter."""
+        result = manager.get_all_items_properties("testlist", status="pending", limit=1)
+        
+        # Should have 3 properties from task1 only (limit=1 means 1 item)
+        assert len(result) == 3
+        
+        # All should be from task1 and have pending status
+        for prop in result:
+            assert prop["item_key"] == "task1"
+            assert prop["status"] == "pending"
+    
+    def test_get_all_items_properties_limit_zero(self, manager, setup_test_data):
+        """Test with limit=0."""
+        result = manager.get_all_items_properties("testlist", limit=0)
+        
+        # Should return empty list
+        assert len(result) == 0
+    
+    def test_get_all_items_properties_limit_larger_than_items(self, manager, setup_test_data):
+        """Test with limit larger than number of items."""
+        result = manager.get_all_items_properties("testlist", limit=10)
+        
+        # Should return all properties (same as no limit)
+        result_no_limit = manager.get_all_items_properties("testlist")
+        assert len(result) == len(result_no_limit)
+        assert result == result_no_limit

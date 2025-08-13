@@ -13,7 +13,7 @@ TODOIT MCP provides 57 comprehensive tools for Claude Code integration, offering
 | Level | Tools Count | Token Savings | Use Case |
 |-------|-------------|---------------|----------|
 | **MINIMAL** | 10 tools | 82% savings | Essential operations only, maximum performance |
-| **STANDARD** | 24 tools | 57% savings | Balanced functionality (default) | 
+| **STANDARD** | 25 tools | 56% savings | Balanced functionality (default) | 
 | **MAX** | 57 tools | 0% savings | Complete feature set |
 
 ### 🔧 Configuration
@@ -24,19 +24,19 @@ Set the environment variable to choose your level:
 # Minimal set (10 tools) - Essential operations only
 export TODOIT_MCP_TOOLS_LEVEL=minimal
 
-# Standard set (24 tools) - Balanced functionality (DEFAULT)
+# Standard set (25 tools) - Balanced functionality (DEFAULT)
 export TODOIT_MCP_TOOLS_LEVEL=standard
 
 # Complete set (57 tools) - All features
 export TODOIT_MCP_TOOLS_LEVEL=max
 ```
 
-**Default**: `STANDARD` level (24 tools) for optimal balance of functionality vs performance.
+**Default**: `STANDARD` level (25 tools) for optimal balance of functionality vs performance.
 
 ### ⚡ Performance Impact
 
 - **MINIMAL**: ~500-1000 tokens context vs 3000+ for MAX
-- **STANDARD**: ~1500-2000 tokens context (24 tools)
+- **STANDARD**: ~1500-2000 tokens context (25 tools)
 - **MAX**: ~3000+ tokens context (57 tools - full feature set)
 
 ### 🛡️ Security Benefits
@@ -98,9 +98,9 @@ Extended functionality for complex workflows.
 - **`todo_set_item_property`** - Set key-value properties on items (create/update)
 - **`todo_get_item_property`** - Get specific property value from item
 - **`todo_get_item_properties`** - Get all properties for item
+- **`todo_get_all_items_properties`** - 🆕 **STANDARD** Get all properties for all items in list with optional status filter
 - **`todo_delete_item_property`** - Remove property from item
-- **`todo_find_items_by_property`** - 🆕 **STANDARD** Search items by property value with optional limit
-- **`todo_find_item_by_property`** - 🆕 Find first item by property value (convenience wrapper)
+- **`todo_find_items_by_property`** - **STANDARD** Search items by property value with optional limit
 
 #### Project Management
 - **`todo_project_overview`** - Get comprehensive project status across related lists
@@ -332,14 +332,31 @@ high_priority_tasks = await todo_find_items_by_property("project", "priority", "
 # Find items assigned to specific person (with limit)
 johns_tasks = await todo_find_items_by_property("project", "assignee", "john", limit=5)
 
-# Find first item by issue ID (convenience function)
-task = await todo_find_item_by_property("project", "jira_ticket", "PROJ-123")
-# Returns: {"success": true, "item": {...}} or {"success": true, "item": null}
+# Find first item by issue ID (using limit=1)
+tasks = await todo_find_items_by_property("project", "jira_ticket", "PROJ-123", limit=1)
+# Returns: {"success": true, "items": [...], "count": 1} or {"success": true, "items": [], "count": 0}
 
 # Example search use cases:
 # - Find tasks by external references: await todo_find_items_by_property("list", "github_issue", "456")
 # - Filter by review status: await todo_find_items_by_property("list", "review_status", "approved")
 # - Locate by component: await todo_find_items_by_property("backend", "component", "authentication")
+
+# 🆕 BULK PROPERTY ANALYSIS - Get all properties for comprehensive filtering
+# Get all properties for all items (useful for complex analysis)
+all_props = await todo_get_all_items_properties("project")
+# Returns: {"success": true, "properties": [...], "count": 25, "unique_items": 8, "status_filter": null}
+
+# Get properties only for pending items (filter by status)
+pending_props = await todo_get_all_items_properties("project", "pending")
+# Returns: {"success": true, "properties": [...], "count": 12, "unique_items": 4, "status_filter": "pending"}
+
+# Get properties for completed items
+completed_props = await todo_get_all_items_properties("project", "completed")
+
+# Example: Find items with specific multi-property criteria in client code:
+# 1. Get all pending item properties
+# 2. Filter for image_downloaded=pending AND image_generated=completed
+# This allows complex filtering that single-property search cannot handle
 ```
 
 ### Reports & Analytics
@@ -493,7 +510,7 @@ await todo_remove_list_tag("project-alpha", "urgent")
 | `todo_get_progress` | Get progress statistics |
 | `todo_update_item_content` | Update item description |
 
-### 🥈 STANDARD Level (+13 tools)
+### 🥈 STANDARD Level (+15 tools)
 **Includes MINIMAL + useful extensions**
 
 **Additional tools in STANDARD:**
@@ -511,7 +528,8 @@ await todo_remove_list_tag("project-alpha", "urgent")
 | `todo_get_list_property` | Get specific list property |
 | `todo_set_item_property` | Set key-value properties on items |
 | `todo_get_item_property` | Get specific item property |
-| `todo_find_items_by_property` | 🆕 Search items by property value |
+| `todo_get_all_items_properties` | 🆕 Get all properties for all items with status filter and optional limit |
+| `todo_find_items_by_property` | Search items by property value |
 | `todo_create_tag` | Create new system tag |
 | `todo_add_list_tag` | Add tag to list |
 
@@ -548,4 +566,4 @@ await todo_remove_list_tag("project-alpha", "urgent")
 
 ---
 
-*Last updated: August 12, 2025 - All 57 tools production ready with 3-level configuration system*
+*Last updated: August 13, 2025 - All 57 tools production ready with 3-level configuration system*
