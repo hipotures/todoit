@@ -14,6 +14,18 @@ from rich.tree import Tree
 from rich import box
 import dicttoxml
 
+# Mapping emoji keys to human-readable names for JSON/YAML/XML output
+EMOJI_TO_NAME_MAPPING = {
+    "🏷️": "tags",
+    "🔀": "type", 
+    "📋": "pending_count",
+    "🔄": "in_progress_count",
+    "❌": "failed_count",
+    "✅": "completed_count",
+    "⏳": "completion_percentage",
+    "📦": "status"
+}
+
 console = Console()
 
 
@@ -100,12 +112,14 @@ def _serialize_for_output(obj):
 
 
 def _prepare_data_for_serialization(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Prepare data for JSON/YAML/XML serialization"""
+    """Prepare data for JSON/YAML/XML serialization with emoji-to-name mapping"""
     serialized_data = []
     for record in data:
         serialized_record = {}
         for key, value in record.items():
-            serialized_record[key] = _serialize_for_output(value)
+            # Replace emoji keys with human-readable names for serialization
+            clean_key = EMOJI_TO_NAME_MAPPING.get(key, key)
+            serialized_record[clean_key] = _serialize_for_output(value)
         serialized_data.append(serialized_record)
     return serialized_data
 
