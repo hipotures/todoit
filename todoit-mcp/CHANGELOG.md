@@ -5,6 +5,26 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.1] - 2025-08-13
+
+### Changed
+- **🔧 Enhanced JSON Output Format**: Improved `todoit item property list` JSON output for better usability
+  - **Grouped Format**: JSON now groups properties by item_key: `{"item_key": {"prop": "value"}}`
+  - **Cleaner Structure**: Eliminates verbose table-style format in JSON output
+  - **Better Integration**: Simplified structure ideal for external tool integration and scripting
+  - **Backward Compatibility**: Table, tree, YAML, and XML formats remain unchanged
+  - **Comprehensive Testing**: 7 integration tests covering all output formats and edge cases
+
+### Technical
+- **Enhanced CLI Logic**: Added output format detection to property list command
+- **Improved User Experience**: JSON output now directly usable without data transformation
+- **Test Coverage**: Added comprehensive test suite for new JSON format behavior
+
+### Use Cases
+- **API Integration**: Direct consumption of item properties without parsing table structures
+- **Scripting**: Simplified property access for automation scripts
+- **Data Export**: Clean JSON format for external processing tools
+
 ## [1.19.0] - 2025-08-13
 
 ### Added

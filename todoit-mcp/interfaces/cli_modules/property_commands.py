@@ -169,7 +169,24 @@ def item_property_list(ctx, list_key, item_key, tree):
         else:
             # New behavior: show properties for all items in the list
             all_properties = manager.get_all_items_properties(list_key)
-            if all_properties:
+            
+            # Check if JSON output is requested
+            import os
+            output_format = os.environ.get('TODOIT_OUTPUT_FORMAT', 'table').lower()
+            
+            if output_format == 'json':
+                # For JSON, group properties by item_key
+                grouped_data = {}
+                for prop in all_properties:
+                    item_key = prop['item_key']
+                    if item_key not in grouped_data:
+                        grouped_data[item_key] = {}
+                    grouped_data[item_key][prop['property_key']] = prop['property_value']
+                
+                # Output JSON directly in the format item_key: {properties}
+                import json
+                print(json.dumps(grouped_data, indent=2, ensure_ascii=False))
+            elif all_properties:
                 if tree:
                     _display_item_properties_tree(all_properties, list_key)
                 else:
