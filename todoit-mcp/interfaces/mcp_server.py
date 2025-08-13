@@ -1017,17 +1017,19 @@ async def todo_get_all_items_properties(list_key: str, status: Optional[str] = N
                If not provided, returns properties for all items regardless of status.
         
     Returns:
-        Dictionary with success status, properties list, and metadata
+        Dictionary with success status, properties grouped by item_key, and metadata
     """
     properties = mgr.get_all_items_properties(list_key, status)
-    return {
-        "success": True,
-        "list_key": list_key,
-        "status_filter": status,
-        "properties": properties,
-        "count": len(properties),
-        "unique_items": len(set(prop['item_key'] for prop in properties))
-    }
+    
+    # Group properties by item_key
+    grouped_data = {}
+    for prop in properties:
+        item_key = prop['item_key']
+        if item_key not in grouped_data:
+            grouped_data[item_key] = {}
+        grouped_data[item_key][prop['property_key']] = prop['property_value']
+    
+    return grouped_data
 
 
 @conditional_tool

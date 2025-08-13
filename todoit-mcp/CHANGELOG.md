@@ -5,6 +5,18 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.2] - 2025-08-13
+
+### Changed
+- **🔧 Unified JSON Format**: Fixed MCP `todo_get_all_items_properties` to match CLI JSON format
+  - **Consistent Output**: MCP now returns same grouped format as CLI: `{"item_key": {"prop": "value"}}`
+  - **Clean Response**: Removed wrapper metadata, returns direct property data
+  - **Better Integration**: MCP and CLI now provide identical JSON structure for property data
+
+### Technical
+- **MCP Server Enhancement**: Updated `todo_get_all_items_properties` to group properties by item_key
+- **Simplified Response**: MCP returns grouped data directly without success/count metadata wrapper
+
 ## [1.19.1] - 2025-08-13
 
 ### Changed
