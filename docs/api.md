@@ -37,6 +37,8 @@ Adds a new task to a list.
 ### `update_item_status`
 Updates the status of a task.
 
+> ⚠️ **Automatic Status Synchronization**: Tasks with subtasks cannot have manually changed status. Their status is automatically calculated from subtask statuses. See [Status Synchronization](#automatic-status-synchronization) for details.
+
 **Parameters:**
 - `list_key: str`: The key of the list containing the item.
 - `item_key: str`: The key of the item to update.
@@ -44,6 +46,8 @@ Updates the status of a task.
 - `completion_states: Optional[Dict[str, Any]]`: Custom key-value pairs for completion metadata.
 
 **Returns:** `TodoItem` – The updated item object.
+
+**Raises:** `ValueError` if attempting to manually change status of a task with subtasks.
 
 [Source](../todoit-mcp/core/manager.py)
 
@@ -53,6 +57,8 @@ Updates the status of a task.
 
 ### `add_subtask`
 Adds a new subtask to an existing parent task.
+
+> 🔄 **Automatic Sync**: Adding a subtask triggers automatic parent status synchronization.
 
 **Parameters:**
 - `list_key: str`: The key of the list.
@@ -86,6 +92,87 @@ Retrieves the full hierarchy for an item, including all its subtasks recursively
 **Returns:** `Dict[str, Any]` – A nested dictionary representing the hierarchy.
 
 [Source](../todoit-mcp/core/manager.py)
+
+---
+
+## Automatic Status Synchronization
+
+*Added in version 1.20.0*
+
+TODOIT automatically synchronizes the status of parent tasks based on their subtasks. This feature ensures hierarchical task consistency and prevents manual status conflicts.
+
+### Core Rules
+
+**Status Calculation Priority:**
+1. **`failed`** - If any subtask is failed → parent becomes `failed`
+2. **`pending`** - If all subtasks are pending → parent becomes `pending`  
+3. **`completed`** - If all subtasks are completed → parent becomes `completed`
+4. **`in_progress`** - Any other combination → parent becomes `in_progress`
+
+**Manual Update Protection:**
+- Tasks with subtasks **cannot** have manually changed status
+- Attempting `update_item_status()` on parent tasks raises `ValueError`
+- Use subtask status changes to control parent status instead
+
+### Automatic Triggers
+
+Status synchronization occurs automatically on:
+- **`add_subtask()`** - Adding first subtask to parent
+- **`update_item_status()`** - Changing any subtask status  
+- **`delete_item()`** - Removing subtasks from parent
+
+### Recursive Propagation
+
+- Changes propagate **upward** through entire hierarchy
+- Circular dependency protection with visited-set mechanism
+- Maximum 10 levels of recursion for safety
+- All operations are **atomic** within database transactions
+
+### Performance
+
+- **Single SQL query** per hierarchy level using covering indexes
+- **O(1) lookup** with `idx_todo_items_parent_status` index
+- **Bulk aggregation** using `get_children_status_summary()`
+- Tested with 100+ subtasks completing in <5 seconds
+
+### Usage Examples
+
+```python
+# Create parent task
+manager.add_item("project", "feature", "Implement new feature")
+
+# Add subtasks - parent automatically becomes 'pending'
+manager.add_subtask("project", "feature", "design", "Create design")
+manager.add_subtask("project", "feature", "code", "Write code")
+manager.add_subtask("project", "feature", "test", "Write tests")
+
+# Update subtask status - parent automatically updates
+manager.update_item_status("project", "design", status="completed")
+# Parent "feature" is now 'in_progress' (mixed statuses)
+
+manager.update_item_status("project", "code", status="completed")  
+manager.update_item_status("project", "test", status="completed")
+# Parent "feature" is now 'completed' (all children completed)
+
+# This will raise ValueError - manual status change blocked
+manager.update_item_status("project", "feature", status="failed")
+```
+
+### Error Handling
+
+```python
+try:
+    manager.update_item_status("project", "parent_task", status="completed")
+except ValueError as e:
+    print(e)  # "Cannot manually change status of task 'parent_task' because it has subtasks..."
+```
+
+### Interface Support
+
+Automatic status synchronization works identically across:
+- **CLI Interface** - All `todoit item` commands respect sync rules
+- **MCP Interface** - All 55+ MCP tools handle sync blocking gracefully
+- **Programmatic API** - Direct `TodoManager` method calls
 
 ---
 
