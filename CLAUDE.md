@@ -4,9 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-TODOIT MCP is an intelligent task management system with MCP integration for Claude Code. The system provides 45+ MCP tools for programmatic task management, featuring hierarchical tasks, cross-list dependencies, and smart workflow algorithms.
+TODOIT MCP is an intelligent task management system with MCP integration for Claude Code. The system provides 55+ MCP tools for programmatic task management, featuring hierarchical tasks, cross-list dependencies, smart workflow algorithms, and dynamic tag system with 12-color visual support.
 
 **Key Architecture**: Clean 3-layer design with `core/` (business logic), `interfaces/` (MCP server + CLI), and SQLite database with comprehensive schema for tasks, dependencies, and relationships.
+
+**Requirements**: Python 3.12+, modern dependency stack (SQLAlchemy 2.0, Pydantic V2, FastMCP, Rich CLI).
 
 ## Development Setup
 
@@ -19,6 +21,12 @@ pip install -e .[dev]
 
 # Initialize database (automatic on first run)
 python -c "from core.manager import TodoManager; TodoManager()"
+
+# Build package for distribution
+python -m build
+
+# Install package locally for testing
+pip install dist/todoit_mcp-*.whl
 ```
 
 ## Essential Commands
@@ -71,20 +79,22 @@ todoit list create "test" --title "Test List"
 
 ### Core Components
 - **`core/manager.py`** (1674 lines) - Main `TodoManager` class containing all business logic
-- **`core/database.py`** - SQLAlchemy ORM layer with 7 tables (lists, items, dependencies, relations, properties, history)
+- **`core/database.py`** - SQLAlchemy ORM layer with 9 tables (lists, items, dependencies, relations, properties, tags, history)
 - **`core/models.py`** - Pydantic models with comprehensive validation (6 enums, 20+ model classes)
 
 ### Interface Layer
-- **`interfaces/mcp_server.py`** (1488 lines) - 45+ MCP tools for Claude Code integration
+- **`interfaces/mcp_server.py`** (1488 lines) - 55+ MCP tools for Claude Code integration
 - **`interfaces/cli.py`** - Rich CLI with modular commands in `cli_modules/`
 - **`interfaces/cli_modules/`** - Modular CLI commands (list, item, dependency, property management)
 
-### Database Schema (6 core tables)
+### Database Schema (9 core tables)
 - `todo_lists` - List management with hierarchical relationships
 - `todo_items` - Items with subtask support via `parent_item_id`
 - `item_dependencies` - Cross-list task blocking/requirements
 - `list_relations` - Project grouping and list relationships
 - `list_properties`/`item_properties` - Key-value runtime configuration
+- `list_tags`/`list_tag_assignments` - Dynamic tag system with 12-color visual support
+- `todo_history` - Complete audit trail for all operations
 
 ## Key Business Logic Patterns
 
@@ -113,7 +123,8 @@ Database layer includes graph traversal algorithms in `_would_create_circular_de
 - **Complex functions**: `link_list_1to1`, `get_next_pending_with_subtasks` require comprehensive coverage
 - **Dependency management**: Circular detection, cross-list blocking logic
 - **Data integrity**: SQLite foreign key constraints and cascade operations
-- **MCP interface**: All 45 tools have basic coverage but need edge case expansion
+- **Tag system**: Dynamic color assignment and self-healing capabilities
+- **MCP interface**: All 55 tools have basic coverage but need edge case expansion
 
 ## Common Development Patterns
 

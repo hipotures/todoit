@@ -2,16 +2,24 @@
 Integration tests for MCP todo_get_list_items with limit functionality
 Tests MCP interface with limit parameter and response format
 """
+
 import pytest
 import asyncio
 from unittest.mock import patch
-from interfaces.mcp_server import todo_get_list_items, todo_create_list, todo_add_item, todo_update_item_status, init_manager
+from interfaces.mcp_server import (
+    todo_get_list_items,
+    todo_create_list,
+    todo_add_item,
+    todo_update_item_status,
+    init_manager,
+)
 
 
 @pytest.fixture(autouse=True)
 def reset_mcp_manager():
     """Reset the global manager instance before each test to ensure isolation."""
     import interfaces.mcp_server
+
     interfaces.mcp_server.manager = None
     yield
     interfaces.mcp_server.manager = None
@@ -24,25 +32,27 @@ class TestMCPListItemsLimit:
     async def test_mcp_get_list_items_no_limit(self, temp_db):
         """Test MCP interface without limit"""
         # Initialize manager with temp database
-        with patch('interfaces.mcp_server.init_manager', return_value=init_manager(temp_db)):
+        with patch(
+            "interfaces.mcp_server.init_manager", return_value=init_manager(temp_db)
+        ):
             # Create list
             list_result = await todo_create_list("test_list", "Test List")
             assert list_result["success"]
-        
+
         # Add multiple items
         for i in range(6):
             item_result = await todo_add_item("test_list", f"item_{i}", f"Item {i}")
             assert item_result["success"]
-        
+
         # Get all items (no limit)
         result = await todo_get_list_items("test_list")
-        
+
         assert result["success"]
         assert result["count"] == 6
         assert len(result["items"]) == 6
         assert result["total_count"] == 6
         assert not result["more_available"]  # No limit means no more available
-        
+
         # Verify items are in correct order
         for i, item in enumerate(result["items"]):
             assert item["item_key"] == f"item_{i}"
@@ -50,7 +60,9 @@ class TestMCPListItemsLimit:
     @pytest.mark.asyncio
     async def test_mcp_get_list_items_with_limit(self, temp_db):
         """Test MCP interface with limit parameter"""
-        with patch('interfaces.mcp_server.init_manager', return_value=init_manager(temp_db)):
+        with patch(
+            "interfaces.mcp_server.init_manager", return_value=init_manager(temp_db)
+        ):
             # Create list
             list_result = await todo_create_list("test_list", "Test List")
             assert list_result["success"]
@@ -76,7 +88,9 @@ class TestMCPListItemsLimit:
     @pytest.mark.asyncio
     async def test_mcp_get_list_items_with_status_and_limit(self, temp_db):
         """Test MCP interface with both status filter and limit"""
-        with patch('interfaces.mcp_server.init_manager', return_value=init_manager(temp_db)):
+        with patch(
+            "interfaces.mcp_server.init_manager", return_value=init_manager(temp_db)
+        ):
             # Create list
             list_result = await todo_create_list("test_list", "Test List")
             assert list_result["success"]
@@ -88,7 +102,9 @@ class TestMCPListItemsLimit:
 
             # Complete some items
             for i in [1, 3, 5, 7]:
-                status_result = await todo_update_item_status("test_list", f"item_{i}", "completed")
+                status_result = await todo_update_item_status(
+                    "test_list", f"item_{i}", "completed"
+                )
                 assert status_result["success"]
 
             # Get limited pending items
@@ -107,7 +123,9 @@ class TestMCPListItemsLimit:
     @pytest.mark.asyncio
     async def test_mcp_limit_larger_than_available(self, temp_db):
         """Test MCP interface when limit is larger than available items"""
-        with patch('interfaces.mcp_server.init_manager', return_value=init_manager(temp_db)):
+        with patch(
+            "interfaces.mcp_server.init_manager", return_value=init_manager(temp_db)
+        ):
             # Create list
             list_result = await todo_create_list("test_list", "Test List")
             assert list_result["success"]
@@ -129,7 +147,9 @@ class TestMCPListItemsLimit:
     @pytest.mark.asyncio
     async def test_mcp_zero_limit(self, temp_db):
         """Test MCP interface with zero limit"""
-        with patch('interfaces.mcp_server.init_manager', return_value=init_manager(temp_db)):
+        with patch(
+            "interfaces.mcp_server.init_manager", return_value=init_manager(temp_db)
+        ):
             # Create list
             list_result = await todo_create_list("test_list", "Test List")
             assert list_result["success"]
@@ -148,10 +168,12 @@ class TestMCPListItemsLimit:
             assert result["total_count"] == 5
             assert result["more_available"]  # More items available (since we got 0)
 
-    @pytest.mark.asyncio 
+    @pytest.mark.asyncio
     async def test_mcp_response_format_with_limit(self, temp_db):
         """Test MCP response format includes all expected fields with limit"""
-        with patch('interfaces.mcp_server.init_manager', return_value=init_manager(temp_db)):
+        with patch(
+            "interfaces.mcp_server.init_manager", return_value=init_manager(temp_db)
+        ):
             # Create list
             list_result = await todo_create_list("test_list", "Test List")
             assert list_result["success"]
@@ -187,7 +209,9 @@ class TestMCPListItemsLimit:
     @pytest.mark.asyncio
     async def test_mcp_limit_with_nonexistent_list(self, temp_db):
         """Test MCP interface with limit on nonexistent list"""
-        with patch('interfaces.mcp_server.init_manager', return_value=init_manager(temp_db)):
+        with patch(
+            "interfaces.mcp_server.init_manager", return_value=init_manager(temp_db)
+        ):
             result = await todo_get_list_items("nonexistent", limit=5)
 
             assert not result["success"]
@@ -196,7 +220,9 @@ class TestMCPListItemsLimit:
     @pytest.mark.asyncio
     async def test_mcp_limit_edge_case_exact_match(self, temp_db):
         """Test MCP interface when limit exactly matches available items"""
-        with patch('interfaces.mcp_server.init_manager', return_value=init_manager(temp_db)):
+        with patch(
+            "interfaces.mcp_server.init_manager", return_value=init_manager(temp_db)
+        ):
             # Create list
             list_result = await todo_create_list("test_list", "Test List")
             assert list_result["success"]
@@ -217,16 +243,20 @@ class TestMCPListItemsLimit:
     @pytest.mark.asyncio
     async def test_mcp_limit_performance_consistency(self, temp_db):
         """Test MCP interface limit performance and consistency"""
-        with patch('interfaces.mcp_server.init_manager', return_value=init_manager(temp_db)):
+        with patch(
+            "interfaces.mcp_server.init_manager", return_value=init_manager(temp_db)
+        ):
             # Create list
             list_result = await todo_create_list("test_list", "Test List")
             assert list_result["success"]
-            
+
             # Add many items
             for i in range(50):
-                item_result = await todo_add_item("test_list", f"item_{i:02d}", f"Item {i}")
+                item_result = await todo_add_item(
+                    "test_list", f"item_{i:02d}", f"Item {i}"
+                )
                 assert item_result["success"]
-            
+
             # Test different limit sizes
             limits = [1, 5, 10, 25, 50, 100]
 
@@ -248,19 +278,25 @@ class TestMCPListItemsLimit:
     @pytest.mark.asyncio
     async def test_mcp_limit_with_completed_status_filter(self, temp_db):
         """Test MCP interface limit with completed status filter"""
-        with patch('interfaces.mcp_server.init_manager', return_value=init_manager(temp_db)):
+        with patch(
+            "interfaces.mcp_server.init_manager", return_value=init_manager(temp_db)
+        ):
             # Create list
             list_result = await todo_create_list("test_list", "Test List")
             assert list_result["success"]
 
             # Add items
             for i in range(12):
-                item_result = await todo_add_item("test_list", f"item_{i:02d}", f"Item {i}")
+                item_result = await todo_add_item(
+                    "test_list", f"item_{i:02d}", f"Item {i}"
+                )
                 assert item_result["success"]
 
             # Complete every third item (4 total completed)
             for i in [2, 5, 8, 11]:
-                status_result = await todo_update_item_status("test_list", f"item_{i:02d}", "completed")
+                status_result = await todo_update_item_status(
+                    "test_list", f"item_{i:02d}", "completed"
+                )
                 assert status_result["success"]
 
             # Get limited completed items
@@ -276,7 +312,9 @@ class TestMCPListItemsLimit:
             assert result["items"][1]["item_key"] == "item_05"
 
             # Test getting all completed items
-            all_completed = await todo_get_list_items("test_list", status="completed", limit=10)
+            all_completed = await todo_get_list_items(
+                "test_list", status="completed", limit=10
+            )
             assert all_completed["success"]
             assert all_completed["count"] == 4
             assert all_completed["more_available"] is False

@@ -1,6 +1,7 @@
 """
 Pytest configuration and fixtures for TODOIT MCP tests
 """
+
 import pytest
 import tempfile
 import os
@@ -13,27 +14,27 @@ from core.database import Database
 def disable_force_tags_for_tests():
     """Disable FORCE_TAGS environment isolation during tests"""
     # Save original value if it exists
-    original_force_tags = os.environ.get('TODOIT_FORCE_TAGS')
-    
+    original_force_tags = os.environ.get("TODOIT_FORCE_TAGS")
+
     # Remove FORCE_TAGS to disable environment isolation during tests
-    if 'TODOIT_FORCE_TAGS' in os.environ:
-        del os.environ['TODOIT_FORCE_TAGS']
-    
+    if "TODOIT_FORCE_TAGS" in os.environ:
+        del os.environ["TODOIT_FORCE_TAGS"]
+
     yield
-    
+
     # Restore original value if it existed
     if original_force_tags is not None:
-        os.environ['TODOIT_FORCE_TAGS'] = original_force_tags
+        os.environ["TODOIT_FORCE_TAGS"] = original_force_tags
 
 
 @pytest.fixture
 def temp_db():
     """Create temporary database for testing"""
-    with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
         db_path = tmp.name
-    
+
     yield db_path
-    
+
     # Cleanup
     if os.path.exists(db_path):
         os.unlink(db_path)
@@ -49,9 +50,7 @@ def manager(temp_db):
 def sample_list(manager):
     """Create sample list with items for testing"""
     list_obj = manager.create_list(
-        list_key="test_list",
-        title="Test List",
-        items=["Task 1", "Task 2", "Task 3"]
+        list_key="test_list", title="Test List", items=["Task 1", "Task 2", "Task 3"]
     )
     return list_obj
 
@@ -62,13 +61,13 @@ def sample_lists(manager):
     backend_list = manager.create_list(
         list_key="backend",
         title="Backend Tasks",
-        items=["Setup DB", "Create API", "Write tests"]
+        items=["Setup DB", "Create API", "Write tests"],
     )
-    
+
     frontend_list = manager.create_list(
-        list_key="frontend", 
+        list_key="frontend",
         title="Frontend Tasks",
-        items=["Setup UI", "Connect API", "User testing"]
+        items=["Setup UI", "Connect API", "User testing"],
     )
-    
+
     return {"backend": backend_list, "frontend": frontend_list}

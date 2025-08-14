@@ -15,10 +15,10 @@ from unittest.mock import patch
 
 from core.manager import TodoManager
 from interfaces.cli_modules.display import (
-    _display_records, 
+    _display_records,
     _get_output_format,
     _serialize_for_output,
-    _prepare_data_for_serialization
+    _prepare_data_for_serialization,
 )
 
 
@@ -35,42 +35,42 @@ class TestOutputFormats:
                 "Title": "Test List",
                 "Items": "3",
                 "Progress": "33.3%",
-                "Created": datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+                "Created": datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
             },
             {
-                "ID": "2", 
+                "ID": "2",
                 "Key": "work_tasks",
                 "Title": "Work Tasks",
                 "Items": "5",
                 "Progress": "80.0%",
-                "Created": datetime(2025, 1, 2, 14, 30, 0, tzinfo=timezone.utc)
-            }
+                "Created": datetime(2025, 1, 2, 14, 30, 0, tzinfo=timezone.utc),
+            },
         ]
 
     def test_get_output_format_default(self):
         """Test default output format"""
         # Clear env var if exists
-        if 'TODOIT_OUTPUT_FORMAT' in os.environ:
-            del os.environ['TODOIT_OUTPUT_FORMAT']
-        
-        assert _get_output_format() == 'table'
+        if "TODOIT_OUTPUT_FORMAT" in os.environ:
+            del os.environ["TODOIT_OUTPUT_FORMAT"]
+
+        assert _get_output_format() == "table"
 
     def test_get_output_format_valid_values(self):
         """Test valid output format values"""
-        valid_formats = ['table', 'vertical', 'json', 'yaml', 'xml']
-        
+        valid_formats = ["table", "vertical", "json", "yaml", "xml"]
+
         for format_name in valid_formats:
-            os.environ['TODOIT_OUTPUT_FORMAT'] = format_name
+            os.environ["TODOIT_OUTPUT_FORMAT"] = format_name
             assert _get_output_format() == format_name
-            
+
             # Test case insensitive
-            os.environ['TODOIT_OUTPUT_FORMAT'] = format_name.upper()
+            os.environ["TODOIT_OUTPUT_FORMAT"] = format_name.upper()
             assert _get_output_format() == format_name
 
     def test_get_output_format_invalid_fallback(self):
         """Test invalid format falls back to table"""
-        os.environ['TODOIT_OUTPUT_FORMAT'] = 'invalid_format'
-        assert _get_output_format() == 'table'
+        os.environ["TODOIT_OUTPUT_FORMAT"] = "invalid_format"
+        assert _get_output_format() == "table"
 
     def test_serialize_for_output_datetime(self):
         """Test datetime serialization"""
@@ -82,9 +82,10 @@ class TestOutputFormats:
     def test_serialize_for_output_enum(self):
         """Test enum serialization"""
         from core.models import ItemStatus
+
         status = ItemStatus.COMPLETED
         result = _serialize_for_output(status)
-        assert result == 'completed'
+        assert result == "completed"
 
     def test_serialize_for_output_string(self):
         """Test string passthrough"""
@@ -95,76 +96,76 @@ class TestOutputFormats:
     def test_prepare_data_for_serialization(self, sample_data):
         """Test data preparation for serialization"""
         result = _prepare_data_for_serialization(sample_data)
-        
+
         assert len(result) == 2
         assert isinstance(result[0]["Created"], str)
         assert isinstance(result[1]["Created"], str)
 
-    @patch('sys.stdout', new_callable=StringIO)
+    @patch("sys.stdout", new_callable=StringIO)
     def test_display_records_json(self, mock_stdout, sample_data):
         """Test JSON output format"""
-        os.environ['TODOIT_OUTPUT_FORMAT'] = 'json'
-        
+        os.environ["TODOIT_OUTPUT_FORMAT"] = "json"
+
         _display_records(sample_data, "Test Lists")
-        
+
         output = mock_stdout.getvalue()
         json_data = json.loads(output)
-        
+
         assert json_data["title"] == "Test Lists"
         assert json_data["count"] == 2
         assert len(json_data["data"]) == 2
         assert json_data["data"][0]["Key"] == "test_list"
 
-    @patch('sys.stdout', new_callable=StringIO) 
+    @patch("sys.stdout", new_callable=StringIO)
     def test_display_records_yaml(self, mock_stdout, sample_data):
         """Test YAML output format"""
-        os.environ['TODOIT_OUTPUT_FORMAT'] = 'yaml'
-        
+        os.environ["TODOIT_OUTPUT_FORMAT"] = "yaml"
+
         _display_records(sample_data, "Test Lists")
-        
+
         output = mock_stdout.getvalue()
         yaml_data = yaml.safe_load(output)
-        
+
         assert yaml_data["title"] == "Test Lists"
         assert yaml_data["count"] == 2
         assert len(yaml_data["data"]) == 2
         assert yaml_data["data"][0]["Key"] == "test_list"
 
-    @patch('sys.stdout', new_callable=StringIO)
+    @patch("sys.stdout", new_callable=StringIO)
     def test_display_records_xml(self, mock_stdout, sample_data):
         """Test XML output format"""
-        os.environ['TODOIT_OUTPUT_FORMAT'] = 'xml'
-        
+        os.environ["TODOIT_OUTPUT_FORMAT"] = "xml"
+
         _display_records(sample_data, "Test Lists")
-        
+
         output = mock_stdout.getvalue()
         root = ET.fromstring(output)
-        
-        assert root.tag == 'todoit_output'
-        title_elem = root.find('title')
+
+        assert root.tag == "todoit_output"
+        title_elem = root.find("title")
         assert title_elem is not None
         assert title_elem.text == "Test Lists"
-        
-        count_elem = root.find('count')
+
+        count_elem = root.find("count")
         assert count_elem is not None
         assert count_elem.text == "2"
 
     def test_empty_data_handling(self):
         """Test handling of empty data lists"""
         empty_data = []
-        
-        for format_name in ['json', 'yaml', 'xml']:
-            os.environ['TODOIT_OUTPUT_FORMAT'] = format_name
-            
-            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+
+        for format_name in ["json", "yaml", "xml"]:
+            os.environ["TODOIT_OUTPUT_FORMAT"] = format_name
+
+            with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
                 _display_records(empty_data, "Empty Test")
                 output = mock_stdout.getvalue()
                 assert len(output) > 0  # Should produce some output even for empty data
 
     def teardown_method(self):
         """Clean up environment variables after each test"""
-        if 'TODOIT_OUTPUT_FORMAT' in os.environ:
-            del os.environ['TODOIT_OUTPUT_FORMAT']
+        if "TODOIT_OUTPUT_FORMAT" in os.environ:
+            del os.environ["TODOIT_OUTPUT_FORMAT"]
 
 
 class TestOutputFormatsWithCLI:
@@ -179,29 +180,31 @@ class TestOutputFormatsWithCLI:
 
     def test_cli_list_all_json_format(self, populated_manager):
         """Test list all command with JSON format"""
-        os.environ['TODOIT_OUTPUT_FORMAT'] = 'json'
-        
+        os.environ["TODOIT_OUTPUT_FORMAT"] = "json"
+
         from click.testing import CliRunner
         from interfaces.cli import cli
-        
+
         runner = CliRunner()
-        result = runner.invoke(cli, ['--db', populated_manager.db.db_path, 'list', 'all'])
-        
+        result = runner.invoke(
+            cli, ["--db", populated_manager.db.db_path, "list", "all"]
+        )
+
         assert result.exit_code == 0
         # Extract JSON part from output (may have extra text after JSON)
-        output_lines = result.output.split('\n')
+        output_lines = result.output.split("\n")
         json_start = None
         json_end = None
-        
+
         for i, line in enumerate(output_lines):
-            if line.strip().startswith('{'):
+            if line.strip().startswith("{"):
                 json_start = i
-            elif json_start is not None and line.strip().startswith('}'):
+            elif json_start is not None and line.strip().startswith("}"):
                 json_end = i + 1
                 break
-        
+
         if json_start is not None and json_end is not None:
-            json_output = '\n'.join(output_lines[json_start:json_end])
+            json_output = "\n".join(output_lines[json_start:json_end])
             try:
                 json_data = json.loads(json_output)
                 assert "title" in json_data
@@ -216,5 +219,5 @@ class TestOutputFormatsWithCLI:
 
     def teardown_method(self):
         """Clean up environment variables"""
-        if 'TODOIT_OUTPUT_FORMAT' in os.environ:
-            del os.environ['TODOIT_OUTPUT_FORMAT']
+        if "TODOIT_OUTPUT_FORMAT" in os.environ:
+            del os.environ["TODOIT_OUTPUT_FORMAT"]

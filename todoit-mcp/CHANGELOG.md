@@ -5,6 +5,31 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.20.0] - 2025-08-14
+
+### Added
+- **🔄 Automatic Status Synchronization**: Revolutionary parent-child status management system
+  - **Smart Status Calculation**: Parent status automatically calculated from children (failed > all_pending > all_completed > in_progress)
+  - **Manual Change Blocking**: Tasks with subtasks cannot have manually changed status - prevents inconsistencies
+  - **Real-time Propagation**: Status changes propagate recursively through entire hierarchy instantly
+  - **Transaction Safety**: All synchronization happens in atomic database transactions
+
+### Technical
+- **Performance Optimized**: Single SQL query per hierarchy level with covering indexes
+- **Database Schema**: Added `idx_todo_items_parent_status` index for O(1) child status aggregation
+- **New Methods**: `has_subtasks()`, `get_children_status_summary()`, `_sync_parent_status()`
+- **Circular Protection**: Visited-set mechanism prevents infinite recursion (max 10 levels)
+- **MCP Integration**: Enhanced error messages for blocked operations with `status_sync_blocked` type
+
+### Breaking Changes
+- **Status Lock**: Tasks with subtasks can no longer have manually changed status - use subtask status changes instead
+- **Behavior Change**: Adding first subtask to completed task changes parent to pending automatically
+
+### Tests
+- **Comprehensive Coverage**: 10 new test scenarios covering all synchronization edge cases
+- **Performance Tested**: Verified with 100+ subtasks, completes in <5 seconds
+- **Integration Updated**: All existing tests adapted to new status synchronization behavior
+
 ## [1.19.4] - 2025-08-13
 
 ### Added 
