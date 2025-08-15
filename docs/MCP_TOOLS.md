@@ -13,7 +13,7 @@ TODOIT MCP provides 58 comprehensive tools for Claude Code integration, offering
 | Level | Tools Count | Token Savings | Use Case |
 |-------|-------------|---------------|----------|
 | **MINIMAL** | 10 tools | 82% savings | Essential operations only, maximum performance |
-| **STANDARD** | 24 tools | 59% savings | Balanced functionality (default) | 
+| **STANDARD** | 25 tools | 57% savings | Balanced functionality (default) | 
 | **MAX** | 58 tools | 0% savings | Complete feature set |
 
 ### 🔧 Configuration
@@ -107,7 +107,7 @@ Extended functionality for complex workflows.
 - **`todo_get_item_history`** - Get complete change history for items
 - **`todo_get_schema_info`** - Get system schema information (available statuses, types, constants)
 
-### 🌳 Subtask Operations (6 tools)
+### 🌳 Subtask Operations (7 tools)
 Hierarchical task management with parent-child relationships.
 
 - **`todo_add_subtask`** - Add subtask to existing task
@@ -116,6 +116,7 @@ Hierarchical task management with parent-child relationships.
 - **`todo_move_to_subtask`** - Convert existing task to subtask
 - **`todo_get_next_pending_smart`** - Smart next task with subtask prioritization
 - **`todo_can_complete_item`** - Check if item can be completed (no pending subtasks)
+- **`todo_find_subitems_by_status`** - **STANDARD** Find subitems based on sibling status conditions for complex workflow management
 
 ### 🔗 Dependency Operations (6 tools)  
 Cross-list task dependencies for complex project coordination.
@@ -287,17 +288,13 @@ await todo_create_tag("zebra")      # Created first, but gets blue (position 2 a
 await todo_create_tag("alpha")      # Gets red (position 0 alphabetically)  
 await todo_create_tag("beta")       # Gets green (position 1 alphabetically)
 
-# Get all tags - colors based on alphabetical order
-all_tags = await todo_get_all_tags()
-# Result: [{"name": "alpha", "color": "red"}, 
-#          {"name": "beta", "color": "green"}, 
-#          {"name": "zebra", "color": "blue"}]
+# Note: Currently there is no direct "get all tags" MCP tool
+# Tags are retrieved through list operations or by using CLI commands
+# Use todo_get_lists_by_tag with known tag names or CLI for tag management
 
-# Delete middle tag - colors shift dynamically
-await todo_delete_tag("beta")
-updated_tags = await todo_get_all_tags()
-# Result: [{"name": "alpha", "color": "red"}, 
-#          {"name": "zebra", "color": "green"}]  # Shifted from blue to green
+# Tag deletion is handled through CLI only - no MCP tool available
+# Use CLI command: todoit tag delete "beta"
+# Colors automatically recalculate when tags are deleted
 
 # Tag limit enforcement - 13th tag fails
 try:
@@ -383,6 +380,75 @@ completed_props = await todo_get_all_items_properties("project", "completed")
 # This allows complex filtering that single-property search cannot handle
 ```
 
+### Advanced Subtask Search by Sibling Status
+```python
+# 🆕 Find subitems based on sibling status conditions
+# Perfect for complex workflow automation where task relationships matter
+
+# Example: Image processing workflow with multiple stages per item
+# Parent tasks have subtasks: generate, download, process, upload
+
+# Find downloads ready to process (where generation is completed but download is pending)
+ready_downloads = await todo_find_subitems_by_status(
+    "images", 
+    {"generate": "completed", "download": "pending"},
+    limit=5
+)
+# Returns: {"success": True, "items": [...], "count": 3, "search_criteria": {...}}
+
+# Find items where upload failed but processing succeeded (needs retry)
+failed_uploads = await todo_find_subitems_by_status(
+    "images", 
+    {"process": "completed", "upload": "failed"},
+    limit=10
+)
+
+# Find fully completed workflows (all stages done)
+completed_workflows = await todo_find_subitems_by_status(
+    "images", 
+    {"generate": "completed", "download": "completed", "process": "completed", "upload": "completed"},
+    limit=20
+)
+
+# Complex multi-stage development workflows
+# Find features ready for testing (dev done, test pending)
+testing_ready = await todo_find_subitems_by_status(
+    "features", 
+    {"development": "completed", "testing": "pending", "documentation": "completed"},
+    limit=3
+)
+
+# Real-world example: CI/CD pipeline status tracking
+# Find builds where tests passed but deployment is pending
+deployment_ready = await todo_find_subitems_by_status(
+    "releases", 
+    {"build": "completed", "tests": "completed", "deployment": "pending"},
+    limit=5
+)
+
+# Response structure:
+# {
+#   "success": True,
+#   "items": [
+#     {
+#       "id": 42,
+#       "item_key": "img_001", 
+#       "content": "Process user avatar",
+#       "status": "in_progress",
+#       "parent_item_id": 15,
+#       "created_at": "2025-08-15T10:30:00",
+#       # ... full item details
+#     }
+#   ],
+#   "count": 3,
+#   "list_key": "images",
+#   "search_criteria": {
+#     "conditions": {"generate": "completed", "download": "pending"},
+#     "limit": 5
+#   }
+# }
+```
+
 ### Reports & Analytics
 ```python
 # Generate report of all failed tasks across active lists
@@ -442,7 +508,7 @@ Error responses include:
 
 ## Integration with Claude Code
 
-All 57 tools are automatically available in Claude Code through MCP integration:
+All 58 tools are automatically available in Claude Code through MCP integration:
 
 1. **List Management** - Create, organize, and manage task lists
 2. **Task Operations** - Add, update, and track individual tasks
@@ -534,7 +600,7 @@ await todo_remove_list_tag("project-alpha", "urgent")
 | `todo_get_progress` | Get progress statistics |
 | `todo_update_item_content` | Update item description |
 
-### 🥈 STANDARD Level (+15 tools)
+### 🥈 STANDARD Level (+16 tools)
 **Includes MINIMAL + useful extensions**
 
 **Additional tools in STANDARD:**
@@ -554,6 +620,7 @@ await todo_remove_list_tag("project-alpha", "urgent")
 | `todo_get_item_property` | Get specific item property |
 | `todo_get_all_items_properties` | 🆕 Get all properties for all items with status filter and optional limit |
 | `todo_find_items_by_property` | Search items by property value |
+| `todo_find_subitems_by_status` | Find subitems by sibling status conditions |
 | `todo_create_tag` | Create new system tag |
 | `todo_add_list_tag` | Add tag to list |
 
@@ -582,7 +649,7 @@ await todo_remove_list_tag("project-alpha", "urgent")
 
 ## Testing Status
 
-✅ **All 57 MCP tools tested and verified working**
+✅ **All 58 MCP tools tested and verified working**
 - 100% functional coverage
 - Error handling validated  
 - Integration tested with real workflows
@@ -590,4 +657,4 @@ await todo_remove_list_tag("project-alpha", "urgent")
 
 ---
 
-*Last updated: August 13, 2025 - All 57 tools production ready with 3-level configuration system*
+*Last updated: August 15, 2025 - All 58 tools production ready with 3-level configuration system*
