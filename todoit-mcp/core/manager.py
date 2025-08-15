@@ -497,9 +497,9 @@ class TodoManager:
         if existing_item:
             raise ValueError(f"Task '{item_key}' already exists in list '{list_key}'")
 
-        # Set position if not provided
+        # Set position if not provided (for main tasks, parent_item_id=None)
         if position is None:
-            position = self.db.get_next_position(db_list.id)
+            position = self.db.get_next_position(db_list.id, parent_item_id=None)
 
         # Prepare task data
         item_data = {
@@ -1381,8 +1381,8 @@ class TodoManager:
                 f"Item key '{subtask_key}' already exists in list '{list_key}'"
             )
 
-        # Get next position for subtask (always at the end to avoid conflicts)
-        position = self.db.get_next_position(db_list.id)
+        # Get next position for subtask among siblings of same parent
+        position = self.db.get_next_position(db_list.id, parent_item_id=parent_item.id)
 
         # Create subtask
         item_data = {
@@ -2549,7 +2549,7 @@ class TodoManager:
                 # Set position for child list
                 child_position = position
                 if child_position is None:
-                    child_position = self.db.get_next_position(child_list.id)
+                    child_position = self.db.get_next_position(child_list.id, parent_item_id=None)
 
                 # Prepare child item data
                 child_item_data = {

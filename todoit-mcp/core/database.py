@@ -470,7 +470,12 @@ class Database:
             query = session.query(TodoItemDB).filter(TodoItemDB.list_id == list_id)
             if status:
                 query = query.filter(TodoItemDB.status == status)
-            query = query.order_by(TodoItemDB.position)
+            # Hierarchical ordering: main tasks first (by position), then subtasks grouped by parent
+            query = query.order_by(
+                TodoItemDB.parent_item_id.is_(None).desc(),  # Main tasks first (NULL parent_id)
+                TodoItemDB.parent_item_id,  # Group subtasks by parent
+                TodoItemDB.position  # Then by position within group
+            )
             if limit is not None and limit >= 0:
                 query = query.limit(limit)
             return query.all()
@@ -481,7 +486,11 @@ class Database:
             return (
                 session.query(TodoItemDB)
                 .filter(TodoItemDB.list_id == list_id, TodoItemDB.status == status)
-                .order_by(TodoItemDB.position)
+                .order_by(
+                    TodoItemDB.parent_item_id.is_(None).desc(),  # Main tasks first
+                    TodoItemDB.parent_item_id,  # Group subtasks by parent
+                    TodoItemDB.position  # Then by position within group
+                )
                 .all()
             )
 
@@ -515,14 +524,27 @@ class Database:
                 return True
             return False
 
-    def get_next_position(self, list_id: int) -> int:
-        """Get next position for new item in list"""
+    def get_next_position(self, list_id: int, parent_item_id: Optional[int] = None) -> int:
+        """Get next position for new item in list
+        
+        Args:
+            list_id: The list ID
+            parent_item_id: If provided, get next position among siblings (subtasks of same parent)
+                           If None, get next position among root items (main tasks)
+        """
         with self.get_session() as session:
-            max_pos = (
-                session.query(func.max(TodoItemDB.position))
-                .filter(TodoItemDB.list_id == list_id)
-                .scalar()
+            query = session.query(func.max(TodoItemDB.position)).filter(
+                TodoItemDB.list_id == list_id
             )
+            
+            if parent_item_id is None:
+                # Get max position among root items (main tasks)
+                query = query.filter(TodoItemDB.parent_item_id.is_(None))
+            else:
+                # Get max position among siblings (subtasks of same parent)
+                query = query.filter(TodoItemDB.parent_item_id == parent_item_id)
+            
+            max_pos = query.scalar()
             return (max_pos or 0) + 1
 
     def get_max_position(self, list_id: int) -> int:

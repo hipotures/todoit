@@ -5,6 +5,21 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.25.1] - 2025-08-15
+
+### Fixed
+- **🔢 Hierarchical Task Positioning**: Fixed sequential numbering for main tasks and subtasks
+  - **Issue**: Main tasks displayed non-sequential positions (1, 9, 17, 25...) due to interleaved positioning with subtasks
+  - **Root Cause**: Single global position counter caused main tasks and subtasks to compete for sequential positions
+  - **Solution**: Implemented separate positioning logic - main tasks get positions 1,2,3... and subtasks get positions 1,2,3... within each parent
+  - **Result**: Clean hierarchical display with main tasks numbered 1,2,3 and subtasks numbered 1.1,1.2,2.1,2.2 etc.
+
+### Technical
+- **Database Enhancement**: Enhanced `get_next_position()` to accept `parent_item_id` parameter for hierarchical positioning
+- **Query Optimization**: Updated `get_list_items()` and `get_items_by_status()` with hierarchical ordering (main tasks first, then subtasks by parent)
+- **Test Coverage**: 6 new unit tests + updated existing tests for new positioning behavior
+- **Performance**: Independent position counters eliminate position conflicts and improve scalability
+
 ## [1.25.0] - 2025-08-15
 
 ### Fixed

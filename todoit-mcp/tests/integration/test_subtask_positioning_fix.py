@@ -81,18 +81,30 @@ class TestSubtaskPositioningFix:
         conn = sqlite3.connect(temp_db_path)
         cursor = conn.cursor()
         
-        cursor.execute("SELECT item_key, position FROM todo_items WHERE list_id = 1 ORDER BY position")
+        cursor.execute("""
+            SELECT item_key, position 
+            FROM todo_items 
+            WHERE list_id = 1 
+            ORDER BY 
+                parent_item_id IS NULL DESC,  -- Main tasks first
+                parent_item_id,               -- Group subtasks by parent
+                position                      -- Then by position within group
+        """)
         positions = cursor.fetchall()
         
         conn.close()
 
-        # Verify positions are sequential: 1, 2, 3, 4, 5
+        # Verify positions with new hierarchical positioning and ordering:
+        # Order: main tasks first, then subtasks grouped by parent
+        # - Main tasks: task1=1, task2=2 
+        # - Subtasks of task1: sub1=1, sub3=2 (order added: sub1 first, sub3 second)
+        # - Subtasks of task2: sub2=1
         expected_positions = [
-            ('task1', 1),
-            ('task2', 2), 
-            ('sub1', 3),
-            ('sub2', 4),
-            ('sub3', 5)
+            ('task1', 1),   # Main task position 1
+            ('task2', 2),   # Main task position 2  
+            ('sub1', 1),    # Subtask of task1, position 1 within parent
+            ('sub3', 2),    # Subtask of task1, position 2 within parent (added after sub1)
+            ('sub2', 1)     # Subtask of task2, position 1 within parent
         ]
         
         assert positions == expected_positions, f"Expected {expected_positions}, got {positions}"

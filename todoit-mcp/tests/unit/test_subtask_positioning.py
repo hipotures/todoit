@@ -83,8 +83,8 @@ class TestSubtaskPositioning:
         # Call add_subtask
         result = mock_manager.add_subtask("test_list", "parent_key", "sub_key", "Sub content")
 
-        # Verify get_next_position was called (not positional logic)
-        mock_manager.db.get_next_position.assert_called_once_with(1)
+        # Verify get_next_position was called with parent_item_id (new hierarchical logic)
+        mock_manager.db.get_next_position.assert_called_once_with(1, parent_item_id=1)
         
         # Verify create_item was called with the next position
         args, kwargs = mock_manager.db.create_item.call_args
