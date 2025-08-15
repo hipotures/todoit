@@ -893,3 +893,104 @@ def item_find(ctx, list_key, property_key, property_value, limit, first):
 
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command("find-subitems")
+@click.argument("list_key")
+@click.option(
+    "--conditions",
+    required=True,
+    help="JSON dictionary of {subitem_key: expected_status} conditions",
+)
+@click.option("--limit", type=int, default=10, help="Maximum number of results")
+@click.pass_context
+def item_find_subitems(ctx, list_key, conditions, limit):
+    """Find subitems based on sibling status conditions
+
+    This command finds subitems that match status conditions within their
+    sibling groups. All conditions must be satisfied by the sibling group
+    for subitems to be returned.
+
+    Examples:
+      # Find downloads ready to process (where generation is completed)
+      todoit item find-subitems images --conditions '{"generate":"completed","download":"pending"}' --limit 5
+
+      # Find test tasks where design and code are done
+      todoit item find-subitems features --conditions '{"design":"completed","code":"completed","tests":"pending"}'
+
+      # Simple workflow check
+      todoit item find-subitems project --conditions '{"step1":"completed","step2":"pending"}' --limit 3
+    """
+    manager = get_manager(ctx.obj["db_path"])
+
+    try:
+        # Parse JSON conditions
+        try:
+            conditions_dict = json.loads(conditions)
+        except json.JSONDecodeError as e:
+            console.print(f"[bold red]❌ Invalid JSON in conditions:[/] {e}")
+            return
+
+        if not isinstance(conditions_dict, dict):
+            console.print("[bold red]❌ Conditions must be a JSON dictionary[/]")
+            return
+
+        if not conditions_dict:
+            console.print("[bold red]❌ Conditions dictionary cannot be empty[/]")
+            return
+
+        # Find subitems
+        items = manager.find_subitems_by_status(list_key, conditions_dict, limit)
+
+        if not items:
+            # Use unified display for empty result
+            _display_records(
+                [],
+                f"🔍 Subitem Search Results in '{list_key}'",
+                {},
+            )
+            console.print(f"[dim]No subitems found matching conditions: {conditions_dict}[/]")
+            return
+
+        # Prepare data for unified display
+        data = []
+        for item in items:
+            data.append(
+                {
+                    "Item Key": item.item_key,
+                    "Content": item.content,
+                    "Status": _get_status_display(item.status.value),
+                    "Position": str(item.position),
+                    "Parent ID": str(item.parent_item_id) if item.parent_item_id else "N/A",
+                    "Created": (
+                        item.created_at.strftime("%Y-%m-%d %H:%M")
+                        if item.created_at
+                        else "N/A"
+                    ),
+                }
+            )
+
+        # Define column styling
+        columns = {
+            "Item Key": {"style": "cyan", "width": 15},
+            "Content": {"style": "white"},
+            "Status": {"style": "yellow", "width": 12},
+            "Position": {"style": "blue", "width": 8},
+            "Parent ID": {"style": "magenta", "width": 10},
+            "Created": {"style": "dim", "width": 16},
+        }
+
+        # Create title with search info
+        title = f"🔍 Found {len(items)} subitem(s) in '{list_key}'"
+        if limit and len(items) >= limit:
+            title += f" (limit: {limit})"
+
+        # Use unified display system
+        _display_records(data, title, columns)
+
+        # Show search conditions
+        conditions_str = ", ".join([f"{k}={v}" for k, v in conditions_dict.items()])
+        console.print(f"[dim]Conditions: {conditions_str}[/]")
+
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")

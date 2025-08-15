@@ -5,6 +5,36 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.0] - 2025-08-15
+
+### Added
+- **🔍 Advanced Subitem Search**: New `find_subitems_by_status()` function for workflow automation
+  - **Sibling Status Conditions**: Find subitems based on status of their siblings within the same parent group
+  - **Perfect for Workflows**: Automate sequential processes (e.g., find downloads when generation complete)
+  - **Multiple Conditions**: All conditions must be satisfied within sibling groups (AND logic)
+  - **Optimized Performance**: Single database queries with proper sorting by position
+  - **Complete Integration**: Available in API, MCP tools (`todo_find_subitems_by_status`), and CLI (`todoit item find-subitems`)
+
+### Technical Implementation
+- **Database Layer**: Added `find_subitems_by_status()` method with efficient parent grouping
+- **Manager Layer**: Full validation and error handling with Pydantic model conversion
+- **CLI Interface**: Rich JSON parsing with comprehensive error messages and formatted output
+- **MCP Interface**: Standard tool with complete metadata in responses
+- **Testing**: 13 comprehensive test scenarios covering edge cases and performance
+
+### Usage Examples
+```bash
+# CLI: Find downloads ready to process
+todoit item find-subitems images --conditions '{"generate":"completed","download":"pending"}' --limit 5
+
+# Python API: Development workflow automation
+ready_tests = manager.find_subitems_by_status(
+    "features", 
+    {"design": "completed", "code": "completed", "test": "pending"},
+    limit=10
+)
+```
+
 ## [1.20.0] - 2025-08-14
 
 ### Added

@@ -915,6 +915,65 @@ class Database:
 
             return query.all()
 
+    def find_subitems_by_status(
+        self,
+        list_id: int,
+        conditions: Dict[str, str],
+        limit: int = 10,
+    ) -> List[TodoItemDB]:
+        """Find subitems based on sibling status conditions
+
+        Args:
+            list_id: List ID to search in
+            conditions: Dictionary of {subitem_key: expected_status}
+            limit: Maximum number of results
+
+        Returns:
+            List of TodoItemDB objects that match the conditions
+        """
+        with self.get_session() as session:
+            results = []
+
+            # Find all unique parent_item_id values in the list
+            parents_query = (
+                session.query(TodoItemDB.parent_item_id)
+                .filter(
+                    TodoItemDB.list_id == list_id,
+                    TodoItemDB.parent_item_id.isnot(None),
+                )
+                .distinct()
+            )
+
+            for (parent_id,) in parents_query:
+                # Get all subitems for this parent
+                siblings = (
+                    session.query(TodoItemDB)
+                    .filter(TodoItemDB.parent_item_id == parent_id)
+                    .all()
+                )
+
+                # Create a dict of sibling statuses
+                sibling_dict = {s.item_key: s.status for s in siblings}
+
+                # Check if this sibling group satisfies all conditions
+                all_conditions_met = all(
+                    sibling_dict.get(key) == status for key, status in conditions.items()
+                )
+
+                if all_conditions_met:
+                    # Add subitems that are mentioned in conditions
+                    for sibling in siblings:
+                        if sibling.item_key in conditions:
+                            results.append(sibling)
+                            if len(results) >= limit:
+                                # Sort by position before returning
+                                results.sort(key=lambda x: x.position)
+                                return results
+
+            # Sort by position before returning
+            results.sort(key=lambda x: x.position)
+            return results
+
     # Hierarchical item operations (for subtasks)
     def get_item_children(self, item_id: int) -> List[TodoItemDB]:
         """Get all direct children (subtasks) of an item"""

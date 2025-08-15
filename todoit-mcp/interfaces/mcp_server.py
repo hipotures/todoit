@@ -84,6 +84,7 @@ TOOLS_STANDARD = TOOLS_MINIMAL + [
     "todo_set_item_property",
     "todo_get_item_property",
     "todo_find_items_by_property",
+    "todo_find_subitems_by_status",
     "todo_get_all_items_properties",
     # Basic tagging (2)
     "todo_create_tag",
@@ -1186,6 +1187,65 @@ async def todo_find_items_by_property(
         "search_criteria": {
             "property_key": property_key,
             "property_value": property_value,
+            "limit": limit,
+        },
+    }
+
+
+@conditional_tool
+@mcp_error_handler
+async def todo_find_subitems_by_status(
+    list_key: str,
+    conditions: Dict[str, str],
+    limit: int = 10,
+    mgr=None,
+) -> Dict[str, Any]:
+    """Find subitems based on sibling status conditions.
+
+    Args:
+        list_key: Key of the list to search in (required)
+        conditions: Dictionary of {subitem_key: expected_status} (required)
+        limit: Maximum number of results to return (default: 10)
+
+    Returns:
+        Dictionary with success status, found subitems, and search details
+
+    Example:
+        # Find downloads ready to process (where generation is completed)
+        {
+            "list_key": "images",
+            "conditions": {"generate": "completed", "download": "pending"},
+            "limit": 5
+        }
+    """
+    items = mgr.find_subitems_by_status(list_key, conditions, limit)
+
+    # Convert items to dictionaries
+    items_data = []
+    for item in items:
+        item_dict = {
+            "id": item.id,
+            "list_id": item.list_id,
+            "item_key": item.item_key,
+            "content": item.content,
+            "status": item.status.value,
+            "position": item.position,
+            "parent_item_id": item.parent_item_id,
+            "created_at": item.created_at.isoformat() if item.created_at else None,
+            "updated_at": item.updated_at.isoformat() if item.updated_at else None,
+            "started_at": item.started_at.isoformat() if item.started_at else None,
+            "completed_at": item.completed_at.isoformat() if item.completed_at else None,
+            "metadata": item.metadata,
+        }
+        items_data.append(item_dict)
+
+    return {
+        "success": True,
+        "items": items_data,
+        "count": len(items_data),
+        "list_key": list_key,
+        "search_criteria": {
+            "conditions": conditions,
             "limit": limit,
         },
     }

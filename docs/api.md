@@ -325,6 +325,62 @@ Gets all properties for an item as a dictionary.
 
 ---
 
+## Advanced Search
+
+### `find_subitems_by_status`
+*Added in version 1.21.0*
+
+Find subitems based on sibling status conditions within their parent groups.
+
+**Parameters:**
+- `list_key: str`: The key of the list to search in.
+- `conditions: Dict[str, str]`: Dictionary of {subitem_key: expected_status} conditions.
+- `limit: int`: Maximum number of results to return (default: 10).
+
+**Returns:** `List[TodoItem]` – Subitems matching the conditions, ordered by position.
+
+**Raises:** `ValueError` if the specified list is not found or conditions are empty.
+
+**How it works:**
+This function finds groups of sibling subitems where ALL conditions are satisfied within the same parent group. It then returns the subitems that are specifically mentioned in the conditions.
+
+**Usage Examples:**
+
+```python
+# Workflow automation: Find downloads ready to process
+# (where image generation is completed)
+ready_downloads = manager.find_subitems_by_status(
+    "image_pipeline",
+    {"generate": "completed", "download": "pending"},
+    limit=10
+)
+
+# Development workflow: Find tests ready to run
+# (where design and coding are both completed)
+ready_tests = manager.find_subitems_by_status(
+    "features",
+    {"design": "completed", "code": "completed", "test": "pending"},
+    limit=5
+)
+
+# Sequential workflow: Find next step when previous is done
+next_steps = manager.find_subitems_by_status(
+    "deployment",
+    {"build": "completed", "deploy": "pending"},
+    limit=3
+)
+```
+
+**Real-world scenarios:**
+- **Image Processing**: Find downloads ready when generation completes
+- **Development**: Find testing tasks when design and code are done
+- **Deployment**: Find deployment tasks when build completes
+- **Content Creation**: Find publishing tasks when writing and review are complete
+
+[Source](../todoit-mcp/core/manager.py)
+
+---
+
 ## Import / Export
 
 ### `import_from_markdown`

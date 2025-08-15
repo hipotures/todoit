@@ -1188,6 +1188,46 @@ class TodoManager:
         # Convert to Pydantic models
         return [self._db_to_model(db_item, TodoItem) for db_item in db_items]
 
+    def find_subitems_by_status(
+        self,
+        list_key: str,
+        conditions: Dict[str, str],
+        limit: int = 10,
+    ) -> List[TodoItem]:
+        """Find subitems based on sibling status conditions.
+
+        Args:
+            list_key: The key of the list to search in.
+            conditions: Dictionary of {subitem_key: expected_status}.
+            limit: Maximum number of results to return.
+
+        Returns:
+            List of TodoItem objects matching the conditions, ordered by position.
+
+        Raises:
+            ValueError: If the specified list is not found.
+
+        Example:
+            # Find downloads ready to process (where generation is completed)
+            items = manager.find_subitems_by_status(
+                "images",
+                {"generate": "completed", "download": "pending"},
+                limit=5
+            )
+        """
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
+
+        if not conditions:
+            raise ValueError("Conditions dictionary cannot be empty")
+
+        # Use database layer for efficient search
+        db_items = self.db.find_subitems_by_status(db_list.id, conditions, limit)
+
+        # Convert to Pydantic models
+        return [self._db_to_model(db_item, TodoItem) for db_item in db_items]
+
     def delete_item_property(
         self, list_key: str, item_key: str, property_key: str
     ) -> bool:
