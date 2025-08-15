@@ -34,10 +34,10 @@ class TestHierarchicalLimit:
         limited_items = manager.get_list_items("test_list", limit=3)
         assert len(limited_items) == 3  # First 3 items by position
 
-        # Check we got first 3 items (1 parent + 2 subtasks by position ordering)
+        # Check we got first 3 items by position (after positioning fix: all parents first)
         assert limited_items[0].item_key == "parent_0"
-        assert limited_items[1].item_key == "sub_0_0"
-        assert limited_items[2].item_key == "parent_1"
+        assert limited_items[1].item_key == "parent_1"
+        assert limited_items[2].item_key == "parent_2"
 
     def test_hierarchical_limit_with_status_filter(self, manager):
         """Test hierarchical items with status filter and limit"""
