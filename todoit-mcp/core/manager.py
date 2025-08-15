@@ -349,6 +349,89 @@ class TodoManager:
                 updated_at=db_list_in_session.updated_at,
             )
 
+    def rename_list(
+        self, 
+        current_key: str, 
+        new_key: Optional[str] = None, 
+        new_title: Optional[str] = None
+    ) -> TodoList:
+        """Rename list key and/or title"""
+        # Validate that at least one parameter is provided
+        if new_key is None and new_title is None:
+            raise ValueError("At least one of new_key or new_title must be provided")
+        
+        # Get the current list
+        db_list = self.db.get_list_by_key(current_key)
+        if not db_list:
+            raise ValueError(f"List '{current_key}' does not exist")
+        
+        # Store old values for history
+        old_key = db_list.list_key
+        old_title = db_list.title
+        
+        # Prepare updates dict
+        updates = {}
+        
+        # Validate and set new key if provided
+        if new_key is not None:
+            # Validate new key - must contain at least one letter
+            import re
+            if not re.search(r'[a-zA-Z]', new_key):
+                raise ValueError(
+                    f"List key '{new_key}' must contain at least one letter (a-z) to distinguish from numeric IDs"
+                )
+            
+            # Check if new key already exists (and it's not the same list)
+            existing = self.db.get_list_by_key(new_key)
+            if existing and existing.id != db_list.id:
+                raise ValueError(f"List key '{new_key}' already exists")
+                
+            updates["list_key"] = new_key
+        
+        # Set new title if provided
+        if new_title is not None:
+            updates["title"] = new_title
+        
+        # Update the list
+        updated_db_list = self.db.update_list(db_list.id, updates)
+        if not updated_db_list:
+            raise ValueError(f"Failed to update list '{current_key}'")
+        
+        # Save to history
+        changes_desc = []
+        if new_key is not None:
+            changes_desc.append(f"key: {old_key} → {new_key}")
+        if new_title is not None:
+            changes_desc.append(f"title: {old_title} → {new_title}")
+        
+        self._record_history(
+            list_id=updated_db_list.id,
+            action="rename_list",
+            old_value={
+                "list_key": old_key,
+                "title": old_title
+            },
+            new_value={
+                "list_key": new_key or old_key,
+                "title": new_title or old_title,
+                "changes": "; ".join(changes_desc)
+            }
+        )
+        
+        # Convert to Pydantic model and return
+        return TodoList(
+            id=updated_db_list.id,
+            list_key=updated_db_list.list_key,
+            title=updated_db_list.title,
+            description=updated_db_list.description,
+            list_type=updated_db_list.list_type,
+            status=updated_db_list.status,
+            parent_list_id=updated_db_list.parent_list_id,
+            metadata=updated_db_list.meta_data or {},
+            created_at=updated_db_list.created_at,
+            updated_at=updated_db_list.updated_at,
+        )
+
     def list_all(
         self,
         limit: Optional[int] = None,

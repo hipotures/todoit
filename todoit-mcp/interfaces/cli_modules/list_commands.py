@@ -970,6 +970,82 @@ def list_unarchive(ctx, list_key):
         console.print(f"[red]❌ Error: {e}[/]")
 
 
+@list_group.command("rename")
+@click.argument("current_key")
+@click.option("--key", "new_key", help="New list key")
+@click.option("--title", "new_title", help="New list title")
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation")
+@click.pass_context
+def list_rename(ctx, current_key, new_key, new_title, yes):
+    """Rename list key and/or title"""
+    try:
+        # Validate that at least one parameter is provided
+        if not new_key and not new_title:
+            console.print("❌ Error: At least one of --key or --title must be provided")
+            raise click.ClickException("Missing required options")
+        
+        manager = get_manager(ctx.obj["db_path"])
+        
+        # Check access if FORCE_TAGS is enabled
+        if not _check_list_access(manager, current_key):
+            console.print(
+                f"❌ Access denied to list '{current_key}' based on FORCE_TAGS filter"
+            )
+            raise click.ClickException("Access denied")
+        
+        # Get current list to show what will change
+        current_list = manager.get_list(current_key)
+        if not current_list:
+            console.print(f"❌ List '{current_key}' does not exist")
+            raise click.ClickException("List not found")
+        
+        # Show changes that will be made
+        changes_table = Table(title="Changes to be made", box=box.ROUNDED)
+        changes_table.add_column("Field", style="cyan")
+        changes_table.add_column("Current", style="white")
+        changes_table.add_column("New", style="green")
+        
+        if new_key:
+            changes_table.add_row("Key", current_list.list_key, new_key)
+        if new_title:
+            changes_table.add_row("Title", current_list.title, new_title)
+        
+        console.print(changes_table)
+        
+        # Confirmation
+        if not yes:
+            if not Confirm.ask("Continue with rename?", default=False):
+                console.print("❌ Rename cancelled")
+                return
+        
+        # Perform rename
+        renamed_list = manager.rename_list(
+            current_key=current_key,
+            new_key=new_key,
+            new_title=new_title
+        )
+        
+        # Show success result
+        result_table = Table(title="✅ List renamed successfully!", box=box.ROUNDED)
+        result_table.add_column("Field", style="cyan")
+        result_table.add_column("Value", style="white")
+        
+        result_table.add_row("Key", renamed_list.list_key)
+        result_table.add_row("Title", renamed_list.title)
+        result_table.add_row("Type", renamed_list.list_type)
+        result_table.add_row("Status", renamed_list.status)
+        result_table.add_row("Updated", _format_date(renamed_list.updated_at))
+        
+        console.print(result_table)
+        
+    except ValueError as e:
+        console.print(f"❌ Error: {e}")
+        raise click.ClickException(str(e))
+    except Exception as e:
+        console.print(f"❌ Unexpected error: {e}")
+        raise click.ClickException(str(e))
+
+
 # ===== LIST TAG MANAGEMENT =====
 
 

@@ -5,6 +5,23 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.23.0] - 2025-08-15
+
+### Added
+- **🏷️ List Rename Functionality**: Complete CLI command for renaming list keys and titles
+  - **New CLI Command**: `todoit list rename <current_key> --key <new_key> --title "New Title"`
+  - **Flexible Options**: Rename key only, title only, or both simultaneously
+  - **Safe Operation**: Validation for unique keys, proper format, and confirmation prompts
+  - **History Tracking**: Full audit trail of rename operations
+  - **FORCE_TAGS Integration**: Respects environment isolation settings
+  - **Rich UI**: Preview changes in tables with success confirmation
+
+### Technical
+- **New Method**: `TodoManager.rename_list()` with comprehensive validation
+- **Database Update**: Uses existing `update_list()` with proper foreign key preservation
+- **Test Coverage**: 11 unit tests + 13 integration tests for CLI functionality
+- **Error Handling**: Comprehensive validation for all edge cases
+
 ## [1.22.0] - 2025-08-15
 
 ### Enhanced
