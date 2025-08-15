@@ -5,6 +5,20 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.24.0] - 2025-08-15
+
+### Fixed
+- **🔢 Hierarchical Numbering**: Fixed subtask numbering to reset per parent task
+  - **Issue**: Subtasks had continuous numbering (1.2, 1.3, ..., 9.10, 9.11) instead of parent-relative (1.1, 1.2, 1.3, 9.1, 9.2)
+  - **Root Cause**: Display logic used global `item.position` instead of sibling index within parent
+  - **Solution**: Modified `add_item_to_table()` in `display.py` to use enumerated sibling index for subtasks
+  - **Result**: Correct hierarchical numbering (Task 1: 1.1, 1.2, 1.3; Task 3: 3.1, 3.2; Task 6: 6.1)
+
+### Technical
+- **Code Changes**: Enhanced `_render_table_view()` with proper parent-relative indexing
+- **Test Coverage**: 4 new unit tests + 3 integration tests for hierarchical numbering
+- **Backward Compatible**: No API changes, only display logic improvement
+
 ## [1.23.0] - 2025-08-15
 
 ### Added

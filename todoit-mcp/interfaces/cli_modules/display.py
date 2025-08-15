@@ -451,13 +451,19 @@ def _render_table_view(
     # Prepare data for unified display
     data = []
 
-    def add_item_to_table(item, parent_numbers=None, depth=0):
+    def add_item_to_table(item, parent_numbers=None, depth=0, sibling_index=None):
         """Recursively add item and its children to table"""
         if parent_numbers is None:
             parent_numbers = []
 
         # Generate hierarchical numbering
-        current_numbers = parent_numbers + [item.position]
+        # For root items, use position; for subtasks, use sibling_index (1-based)
+        if depth == 0:
+            position_number = item.position
+        else:
+            position_number = sibling_index if sibling_index is not None else 1
+            
+        current_numbers = parent_numbers + [position_number]
         hierarchical_num = ".".join(map(str, current_numbers))
 
         # Create indentation for visual hierarchy
@@ -531,8 +537,8 @@ def _render_table_view(
         data.append(record)
 
         # Recursively add children
-        for child in children:
-            add_item_to_table(child, current_numbers, depth + 1)
+        for child_index, child in enumerate(children, 1):
+            add_item_to_table(child, current_numbers, depth + 1, child_index)
 
     # Add all root items and their subtrees
     for root_item in hierarchy["roots"]:
