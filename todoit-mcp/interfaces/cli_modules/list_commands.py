@@ -63,10 +63,10 @@ def list_group():
 @click.argument("list_key")
 @click.option("--title", help="List title")
 @click.option("--items", "-i", multiple=True, help="Initial items")
-@click.option("--from-folder", help="Create tasks from folder contents")
+@click.option("--from-folder", help="Create items from folder contents")
 @click.option("--filter-ext", help="Filter files by extension (e.g., .yaml, .py, .md)")
 @click.option(
-    "--task-prefix", default="Process", help="Task name prefix (default: Process)"
+    "--item-prefix", default="Process", help="Item name prefix (default: Process)"
 )
 @click.option(
     "--type",
@@ -83,7 +83,7 @@ def list_create(
     items,
     from_folder,
     filter_ext,
-    task_prefix,
+    item_prefix,
     list_type,
     metadata,
 ):
@@ -115,7 +115,7 @@ def list_create(
                             filter_ext = "." + filter_ext
                         if not item.lower().endswith(filter_ext.lower()):
                             continue
-                    folder_items.append(f"{task_prefix} {item}")
+                    folder_items.append(f"{item_prefix} {item}")
                 elif os.path.isdir(item_path) and not filter_ext:
                     # Only include directories if no extension filter
                     folder_items.append(f"Handle folder {item}/")
@@ -173,7 +173,7 @@ def list_create(
 @click.option("--title", help="Title for the linked list")
 @click.pass_context
 def list_link(ctx, source_key, target_key, title):
-    """Create a linked copy of a list with 1:1 task mapping
+    """Create a linked copy of a list with 1:1 item mapping
 
     Creates a complete copy of the source list including all items and properties,
     but with all item statuses reset to 'pending'. Establishes a 'project' relation
@@ -905,14 +905,14 @@ def _create_changes_panel(changes_history):
 @list_group.command("archive")
 @click.argument("list_key")
 @click.option(
-    "--force", is_flag=True, help="Force archiving even with incomplete tasks"
+    "--force", is_flag=True, help="Force archiving even with incomplete items"
 )
 @click.pass_context
 def list_archive(ctx, list_key, force):
     """Archive a TODO list (hide from normal view)
 
-    By default, only lists with all tasks completed can be archived.
-    Use --force to archive lists with incomplete tasks.
+    By default, only lists with all items completed can be archived.
+    Use --force to archive lists with incomplete items.
     """
     manager = get_manager(ctx.obj["db_path"])
 
@@ -936,7 +936,7 @@ def list_archive(ctx, list_key, force):
         console.print("💡 Use [cyan]todoit list unarchive {list_key}[/] to restore it")
     except ValueError as e:
         console.print(f"[red]❌ Error: {e}[/]")
-        if "incomplete tasks" in str(e).lower() and not force:
+        if "incomplete items" in str(e).lower() and not force:
             console.print(
                 f"[yellow]💡 Use [cyan]todoit list archive {list_key} --force[/] to archive anyway[/]"
             )

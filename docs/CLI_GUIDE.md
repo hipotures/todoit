@@ -142,10 +142,10 @@ todoit list all --include-archived
 
 # Example workflow with archive validation
 todoit list create "sprint-1" --title "Sprint 1" --items "Feature A" "Bug fix" "Testing"
-todoit item status "sprint-1" "item_1" --status completed  # Complete some tasks
-todoit list archive "sprint-1"  # Will fail - shows incomplete tasks count
-todoit item status "sprint-1" "item_2" --status completed  # Complete more
-todoit item status "sprint-1" "item_3" --status completed  # Complete all
+todoit item status --list "sprint-1" --item "item_1" --status completed  # Complete some items
+todoit list archive "sprint-1"  # Will fail - shows incomplete items count
+todoit item status --list "sprint-1" --item "item_2" --status completed  # Complete more
+todoit item status --list "sprint-1" --item "item_3" --status completed  # Complete all
 todoit list archive "sprint-1"  # Now succeeds
 ```
 
@@ -178,8 +178,8 @@ todoit list link "api-dev" "api-test" --title "API Testing Tasks"
 
 # Example workflow: Create development and testing lists
 todoit list create "frontend-dev" --title "Frontend Development"
-todoit item add "frontend-dev" "component1" "Build user dashboard"
-todoit item add "frontend-dev" "component2" "Implement authentication"
+todoit item add --list "frontend-dev" --item "component1" --title "Build user dashboard"
+todoit item add --list "frontend-dev" --item "component2" --title "Implement authentication"
 todoit list link "frontend-dev" "frontend-test" --title "Frontend Testing"
 ```
 
@@ -197,80 +197,80 @@ todoit list link "frontend-dev" "frontend-test" --title "Frontend Testing"
 #### Add Items
 ```bash
 # Add item to list
-todoit item add "my-project" "task1" "Implement feature X"
+todoit item add --list "my-project" --item "feature1" --title "Implement feature X"
 
 # Add with metadata
-todoit item add "my-project" "task2" "Write tests" -m '{"priority": "high"}'
+todoit item add --list "my-project" --item "feature2" --title "Write tests" -m '{"priority": "high"}'
 ```
 
 #### Update Status
 ```bash
 # Update item status
-todoit item status "my-project" "task1" --status in_progress
-todoit item status "my-project" "task1" --status completed
+todoit item status --list "my-project" --item "feature1" --status in_progress
+todoit item status --list "my-project" --item "feature1" --status completed
 
 # Add completion states
-todoit item status "my-project" "task1" --status completed -s "quality=excellent"
+todoit item status --list "my-project" --item "feature1" --status completed -s "quality=excellent"
 ```
 
 #### Edit Item Content
 ```bash
-# Edit item description/content
-todoit item edit "my-project" "task1" "Updated task description"
+# Edit item title/description
+todoit item edit --list "my-project" --item "feature1" --title "Updated feature description"
 ```
 
 #### Delete Items
 ```bash
 # Delete item with confirmation prompt
-todoit item delete "my-project" "task1"
+todoit item delete --list "my-project" --item "feature1"
 
 # Force delete without confirmation
-todoit item delete "my-project" "task1" --force
+todoit item delete --list "my-project" --item "feature1" --force
 ```
 
-#### Subtask Operations
+#### Subitem Operations
 ```bash
-# Add subtask
-todoit item add-subtask "my-project" "task1" "subtask1" "Backend implementation"
+# Add subitem
+todoit item add --list "my-project" --item "feature1" --subitem "step1" --title "Backend implementation"
 
-# Show subtasks
-todoit item subtasks "my-project" "task1"
+# Show subitems
+todoit item list --list "my-project" --item "feature1"
 
-# Move task to become subtask
-todoit item move-to-subtask "my-project" "task2" "task1"
-todoit item move-to-subtask "my-project" "task2" "task1" --force  # Skip confirmation
+# Move item to become subitem
+todoit item move-to-subitem --list "my-project" --item "feature2" --parent "feature1"
+todoit item move-to-subitem --list "my-project" --item "feature2" --parent "feature1" --force  # Skip confirmation
 
 # Show hierarchy tree
-todoit item tree "my-project"
-todoit item tree "my-project" "task1"  # Specific item tree
+todoit item tree --list "my-project"
+todoit item tree --list "my-project" --item "feature1"  # Specific item tree
 ```
 
-#### Smart Task Selection
+#### Smart Item Selection
 ```bash
-# Get next pending task
-todoit item next "my-project"
+# Get next pending item
+todoit item next --list "my-project"
 
-# Get next with smart subtask logic
-todoit item next-smart "my-project"
+# Get next with smart subitem logic
+todoit item next-smart --list "my-project"
 ```
 
 #### Search Items by Properties
 ```bash
 # Find all items with specific property value
-todoit item find "my-project" --property "priority" --value "high"
+todoit item find --list "my-project" --property "priority" --value "high"
 # Find items by status property 
-todoit item find "my-project" --property "status" --value "reviewed"
+todoit item find --list "my-project" --property "status" --value "reviewed"
 # Find items by issue ID
-todoit item find "my-project" --property "issue_id" --value "123"
+todoit item find --list "my-project" --property "issue_id" --value "123"
 
 # Limit search results
-todoit item find "my-project" --property "priority" --value "high" --limit 5
+todoit item find --list "my-project" --property "priority" --value "high" --limit 5
 # Get only first match (equivalent to --limit 1)
-todoit item find "my-project" --property "assignee" --value "john" --first
+todoit item find --list "my-project" --property "assignee" --value "john" --first
 
 # Examples of property-based search
-todoit item find "backend" --property "component" --value "api" --limit 3
-todoit item find "frontend" --property "framework" --value "react" --first
+todoit item find --list "backend" --property "component" --value "api" --limit 3
+todoit item find --list "frontend" --property "framework" --value "react" --first
 ```
 
 **Example Search Output:**
@@ -541,24 +541,24 @@ todoit list property delete "my-project" "old-property"
 #### Item Properties (`item property`)
 ```bash
 # Set item property for runtime tracking
-todoit item property set "my-project" "task1" "priority" "high"
-todoit item property set "my-project" "task1" "estimated_hours" "8"
-todoit item property set "my-project" "task1" "assignee" "john_doe"
+todoit item property set --list "my-project" --item "feature1" "priority" "high"
+todoit item property set --list "my-project" --item "feature1" "estimated_hours" "8"
+todoit item property set --list "my-project" --item "feature1" "assignee" "john_doe"
 
 # Get item property
-todoit item property get "my-project" "task1" "priority"
+todoit item property get --list "my-project" --item "feature1" "priority"
 
 # List all properties for a specific item
-todoit item property list "my-project" "task1"
+todoit item property list --list "my-project" --item "feature1"
 
 # List ALL properties for ALL items in the list (NEW!)
-todoit item property list "my-project"
+todoit item property list --list "my-project"
 
 # Display properties in tree format grouped by item (NEW!)
-todoit item property list "my-project" --tree
+todoit item property list --list "my-project" --tree
 
 # Delete item property when no longer needed
-todoit item property delete "my-project" "task1" "assignee"
+todoit item property delete --list "my-project" --item "feature1" "assignee"
 ```
 
 **Example Output:**
@@ -659,10 +659,10 @@ todoit list create "backend" --title "Backend Development"
 todoit list create "frontend" --title "Frontend Development"  
 todoit list create "testing" --title "QA Testing"
 
-# Add tasks with hierarchies
-todoit item add "backend" "api" "Implement REST API"
-todoit item add-subtask "backend" "api" "auth" "Authentication endpoint"
-todoit item add-subtask "backend" "api" "crud" "CRUD operations"
+# Add items with hierarchies
+todoit item add --list "backend" --item "api" --title "Implement REST API"
+todoit item add --list "backend" --item "api" --subitem "auth" --title "Authentication endpoint"
+todoit item add --list "backend" --item "api" --subitem "crud" --title "CRUD operations"
 
 # Create dependencies
 todoit dep add "frontend:components" requires "backend:api" --force
@@ -670,7 +670,7 @@ todoit dep add "testing:integration" requires "backend:api" --force
 todoit dep add "testing:e2e" requires "frontend:components" --force
 
 # Monitor progress
-todoit item next-smart "backend"  # Get next backend task
+todoit item next-smart --list "backend"  # Get next backend item
 todoit stats progress "backend"   # Check backend progress
 todoit dep graph "project"        # Visualize dependencies
 ```
@@ -679,9 +679,9 @@ todoit dep graph "project"        # Visualize dependencies
 ```bash
 # Create development list with tasks
 todoit list create "feature-dev" --title "Feature Development"
-todoit item add "feature-dev" "setup" "Setup development environment"
-todoit item add "feature-dev" "implement" "Implement core functionality"
-todoit item add "feature-dev" "review" "Code review and cleanup"
+todoit item add --list "feature-dev" --item "setup" --title "Setup development environment"
+todoit item add --list "feature-dev" --item "implement" --title "Implement core functionality"
+todoit item add --list "feature-dev" --item "review" --title "Code review and cleanup"
 
 # Add properties to development list
 todoit list property set "feature-dev" "project_id" "proj-123"
@@ -698,13 +698,13 @@ todoit list link "feature-dev" "feature-test" --title "Feature Testing"
 ### Daily Workflow
 ```bash
 # Morning routine: check what to work on
-todoit item next-smart "my-project"
+todoit item next-smart --list "my-project"
 
-# Start working on task
-todoit item status "my-project" "current-task" --status in_progress
+# Start working on item
+todoit item status --list "my-project" --item "current-feature" --status in_progress
 
-# Complete task
-todoit item status "my-project" "current-task" --status completed
+# Complete item
+todoit item status --list "my-project" --item "current-feature" --status completed
 
 # Check overall progress
 todoit stats progress "my-project"
@@ -715,7 +715,7 @@ todoit stats progress "my-project"
 ### Efficient Task Management
 1. **Use hierarchies** for complex tasks - break them into manageable subtasks
 2. **Set up dependencies** between related tasks across different lists  
-3. **Use smart next task** to let the system guide your workflow
+3. **Use smart next item** to let the system guide your workflow
 4. **Regular progress checks** to stay on track
 
 ### CLI Productivity
@@ -756,42 +756,42 @@ Manage completion states (flags) that are set alongside task status changes.
 #### View Current States
 ```bash
 # Show all completion states for an item
-todoit item state list "my-project" "task1"
+todoit item state list --list "my-project" --item "feature1"
 ```
 
 #### Clear States
 ```bash
 # Clear all completion states from an item
-todoit item state clear "my-project" "task1"
+todoit item state clear --list "my-project" --item "feature1"
 
 # Skip confirmation prompt
-todoit item state clear "my-project" "task1" --force
+todoit item state clear --list "my-project" --item "feature1" --force
 ```
 
 #### Remove Specific States
 ```bash
 # Remove one or more specific completion states
-todoit item state remove "my-project" "task1" "quality"
-todoit item state remove "my-project" "task1" "quality" "tested" "reviewed"
+todoit item state remove --list "my-project" --item "feature1" --state-keys "quality"
+todoit item state remove --list "my-project" --item "feature1" --state-keys "quality,tested,reviewed"
 
 # Skip confirmation prompt
-todoit item state remove "my-project" "task1" "unwanted_state" --force
+todoit item state remove --list "my-project" --item "feature1" --state-keys "unwanted_state" --force
 ```
 
 **Example Workflow:**
 ```bash
 # Accidentally set wrong state during status update
-todoit item status "project" "task1" -s wrong_name=true
+todoit item status --list "project" --item "feature1" --status completed -s wrong_name=true
 
 # Check what states exist
-todoit item state list "project" "task1"
+todoit item state list --list "project" --item "feature1"
 # Shows: ❌ wrong_name: false
 
 # Remove the problematic state
-todoit item state remove "project" "task1" "wrong_name"
+todoit item state remove --list "project" --item "feature1" --state-keys "wrong_name"
 
 # Set correct status
-todoit item status "project" "task1" --status completed -s quality=true
+todoit item status --list "project" --item "feature1" --status completed -s quality=true
 ```
 
 **Common Use Cases:**

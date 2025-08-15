@@ -5,6 +5,66 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2025-08-16
+
+### 🔄 BREAKING CHANGES - CLI Complete Refactoring
+
+#### Major CLI Syntax Changes
+- **NEW SYNTAX**: All CLI commands now use explicit switches instead of positional arguments
+  - **OLD**: `todoit item status "list" "item" --status completed`
+  - **NEW**: `todoit item status --list "list" --item "item" --status completed`
+  - **NEW**: `todoit item status --list "list" --item "item" --subitem "subitem" --status completed`
+
+#### Terminology Standardization
+- **BREAKING**: Replaced all "task/subtask" terminology with "item/subitem" throughout CLI interface
+- **Parameter Change**: `--content` parameter renamed to `--title` for better user experience
+- **Command Updates**: All help text, error messages, and examples updated to new terminology
+
+#### Smart Command Logic
+- **Unified Commands**: Single commands now handle both items and subitems automatically
+  - `item add` - Smart add based on `--subitem` parameter presence
+  - `item status` - Smart status update for items or subitems
+  - `item edit` - Smart edit with context detection
+  - `item delete` - Smart delete with unified interface
+- **Context Detection**: Commands automatically determine whether to operate on items or subitems
+
+#### Manager API Updates
+- **BREAKING**: Renamed core manager methods:
+  - `add_subtask()` → `add_subitem()`
+  - `get_subtasks()` → `get_subitems()`
+  - `move_to_subtask()` → `move_to_subitem()`
+- **Updated Documentation**: All docstrings and method descriptions use new terminology
+
+#### Documentation Complete Overhaul
+- **New Reference**: Created comprehensive `docs/REF-20250816.md` with migration guide
+- **Updated CLI Guide**: All examples in `docs/CLI_GUIDE.md` converted to new syntax
+- **No Backward Compatibility**: Clean break approach - old syntax no longer supported
+
+#### Example New Syntax
+```bash
+# Add items and subitems
+todoit item add --list "project" --item "feature1" --title "Implement login"
+todoit item add --list "project" --item "feature1" --subitem "step1" --title "Design UI"
+
+# Update status
+todoit item status --list "project" --item "feature1" --status completed
+todoit item status --list "project" --item "feature1" --subitem "step1" --status completed
+
+# List operations
+todoit item list --list "project"                    # List items
+todoit item list --list "project" --item "feature1" # List subitems
+```
+
+### Benefits
+- **Explicit and Clear**: All parameters use descriptive switches
+- **Unified Interface**: Fewer commands, more consistency
+- **Better Discoverability**: Clear parameter names eliminate ambiguity
+- **Consistent Terminology**: item/subitem throughout entire system
+- **Smart Context**: Commands adapt based on provided parameters
+
+### Migration Required
+⚠️ **NO BACKWARD COMPATIBILITY** - All scripts and workflows must be updated to new syntax
+
 ## [1.25.3] - 2025-08-15
 
 ### Added

@@ -1,6 +1,6 @@
 """
 Item management commands for TODOIT CLI
-Handles add, status, subtasks, tree operations
+Handles add, status, edit, delete, list, tree operations with smart item/subitem detection
 """
 
 import click
@@ -45,18 +45,27 @@ def get_manager(db_path):
 
 @click.group()
 def item():
-    """Manage TODO items"""
+    """Manage TODO items and subitems"""
     pass
 
 
 @item.command("add")
-@click.argument("list_key")
-@click.argument("item_key")
-@click.argument("content")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--item", "item_key", required=True, help="Item key")
+@click.option("--subitem", "subitem_key", help="Subitem key (if adding subitem)")
+@click.option("--title", required=True, help="Item or subitem title/description")
 @click.option("--metadata", "-m", help="Metadata JSON")
 @click.pass_context
-def item_add(ctx, list_key, item_key, content, metadata):
-    """Add item to TODO list"""
+def item_add(ctx, list_key, item_key, subitem_key, title, metadata):
+    """Add item or subitem to TODO list
+    
+    Examples:
+      # Add regular item
+      todoit item add --list "project" --item "feature1" --title "Implement login"
+      
+      # Add subitem
+      todoit item add --list "project" --item "feature1" --subitem "step1" --title "Design UI"
+    """
     manager = get_manager(ctx.obj["db_path"])
 
     # Check if list is accessible based on FORCE_TAGS (environment isolation)
@@ -69,68 +78,67 @@ def item_add(ctx, list_key, item_key, content, metadata):
 
     try:
         meta = json.loads(metadata) if metadata else {}
-        item = manager.add_item(
-            list_key=list_key, item_key=item_key, content=content, metadata=meta
-        )
-        console.print(f"[green]✅ Added item '{item_key}' to list '{list_key}'[/]")
+        
+        if subitem_key:
+            # Adding a subitem - item_key is the parent
+            subitem = manager.add_subitem(
+                list_key=list_key,
+                parent_key=item_key,
+                subitem_key=subitem_key,
+                content=title,  # Map title to content field
+                metadata=meta,
+            )
+            console.print(
+                f"[green]✅ Added subitem '{subitem_key}' to item '{item_key}' in list '{list_key}'[/]"
+            )
+
+            # Show hierarchy for parent
+            try:
+                hierarchy = manager.get_item_hierarchy(list_key, item_key)
+                console.print(f"\n[dim]Current hierarchy:[/]")
+                console.print(f"📋 {item_key}: {hierarchy['item']['content']}")
+                for subitem_info in hierarchy["subitems"]:
+                    st = subitem_info["item"]
+                    status_icon = _get_status_icon(st["status"])
+                    console.print(f"  └─ {status_icon} {st['item_key']}: {st['content']}")
+            except:
+                pass  # Skip hierarchy display if error
+        else:
+            # Adding a regular item
+            item = manager.add_item(
+                list_key=list_key, 
+                item_key=item_key, 
+                content=title,  # Map title to content field
+                metadata=meta
+            )
+            console.print(f"[green]✅ Added item '{item_key}' to list '{list_key}'[/]")
+            
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
 
 
 @item.command("status")
-@click.argument("list_key")
-@click.argument("item_key")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--item", "item_key", required=True, help="Item key")
+@click.option("--subitem", "subitem_key", help="Subitem key (if updating subitem)")
 @click.option(
     "--status",
-    is_flag=False,
-    flag_value="_show_help",
-    default=None,
+    required=True,
+    type=click.Choice(["pending", "in_progress", "completed", "failed"]),
     help="Status: pending, in_progress, completed, failed",
 )
 @click.option("--state", "-s", multiple=True, help="State in format key=value")
 @click.pass_context
-def item_status(ctx, list_key, item_key, status, state):
-    """Update item status"""
-
-    # Check if --status was provided without value (flag_value will be '_show_help')
-    if status == "_show_help":
-        console.print("[bold red]❌ Error:[/] Option '--status' requires an argument.")
-        console.print("[yellow]Available status options:[/]")
-        console.print("  • [green]pending[/] - Task is waiting to be started")
-        console.print("  • [blue]in_progress[/] - Task is currently being worked on")
-        console.print("  • [green]completed[/] - Task has been finished")
-        console.print("  • [red]failed[/] - Task failed or was cancelled")
-        console.print(
-            "\n[dim]Example:[/] todoit item status mylist task001 --status pending"
-        )
-        console.print("\n[dim]For more help:[/] todoit item status --help")
-        return
-
-    # Check if status option was provided
-    if status is None:
-        console.print("[bold red]❌ Error:[/] Option '--status' requires an argument.")
-        console.print("[yellow]Available status options:[/]")
-        console.print("  • [green]pending[/] - Task is waiting to be started")
-        console.print("  • [blue]in_progress[/] - Task is currently being worked on")
-        console.print("  • [green]completed[/] - Task has been finished")
-        console.print("  • [red]failed[/] - Task failed or was cancelled")
-        console.print(
-            "\n[dim]Example:[/] todoit item status mylist task001 --status pending"
-        )
-        console.print("\n[dim]For more help:[/] todoit item status --help")
-        return
-
-    # Validate status value
-    valid_statuses = ["pending", "in_progress", "completed", "failed"]
-    if status not in valid_statuses:
-        console.print(f"[bold red]❌ Error:[/] Invalid status '{status}'.")
-        console.print("[yellow]Available status options:[/]")
-        console.print("  • [green]pending[/] - Task is waiting to be started")
-        console.print("  • [blue]in_progress[/] - Task is currently being worked on")
-        console.print("  • [green]completed[/] - Task has been finished")
-        console.print("  • [red]failed[/] - Task failed or was cancelled")
-        return
-
+def item_status(ctx, list_key, item_key, subitem_key, status, state):
+    """Update item or subitem status
+    
+    Examples:
+      # Update item status
+      todoit item status --list "project" --item "feature1" --status completed
+      
+      # Update subitem status
+      todoit item status --list "project" --item "feature1" --subitem "step1" --status completed
+    """
     manager = get_manager(ctx.obj["db_path"])
 
     # Check if list is accessible based on FORCE_TAGS (environment isolation)
@@ -147,29 +155,262 @@ def item_status(ctx, list_key, item_key, status, state):
             k, v = s.split("=", 1)
             states[k] = v.lower() in ["true", "1", "yes"]
 
+        # Determine target key - if subitem is specified, update the subitem
+        target_key = subitem_key if subitem_key else item_key
+        target_type = "subitem" if subitem_key else "item"
+
         item = manager.update_item_status(
             list_key=list_key,
-            item_key=item_key,
+            item_key=target_key,
             status=status,
             completion_states=states if states else None,
         )
 
-        console.print(f"[green]✅ Updated '{item_key}'[/]")
+        console.print(f"[green]✅ Updated {target_type} '{target_key}' status to {status}[/]")
         if states:
             console.print("States:")
             for k, v in states.items():
                 icon = "✅" if v else "❌"
                 console.print(f"  {icon} {k}")
+                
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command("edit")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--item", "item_key", required=True, help="Item key")
+@click.option("--subitem", "subitem_key", help="Subitem key (if editing subitem)")
+@click.option("--title", required=True, help="New title/description")
+@click.pass_context
+def item_edit(ctx, list_key, item_key, subitem_key, title):
+    """Edit item or subitem title/description
+    
+    Examples:
+      # Edit item
+      todoit item edit --list "project" --item "feature1" --title "Updated feature description"
+      
+      # Edit subitem
+      todoit item edit --list "project" --item "feature1" --subitem "step1" --title "Updated step"
+    """
+    manager = get_manager(ctx.obj["db_path"])
+
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print(
+            "[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]"
+        )
+        return
+
+    try:
+        # Determine target key - if subitem is specified, edit the subitem
+        target_key = subitem_key if subitem_key else item_key
+        target_type = "subitem" if subitem_key else "item"
+
+        # Get current item/subitem
+        current_item = manager.get_item(list_key, target_key)
+        if not current_item:
+            console.print(f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]")
+            return
+
+        # Show changes
+        console.print(f"[yellow]Old title:[/] {current_item.content}")
+        console.print(f"[green]New title:[/] {title}")
+
+        # Update the content
+        updated_item = manager.update_item_content(list_key, target_key, title)
+        console.print(
+            f"[green]✅ Title updated for {target_type} '{target_key}' in list '{list_key}'[/]"
+        )
+
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command("delete")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--item", "item_key", required=True, help="Item key")
+@click.option("--subitem", "subitem_key", help="Subitem key (if deleting subitem)")
+@click.option("--force", is_flag=True, help="Skip confirmation prompt")
+@click.pass_context
+def item_delete(ctx, list_key, item_key, subitem_key, force):
+    """Delete item or subitem permanently
+    
+    Examples:
+      # Delete item
+      todoit item delete --list "project" --item "feature1" --force
+      
+      # Delete subitem
+      todoit item delete --list "project" --item "feature1" --subitem "step1" --force
+    """
+    manager = get_manager(ctx.obj["db_path"])
+
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print(
+            "[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]"
+        )
+        return
+
+    try:
+        # Determine target key - if subitem is specified, delete the subitem
+        target_key = subitem_key if subitem_key else item_key
+        target_type = "subitem" if subitem_key else "item"
+
+        # Get item details for confirmation
+        item = manager.get_item(list_key, target_key)
+        if not item:
+            console.print(f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]")
+            return
+
+        # Show what will be deleted
+        console.print(f"[yellow]About to delete {target_type}:[/] {item.content}")
+        console.print(f"[yellow]From list:[/] {list_key}")
+
+        # Confirm deletion unless force flag is used
+        if not force and not Confirm.ask(
+            f"[red]Are you sure you want to delete this {target_type}? This cannot be undone"
+        ):
+            console.print("[yellow]Deletion cancelled[/]")
+            return
+
+        # Delete the item/subitem
+        success = manager.delete_item(list_key, target_key)
+        if success:
+            console.print(
+                f"[green]✅ {target_type.capitalize()} '{target_key}' deleted from list '{list_key}'[/]"
+            )
+        else:
+            console.print(f"[red]❌ Failed to delete {target_type} '{target_key}'[/]")
+
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command("list")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--item", "item_key", help="Item key (if listing subitems of specific item)")
+@click.pass_context
+def item_list(ctx, list_key, item_key):
+    """List items in a list, or subitems of a specific item
+    
+    Examples:
+      # List all items in a list
+      todoit item list --list "project"
+      
+      # List subitems of specific item
+      todoit item list --list "project" --item "feature1"
+    """
+    manager = get_manager(ctx.obj["db_path"])
+
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print(
+            "[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]"
+        )
+        return
+
+    try:
+        if item_key:
+            # List subitems of specific item
+            subitems = manager.get_subitems(list_key, item_key)
+
+            if not subitems:
+                console.print(
+                    f"[yellow]No subitems found for item '{item_key}' in list '{list_key}'[/]"
+                )
+                return
+
+            # Show parent info
+            parent = manager.get_item(list_key, item_key)
+            console.print(f"📋 Parent: {parent.item_key} - {parent.content}")
+            console.print()
+
+            # Prepare subitems data for unified display
+            data = []
+            for subitem in subitems:
+                status_display = _get_status_display(subitem.status.value)
+
+                states_str = ""
+                if subitem.completion_states:
+                    states = []
+                    for k, v in subitem.completion_states.items():
+                        if isinstance(v, bool):
+                            icon = "✅" if v else "❌"
+                            states.append(f"{icon}{k}")
+                        else:
+                            states.append(f"📝{k}")
+                    states_str = " ".join(states)
+
+                record = {
+                    "Key": subitem.item_key,
+                    "Title": subitem.content,
+                    "Status": status_display,
+                    "States": states_str,
+                }
+                data.append(record)
+
+            # Define column styling
+            columns = {
+                "Key": {"style": "magenta"},
+                "Title": {"style": "white"},
+                "Status": {"style": "yellow"},
+                "States": {"style": "blue"},
+            }
+
+            # Use unified display system
+            _display_records(data, f"Subitems for '{item_key}'", columns)
+
+            # Show completion info
+            completed = sum(1 for st in subitems if st.status.value == "completed")
+            total = len(subitems)
+            percentage = (completed / total * 100) if total > 0 else 0
+            console.print(
+                f"\n[bold]Progress:[/] {percentage:.1f}% ({completed}/{total} completed)"
+            )
+        else:
+            # List all items in the list
+            items = manager.get_list_items(list_key)
+            if not items:
+                _display_records([], f"Items in list '{list_key}'", {})
+                return
+
+            # Prepare items data for unified display
+            data = []
+            for item in items:
+                data.append({
+                    "Position": str(item.position),
+                    "Key": item.item_key,
+                    "Title": item.content,
+                    "Status": _get_status_display(item.status.value),
+                })
+
+            columns = {
+                "Position": {"style": "dim", "width": 8},
+                "Key": {"style": "cyan"},
+                "Title": {"style": "white"},
+                "Status": {"style": "yellow"},
+            }
+
+            _display_records(data, f"Items in list '{list_key}'", columns)
+
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
 
 
 @item.command("next")
-@click.argument("list_key")
-@click.option("--start", is_flag=True, help="Start the task")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--start", is_flag=True, help="Start the item")
 @click.pass_context
 def item_next(ctx, list_key, start):
-    """Get next pending item"""
+    """Get next pending item
+    
+    Example:
+      todoit item next --list "project" --start
+    """
     manager = get_manager(ctx.obj["db_path"])
 
     # Check if list is accessible based on FORCE_TAGS (environment isolation)
@@ -184,13 +425,13 @@ def item_next(ctx, list_key, start):
         item = manager.get_next_pending(list_key)
         if not item:
             # Use unified display for empty case
-            _display_records([], f"Next Task for list '{list_key}'", {})
+            _display_records([], f"Next Item for list '{list_key}'", {})
             return
 
         # Prepare data for unified display
         data = [
             {
-                "Task": item.content,
+                "Item": item.content,
                 "Key": item.item_key,
                 "Position": str(item.position),
                 "Status": _get_status_display(item.status.value),
@@ -198,31 +439,32 @@ def item_next(ctx, list_key, start):
         ]
 
         columns = {
-            "Task": {"style": "cyan"},
+            "Item": {"style": "cyan"},
             "Key": {"style": "magenta"},
             "Position": {"style": "yellow"},
             "Status": {"style": "green"},
         }
 
-        _display_records(data, f"⏭️ Next Task for list '{list_key}'", columns)
+        _display_records(data, f"⏭️ Next Item for list '{list_key}'", columns)
 
-        if start and Confirm.ask("Start this task?"):
+        if start and Confirm.ask("Start this item?"):
             manager.update_item_status(list_key, item.item_key, status="in_progress")
-            console.print("[green]✅ Task started[/]")
+            console.print("[green]✅ Item started[/]")
 
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
 
 
-@item.command("add-subtask")
-@click.argument("list_key")
-@click.argument("parent_key")
-@click.argument("subtask_key")
-@click.argument("content")
-@click.option("--metadata", "-m", help="Metadata JSON")
+@item.command("next-smart")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--start", is_flag=True, help="Start the item")
 @click.pass_context
-def item_add_subtask(ctx, list_key, parent_key, subtask_key, content, metadata):
-    """Add subtask to existing task"""
+def item_next_smart(ctx, list_key, start):
+    """Get next pending item with smart subitem logic
+    
+    Example:
+      todoit item next-smart --list "project" --start
+    """
     manager = get_manager(ctx.obj["db_path"])
 
     # Check if list is accessible based on FORCE_TAGS (environment isolation)
@@ -234,40 +476,59 @@ def item_add_subtask(ctx, list_key, parent_key, subtask_key, content, metadata):
         return
 
     try:
-        meta = json.loads(metadata) if metadata else {}
-        subtask = manager.add_subtask(
-            list_key=list_key,
-            parent_key=parent_key,
-            subtask_key=subtask_key,
-            content=content,
-            metadata=meta,
-        )
-        console.print(
-            f"[green]✅ Added subtask '{subtask_key}' to '{parent_key}' in list '{list_key}'[/]"
-        )
+        item = manager.get_next_pending(list_key, smart_subtasks=True)
+        if not item:
+            # Use unified display for empty case
+            _display_records([], f"Next Smart Item for list '{list_key}'", {})
+            return
 
-        # Show hierarchy for parent
-        try:
-            hierarchy = manager.get_item_hierarchy(list_key, parent_key)
-            console.print(f"\n[dim]Current hierarchy:[/]")
-            console.print(f"📋 {parent_key}: {hierarchy['item']['content']}")
-            for subtask_info in hierarchy["subtasks"]:
-                st = subtask_info["item"]
-                status_icon = _get_status_icon(st["status"])
-                console.print(f"  └─ {status_icon} {st['item_key']}: {st['content']}")
-        except:
-            pass  # Skip hierarchy display if error
+        # Check if this is a subitem
+        is_subitem = getattr(item, "parent_item_id", None) is not None
+        item_type = "Subitem" if is_subitem else "Item"
+
+        # Prepare data for unified display
+        data = [
+            {
+                "Type": item_type,
+                "Item": item.content,
+                "Key": item.item_key,
+                "Position": str(item.position),
+                "Status": _get_status_display(item.status.value),
+            }
+        ]
+
+        columns = {
+            "Type": {"style": "yellow"},
+            "Item": {"style": "cyan"},
+            "Key": {"style": "magenta"},
+            "Position": {"style": "blue"},
+            "Status": {"style": "green"},
+        }
+
+        _display_records(data, f"⏭️ Next Smart Item for list '{list_key}'", columns)
+
+        if start and Confirm.ask("Start this item?"):
+            manager.update_item_status(list_key, item.item_key, status="in_progress")
+            console.print("[green]✅ Item started[/]")
 
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
 
 
 @item.command("tree")
-@click.argument("list_key")
-@click.argument("item_key", required=False)
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--item", "item_key", help="Item key (show hierarchy for specific item)")
 @click.pass_context
 def item_tree(ctx, list_key, item_key):
-    """Show hierarchy tree for item or entire list"""
+    """Show hierarchy tree for item or entire list
+    
+    Examples:
+      # Show tree for entire list
+      todoit item tree --list "project"
+      
+      # Show tree for specific item
+      todoit item tree --list "project" --item "feature1"
+    """
     manager = get_manager(ctx.obj["db_path"])
 
     # Check if list is accessible based on FORCE_TAGS (environment isolation)
@@ -307,8 +568,8 @@ def item_tree(ctx, list_key, item_key):
                     }
                 )
 
-                for subtask_info in item_info["subtasks"]:
-                    flatten_hierarchy(subtask_info, depth + 1, data_list)
+                for subitem_info in item_info.get("subitems", []):
+                    flatten_hierarchy(subitem_info, depth + 1, data_list)
 
                 return data_list
 
@@ -357,7 +618,7 @@ def item_tree(ctx, list_key, item_key):
                         "Position": str(item.position),
                         "Key": item.item_key,
                         "Status": status_icon,
-                        "Task": hierarchy_display,
+                        "Item": hierarchy_display,
                     }
                 )
 
@@ -365,7 +626,7 @@ def item_tree(ctx, list_key, item_key):
                 "Position": {"style": "dim", "width": 8},
                 "Key": {"style": "cyan"},
                 "Status": {"style": "yellow", "width": 6},
-                "Task": {"style": "white"},
+                "Item": {"style": "white"},
             }
 
             _display_records(
@@ -376,14 +637,18 @@ def item_tree(ctx, list_key, item_key):
         console.print(f"[bold red]❌ Error:[/] {e}")
 
 
-@item.command("move-to-subtask")
-@click.argument("list_key")
-@click.argument("item_key")
-@click.argument("new_parent_key")
+@item.command("move-to-subitem")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--item", "item_key", required=True, help="Item key to move")
+@click.option("--parent", "new_parent_key", required=True, help="New parent item key")
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
-def item_move_to_subtask(ctx, list_key, item_key, new_parent_key, force):
-    """Convert existing task to be a subtask of another task"""
+def item_move_to_subitem(ctx, list_key, item_key, new_parent_key, force):
+    """Convert existing item to be a subitem of another item
+    
+    Example:
+      todoit item move-to-subitem --list "project" --item "feature2" --parent "feature1" --force
+    """
     manager = get_manager(ctx.obj["db_path"])
 
     # Check if list is accessible based on FORCE_TAGS (environment isolation)
@@ -405,15 +670,15 @@ def item_move_to_subtask(ctx, list_key, item_key, new_parent_key, force):
 
         console.print(f"[yellow]Moving '{item.item_key}: {item.content}'[/]")
         console.print(
-            f"[yellow]To be subtask of '{parent.item_key}: {parent.content}'[/]"
+            f"[yellow]To be subitem of '{parent.item_key}: {parent.content}'[/]"
         )
 
         if not force and not Confirm.ask("Proceed with move?"):
             return
 
-        moved_item = manager.move_to_subtask(list_key, item_key, new_parent_key)
+        moved_item = manager.move_to_subitem(list_key, item_key, new_parent_key)
         console.print(
-            f"[green]✅ Moved '{item_key}' to be subtask of '{new_parent_key}'[/]"
+            f"[green]✅ Moved '{item_key}' to be subitem of '{new_parent_key}'[/]"
         )
 
         # Show updated hierarchy
@@ -421,8 +686,8 @@ def item_move_to_subtask(ctx, list_key, item_key, new_parent_key, force):
             hierarchy = manager.get_item_hierarchy(list_key, new_parent_key)
             console.print(f"\n[dim]Updated hierarchy:[/]")
             console.print(f"📋 {new_parent_key}: {hierarchy['item']['content']}")
-            for subtask_info in hierarchy["subtasks"]:
-                st = subtask_info["item"]
+            for subitem_info in hierarchy.get("subitems", []):
+                st = subitem_info["item"]
                 status_icon = _get_status_icon(st["status"])
                 console.print(f"  └─ {status_icon} {st['item_key']}: {st['content']}")
         except:
@@ -432,382 +697,8 @@ def item_move_to_subtask(ctx, list_key, item_key, new_parent_key, force):
         console.print(f"[bold red]❌ Error:[/] {e}")
 
 
-@item.command("subtasks")
-@click.argument("list_key")
-@click.argument("parent_key")
-@click.pass_context
-def item_subtasks(ctx, list_key, parent_key):
-    """List all subtasks for a parent task"""
-    manager = get_manager(ctx.obj["db_path"])
-
-    # Check if list is accessible based on FORCE_TAGS (environment isolation)
-    if not _check_list_access(manager, list_key):
-        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
-        console.print(
-            "[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]"
-        )
-        return
-
-    try:
-        subtasks = manager.get_subtasks(list_key, parent_key)
-
-        if not subtasks:
-            console.print(
-                f"[yellow]No subtasks found for '{parent_key}' in list '{list_key}'[/]"
-            )
-            return
-
-        # Show parent info
-        parent = manager.get_item(list_key, parent_key)
-        console.print(f"📋 Parent: {parent.item_key} - {parent.content}")
-        console.print()
-
-        # Prepare subtasks data for unified display
-        data = []
-
-        for subtask in subtasks:
-            status_display = _get_status_display(subtask.status.value)
-
-            states_str = ""
-            if subtask.completion_states:
-                states = []
-                for k, v in subtask.completion_states.items():
-                    if isinstance(v, bool):
-                        icon = "✅" if v else "❌"
-                        states.append(f"{icon}{k}")
-                    else:
-                        states.append(f"📝{k}")
-                states_str = " ".join(states)
-
-            record = {
-                "Key": subtask.item_key,
-                "Task": subtask.content,
-                "Status": status_display,
-                "States": states_str,
-            }
-            data.append(record)
-
-        # Define column styling
-        columns = {
-            "Key": {"style": "magenta"},
-            "Task": {"style": "white"},
-            "Status": {"style": "yellow"},
-            "States": {"style": "blue"},
-        }
-
-        # Use unified display system
-        _display_records(data, f"Subtasks for '{parent_key}'", columns)
-
-        # Show completion info
-        completed = sum(1 for st in subtasks if st.status.value == "completed")
-        total = len(subtasks)
-        percentage = (completed / total * 100) if total > 0 else 0
-        console.print(
-            f"\n[bold]Progress:[/] {percentage:.1f}% ({completed}/{total} completed)"
-        )
-
-    except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
-
-
-@item.command("next-smart")
-@click.argument("list_key")
-@click.option("--start", is_flag=True, help="Start the task")
-@click.pass_context
-def item_next_smart(ctx, list_key, start):
-    """Get next pending item with smart subtask logic"""
-    manager = get_manager(ctx.obj["db_path"])
-
-    # Check if list is accessible based on FORCE_TAGS (environment isolation)
-    if not _check_list_access(manager, list_key):
-        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
-        console.print(
-            "[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]"
-        )
-        return
-
-    try:
-        item = manager.get_next_pending(list_key, smart_subtasks=True)
-        if not item:
-            # Use unified display for empty case
-            _display_records([], f"Next Smart Task for list '{list_key}'", {})
-            return
-
-        # Check if this is a subtask
-        is_subtask = getattr(item, "parent_item_id", None) is not None
-        task_type = "Subtask" if is_subtask else "Task"
-
-        # Prepare data for unified display
-        data = [
-            {
-                "Type": task_type,
-                "Task": item.content,
-                "Key": item.item_key,
-                "Position": str(item.position),
-                "Status": _get_status_display(item.status.value),
-            }
-        ]
-
-        columns = {
-            "Type": {"style": "yellow"},
-            "Task": {"style": "cyan"},
-            "Key": {"style": "magenta"},
-            "Position": {"style": "blue"},
-            "Status": {"style": "green"},
-        }
-
-        _display_records(data, f"⏭️ Next Smart Task for list '{list_key}'", columns)
-
-        if start and Confirm.ask("Start this task?"):
-            manager.update_item_status(list_key, item.item_key, status="in_progress")
-            console.print("[green]✅ Task started[/]")
-
-    except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
-
-
-@item.group("state")
-def item_state():
-    """Manage completion states for TODO items"""
-    pass
-
-
-@item_state.command("list")
-@click.argument("list_key")
-@click.argument("item_key")
-@click.pass_context
-def state_list(ctx, list_key, item_key):
-    """Show all completion states for an item"""
-    manager = get_manager(ctx.obj["db_path"])
-
-    # Check if list is accessible based on FORCE_TAGS (environment isolation)
-    if not _check_list_access(manager, list_key):
-        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
-        console.print(
-            "[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]"
-        )
-        return
-
-    try:
-        item = manager.get_item(list_key, item_key)
-        if not item:
-            console.print(f"[red]Item '{item_key}' not found in list '{list_key}'[/]")
-            return
-
-        console.print(f"[bold]Completion states for '{item_key}':[/]")
-
-        if not item.completion_states:
-            console.print("[dim]No completion states set[/]")
-            return
-
-        for key, value in item.completion_states.items():
-            icon = "✅" if value else "❌"
-            console.print(f"  {icon} {key}: {value}")
-
-    except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
-
-
-@item_state.command("clear")
-@click.argument("list_key")
-@click.argument("item_key")
-@click.option("--force", is_flag=True, help="Skip confirmation prompt")
-@click.pass_context
-def state_clear(ctx, list_key, item_key, force):
-    """Clear all completion states from an item"""
-    manager = get_manager(ctx.obj["db_path"])
-
-    # Check if list is accessible based on FORCE_TAGS (environment isolation)
-    if not _check_list_access(manager, list_key):
-        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
-        console.print(
-            "[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]"
-        )
-        return
-
-    try:
-        item = manager.get_item(list_key, item_key)
-        if not item:
-            console.print(f"[red]Item '{item_key}' not found in list '{list_key}'[/]")
-            return
-
-        if not item.completion_states:
-            console.print("[dim]No completion states to clear[/]")
-            return
-
-        # Show current states
-        console.print(f"[yellow]Current states for '{item_key}':[/]")
-        for key, value in item.completion_states.items():
-            icon = "✅" if value else "❌"
-            console.print(f"  {icon} {key}")
-
-        if not force and not Confirm.ask("Clear all completion states?"):
-            return
-
-        # Clear all states
-        updated_item = manager.clear_item_completion_states(list_key, item_key)
-        console.print(f"[green]✅ Cleared all completion states from '{item_key}'[/]")
-
-    except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
-
-
-@item_state.command("remove")
-@click.argument("list_key")
-@click.argument("item_key")
-@click.argument("state_keys", nargs=-1, required=True)
-@click.option("--force", is_flag=True, help="Skip confirmation prompt")
-@click.pass_context
-def state_remove(ctx, list_key, item_key, state_keys, force):
-    """Remove specific completion states from an item"""
-    manager = get_manager(ctx.obj["db_path"])
-
-    # Check if list is accessible based on FORCE_TAGS (environment isolation)
-    if not _check_list_access(manager, list_key):
-        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
-        console.print(
-            "[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]"
-        )
-        return
-
-    try:
-        item = manager.get_item(list_key, item_key)
-        if not item:
-            console.print(f"[red]Item '{item_key}' not found in list '{list_key}'[/]")
-            return
-
-        if not item.completion_states:
-            console.print("[dim]No completion states to remove[/]")
-            return
-
-        # Check which keys exist
-        existing_keys = []
-        missing_keys = []
-        for key in state_keys:
-            if key in item.completion_states:
-                existing_keys.append(key)
-            else:
-                missing_keys.append(key)
-
-        if missing_keys:
-            console.print(
-                f"[yellow]Warning: Keys not found: {', '.join(missing_keys)}[/]"
-            )
-
-        if not existing_keys:
-            console.print("[red]No valid state keys found to remove[/]")
-            return
-
-        # Show states to be removed
-        console.print(f"[yellow]Removing states from '{item_key}':[/]")
-        for key in existing_keys:
-            value = item.completion_states[key]
-            icon = "✅" if value else "❌"
-            console.print(f"  {icon} {key}")
-
-        if not force and not Confirm.ask(f"Remove {len(existing_keys)} state(s)?"):
-            return
-
-        # Remove specific states
-        updated_item = manager.clear_item_completion_states(
-            list_key, item_key, existing_keys
-        )
-        console.print(
-            f"[green]✅ Removed {len(existing_keys)} completion state(s) from '{item_key}'[/]"
-        )
-
-    except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
-
-
-@item.command("delete")
-@click.argument("list_key")
-@click.argument("item_key")
-@click.option("--force", is_flag=True, help="Skip confirmation prompt")
-@click.pass_context
-def item_delete(ctx, list_key, item_key, force):
-    """Delete an item from a TODO list permanently"""
-    manager = get_manager(ctx.obj["db_path"])
-
-    # Check if list is accessible based on FORCE_TAGS (environment isolation)
-    if not _check_list_access(manager, list_key):
-        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
-        console.print(
-            "[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]"
-        )
-        return
-
-    try:
-        # Get item details for confirmation
-        item = manager.get_item(list_key, item_key)
-        if not item:
-            console.print(f"[red]Item '{item_key}' not found in list '{list_key}'[/]")
-            return
-
-        # Show what will be deleted
-        console.print(f"[yellow]About to delete:[/] {item.content}")
-        console.print(f"[yellow]From list:[/] {list_key}")
-
-        # Confirm deletion unless force flag is used
-        if not force and not Confirm.ask(
-            "[red]Are you sure you want to delete this item? This cannot be undone"
-        ):
-            console.print("[yellow]Deletion cancelled[/]")
-            return
-
-        # Delete the item
-        success = manager.delete_item(list_key, item_key)
-        if success:
-            console.print(
-                f"[green]✅ Item '{item_key}' deleted from list '{list_key}'[/]"
-            )
-        else:
-            console.print(f"[red]❌ Failed to delete item '{item_key}'[/]")
-
-    except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
-
-
-@item.command("edit")
-@click.argument("list_key")
-@click.argument("item_key")
-@click.argument("new_content")
-@click.pass_context
-def item_edit(ctx, list_key, item_key, new_content):
-    """Edit the content/description of a TODO item"""
-    manager = get_manager(ctx.obj["db_path"])
-
-    # Check if list is accessible based on FORCE_TAGS (environment isolation)
-    if not _check_list_access(manager, list_key):
-        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
-        console.print(
-            "[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]"
-        )
-        return
-
-    try:
-        # Get current item
-        current_item = manager.get_item(list_key, item_key)
-        if not current_item:
-            console.print(f"[red]Item '{item_key}' not found in list '{list_key}'[/]")
-            return
-
-        # Show changes
-        console.print(f"[yellow]Old content:[/] {current_item.content}")
-        console.print(f"[green]New content:[/] {new_content}")
-
-        # Update the content
-        updated_item = manager.update_item_content(list_key, item_key, new_content)
-        console.print(
-            f"[green]✅ Content updated for item '{item_key}' in list '{list_key}'[/]"
-        )
-
-    except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
-
-
 @item.command("find")
-@click.argument("list_key")
+@click.option("--list", "list_key", required=True, help="List key")
 @click.option(
     "--property", "property_key", required=True, help="Property name to search for"
 )
@@ -821,9 +712,9 @@ def item_find(ctx, list_key, property_key, property_value, limit, first):
     """Find items by property value
 
     Examples:
-      todoit item find mylist --property status --value reviewed
-      todoit item find mylist --property issue_id --value 123 --first
-      todoit item find mylist --property priority --value high --limit 5
+      todoit item find --list "mylist" --property "status" --value "reviewed"
+      todoit item find --list "mylist" --property "issue_id" --value "123" --first
+      todoit item find --list "mylist" --property "priority" --value "high" --limit 5
     """
     manager = get_manager(ctx.obj["db_path"])
 
@@ -896,7 +787,7 @@ def item_find(ctx, list_key, property_key, property_value, limit, first):
 
 
 @item.command("find-subitems")
-@click.argument("list_key")
+@click.option("--list", "list_key", required=True, help="List key")
 @click.option(
     "--conditions",
     required=True,
@@ -913,13 +804,10 @@ def item_find_subitems(ctx, list_key, conditions, limit):
 
     Examples:
       # Find downloads ready to process (where generation is completed)
-      todoit item find-subitems images --conditions '{"generate":"completed","download":"pending"}' --limit 5
+      todoit item find-subitems --list "images" --conditions '{"generate":"completed","download":"pending"}' --limit 5
 
-      # Find test tasks where design and code are done
-      todoit item find-subitems features --conditions '{"design":"completed","code":"completed","tests":"pending"}'
-
-      # Simple workflow check
-      todoit item find-subitems project --conditions '{"step1":"completed","step2":"pending"}' --limit 3
+      # Find test items where design and code are done
+      todoit item find-subitems --list "features" --conditions '{"design":"completed","code":"completed","tests":"pending"}'
     """
     manager = get_manager(ctx.obj["db_path"])
 
@@ -991,6 +879,202 @@ def item_find_subitems(ctx, list_key, conditions, limit):
         # Show search conditions
         conditions_str = ", ".join([f"{k}={v}" for k, v in conditions_dict.items()])
         console.print(f"[dim]Conditions: {conditions_str}[/]")
+
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.group("state")
+def item_state():
+    """Manage completion states for TODO items"""
+    pass
+
+
+@item_state.command("list")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--item", "item_key", required=True, help="Item key")
+@click.option("--subitem", "subitem_key", help="Subitem key (if checking subitem)")
+@click.pass_context
+def state_list(ctx, list_key, item_key, subitem_key):
+    """Show all completion states for an item or subitem
+    
+    Examples:
+      # Show states for item
+      todoit item state list --list "project" --item "feature1"
+      
+      # Show states for subitem
+      todoit item state list --list "project" --item "feature1" --subitem "step1"
+    """
+    manager = get_manager(ctx.obj["db_path"])
+
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print(
+            "[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]"
+        )
+        return
+
+    try:
+        # Determine target key - if subitem is specified, check the subitem
+        target_key = subitem_key if subitem_key else item_key
+        target_type = "subitem" if subitem_key else "item"
+
+        item = manager.get_item(list_key, target_key)
+        if not item:
+            console.print(f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]")
+            return
+
+        console.print(f"[bold]Completion states for {target_type} '{target_key}':[/]")
+
+        if not item.completion_states:
+            console.print("[dim]No completion states set[/]")
+            return
+
+        for key, value in item.completion_states.items():
+            icon = "✅" if value else "❌"
+            console.print(f"  {icon} {key}: {value}")
+
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item_state.command("clear")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--item", "item_key", required=True, help="Item key")
+@click.option("--subitem", "subitem_key", help="Subitem key (if clearing subitem)")
+@click.option("--force", is_flag=True, help="Skip confirmation prompt")
+@click.pass_context
+def state_clear(ctx, list_key, item_key, subitem_key, force):
+    """Clear all completion states from an item or subitem
+    
+    Examples:
+      # Clear states for item
+      todoit item state clear --list "project" --item "feature1" --force
+      
+      # Clear states for subitem  
+      todoit item state clear --list "project" --item "feature1" --subitem "step1" --force
+    """
+    manager = get_manager(ctx.obj["db_path"])
+
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print(
+            "[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]"
+        )
+        return
+
+    try:
+        # Determine target key - if subitem is specified, clear the subitem
+        target_key = subitem_key if subitem_key else item_key
+        target_type = "subitem" if subitem_key else "item"
+
+        item = manager.get_item(list_key, target_key)
+        if not item:
+            console.print(f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]")
+            return
+
+        if not item.completion_states:
+            console.print("[dim]No completion states to clear[/]")
+            return
+
+        # Show current states
+        console.print(f"[yellow]Current states for {target_type} '{target_key}':[/]")
+        for key, value in item.completion_states.items():
+            icon = "✅" if value else "❌"
+            console.print(f"  {icon} {key}")
+
+        if not force and not Confirm.ask("Clear all completion states?"):
+            return
+
+        # Clear all states
+        updated_item = manager.clear_item_completion_states(list_key, target_key)
+        console.print(f"[green]✅ Cleared all completion states from {target_type} '{target_key}'[/]")
+
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item_state.command("remove")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--item", "item_key", required=True, help="Item key")
+@click.option("--subitem", "subitem_key", help="Subitem key (if removing from subitem)")
+@click.option("--state-keys", required=True, help="Comma-separated state keys to remove")
+@click.option("--force", is_flag=True, help="Skip confirmation prompt")
+@click.pass_context
+def state_remove(ctx, list_key, item_key, subitem_key, state_keys, force):
+    """Remove specific completion states from an item or subitem
+    
+    Examples:
+      # Remove states from item
+      todoit item state remove --list "project" --item "feature1" --state-keys "quality,tested" --force
+      
+      # Remove states from subitem
+      todoit item state remove --list "project" --item "feature1" --subitem "step1" --state-keys "reviewed" --force
+    """
+    manager = get_manager(ctx.obj["db_path"])
+
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print(
+            "[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]"
+        )
+        return
+
+    try:
+        # Parse state keys
+        state_key_list = [key.strip() for key in state_keys.split(",")]
+        
+        # Determine target key - if subitem is specified, remove from the subitem
+        target_key = subitem_key if subitem_key else item_key
+        target_type = "subitem" if subitem_key else "item"
+
+        item = manager.get_item(list_key, target_key)
+        if not item:
+            console.print(f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]")
+            return
+
+        if not item.completion_states:
+            console.print("[dim]No completion states to remove[/]")
+            return
+
+        # Check which keys exist
+        existing_keys = []
+        missing_keys = []
+        for key in state_key_list:
+            if key in item.completion_states:
+                existing_keys.append(key)
+            else:
+                missing_keys.append(key)
+
+        if missing_keys:
+            console.print(
+                f"[yellow]Warning: Keys not found: {', '.join(missing_keys)}[/]"
+            )
+
+        if not existing_keys:
+            console.print("[red]No valid state keys found to remove[/]")
+            return
+
+        # Show states to be removed
+        console.print(f"[yellow]Removing states from {target_type} '{target_key}':[/]")
+        for key in existing_keys:
+            value = item.completion_states[key]
+            icon = "✅" if value else "❌"
+            console.print(f"  {icon} {key}")
+
+        if not force and not Confirm.ask(f"Remove {len(existing_keys)} state(s)?"):
+            return
+
+        # Remove specific states
+        updated_item = manager.clear_item_completion_states(
+            list_key, target_key, existing_keys
+        )
+        console.print(
+            f"[green]✅ Removed {len(existing_keys)} completion state(s) from {target_type} '{target_key}'[/]"
+        )
 
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")

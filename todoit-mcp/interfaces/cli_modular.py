@@ -12,11 +12,11 @@ from rich.console import Console
 from core.manager import TodoManager
 
 # Import command modules
-from .cli.list_commands import list_group
-from .cli.item_commands import item
-from .cli.property_commands import list_property_group, item_property_group
-from .cli.dependency_commands import dep
-from .cli.io_stats_commands import stats, io, schema_info, interactive
+from .cli_modules.list_commands import list_group
+from .cli_modules.item_commands import item
+from .cli_modules.property_commands import list_property_group, item_property_group
+from .cli_modules.dependency_commands import dep
+from .cli_modules.io_stats_commands import stats, io, schema_info, interactive
 
 
 console = Console()

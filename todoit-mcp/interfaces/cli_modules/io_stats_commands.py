@@ -235,8 +235,8 @@ def interactive(ctx):
 [bold]Available commands:[/]
   lists          - Show all lists
   show <key>     - Show list details
-  next <key>     - Next task from list
-  complete <key> <item> - Mark task as completed  
+  next <key>     - Next item from list
+  complete <key> <item> - Mark item as completed  
   progress <key> - Show list progress
   help          - This help
   exit          - Exit

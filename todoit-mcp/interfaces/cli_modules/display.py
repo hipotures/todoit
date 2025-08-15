@@ -342,7 +342,7 @@ def _get_hierarchical_numbering(item, parent_numbers: List[int] = None) -> str:
     if not parent_numbers:
         return str(item.position)
 
-    # For subtasks, append to parent numbering
+    # For subitems, append to parent numbering
     return ".".join(map(str, parent_numbers + [item.position]))
 
 
@@ -457,7 +457,7 @@ def _render_table_view(
             parent_numbers = []
 
         # Generate hierarchical numbering
-        # For root items, use position; for subtasks, use sibling_index (1-based)
+        # For root items, use position; for subitems, use sibling_index (1-based)
         if depth == 0:
             position_number = item.position
         else:

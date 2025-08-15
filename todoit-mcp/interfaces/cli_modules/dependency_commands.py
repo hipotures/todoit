@@ -48,7 +48,7 @@ def dep():
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
 def dep_add(ctx, dependent_ref, requires_word, required_ref, dep_type, force):
-    """Add dependency between tasks from different lists
+    """Add dependency between items from different lists
 
     Example: cli dep add frontend:auth_ui requires backend:auth_api
     """
@@ -95,7 +95,7 @@ def dep_add(ctx, dependent_ref, requires_word, required_ref, dep_type, force):
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
 def dep_remove(ctx, dependent_ref, required_ref, force):
-    """Remove dependency between tasks
+    """Remove dependency between items
 
     Example: cli dep remove frontend:auth_ui backend:auth_api
     """

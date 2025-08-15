@@ -1340,28 +1340,28 @@ class TodoManager:
 
     # ===== SUBTASK MANAGEMENT METHODS (Phase 1) =====
 
-    def add_subtask(
+    def add_subitem(
         self,
         list_key: str,
         parent_key: str,
-        subtask_key: str,
+        subitem_key: str,
         content: str,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> TodoItem:
-        """Add a new subtask to an existing parent task.
+        """Add a new subitem to an existing parent item.
 
         Args:
-            list_key: The key of the list containing the parent task.
-            parent_key: The key of the parent task.
-            subtask_key: The unique key for the new subtask.
-            content: The description or content of the subtask.
+            list_key: The key of the list containing the parent item.
+            parent_key: The key of the parent item.
+            subitem_key: The unique key for the new subitem.
+            content: The description or content of the subitem.
             metadata: Optional dictionary for custom metadata.
 
         Returns:
-            The newly created TodoItem object for the subtask.
+            The newly created TodoItem object for the subitem.
 
         Raises:
-            ValueError: If the list, parent task, or subtask key already exists.
+            ValueError: If the list, parent item, or subitem key already exists.
         """
         # Get list
         db_list = self.db.get_list_by_key(list_key)
@@ -1372,23 +1372,23 @@ class TodoManager:
         parent_item = self.db.get_item_by_key(db_list.id, parent_key)
         if not parent_item:
             raise ValueError(
-                f"Parent task '{parent_key}' not found in list '{list_key}'"
+                f"Parent item '{parent_key}' not found in list '{list_key}'"
             )
 
-        # Check if subtask_key already exists among siblings of same parent
-        existing_item = self.db.get_item_by_key_and_parent(db_list.id, subtask_key, parent_item.id)
+        # Check if subitem_key already exists among siblings of same parent
+        existing_item = self.db.get_item_by_key_and_parent(db_list.id, subitem_key, parent_item.id)
         if existing_item:
             raise ValueError(
-                f"Subtask key '{subtask_key}' already exists for parent '{parent_key}'"
+                f"Subitem key '{subitem_key}' already exists for parent '{parent_key}'"
             )
 
-        # Get next position for subtask among siblings of same parent
+        # Get next position for subitem among siblings of same parent
         position = self.db.get_next_position(db_list.id, parent_item_id=parent_item.id)
 
-        # Create subtask
+        # Create subitem
         item_data = {
             "list_id": db_list.id,
-            "item_key": subtask_key,
+            "item_key": subitem_key,
             "content": content,
             "position": position,
             "status": "pending",
@@ -1408,25 +1408,25 @@ class TodoManager:
                 new_value={"content": content, "parent": parent_key},
             )
 
-            # Synchronize parent status (adding first subtask changes parent status)
+            # Synchronize parent status (adding first subitem changes parent status)
             self._sync_parent_status(parent_item.id, session)
 
             session.commit()
 
         return self._db_to_model(db_item, TodoItem)
 
-    def get_subtasks(self, list_key: str, parent_key: str) -> List[TodoItem]:
-        """Get all direct subtasks for a given parent task.
+    def get_subitems(self, list_key: str, parent_key: str) -> List[TodoItem]:
+        """Get all direct subitems for a given parent item.
 
         Args:
-            list_key: The key of the list containing the parent task.
-            parent_key: The key of the parent task.
+            list_key: The key of the list containing the parent item.
+            parent_key: The key of the parent item.
 
         Returns:
-            A list of TodoItem objects representing the subtasks.
+            A list of TodoItem objects representing the subitems.
 
         Raises:
-            ValueError: If the list or parent task is not found.
+            ValueError: If the list or parent item is not found.
         """
         # Get list
         db_list = self.db.get_list_by_key(list_key)
@@ -1437,7 +1437,7 @@ class TodoManager:
         parent_item = self.db.get_item_by_key(db_list.id, parent_key)
         if not parent_item:
             raise ValueError(
-                f"Parent task '{parent_key}' not found in list '{list_key}'"
+                f"Parent item '{parent_key}' not found in list '{list_key}'"
             )
 
         # Get children
@@ -1445,14 +1445,14 @@ class TodoManager:
         return [self._db_to_model(child, TodoItem) for child in children]
 
     def get_item_hierarchy(self, list_key: str, item_key: str) -> Dict[str, Any]:
-        """Get the full hierarchy for an item, including all its subtasks recursively.
+        """Get the full hierarchy for an item, including all its subitems recursively.
 
         Args:
             list_key: The key of the list containing the item.
             item_key: The key of the root item of the hierarchy.
 
         Returns:
-            A dictionary representing the item and its nested subtasks.
+            A dictionary representing the item and its nested subitems.
 
         Raises:
             ValueError: If the list or item is not found.
@@ -1474,7 +1474,7 @@ class TodoManager:
 
             hierarchy = {
                 "item": item_model.to_dict(),
-                "subtasks": [build_hierarchy(child) for child in children],
+                "subitems": [build_hierarchy(child) for child in children],
             }
 
             return hierarchy
@@ -1738,13 +1738,13 @@ class TodoManager:
 
         return False
 
-    def move_to_subtask(
+    def move_to_subitem(
         self, list_key: str, item_key: str, new_parent_key: str
     ) -> TodoItem:
-        """Convert an existing root task to be a subtask of another task.
+        """Convert an existing root item to be a subitem of another item.
 
         Args:
-            list_key: The key of the list containing the tasks.
+            list_key: The key of the list containing the items.
             item_key: The key of the item to move.
             new_parent_key: The key of the item that will become the new parent.
 
@@ -1768,17 +1768,17 @@ class TodoManager:
         parent_item = self.db.get_item_by_key(db_list.id, new_parent_key)
         if not parent_item:
             raise ValueError(
-                f"Parent task '{new_parent_key}' not found in list '{list_key}'"
+                f"Parent item '{new_parent_key}' not found in list '{list_key}'"
             )
 
         # Prevent circular references
         if parent_item.id == db_item.id:
-            raise ValueError("Cannot make item a subtask of itself")
+            raise ValueError("Cannot make item a subitem of itself")
 
         # Check if new parent is not already a descendant of this item
         parent_path = self.db.get_item_path(parent_item.id)
         if any(path_item.id == db_item.id for path_item in parent_path):
-            raise ValueError("Cannot create circular reference in subtask hierarchy")
+            raise ValueError("Cannot create circular reference in subitem hierarchy")
 
         # Update the item to have the new parent
         old_parent_id = db_item.parent_item_id

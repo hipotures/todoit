@@ -35,15 +35,15 @@ def report_group():
 )
 @click.pass_context
 def report_errors(ctx, list_filter):
-    """Show all failed tasks from active lists with full details
+    """Show all failed items from active lists with full details
 
-    This command provides a centralized view of all tasks with 'failed' status
-    across all active (non-archived) lists. Includes task content, properties,
+    This command provides a centralized view of all items with 'failed' status
+    across all active (non-archived) lists. Includes item content, properties,
     and context information to help with troubleshooting and project management.
 
     Examples:
     \b
-        todoit reports errors                           # All failed tasks
+        todoit reports errors                           # All failed items
         todoit reports errors --filter "^\\d{4}_.*"     # Only NNNN_* lists
         todoit reports errors --filter ".*sprint.*"     # Lists containing "sprint"
         TODOIT_OUTPUT_FORMAT=json todoit reports errors # JSON output for scripts
@@ -80,10 +80,10 @@ def report_errors(ctx, list_filter):
         if not failed_items:
             if list_filter:
                 console.print(
-                    f"[yellow]No failed tasks found in active lists matching pattern: {list_filter}[/]"
+                    f"[yellow]No failed items found in active lists matching pattern: {list_filter}[/]"
                 )
             else:
-                console.print(f"[green]✅ No failed tasks found in active lists[/]")
+                console.print(f"[green]✅ No failed items found in active lists[/]")
             return
 
         # Prepare data for display
@@ -136,7 +136,7 @@ def report_errors(ctx, list_filter):
             # Count unique lists
             unique_lists = len(set(item["list_key"] for item in failed_items))
 
-            console.print(f"\n[bold]Total failed tasks:[/] {len(failed_items)}")
+            console.print(f"\n[bold]Total failed items:[/] {len(failed_items)}")
             console.print(f"[bold]From active lists:[/] {unique_lists}")
 
             if list_filter:
@@ -146,7 +146,7 @@ def report_errors(ctx, list_filter):
             has_properties = any(item.get("properties") for item in failed_items)
             if has_properties:
                 console.print(
-                    f"[dim]💡 Some tasks have additional properties - use JSON output for full details[/]"
+                    f"[dim]💡 Some items have additional properties - use JSON output for full details[/]"
                 )
 
     except Exception as e:
