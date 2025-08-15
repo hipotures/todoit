@@ -72,29 +72,27 @@ class TestHierarchicalNumberingCLI:
         output = result.stdout
         
         # Verify hierarchical numbering is correct
-        # Expected numbering pattern:
+        # Expected numbering pattern (after positioning fix):
         # │ 1        │ task1      │ Main Task 1              │ ⏳     │ 0% (0/3)   │
         # │ 1.1      │ task1_sub1 │   └─ Subtask 1 for Task1 │ ⏳     │            │
         # │ 1.2      │ task1_sub2 │   └─ Subtask 2 for Task1 │ ⏳     │            │
         # │ 1.3      │ task1_sub3 │   └─ Subtask 3 for Task1 │ ⏳     │            │
-        # │ 3        │ task2      │ Main Task 2              │ ⏳     │ 0% (0/2)   │
-        # │ 3.1      │ task2_sub1 │   └─ Subtask 1 for Task2 │ ⏳     │            │
-        # │ 3.2      │ task2_sub2 │   └─ Subtask 2 for Task2 │ ⏳     │            │
+        # │ 2        │ task2      │ Main Task 2              │ ⏳     │ 0% (0/2)   │
+        # │ 2.1      │ task2_sub1 │   └─ Subtask 1 for Task2 │ ⏳     │            │
+        # │ 2.2      │ task2_sub2 │   └─ Subtask 2 for Task2 │ ⏳     │            │
 
         # Check for correct numbering patterns
         assert "│ 1        │ task1      │" in output, "Task1 should have number 1"
         assert "│ 1.1      │ task1_sub1 │" in output, "Task1_sub1 should have number 1.1"
         assert "│ 1.2      │ task1_sub2 │" in output, "Task1_sub2 should have number 1.2"
         assert "│ 1.3      │ task1_sub3 │" in output, "Task1_sub3 should have number 1.3"
-        assert "│ 3        │ task2      │" in output, "Task2 should have number 3"
-        assert "│ 3.1      │ task2_sub1 │" in output, "Task2_sub1 should have number 3.1"
-        assert "│ 3.2      │ task2_sub2 │" in output, "Task2_sub2 should have number 3.2"
+        assert "│ 2        │ task2      │" in output, "Task2 should have number 2"
+        assert "│ 2.1      │ task2_sub1 │" in output, "Task2_sub1 should have number 2.1"
+        assert "│ 2.2      │ task2_sub2 │" in output, "Task2_sub2 should have number 2.2"
         
-        # Verify wrong patterns don't exist (old bug patterns)
+        # Verify wrong patterns don't exist (old bug patterns would have continuous numbering)
         assert "│ 1.2      │ task1_sub1 │" not in output, "Task1_sub1 should NOT have wrong numbering"
-        assert "│ 1.3      │ task1_sub2 │" not in output, "Task1_sub2 should NOT have wrong numbering"
-        assert "│ 3.4      │ task2_sub1 │" not in output, "Task2_sub1 should NOT have wrong numbering"
-        assert "│ 3.5      │ task2_sub2 │" not in output, "Task2_sub2 should NOT have wrong numbering"
+        assert "│ 1.4      │ task1_sub2 │" not in output, "Task1_sub2 should NOT have wrong numbering"
 
     def test_tree_view_numbering_consistency(self, temp_db_path):
         """Test that tree view and table view are consistent"""

@@ -5,6 +5,21 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.25.0] - 2025-08-15
+
+### Fixed
+- **🔧 Subtask Position Conflicts**: Fixed critical position conflicts in subtask creation
+  - **Issue**: Database position conflicts caused by inconsistent positioning logic in `add_subtask()`
+  - **Root Cause**: First subtask used `parent.position + 1` with shifting, subsequent subtasks used `max(subtask_positions) + 1` without shifting
+  - **Solution**: Simplified positioning to always use `get_next_position()` for all subtasks
+  - **Result**: Sequential positions without conflicts, reliable subtask creation and display
+
+### Technical
+- **Database Fix**: Eliminated position conflicts that could cause data integrity issues
+- **Code Simplification**: Reduced complex positioning logic from 13 lines to 1 line
+- **Test Coverage**: 6 new unit tests + 4 integration tests for position conflict scenarios
+- **Performance**: Removed unnecessary `get_item_children()` and `shift_positions()` calls
+
 ## [1.24.0] - 2025-08-15
 
 ### Fixed

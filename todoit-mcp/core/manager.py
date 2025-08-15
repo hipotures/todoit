@@ -1381,19 +1381,8 @@ class TodoManager:
                 f"Item key '{subtask_key}' already exists in list '{list_key}'"
             )
 
-        # Get next position for subtask (after existing subtasks of this parent)
-        existing_subtasks = self.db.get_item_children(parent_item.id)
-        if existing_subtasks:
-            # Position after the last subtask
-            max_subtask_position = max(
-                subtask.position for subtask in existing_subtasks
-            )
-            position = max_subtask_position + 1
-        else:
-            # First subtask gets position after parent
-            position = parent_item.position + 1
-            # Shift other items to make room
-            self.db.shift_positions(db_list.id, position, 1)
+        # Get next position for subtask (always at the end to avoid conflicts)
+        position = self.db.get_next_position(db_list.id)
 
         # Create subtask
         item_data = {
