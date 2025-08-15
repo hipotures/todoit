@@ -113,7 +113,7 @@ class TodoItemDB(Base):
         Index("idx_todo_items_status", "status"),
         Index("idx_todo_items_position", "list_id", "position"),
         Index("idx_todo_items_parent", "parent_item_id"),
-        Index("idx_todo_items_unique_key", "list_id", "item_key", unique=True),
+        Index("idx_todo_items_unique_key", "list_id", "parent_item_id", "item_key", unique=True),
         Index("idx_todo_items_parent_status", "parent_item_id", "status"),
     )
 
@@ -461,6 +461,16 @@ class Database:
                 .filter(TodoItemDB.list_id == list_id, TodoItemDB.item_key == item_key)
                 .first()
             )
+
+    def get_item_by_key_and_parent(self, list_id: int, item_key: str, parent_item_id: Optional[int] = None) -> Optional[TodoItemDB]:
+        """Get item by list_id, item_key and parent_item_id for precise subtask lookup"""
+        with self.get_session() as session:
+            query = session.query(TodoItemDB).filter(
+                TodoItemDB.list_id == list_id,
+                TodoItemDB.item_key == item_key,
+                TodoItemDB.parent_item_id == parent_item_id
+            )
+            return query.first()
 
     def get_list_items(
         self, list_id: int, status: Optional[str] = None, limit: Optional[int] = None

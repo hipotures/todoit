@@ -5,6 +5,28 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.25.3] - 2025-08-15
+
+### Added
+- **🔄 Duplicate Subtask Keys**: Enhanced subtask flexibility by allowing the same key across different parents
+  - **Feature**: Subtasks can now use identical keys (e.g., `image_gen`, `image_dwn`) for different parent tasks
+  - **Use Case**: Enables standardized workflows where multiple scenes/items share common subtask patterns
+  - **Example**: `scene_0019` and `scene_0020` can both have `image_gen` and `image_dwn` subtasks
+  - **Search Enhancement**: `todo_find_subitems_by_status` now works with generic keys like `{"image_gen":"completed","image_dwn":"pending"}`
+
+### Technical
+- **Database Schema**: Modified unique constraint from `(list_id, item_key)` to `(list_id, parent_item_id, item_key)`
+- **New Function**: Added `get_item_by_key_and_parent()` for precise subtask lookup with parent context
+- **Validation Logic**: Updated `add_subtask()` to check uniqueness only among siblings (same parent)
+- **Backward Compatibility**: Main task keys remain unique within each list as before
+- **Test Coverage**: 5 comprehensive tests covering duplicate keys, constraint validation, and search functionality
+
+### Benefits
+- **Workflow Standardization**: Common subtask patterns can be reused across different parent tasks
+- **MCP Integration**: Claude Code can now use generic subtask keys in `todo_find_subitems_by_status`
+- **Reduced Naming Complexity**: No need for unique prefixes like `scene_0019_image_gen`
+- **Data Integrity**: Maintains all existing constraints while providing new flexibility
+
 ## [1.25.2] - 2025-08-15
 
 ### Fixed

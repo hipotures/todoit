@@ -73,7 +73,8 @@ class TestSubtaskPositioning:
         
         # Setup mocks
         mock_manager.db.get_list_by_key.return_value = mock_list
-        mock_manager.db.get_item_by_key.side_effect = [mock_parent_item, None]  # parent exists, subtask doesn't
+        mock_manager.db.get_item_by_key.return_value = mock_parent_item  # parent exists
+        mock_manager.db.get_item_by_key_and_parent.return_value = None  # subtask doesn't exist for this parent
         mock_manager.db.get_next_position.return_value = 5  # Next available position
         mock_manager.db.create_item.return_value = mock_db_item
         mock_manager.db.get_session.return_value.__enter__ = Mock(return_value=Mock())
@@ -101,7 +102,8 @@ class TestSubtaskPositioning:
         
         # Setup mocks
         mock_manager.db.get_list_by_key.return_value = mock_list
-        mock_manager.db.get_item_by_key.side_effect = [mock_parent_item, None]
+        mock_manager.db.get_item_by_key.return_value = mock_parent_item
+        mock_manager.db.get_item_by_key_and_parent.return_value = None
         mock_manager.db.get_next_position.return_value = 4
         mock_manager.db.create_item.return_value = mock_db_item
         mock_manager.db.get_session.return_value.__enter__ = Mock(return_value=Mock())
@@ -125,7 +127,8 @@ class TestSubtaskPositioning:
         ]
         
         mock_manager.db.get_list_by_key.return_value = mock_list
-        mock_manager.db.get_item_by_key.side_effect = [mock_parent_item, None]
+        mock_manager.db.get_item_by_key.return_value = mock_parent_item
+        mock_manager.db.get_item_by_key_and_parent.return_value = None
         mock_manager.db.get_item_children.return_value = existing_subtasks  # This should be ignored now
         mock_manager.db.get_next_position.return_value = 10  # Next available position
         mock_manager.db.create_item.return_value = mock_db_item
@@ -149,7 +152,8 @@ class TestSubtaskPositioning:
         
         # Setup mocks
         mock_manager.db.get_list_by_key.return_value = mock_list
-        mock_manager.db.get_item_by_key.side_effect = [mock_parent_item, None, mock_parent_item, None]
+        mock_manager.db.get_item_by_key.return_value = mock_parent_item
+        mock_manager.db.get_item_by_key_and_parent.return_value = None
         mock_manager.db.get_next_position.side_effect = [4, 5]  # Incrementing positions
         mock_manager.db.create_item.return_value = mock_db_item
         mock_manager.db.get_session.return_value.__enter__ = Mock(return_value=Mock())
@@ -191,7 +195,8 @@ class TestSubtaskPositioning:
         
         # Setup mocks
         mock_manager.db.get_list_by_key.return_value = mock_list
-        mock_manager.db.get_item_by_key.side_effect = [mock_parent_item, None]
+        mock_manager.db.get_item_by_key.return_value = mock_parent_item
+        mock_manager.db.get_item_by_key_and_parent.return_value = None
         mock_manager.db.get_next_position.return_value = 3
         mock_manager.db.create_item.return_value = mock_db_item
         mock_manager.db.get_session.return_value.__enter__ = Mock(return_value=Mock())

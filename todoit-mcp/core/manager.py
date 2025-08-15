@@ -1375,11 +1375,11 @@ class TodoManager:
                 f"Parent task '{parent_key}' not found in list '{list_key}'"
             )
 
-        # Check if subtask_key already exists in the list
-        existing_item = self.db.get_item_by_key(db_list.id, subtask_key)
+        # Check if subtask_key already exists among siblings of same parent
+        existing_item = self.db.get_item_by_key_and_parent(db_list.id, subtask_key, parent_item.id)
         if existing_item:
             raise ValueError(
-                f"Item key '{subtask_key}' already exists in list '{list_key}'"
+                f"Subtask key '{subtask_key}' already exists for parent '{parent_key}'"
             )
 
         # Get next position for subtask among siblings of same parent
