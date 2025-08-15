@@ -5,6 +5,21 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.25.2] - 2025-08-15
+
+### Fixed
+- **📋 Property List Hierarchical Sorting**: Fixed `todoit item property list` to display properties in hierarchical order
+  - **Issue**: Properties were sorted alphabetically by item_key instead of following list hierarchy
+  - **Root Cause**: `get_all_items_properties()` used alphabetical sorting instead of hierarchical position
+  - **Solution**: Added `item_order` tracking to maintain hierarchical sequence from `get_list_items()`
+  - **Result**: Properties now display in logical task order (1,2,3...) matching list structure
+
+### Technical
+- **Enhanced Sorting Logic**: Modified `get_all_items_properties()` to use `(item_order, property_key)` for sorting
+- **Maintained Structure**: Preserved alphabetical sorting of properties within each item
+- **Test Coverage**: 5 new unit tests for hierarchical property sorting scenarios
+- **Performance**: No performance impact - leverages existing hierarchical ordering from database
+
 ## [1.25.1] - 2025-08-15
 
 ### Fixed

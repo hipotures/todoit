@@ -1221,7 +1221,7 @@ class TodoManager:
             items = items[:limit]
 
         result = []
-        for item in items:
+        for item_order, item in enumerate(items):
             # Get all properties for this item
             properties = self.db.get_item_properties(item.id)
             for prop_key, prop_value in properties.items():
@@ -1231,11 +1231,12 @@ class TodoManager:
                         "property_key": prop_key,
                         "property_value": prop_value,
                         "status": item.status,
+                        "item_order": item_order,  # Add hierarchical order for sorting
                     }
                 )
 
-        # Sort by item_key first, then by property_key for consistent ordering
-        result.sort(key=lambda x: (x["item_key"], x["property_key"]))
+        # Sort by hierarchical item order first, then by property_key for consistent ordering
+        result.sort(key=lambda x: (x["item_order"], x["property_key"]))
         return result
 
     def find_items_by_property(
