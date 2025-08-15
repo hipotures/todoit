@@ -554,18 +554,50 @@ def _render_table_view(
     if has_states:
         columns["States"] = {"style": "green"}
 
-    # Use unified display system
-    _display_records(data, f"📋 {todo_list.title} (ID: {todo_list.id})", columns)
-
-    # Properties display
-    if properties:
-        console.print()
-        prop_data = [{"Key": k, "Value": v} for k, v in properties.items()]
-        prop_columns = {
-            "Key": {"style": "cyan", "width": 20},
-            "Value": {"style": "white"},
+    # Check if we're in JSON mode to handle output differently
+    output_format = _get_output_format()
+    
+    if output_format == "json":
+        # For JSON output, combine everything into one JSON object
+        combined_output = {
+            "list_info": {
+                "id": todo_list.id,
+                "list_key": todo_list.list_key,
+                "title": todo_list.title,
+                "created_at": todo_list.created_at.isoformat() if todo_list.created_at else None,
+                "metadata": todo_list.metadata
+            },
+            "items": {
+                "title": f"📋 {todo_list.title} (ID: {todo_list.id})",
+                "count": len(data),
+                "data": _prepare_data_for_serialization(data)
+            }
         }
-        _display_records(prop_data, "Properties", prop_columns)
+        
+        # Add properties if they exist
+        if properties:
+            prop_data = [{"Key": k, "Value": v} for k, v in properties.items()]
+            combined_output["properties"] = {
+                "title": "Properties",
+                "count": len(prop_data),
+                "data": _prepare_data_for_serialization(prop_data)
+            }
+        
+        # Print single JSON
+        print(json.dumps(combined_output, indent=2, ensure_ascii=False))
+    else:
+        # For non-JSON outputs, use the original separate display method
+        _display_records(data, f"📋 {todo_list.title} (ID: {todo_list.id})", columns)
+
+        # Properties display
+        if properties:
+            console.print()
+            prop_data = [{"Key": k, "Value": v} for k, v in properties.items()]
+            prop_columns = {
+                "Key": {"style": "cyan", "width": 20},
+                "Value": {"style": "white"},
+            }
+            _display_records(prop_data, "Properties", prop_columns)
 
 
 # Live display functions for list_live command

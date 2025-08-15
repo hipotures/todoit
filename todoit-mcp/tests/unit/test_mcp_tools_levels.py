@@ -58,18 +58,20 @@ class TestMCPToolsLevels:
 
             # Test that STANDARD tools should register
             assert should_register_tool("todo_add_subtask") == True
-            assert should_register_tool("todo_archive_list") == True
             assert should_register_tool("todo_quick_add") == True
             assert should_register_tool("todo_set_list_property") == True
+            assert should_register_tool("todo_find_subitems_by_status") == True
 
-            # Test that MAX-only tools should NOT register
+            # Test that MAX-only tools should NOT register (including moved archive tools)
             assert should_register_tool("todo_add_item_dependency") == False
             assert should_register_tool("todo_delete_list") == False
             assert should_register_tool("todo_delete_item") == False
+            assert should_register_tool("todo_archive_list") == False
+            assert should_register_tool("todo_unarchive_list") == False
 
-            # Verify STANDARD has 25 tools (10 MINIMAL + 15 additional)
-            assert len(TOOLS_STANDARD) == 25
-            assert len(TOOLS_STANDARD) - len(TOOLS_MINIMAL) == 15
+            # Verify STANDARD has 24 tools (10 MINIMAL + 14 additional)
+            assert len(TOOLS_STANDARD) == 24
+            assert len(TOOLS_STANDARD) - len(TOOLS_MINIMAL) == 14
 
     def test_tools_max_level(self):
         """Test that MAX level registers all tools"""
@@ -211,15 +213,14 @@ class TestMCPToolsLevels:
         assert "todo_add_subtask" in TOOLS_STANDARD
         assert "todo_get_subtasks" in TOOLS_STANDARD
 
-        # Should add archive management
-        assert "todo_archive_list" in TOOLS_STANDARD
-        assert "todo_unarchive_list" in TOOLS_STANDARD
-
-        # Should add basic properties
+        # Should add basic properties (including search functions)
         assert "todo_set_list_property" in TOOLS_STANDARD
         assert "todo_get_list_property" in TOOLS_STANDARD
         assert "todo_set_item_property" in TOOLS_STANDARD
         assert "todo_get_item_property" in TOOLS_STANDARD
+        assert "todo_find_items_by_property" in TOOLS_STANDARD
+        assert "todo_find_subitems_by_status" in TOOLS_STANDARD
+        assert "todo_get_all_items_properties" in TOOLS_STANDARD
 
         # Should add basic tagging
         assert "todo_create_tag" in TOOLS_STANDARD

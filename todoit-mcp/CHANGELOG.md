@@ -5,6 +5,38 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.0] - 2025-08-15
+
+### Enhanced
+- **🚀 CLI JSON Output**: Fixed `todoit list show` to return single unified JSON instead of multiple separate JSONs in JSON mode
+  - **Unified Structure**: Combined `list_info`, `items`, and `properties` sections in one JSON response  
+  - **Backward Compatible**: Table, YAML, and XML formats remain unchanged
+  - **Improved Integration**: Better support for automation and API consumption
+
+- **⚡ Enhanced MCP `todo_get_list`**: Extended with optional parameters for complete data retrieval
+  - **New Parameters**: `include_items` and `include_properties` (both default to `True`)
+  - **Single Call Efficiency**: Get list, items, and properties in one MCP call instead of three
+  - **Flexible Usage**: Can retrieve only specific data sections as needed
+  - **Backward Compatible**: Default behavior includes everything, maintaining existing workflows
+
+### Configuration
+- **🛡️ MCP Tools Reorganization**: Moved archive management tools from STANDARD to MAX level
+  - **Enhanced Security**: `todo_archive_list` and `todo_unarchive_list` now require MAX level
+  - **Updated Counts**: STANDARD level now has 24 tools (down from 25), MAX level has 58 tools (up from 57)
+  - **Better Token Efficiency**: STANDARD level now provides 59% token savings (improved from 55%)
+
+### Documentation
+- **📚 Updated MCP Tools Documentation**: Complete documentation update for enhanced `todo_get_list`
+  - **New Usage Examples**: Comprehensive examples showing all parameter combinations
+  - **Updated Tool Counts**: Corrected all tool level counts and performance metrics
+  - **Enhanced Clarity**: Better organization and more detailed explanations
+
+### Testing
+- **🧪 Comprehensive Test Coverage**: Added robust test suites for all new functionality
+  - **JSON Output Tests**: 9 test scenarios covering CLI and MCP JSON output fixes
+  - **Enhanced MCP Tests**: Complete coverage of new `todo_get_list` parameter combinations
+  - **Backward Compatibility**: Verified no breaking changes in existing functionality
+
 ## [1.21.0] - 2025-08-15
 
 ### Added

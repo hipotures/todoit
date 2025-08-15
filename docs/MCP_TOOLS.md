@@ -2,7 +2,7 @@
 
 ## Overview
 
-TODOIT MCP provides 57 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
+TODOIT MCP provides 58 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
 
 ## 🎛️ Tools Level Configuration
 
@@ -13,8 +13,8 @@ TODOIT MCP provides 57 comprehensive tools for Claude Code integration, offering
 | Level | Tools Count | Token Savings | Use Case |
 |-------|-------------|---------------|----------|
 | **MINIMAL** | 10 tools | 82% savings | Essential operations only, maximum performance |
-| **STANDARD** | 25 tools | 56% savings | Balanced functionality (default) | 
-| **MAX** | 57 tools | 0% savings | Complete feature set |
+| **STANDARD** | 24 tools | 59% savings | Balanced functionality (default) | 
+| **MAX** | 58 tools | 0% savings | Complete feature set |
 
 ### 🔧 Configuration
 
@@ -27,17 +27,17 @@ export TODOIT_MCP_TOOLS_LEVEL=minimal
 # Standard set (25 tools) - Balanced functionality (DEFAULT)
 export TODOIT_MCP_TOOLS_LEVEL=standard
 
-# Complete set (57 tools) - All features
+# Complete set (58 tools) - All features
 export TODOIT_MCP_TOOLS_LEVEL=max
 ```
 
-**Default**: `STANDARD` level (25 tools) for optimal balance of functionality vs performance.
+**Default**: `STANDARD` level (24 tools) for optimal balance of functionality vs performance.
 
 ### ⚡ Performance Impact
 
 - **MINIMAL**: ~500-1000 tokens context vs 3000+ for MAX
-- **STANDARD**: ~1500-2000 tokens context (25 tools)
-- **MAX**: ~3000+ tokens context (57 tools - full feature set)
+- **STANDARD**: ~1300-1800 tokens context (24 tools)
+- **MAX**: ~3000+ tokens context (58 tools - full feature set)
 
 ### 🛡️ Security Benefits
 
@@ -57,7 +57,7 @@ Core functionality for list and item management.
 
 #### List Management
 - **`todo_create_list`** - Create new TODO list with optional initial items
-- **`todo_get_list`** - Retrieve list details by key or ID  
+- **`todo_get_list`** - 🆕 **Enhanced** - Retrieve list details with optional items and properties in single call  
 - **`todo_delete_list`** - Delete list with dependency validation
 - **`todo_archive_list`** - Archive list (hide from normal view) with completion validation 
 - **`todo_unarchive_list`** - Unarchive list (restore to normal view)
@@ -156,6 +156,30 @@ await todo_add_item_dependency("frontend", "ui_task", "backend", "api_task")
 
 # Get smart next task
 next_task = await todo_get_next_pending_enhanced("project", smart_subtasks=True)
+```
+
+### Enhanced List Retrieval (New in v1.21.0)
+```python
+# Get complete list information in a single call (default - includes everything)
+full_data = await todo_get_list("project")
+# Returns: {
+#   "success": True,
+#   "list": {"id": 1, "list_key": "project", "title": "My Project", ...},
+#   "items": {"count": 2, "data": [{"item_key": "task1", "content": "Task 1", ...}, ...]},
+#   "properties": {"count": 1, "data": [{"key": "environment", "value": "production"}]}
+# }
+
+# Get only list details (no items or properties)
+list_only = await todo_get_list("project", include_items=False, include_properties=False)
+# Returns: {"success": True, "list": {...}}
+
+# Get list with items but no properties
+with_items = await todo_get_list("project", include_items=True, include_properties=False)
+# Returns: {"success": True, "list": {...}, "items": {...}}
+
+# Get list with properties but no items  
+with_props = await todo_get_list("project", include_items=False, include_properties=True)
+# Returns: {"success": True, "list": {...}, "properties": {...}}
 ```
 
 ### List Items with Limit and Filtering

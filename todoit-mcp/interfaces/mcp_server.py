@@ -75,9 +75,6 @@ TOOLS_STANDARD = TOOLS_MINIMAL + [
     # Basic subtasks (2)
     "todo_add_subtask",
     "todo_get_subtasks",
-    # Archive management (2)
-    "todo_archive_list",
-    "todo_unarchive_list",
     # Basic properties (6)
     "todo_set_list_property",
     "todo_get_list_property",
@@ -169,24 +166,69 @@ async def todo_create_list(
 
 
 @conditional_tool
-async def todo_get_list(key: str) -> Dict[str, Any]:
-    """Get TODO list by key or ID.
+@mcp_error_handler
+async def todo_get_list(
+    key: str, 
+    include_items: bool = True, 
+    include_properties: bool = True,
+    mgr=None
+) -> Dict[str, Any]:
+    """Get TODO list by key or ID with optional items and properties.
 
     Args:
         key: List key or ID to retrieve (required)
+        include_items: Whether to include list items (default: True)
+        include_properties: Whether to include list properties (default: True)
 
     Returns:
-        Dictionary with success status and list details if found
+        Dictionary with success status, list details, and optionally items and properties
     """
-    try:
-        mgr = init_manager()
-        todo_list = mgr.get_list(key)
-        if todo_list:
-            return {"success": True, "list": todo_list.to_dict()}
-        else:
-            return {"success": False, "error": f"List '{key}' not found"}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    todo_list = mgr.get_list(key)
+    if not todo_list:
+        return {"success": False, "error": f"List '{key}' not found"}
+
+    # Base response with list info
+    response = {
+        "success": True,
+        "list": todo_list.to_dict()
+    }
+
+    # Add items if requested
+    if include_items:
+        items = mgr.get_list_items(todo_list.list_key)
+        items_data = []
+        for item in items:
+            item_dict = {
+                "id": item.id,
+                "item_key": item.item_key,
+                "content": item.content,
+                "status": item.status.value,
+                "position": item.position,
+                "parent_item_id": item.parent_item_id,
+                "created_at": item.created_at.isoformat() if item.created_at else None,
+                "updated_at": item.updated_at.isoformat() if item.updated_at else None,
+                "started_at": item.started_at.isoformat() if item.started_at else None,
+                "completed_at": item.completed_at.isoformat() if item.completed_at else None,
+                "completion_states": item.completion_states,
+                "metadata": item.metadata,
+            }
+            items_data.append(item_dict)
+        
+        response["items"] = {
+            "count": len(items_data),
+            "data": items_data
+        }
+
+    # Add properties if requested
+    if include_properties:
+        properties = mgr.get_list_properties(todo_list.list_key)
+        prop_data = [{"key": k, "value": v} for k, v in properties.items()] if properties else []
+        response["properties"] = {
+            "count": len(prop_data),
+            "data": prop_data
+        }
+
+    return response
 
 
 @conditional_tool
