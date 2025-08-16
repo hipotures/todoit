@@ -1,6 +1,6 @@
 """
 Integration test for hierarchical numbering fix
-Tests the complete CLI flow to ensure subtask numbering works correctly
+Tests the complete CLI flow to ensure subitem numbering works correctly
 """
 
 import pytest
@@ -36,37 +36,37 @@ class TestHierarchicalNumberingCLI:
         return result
 
     def test_subtask_numbering_integration(self, temp_db_path):
-        """Test complete subtask numbering flow through CLI"""
+        """Test complete subitem numbering flow through CLI"""
         # Create list
-        result = self.run_cli('list create test_numbering --title "Test Numbering"', temp_db_path)
+        result = self.run_cli('list create --list test_numbering --title "Test Numbering"', temp_db_path)
         assert result.returncode == 0, f"Failed to create list: {result.stderr}"
 
         # Add main tasks
-        result = self.run_cli('item add test_numbering task1 "Main Task 1"', temp_db_path)
+        result = self.run_cli('item add --list test_numbering --item task1 --title "Main Item 1"', temp_db_path)
         assert result.returncode == 0, f"Failed to add task1: {result.stderr}"
 
-        result = self.run_cli('item add test_numbering task2 "Main Task 2"', temp_db_path)
+        result = self.run_cli('item add --list test_numbering --item task2 --title "Main Item 2"', temp_db_path)
         assert result.returncode == 0, f"Failed to add task2: {result.stderr}"
 
         # Add subtasks to task1
-        result = self.run_cli('item add-subtask test_numbering task1 task1_sub1 "Subtask 1 for Task 1"', temp_db_path)
+        result = self.run_cli('item add --list test_numbering --item task1 --subitem task1_sub1 --title "Subitem 1 for Item 1"', temp_db_path)
         assert result.returncode == 0, f"Failed to add task1_sub1: {result.stderr}"
 
-        result = self.run_cli('item add-subtask test_numbering task1 task1_sub2 "Subtask 2 for Task 1"', temp_db_path)
+        result = self.run_cli('item add --list test_numbering --item task1 --subitem task1_sub2 --title "Subitem 2 for Item 1"', temp_db_path)
         assert result.returncode == 0, f"Failed to add task1_sub2: {result.stderr}"
 
-        result = self.run_cli('item add-subtask test_numbering task1 task1_sub3 "Subtask 3 for Task 1"', temp_db_path)
+        result = self.run_cli('item add --list test_numbering --item task1 --subitem task1_sub3 --title "Subitem 3 for Item 1"', temp_db_path)
         assert result.returncode == 0, f"Failed to add task1_sub3: {result.stderr}"
 
         # Add subtasks to task2
-        result = self.run_cli('item add-subtask test_numbering task2 task2_sub1 "Subtask 1 for Task 2"', temp_db_path)
+        result = self.run_cli('item add --list test_numbering --item task2 --subitem task2_sub1 --title "Subitem 1 for Item 2"', temp_db_path)
         assert result.returncode == 0, f"Failed to add task2_sub1: {result.stderr}"
 
-        result = self.run_cli('item add-subtask test_numbering task2 task2_sub2 "Subtask 2 for Task 2"', temp_db_path)
+        result = self.run_cli('item add --list test_numbering --item task2 --subitem task2_sub2 --title "Subitem 2 for Item 2"', temp_db_path)
         assert result.returncode == 0, f"Failed to add task2_sub2: {result.stderr}"
 
         # Get list view and check numbering
-        result = self.run_cli('list show test_numbering', temp_db_path)
+        result = self.run_cli('list show --list test_numbering', temp_db_path)
         assert result.returncode == 0, f"Failed to show list: {result.stderr}"
 
         output = result.stdout
@@ -77,9 +77,9 @@ class TestHierarchicalNumberingCLI:
         # │ 1.1      │ task1_sub1 │   └─ Subtask 1 for Task1 │ ⏳     │            │
         # │ 1.2      │ task1_sub2 │   └─ Subtask 2 for Task1 │ ⏳     │            │
         # │ 1.3      │ task1_sub3 │   └─ Subtask 3 for Task1 │ ⏳     │            │
-        # │ 2        │ task2      │ Main Task 2              │ ⏳     │ 0% (0/2)   │
+        # │ 2        │ task2      │ Main Item 2              │ ⏳     │ 0% (0/2)   │
         # │ 2.1      │ task2_sub1 │   └─ Subtask 1 for Task2 │ ⏳     │            │
-        # │ 2.2      │ task2_sub2 │   └─ Subtask 2 for Task2 │ ⏳     │            │
+        # │ 2.2      │ task2_sub2 │   └─ Subitem 2 for Task2 │ ⏳     │            │
 
         # Check for correct numbering patterns
         assert "│ 1        │ task1      │" in output, "Task1 should have number 1"
@@ -97,17 +97,17 @@ class TestHierarchicalNumberingCLI:
     def test_tree_view_numbering_consistency(self, temp_db_path):
         """Test that tree view and table view are consistent"""
         # Create list with hierarchy
-        self.run_cli('list create test_tree --title "Test Tree"', temp_db_path)
-        self.run_cli('item add test_tree main1 "Main 1"', temp_db_path)
-        self.run_cli('item add-subtask test_tree main1 sub1 "Sub 1"', temp_db_path)
-        self.run_cli('item add-subtask test_tree main1 sub2 "Sub 2"', temp_db_path)
+        self.run_cli('list create --list test_tree --title "Test Tree"', temp_db_path)
+        self.run_cli('item add --list test_tree --item main1 --title "Main 1"', temp_db_path)
+        self.run_cli('item add --list test_tree --item main1 --subitem sub1 --title "Sub 1"', temp_db_path)
+        self.run_cli('item add --list test_tree --item main1 --subitem sub2 --title "Sub 2"', temp_db_path)
 
         # Get table view
-        table_result = self.run_cli('list show test_tree', temp_db_path)
+        table_result = self.run_cli('list show --list test_tree', temp_db_path)
         assert table_result.returncode == 0
 
         # Get tree view
-        tree_result = self.run_cli('list show test_tree --tree', temp_db_path)
+        tree_result = self.run_cli('list show --list test_tree --tree', temp_db_path)
         assert tree_result.returncode == 0
 
         # Both should work without errors and show hierarchy
@@ -119,16 +119,16 @@ class TestHierarchicalNumberingCLI:
     def test_multiple_hierarchy_levels_numbering(self, temp_db_path):
         """Test numbering with multiple levels of hierarchy"""
         # Create list
-        self.run_cli('list create test_deep --title "Deep Hierarchy"', temp_db_path)
+        self.run_cli('list create --list test_deep --title "Deep Hierarchy"', temp_db_path)
         
-        # Create main task
-        self.run_cli('item add test_deep main "Main Task"', temp_db_path)
+        # Create main item
+        self.run_cli('item add --list test_deep --item main --title "Main Item"', temp_db_path)
         
-        # Add subtask
-        self.run_cli('item add-subtask test_deep main sub1 "Subtask 1"', temp_db_path)
+        # Add subitem
+        self.run_cli('item add --list test_deep --item main --subitem sub1 --title "Subitem 1"', temp_db_path)
         
         # Show list
-        result = self.run_cli('list show test_deep', temp_db_path)
+        result = self.run_cli('list show --list test_deep', temp_db_path)
         assert result.returncode == 0
         
         # Check basic numbering (flexible format matching)

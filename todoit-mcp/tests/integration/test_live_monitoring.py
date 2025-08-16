@@ -24,8 +24,8 @@ class TestLiveMonitoring:
         temp_manager.create_list("live_test", "Live Test List")
 
         # Add items with different statuses
-        temp_manager.add_item("live_test", "task1", "First task")
-        temp_manager.add_item("live_test", "task2", "Second task")
+        temp_manager.add_item("live_test", "task1", "First item")
+        temp_manager.add_item("live_test", "task2", "Second item")
         temp_manager.update_item_status("live_test", "task2", status="in_progress")
 
         return temp_manager.get_list("live_test")
@@ -131,7 +131,7 @@ class TestLiveMonitoring:
         snapshot1 = get_items_snapshot()
 
         # Edit item content
-        temp_manager.update_item_content("live_test", "task1", "Updated first task")
+        temp_manager.update_item_content("live_test", "task1", "Updated first item")
 
         # Get new snapshot
         snapshot2 = get_items_snapshot()
@@ -176,7 +176,7 @@ class TestLiveMonitoring:
         assert count1 == 2
 
         # Add new item
-        temp_manager.add_item("live_test", "task3", "Third task")
+        temp_manager.add_item("live_test", "task3", "Third item")
 
         # Get new count
         count2 = get_items_count()
@@ -196,7 +196,7 @@ class TestLiveMonitoring:
         assert progress1.in_progress == 1  # task2 is in_progress
         assert progress1.completed == 0
 
-        # Complete a task
+        # Complete a item
         temp_manager.update_item_status("live_test", "task1", status="completed")
 
         # Check updated progress
@@ -209,9 +209,9 @@ class TestLiveMonitoring:
     def test_filtered_status_view(self, temp_manager, sample_list_with_items):
         """Test filtering items by status (for --filter-status option)"""
         # Add more items with different statuses
-        temp_manager.add_item("live_test", "task3", "Third task")
+        temp_manager.add_item("live_test", "task3", "Third item")
         temp_manager.update_item_status("live_test", "task3", status="completed")
-        temp_manager.add_item("live_test", "task4", "Fourth task")  # pending by default
+        temp_manager.add_item("live_test", "task4", "Fourth item")  # pending by default
 
         # Filter by pending
         pending_items = temp_manager.get_list_items("live_test", status="pending")
@@ -238,15 +238,15 @@ class TestLiveMonitoring:
         """Test live monitoring with hierarchical structures"""
         # Create list with subtasks
         temp_manager.create_list("hierarchy_test", "Hierarchy Test")
-        temp_manager.add_item("hierarchy_test", "parent", "Parent task")
-        temp_manager.add_subtask("hierarchy_test", "parent", "sub1", "Subtask 1")
-        temp_manager.add_subtask("hierarchy_test", "parent", "sub2", "Subtask 2")
+        temp_manager.add_item("hierarchy_test", "parent", "Parent item")
+        temp_manager.add_subitem("hierarchy_test", "parent", "sub1", "Subitem 1")
+        temp_manager.add_subitem("hierarchy_test", "parent", "sub2", "Subitem 2")
 
         # Get all items (including subtasks)
         all_items = temp_manager.get_list_items("hierarchy_test")
         assert len(all_items) == 3  # parent + 2 subtasks
 
-        # Change subtask status
+        # Change subitem status
         temp_manager.update_item_status("hierarchy_test", "sub1", status="completed")
 
         # Get progress (should include subtasks)

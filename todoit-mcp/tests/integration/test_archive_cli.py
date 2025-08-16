@@ -30,12 +30,12 @@ class TestArchiveCLI:
 
         # Create test lists
         list1 = manager.create_list(
-            "test-list-1", "Test List 1", items=["Task 1", "Task 2"]
+            "test-list-1", "Test List 1", items=["Item 1", "Item 2"]
         )
         list2 = manager.create_list(
-            "test-list-2", "Test List 2", items=["Task A", "Task B"]
+            "test-list-2", "Test List 2", items=["Item A", "Item B"]
         )
-        list3 = manager.create_list("archive-me", "List to Archive", items=["Old Task"])
+        list3 = manager.create_list("archive-me", "List to Archive", items=["Old Item"])
 
         return manager, [list1, list2, list3]
 
@@ -44,12 +44,12 @@ class TestArchiveCLI:
         manager, lists = setup_test_lists
         runner = CliRunner()
 
-        # Complete the task first so we can archive without force
+        # Complete the item first so we can archive without force
         manager.update_item_status("archive-me", "item_1", "completed")
 
         # Archive a list
         result = runner.invoke(
-            cli, ["--db", temp_db_path, "list", "archive", "archive-me"]
+            cli, ["--db", temp_db_path, "list", "archive", "--list", "archive-me"]
         )
 
         assert result.exit_code == 0
@@ -69,13 +69,13 @@ class TestArchiveCLI:
         manager, lists = setup_test_lists
         runner = CliRunner()
 
-        # First complete the task and archive a list
+        # First complete the item and archive a list
         manager.update_item_status("archive-me", "item_1", "completed")
         manager.archive_list("archive-me")
 
         # Then unarchive it
         result = runner.invoke(
-            cli, ["--db", temp_db_path, "list", "unarchive", "archive-me"]
+            cli, ["--db", temp_db_path, "list", "unarchive", "--list", "archive-me"]
         )
 
         assert result.exit_code == 0
@@ -96,7 +96,7 @@ class TestArchiveCLI:
         manager, lists = setup_test_lists
         runner = CliRunner()
 
-        # Complete the task and archive one list
+        # Complete the item and archive one list
         manager.update_item_status("archive-me", "item_1", "completed")
         manager.archive_list("archive-me")
 
@@ -114,7 +114,7 @@ class TestArchiveCLI:
         manager, lists = setup_test_lists
         runner = CliRunner()
 
-        # Complete the task and archive one list
+        # Complete the item and archive one list
         manager.update_item_status("archive-me", "item_1", "completed")
         manager.archive_list("archive-me")
 
@@ -170,7 +170,7 @@ class TestArchiveCLI:
         runner = CliRunner()
 
         result = runner.invoke(
-            cli, ["--db", temp_db_path, "list", "archive", "nonexistent"]
+            cli, ["--db", temp_db_path, "list", "archive", "--list", "nonexistent"]
         )
 
         assert result.exit_code == 0
@@ -181,13 +181,13 @@ class TestArchiveCLI:
         manager, lists = setup_test_lists
         runner = CliRunner()
 
-        # Complete the task and archive a list first
+        # Complete the item and archive a list first
         manager.update_item_status("archive-me", "item_1", "completed")
         manager.archive_list("archive-me")
 
         # Try to archive again
         result = runner.invoke(
-            cli, ["--db", temp_db_path, "list", "archive", "archive-me"]
+            cli, ["--db", temp_db_path, "list", "archive", "--list", "archive-me"]
         )
 
         assert result.exit_code == 0
@@ -199,7 +199,7 @@ class TestArchiveCLI:
         runner = CliRunner()
 
         result = runner.invoke(
-            cli, ["--db", temp_db_path, "list", "unarchive", "test-list-1"]
+            cli, ["--db", temp_db_path, "list", "unarchive", "--list", "test-list-1"]
         )
 
         assert result.exit_code == 0
@@ -210,7 +210,7 @@ class TestArchiveCLI:
         runner = CliRunner()
 
         result = runner.invoke(
-            cli, ["--db", temp_db_path, "list", "unarchive", "nonexistent"]
+            cli, ["--db", temp_db_path, "list", "unarchive", "--list", "nonexistent"]
         )
 
         assert result.exit_code == 0
@@ -226,7 +226,7 @@ class TestArchiveCLI:
         assert result.exit_code == 0
         assert "📦" not in result.output  # Status column should not appear
 
-        # Complete the task and archive one list
+        # Complete the item and archive one list
         manager.update_item_status("archive-me", "item_1", "completed")
         manager.archive_list("archive-me")
 
@@ -247,7 +247,7 @@ class TestArchiveCLI:
         manager, lists = setup_test_lists
         runner = CliRunner()
 
-        # Complete the task and archive one list
+        # Complete the item and archive one list
         manager.update_item_status("archive-me", "item_1", "completed")
         manager.archive_list("archive-me")
 
@@ -280,7 +280,7 @@ class TestArchiveCLI:
         manager, lists = setup_test_lists
         runner = CliRunner()
 
-        # Complete the task and archive one list
+        # Complete the item and archive one list
         manager.update_item_status("archive-me", "item_1", "completed")
         manager.archive_list("archive-me")
 
@@ -306,6 +306,7 @@ class TestArchiveCLI:
                 temp_db_path,
                 "list",
                 "create",
+                "--list",
                 "workflow-test",
                 "--title",
                 "Workflow Test",
@@ -322,7 +323,7 @@ class TestArchiveCLI:
 
         # Archive it
         result = runner.invoke(
-            cli, ["--db", temp_db_path, "list", "archive", "workflow-test"]
+            cli, ["--db", temp_db_path, "list", "archive", "--list", "workflow-test"]
         )
         assert result.exit_code == 0
         assert "has been archived" in result.output
@@ -345,7 +346,7 @@ class TestArchiveCLI:
 
         # Unarchive it
         result = runner.invoke(
-            cli, ["--db", temp_db_path, "list", "unarchive", "workflow-test"]
+            cli, ["--db", temp_db_path, "list", "unarchive", "--list", "workflow-test"]
         )
         assert result.exit_code == 0
         assert "has been restored" in result.output
@@ -371,15 +372,15 @@ class TestArchiveCLI:
         list_with_tasks = manager.create_list(
             "incomplete-tasks",
             "List with incomplete tasks",
-            items=["Task 1", "Task 2", "Task 3"],
+            items=["Item 1", "Item 2", "Item 3"],
         )
 
-        # Complete only one task
+        # Complete only one item
         manager.update_item_status("incomplete-tasks", "item_1", "completed")
 
         # Try to archive without --force (should fail)
         result = runner.invoke(
-            cli, ["--db", temp_db_path, "list", "archive", "incomplete-tasks"]
+            cli, ["--db", temp_db_path, "list", "archive", "--list", "incomplete-tasks"]
         )
 
         assert result.exit_code == 0
@@ -390,7 +391,7 @@ class TestArchiveCLI:
             and "force=True" in result.output
             and "archive anyway" in result.output
         )
-        assert "todoit list archive incomplete-tasks --force" in result.output
+        assert "todoit list archive --list incomplete-tasks --force" in result.output
 
     def test_archive_with_force_flag_succeeds(self, temp_db_path):
         """Test that archiving list with incomplete tasks succeeds with --force"""
@@ -399,12 +400,12 @@ class TestArchiveCLI:
 
         # Create a list with incomplete tasks
         list_with_tasks = manager.create_list(
-            "force-archive", "List to force archive", items=["Task 1", "Task 2"]
+            "force-archive", "List to force archive", items=["Item 1", "Item 2"]
         )
 
         # Archive with --force (should succeed)
         result = runner.invoke(
-            cli, ["--db", temp_db_path, "list", "archive", "force-archive", "--force"]
+            cli, ["--db", temp_db_path, "list", "archive", "--list", "force-archive", "--force"]
         )
 
         assert result.exit_code == 0
@@ -425,14 +426,14 @@ class TestArchiveCLI:
 
         # Create a list and complete all tasks
         list_completed = manager.create_list(
-            "completed-list", "Completed list", items=["Task 1", "Task 2"]
+            "completed-list", "Completed list", items=["Item 1", "Item 2"]
         )
         manager.update_item_status("completed-list", "item_1", "completed")
         manager.update_item_status("completed-list", "item_2", "completed")
 
         # Archive without --force (should succeed)
         result = runner.invoke(
-            cli, ["--db", temp_db_path, "list", "archive", "completed-list"]
+            cli, ["--db", temp_db_path, "list", "archive", "--list", "completed-list"]
         )
 
         assert result.exit_code == 0
@@ -452,7 +453,7 @@ class TestArchiveCLI:
 
         # Archive without --force (should succeed)
         result = runner.invoke(
-            cli, ["--db", temp_db_path, "list", "archive", "empty-list"]
+            cli, ["--db", temp_db_path, "list", "archive", "--list", "empty-list"]
         )
 
         assert result.exit_code == 0

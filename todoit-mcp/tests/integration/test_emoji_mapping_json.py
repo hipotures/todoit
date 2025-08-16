@@ -31,36 +31,29 @@ class TestEmojiMappingJSON:
                 [
                     "--db",
                     "test.db",
-                    "list",
-                    "create",
-                    "testlist",
-                    "--title",
+                    "list", "create", "--list", "testlist", "--title",
                     "Test List",
                 ],
             )
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db", "test.db", "item", "add", "testlist", "task1", "Task 1"]
+                cli, ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Item 1"]
             )
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db", "test.db", "item", "add", "testlist", "task2", "Task 2"]
+                cli, ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task2", "--title", "Item 2"]
             )
             assert result.exit_code == 0
 
-            # Mark one task as completed
+            # Mark one item as completed
             result = runner.invoke(
                 cli,
                 [
                     "--db",
                     "test.db",
-                    "item",
-                    "status",
-                    "testlist",
-                    "task1",
-                    "--status",
+                    "item", "status", "--list", "testlist", "--item", "task1", "--status",
                     "completed",
                 ],
             )
@@ -115,17 +108,14 @@ class TestEmojiMappingJSON:
                 [
                     "--db",
                     "test.db",
-                    "list",
-                    "create",
-                    "testlist",
-                    "--title",
+                    "list", "create", "--list", "testlist", "--title",
                     "Test List",
                 ],
             )
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db", "test.db", "item", "add", "testlist", "task1", "Task 1"]
+                cli, ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Item 1"]
             )
             assert result.exit_code == 0
 
@@ -163,17 +153,14 @@ class TestEmojiMappingJSON:
                 [
                     "--db",
                     "test.db",
-                    "list",
-                    "create",
-                    "testlist",
-                    "--title",
+                    "list", "create", "--list", "testlist", "--title",
                     "Test List",
                 ],
             )
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db", "test.db", "item", "add", "testlist", "task1", "Task 1"]
+                cli, ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Item 1"]
             )
             assert result.exit_code == 0
 
@@ -212,10 +199,7 @@ class TestEmojiMappingJSON:
                 [
                     "--db",
                     "test.db",
-                    "list",
-                    "create",
-                    "testlist",
-                    "--title",
+                    "list", "create", "--list", "testlist", "--title",
                     "Test List",
                 ],
             )
@@ -273,23 +257,23 @@ class TestEmojiMappingJSON:
         with runner.isolated_filesystem():
             # Create multiple lists with different content
             result = runner.invoke(
-                cli, ["--db", "test.db", "list", "create", "list1", "--title", "List 1"]
+                cli, ["--db", "test.db", "list", "create", "--list", "list1", "--title", "List 1"]
             )
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db", "test.db", "list", "create", "list2", "--title", "List 2"]
+                cli, ["--db", "test.db", "list", "create", "--list", "list2", "--title", "List 2"]
             )
             assert result.exit_code == 0
 
             # Add items to first list
             result = runner.invoke(
-                cli, ["--db", "test.db", "item", "add", "list1", "task1", "Task 1"]
+                cli, ["--db", "test.db", "item", "add", "--list", "list1", "--item", "task1", "--title", "Item 1"]
             )
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db", "test.db", "item", "add", "list1", "task2", "Task 2"]
+                cli, ["--db", "test.db", "item", "add", "--list", "list1", "--item", "task2", "--title", "Item 2"]
             )
             assert result.exit_code == 0
 
@@ -299,11 +283,7 @@ class TestEmojiMappingJSON:
                 [
                     "--db",
                     "test.db",
-                    "item",
-                    "status",
-                    "list1",
-                    "task1",
-                    "--status",
+                    "item", "status", "--list", "list1", "--item", "task1", "--status",
                     "completed",
                 ],
             )
@@ -314,11 +294,7 @@ class TestEmojiMappingJSON:
                 [
                     "--db",
                     "test.db",
-                    "item",
-                    "status",
-                    "list1",
-                    "task2",
-                    "--status",
+                    "item", "status", "--list", "list1", "--item", "task2", "--status",
                     "failed",
                 ],
             )

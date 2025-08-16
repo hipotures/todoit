@@ -65,7 +65,7 @@ class TestDepGraphJsonOutput:
             # Create a list with project tag
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "list", "create", "backend", "--title", "Backend"],
+                ["--db", "test.db", "list", "create", "--list", "backend", "--title", "Backend"],
             )
             assert result.exit_code == 0
 
@@ -128,6 +128,7 @@ class TestDepGraphJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "frontend",
                     "--title",
                     "Frontend Tasks",
@@ -142,6 +143,7 @@ class TestDepGraphJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "backend",
                     "--title",
                     "Backend Tasks",
@@ -152,13 +154,13 @@ class TestDepGraphJsonOutput:
             # Add some tasks
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "frontend", "ui", "User Interface"],
+                ["--db", "test.db", "item", "add", "--list", "frontend", "--item", "ui", "--title", "User Interface"],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "backend", "api", "API Development"],
+                ["--db", "test.db", "item", "add", "--list", "backend", "--item", "api", "--title", "API Development"],
             )
             assert result.exit_code == 0
 

@@ -22,8 +22,8 @@ class TestHierarchicalLimit:
         # Add subtasks to each parent
         for i in range(5):
             for j in range(2):
-                manager.add_subtask(
-                    "test_list", f"parent_{i}", f"sub_{i}_{j}", f"Subtask {i}-{j}"
+                manager.add_subitem(
+                    "test_list", f"parent_{i}", f"sub_{i}_{j}", f"Subitem {i}-{j}"
                 )
 
         # Get all items (15 total: 5 parents + 10 subtasks)
@@ -55,13 +55,13 @@ class TestHierarchicalLimit:
 
         # Add subtasks to all parents
         for i in range(6):
-            manager.add_subtask("test_list", f"parent_{i}", f"sub_{i}", f"Subtask {i}")
+            manager.add_subitem("test_list", f"parent_{i}", f"sub_{i}", f"Subitem {i}")
 
         # Get limited pending items (flat limit across all pending items)
         pending_limited = manager.get_list_items("test_list", status="pending", limit=2)
 
         # Should get first 2 pending items by position (after positioning fix: parents first)
-        # Note: parent_1 status may have been reset due to subtask addition
+        # Note: parent_1 status may have been reset due to subitem addition
         assert len(pending_limited) == 2
         assert pending_limited[0].item_key == "parent_0"  # First pending parent
         # Second pending item (status sync may affect parent status when subtasks added)
@@ -74,7 +74,7 @@ class TestHierarchicalLimit:
 
         # Add items with hierarchy
         manager.add_item("test_list", "parent_1", "Parent 1")
-        manager.add_subtask("test_list", "parent_1", "sub_1", "Subtask 1")
+        manager.add_subitem("test_list", "parent_1", "sub_1", "Subitem 1")
 
         # Get zero items
         zero_items = manager.get_list_items("test_list", limit=0)
@@ -96,8 +96,8 @@ class TestHierarchicalLimit:
 
         # Add subtasks
         for parent in ["parent_high", "parent_low", "parent_medium"]:
-            manager.add_subtask(
-                "test_list", parent, f"sub_{parent}", f"Subtask for {parent}"
+            manager.add_subitem(
+                "test_list", parent, f"sub_{parent}", f"Subitem for {parent}"
             )
 
         # Get limited items (should be ordered by position, flat limit)
@@ -115,11 +115,11 @@ class TestHierarchicalLimit:
 
         # Add parents with varying numbers of subtasks
         manager.add_item("test_list", "parent_1", "Parent 1")
-        manager.add_subtask("test_list", "parent_1", "sub_1_1", "Subtask 1-1")
-        manager.add_subtask("test_list", "parent_1", "sub_1_2", "Subtask 1-2")
+        manager.add_subitem("test_list", "parent_1", "sub_1_1", "Subitem 1-1")
+        manager.add_subitem("test_list", "parent_1", "sub_1_2", "Subitem 1-2")
 
         manager.add_item("test_list", "parent_2", "Parent 2")
-        manager.add_subtask("test_list", "parent_2", "sub_2_1", "Subtask 2-1")
+        manager.add_subitem("test_list", "parent_2", "sub_2_1", "Subitem 2-1")
 
         manager.add_item("test_list", "parent_3", "Parent 3")
         # No subtasks for parent_3
@@ -139,7 +139,7 @@ class TestHierarchicalLimit:
 
         # Test limit larger than available
         manager.add_item("test_list", "parent_1", "Parent 1")
-        manager.add_subtask("test_list", "parent_1", "sub_1", "Subtask 1")
+        manager.add_subitem("test_list", "parent_1", "sub_1", "Subitem 1")
 
         large_limit = manager.get_list_items("test_list", limit=100)
         assert len(large_limit) == 2  # Should return all available

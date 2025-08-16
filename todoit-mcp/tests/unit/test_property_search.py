@@ -37,7 +37,7 @@ class TestPropertySearchUnit:
         mock_item1 = MagicMock(
             id=1,
             item_key="task1",
-            content="First task",
+            content="First item",
             status="pending",
             position=1,
             created_at=datetime(2024, 1, 1),
@@ -45,7 +45,7 @@ class TestPropertySearchUnit:
         mock_item2 = MagicMock(
             id=2,
             item_key="task2",
-            content="Second task",
+            content="Second item",
             status="pending",
             position=2,
             created_at=datetime(2024, 1, 2),
@@ -58,7 +58,7 @@ class TestPropertySearchUnit:
             id=1,
             list_id=1,
             item_key="task1",
-            content="First task",
+            content="First item",
             status=ItemStatus.PENDING,
             position=1,
             created_at=datetime(2024, 1, 1),
@@ -68,7 +68,7 @@ class TestPropertySearchUnit:
             id=2,
             list_id=1,
             item_key="task2",
-            content="Second task",
+            content="Second item",
             status=ItemStatus.PENDING,
             position=2,
             created_at=datetime(2024, 1, 2),
@@ -94,7 +94,7 @@ class TestPropertySearchUnit:
     def test_find_items_by_property_with_limit(self, manager_with_mock, mock_db):
         """Test property search with limit parameter."""
         mock_item = MagicMock(
-            id=1, item_key="task1", content="First task", status="pending"
+            id=1, item_key="task1", content="First item", status="pending"
         )
         mock_db.find_items_by_property.return_value = [mock_item]
 
@@ -102,7 +102,7 @@ class TestPropertySearchUnit:
             id=1,
             list_id=1,
             item_key="task1",
-            content="First task",
+            content="First item",
             status=ItemStatus.PENDING,
             position=1,
             created_at=datetime(2024, 1, 1),

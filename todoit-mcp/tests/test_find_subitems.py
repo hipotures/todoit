@@ -16,19 +16,19 @@ def manager_with_test_data(tmp_path):
     # Create a test list
     test_list = manager.create_list("test_list", "Test List for Subitems")
 
-    # Create parent task
-    parent = manager.add_item("test_list", "parent_task", "Parent task for testing")
+    # Create parent item
+    parent = manager.add_item("test_list", "parent_task", "Parent item for testing")
 
     # Create subitems with different statuses
-    manager.add_subtask("test_list", "parent_task", "generate", "Generate image")
-    manager.add_subtask("test_list", "parent_task", "download", "Download image")
-    manager.add_subtask("test_list", "parent_task", "process", "Process image")
+    manager.add_subitem("test_list", "parent_task", "generate", "Generate image")
+    manager.add_subitem("test_list", "parent_task", "download", "Download image")
+    manager.add_subitem("test_list", "parent_task", "process", "Process image")
 
     # Create second parent with different subitems
-    parent2 = manager.add_item("test_list", "parent_task2", "Second parent task")
-    manager.add_subtask("test_list", "parent_task2", "design", "Design feature")
-    manager.add_subtask("test_list", "parent_task2", "code", "Write code")
-    manager.add_subtask("test_list", "parent_task2", "test", "Write tests")
+    parent2 = manager.add_item("test_list", "parent_task2", "Second parent item")
+    manager.add_subitem("test_list", "parent_task2", "design", "Design feature")
+    manager.add_subitem("test_list", "parent_task2", "code", "Write code")
+    manager.add_subitem("test_list", "parent_task2", "test", "Write tests")
 
     # Set some initial statuses
     manager.update_item_status("test_list", "generate", status="completed")
@@ -185,9 +185,9 @@ class TestFindSubitemsByStatus:
         manager = manager_with_test_data
 
         # Add third parent with different subitems (unique keys)
-        manager.add_item("test_list", "parent_task3", "Third parent task")
-        manager.add_subtask("test_list", "parent_task3", "generate_v3", "Generate v3")
-        manager.add_subtask("test_list", "parent_task3", "download_v3", "Download v3")
+        manager.add_item("test_list", "parent_task3", "Third parent item")
+        manager.add_subitem("test_list", "parent_task3", "generate_v3", "Generate v3")
+        manager.add_subitem("test_list", "parent_task3", "download_v3", "Download v3")
 
         # Set statuses for third parent
         manager.update_item_status("test_list", "generate_v3", status="in_progress")
@@ -246,12 +246,12 @@ class TestFindSubitemsByStatusIntegration:
         # Create many parent tasks with subitems (unique keys)
         for i in range(20):
             parent_key = f"parent_{i}"
-            manager.add_item("perf_test", parent_key, f"Parent task {i}")
+            manager.add_item("perf_test", parent_key, f"Parent item {i}")
             
             # Add subitems with unique keys
-            manager.add_subtask("perf_test", parent_key, f"step1_{i}", f"Step 1 for {i}")
-            manager.add_subtask("perf_test", parent_key, f"step2_{i}", f"Step 2 for {i}")
-            manager.add_subtask("perf_test", parent_key, f"step3_{i}", f"Step 3 for {i}")
+            manager.add_subitem("perf_test", parent_key, f"step1_{i}", f"Step 1 for {i}")
+            manager.add_subitem("perf_test", parent_key, f"step2_{i}", f"Step 2 for {i}")
+            manager.add_subitem("perf_test", parent_key, f"step3_{i}", f"Step 3 for {i}")
 
             # Set statuses for some groups
             if i % 3 == 0:

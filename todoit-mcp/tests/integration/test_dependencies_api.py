@@ -13,7 +13,7 @@ class TestDependenciesAPI:
 
     def test_add_item_dependency_basic(self, manager, sample_lists):
         """Test basic cross-list dependency creation"""
-        # Frontend task depends on backend task
+        # Frontend task depends on backend item
         try:
             result = manager.add_item_dependency(
                 dependent_list="frontend",
@@ -28,7 +28,7 @@ class TestDependenciesAPI:
             assert "circular" not in str(e).lower()
 
     def test_get_item_blockers(self, manager, sample_lists):
-        """Test retrieving items that block a given task"""
+        """Test retrieving items that block a given item"""
         # Create dependency
         manager.add_item_dependency("frontend", "item_1", "backend", "item_1")
         manager.add_item_dependency("frontend", "item_1", "backend", "item_2")
@@ -39,7 +39,7 @@ class TestDependenciesAPI:
         assert all(blocker.status != ItemStatus.COMPLETED for blocker in blockers)
 
     def test_get_items_blocked_by(self, manager, sample_lists):
-        """Test retrieving items blocked by a given task"""
+        """Test retrieving items blocked by a given item"""
         # Create dependencies
         manager.add_item_dependency("frontend", "item_1", "backend", "item_1")
         manager.add_item_dependency("frontend", "item_2", "backend", "item_1")
@@ -128,7 +128,7 @@ class TestDependenciesAPI:
         assert len(blockers2) == 1
 
     def test_cross_list_progress(self, manager, sample_lists):
-        """Test cross-list progress tracking"""
+        """Test cross-list stats --list tracking"""
         # Create dependencies between lists
         manager.add_item_dependency("frontend", "item_1", "backend", "item_1")
         manager.add_item_dependency("frontend", "item_2", "backend", "item_2")
@@ -145,8 +145,8 @@ class TestDependenciesAPI:
 
     def test_dependency_with_subtasks(self, manager, sample_lists):
         """Test dependencies involving subtasks"""
-        # Add subtask to backend
-        manager.add_subtask("backend", "item_1", "sub1", "Backend subtask")
+        # Add subitem to backend
+        manager.add_subitem("backend", "item_1", "sub1", "Backend subitem")
 
         # Frontend depends on backend subtask
         manager.add_item_dependency("frontend", "item_1", "backend", "sub1")
@@ -154,7 +154,7 @@ class TestDependenciesAPI:
         # Should be blocked
         assert manager.is_item_blocked("frontend", "item_1") == True
 
-        # Complete subtask
+        # Complete subitem
         manager.update_item_status("backend", "sub1", ItemStatus.COMPLETED)
 
         # Should be unblocked

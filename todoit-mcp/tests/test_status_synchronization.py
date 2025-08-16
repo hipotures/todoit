@@ -31,20 +31,20 @@ class TestStatusSynchronization:
 
     def test_basic_status_propagation(self, manager):
         """Test 1: Basic status propagation rules"""
-        # Create list and parent task
+        # Create list and parent item
         manager.create_list("test_list", "Test List")
-        manager.add_item("test_list", "parent", "Parent Task")
+        manager.add_item("test_list", "parent", "Parent Item")
 
         # Add subtasks - all pending initially
-        manager.add_subtask("test_list", "parent", "sub1", "Subtask 1")
-        manager.add_subtask("test_list", "parent", "sub2", "Subtask 2")
-        manager.add_subtask("test_list", "parent", "sub3", "Subtask 3")
+        manager.add_subitem("test_list", "parent", "sub1", "Subitem 1")
+        manager.add_subitem("test_list", "parent", "sub2", "Subitem 2")
+        manager.add_subitem("test_list", "parent", "sub3", "Subitem 3")
 
         # Verify parent status = pending (all children pending)
         parent = manager.get_item("test_list", "parent")
         assert parent.status == "pending"
 
-        # Change one subtask to in_progress -> parent should be in_progress
+        # Change one subitem to in_progress -> parent should be in_progress
         manager.update_item_status("test_list", "sub1", "in_progress")
         parent = manager.get_item("test_list", "parent")
         assert parent.status == "in_progress"
@@ -55,7 +55,7 @@ class TestStatusSynchronization:
         parent = manager.get_item("test_list", "parent")
         assert parent.status == "in_progress"
 
-        # Complete last subtask -> parent should be completed
+        # Complete last subitem -> parent should be completed
         manager.update_item_status("test_list", "sub3", "completed")
         parent = manager.get_item("test_list", "parent")
         assert parent.status == "completed"
@@ -64,10 +64,10 @@ class TestStatusSynchronization:
         """Test 2: Failed status has highest priority"""
         # Create setup
         manager.create_list("test_list", "Test List")
-        manager.add_item("test_list", "parent", "Parent Task")
-        manager.add_subtask("test_list", "parent", "sub1", "Subtask 1")
-        manager.add_subtask("test_list", "parent", "sub2", "Subtask 2")
-        manager.add_subtask("test_list", "parent", "sub3", "Subtask 3")
+        manager.add_item("test_list", "parent", "Parent Item")
+        manager.add_subitem("test_list", "parent", "sub1", "Subitem 1")
+        manager.add_subitem("test_list", "parent", "sub2", "Subitem 2")
+        manager.add_subitem("test_list", "parent", "sub3", "Subitem 3")
 
         # Set mixed statuses: completed, in_progress, failed
         manager.update_item_status("test_list", "sub1", "completed")
@@ -92,21 +92,21 @@ class TestStatusSynchronization:
         """Test 3: Block manual status changes for tasks with subtasks"""
         # Create setup
         manager.create_list("test_list", "Test List")
-        manager.add_item("test_list", "parent", "Parent Task")
+        manager.add_item("test_list", "parent", "Parent Item")
 
         # Should be able to change status before adding subtasks
         manager.update_item_status("test_list", "parent", "in_progress")
         parent = manager.get_item("test_list", "parent")
         assert parent.status == "in_progress"
 
-        # Add subtask
-        manager.add_subtask("test_list", "parent", "sub1", "Subtask 1")
+        # Add subitem
+        manager.add_subitem("test_list", "parent", "sub1", "Subitem 1")
 
         # Now manual status change should be blocked
         with pytest.raises(ValueError, match="has subtasks"):
             manager.update_item_status("test_list", "parent", "completed")
 
-        # Subtask status change should still work
+        # Subitem status change should still work
         manager.update_item_status("test_list", "sub1", "completed")
 
         # Parent should automatically be completed
@@ -118,8 +118,8 @@ class TestStatusSynchronization:
         # Create 3-level hierarchy
         manager.create_list("test_list", "Test List")
         manager.add_item("test_list", "grandparent", "Grandparent")
-        manager.add_subtask("test_list", "grandparent", "parent", "Parent")
-        manager.add_subtask("test_list", "parent", "child", "Child")
+        manager.add_subitem("test_list", "grandparent", "parent", "Parent")
+        manager.add_subitem("test_list", "parent", "child", "Child")
 
         # Change child status -> should propagate up 2 levels
         manager.update_item_status("test_list", "child", "in_progress")
@@ -145,20 +145,20 @@ class TestStatusSynchronization:
         assert grandparent.status == "completed"
 
     def test_add_first_subtask_changes_parent(self, manager):
-        """Test 5: Adding first subtask changes parent status appropriately"""
+        """Test 5: Adding first subitem changes parent status appropriately"""
         # Create parent with completed status
         manager.create_list("test_list", "Test List")
-        manager.add_item("test_list", "parent", "Parent Task")
+        manager.add_item("test_list", "parent", "Parent Item")
         manager.update_item_status("test_list", "parent", "completed")
 
         # Verify initial status
         parent = manager.get_item("test_list", "parent")
         assert parent.status == "completed"
 
-        # Add first subtask (pending by default)
-        manager.add_subtask("test_list", "parent", "sub1", "Subtask 1")
+        # Add first subitem (pending by default)
+        manager.add_subitem("test_list", "parent", "sub1", "Subitem 1")
 
-        # Parent should now be pending (based on pending subtask)
+        # Parent should now be pending (based on pending subitem)
         parent = manager.get_item("test_list", "parent")
         assert parent.status == "pending"
 
@@ -166,9 +166,9 @@ class TestStatusSynchronization:
         """Test 6: Deleting subtasks triggers parent synchronization"""
         # Create setup with 2 subtasks
         manager.create_list("test_list", "Test List")
-        manager.add_item("test_list", "parent", "Parent Task")
-        manager.add_subtask("test_list", "parent", "sub1", "Subtask 1")
-        manager.add_subtask("test_list", "parent", "sub2", "Subtask 2")
+        manager.add_item("test_list", "parent", "Parent Item")
+        manager.add_subitem("test_list", "parent", "sub1", "Subitem 1")
+        manager.add_subitem("test_list", "parent", "sub2", "Subitem 2")
 
         # Set mixed statuses
         manager.update_item_status("test_list", "sub1", "completed")
@@ -178,14 +178,14 @@ class TestStatusSynchronization:
         parent = manager.get_item("test_list", "parent")
         assert parent.status == "in_progress"
 
-        # Delete pending subtask
+        # Delete pending subitem
         manager.delete_item("test_list", "sub2")
 
-        # Parent should now be completed (only completed subtask remains)
+        # Parent should now be completed (only completed subitem remains)
         parent = manager.get_item("test_list", "parent")
         assert parent.status == "completed"
 
-        # Delete last subtask - parent status should remain completed
+        # Delete last subitem - parent status should remain completed
         # (no automatic change when all subtasks removed)
         manager.delete_item("test_list", "sub1")
         parent = manager.get_item("test_list", "parent")
@@ -201,16 +201,16 @@ class TestStatusSynchronization:
         """Test 7: Complex scenarios with multiple branches"""
         # Create complex hierarchy
         manager.create_list("test_list", "Test List")
-        manager.add_item("test_list", "root", "Root Task")
+        manager.add_item("test_list", "root", "Root Item")
 
         # Branch 1
-        manager.add_subtask("test_list", "root", "branch1", "Branch 1")
-        manager.add_subtask("test_list", "branch1", "leaf1", "Leaf 1")
-        manager.add_subtask("test_list", "branch1", "leaf2", "Leaf 2")
+        manager.add_subitem("test_list", "root", "branch1", "Branch 1")
+        manager.add_subitem("test_list", "branch1", "leaf1", "Leaf 1")
+        manager.add_subitem("test_list", "branch1", "leaf2", "Leaf 2")
 
         # Branch 2
-        manager.add_subtask("test_list", "root", "branch2", "Branch 2")
-        manager.add_subtask("test_list", "branch2", "leaf3", "Leaf 3")
+        manager.add_subitem("test_list", "root", "branch2", "Branch 2")
+        manager.add_subitem("test_list", "branch2", "leaf3", "Leaf 3")
 
         # Set leaf statuses
         manager.update_item_status("test_list", "leaf1", "completed")
@@ -248,7 +248,7 @@ class TestStatusSynchronization:
 
         # Add 100 subtasks
         for i in range(100):
-            manager.add_subtask("test_list", "parent", f"sub{i:03d}", f"Subtask {i}")
+            manager.add_subitem("test_list", "parent", f"sub{i:03d}", f"Subitem {i}")
 
         # Complete all subtasks one by one - should be fast
         import time
@@ -273,7 +273,7 @@ class TestStatusSynchronization:
         # Create normal hierarchy first
         manager.create_list("test_list", "Test List")
         manager.add_item("test_list", "parent", "Parent")
-        manager.add_subtask("test_list", "parent", "child", "Child")
+        manager.add_subitem("test_list", "parent", "child", "Child")
 
         # Normal operation should work
         manager.update_item_status("test_list", "child", "completed")
@@ -289,13 +289,13 @@ class TestStatusSynchronization:
         # Create setup
         manager.create_list("test_list", "Test List")
         manager.add_item("test_list", "parent", "Parent")
-        manager.add_subtask("test_list", "parent", "sub1", "Subtask 1")
+        manager.add_subitem("test_list", "parent", "sub1", "Subitem 1")
 
         # This tests that status updates are atomic - if parent sync fails,
         # the subtask update should also be rolled back
         # This is mainly tested by the transaction structure in the code
 
-        # Normal case - both subtask and parent should update
+        # Normal case - both subitem and parent should update
         manager.update_item_status("test_list", "sub1", "completed")
 
         sub1 = manager.get_item("test_list", "sub1")

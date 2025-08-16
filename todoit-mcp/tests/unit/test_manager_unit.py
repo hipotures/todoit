@@ -2,7 +2,7 @@
 Unit tests for the TodoManager class with a mocked database.
 
 This file focuses on testing the business logic of the TodoManager in isolation
-from the database, ensuring that algorithms for task selection, status updates,
+from the database, ensuring that algorithms for item selection, status updates,
 and hierarchy management work as expected.
 """
 
@@ -32,7 +32,7 @@ class TestTodoManagerUnit:
             return manager
 
     def test_get_next_pending_algorithm(self, manager_with_mock, mock_db):
-        """Test the core logic of the next pending task algorithm."""
+        """Test the core logic of the next pending item algorithm."""
         mock_parent = MagicMock(
             id=1,
             item_key="task1",
@@ -148,7 +148,7 @@ class TestTodoManagerUnit:
         assert next_task is None
 
     def test_auto_complete_parent_succeeds(self, manager_with_mock, mock_db):
-        """Test that a parent task is auto-completed when all its children are complete."""
+        """Test that a parent item is auto-completed when all its children are complete."""
         parent = MagicMock(id=10, status="in_progress")
         child = MagicMock(id=100, parent_item_id=10)
 
@@ -169,7 +169,7 @@ class TestTodoManagerUnit:
     def test_auto_complete_parent_does_not_complete_if_children_pending(
         self, manager_with_mock, mock_db
     ):
-        """Test that a parent task is NOT completed if at least one child is pending."""
+        """Test that a parent item is NOT completed if at least one child is pending."""
         parent = MagicMock(id=10, status="in_progress")
         child = MagicMock(id=100, parent_item_id=10)
 
@@ -269,8 +269,8 @@ class TestTodoManagerUnit:
         assert next_task is not None
         assert next_task.id == orphaned_subtask.id
 
-    def test_move_to_subtask(self, manager_with_mock, mock_db):
-        """Test moving an item to become a subtask of another item."""
+    def test_move_to_subitem(self, manager_with_mock, mock_db):
+        """Test moving an item to become a subitem of another item."""
         item_to_move = MagicMock(id=100)
         new_parent = MagicMock(id=200)
 
@@ -282,22 +282,22 @@ class TestTodoManagerUnit:
             "_db_to_model",
             side_effect=lambda db_obj, model_class: db_obj,
         ):
-            manager_with_mock.move_to_subtask("test", "item_to_move", "new_parent")
+            manager_with_mock.move_to_subitem("test", "item_to_move", "new_parent")
 
         mock_db.update_item.assert_called_once_with(
             item_to_move.id, {"parent_item_id": new_parent.id}
         )
 
-    def test_add_subtask_to_nonexistent_parent_raises_error(
+    def test_add_subitem_to_nonexistent_parent_raises_error(
         self, manager_with_mock, mock_db
     ):
-        """Test that adding a subtask to a non-existent parent raises ValueError."""
+        """Test that adding a subitem to a non-existent parent raises ValueError."""
         mock_db.get_item_by_key.return_value = None
 
         with pytest.raises(
-            ValueError, match="Parent task 'nonexistent_parent' not found"
+            ValueError, match="Parent item 'nonexistent_parent' not found"
         ):
-            manager_with_mock.add_subtask(
+            manager_with_mock.add_subitem(
                 list_key="test",
                 parent_key="nonexistent_parent",
                 subtask_key="new_subtask",

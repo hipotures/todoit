@@ -23,7 +23,7 @@ class TestFORCETagsListCommands:
         return CliRunner()
 
     def test_list_show_blocked_by_force_tags(self, runner):
-        """Test that list show is blocked when list doesn't have required tags"""
+        """Test that list show --list is blocked when list doesn't have required tags"""
 
         with patch(
             "interfaces.cli_modules.list_commands.get_manager"
@@ -49,7 +49,7 @@ class TestFORCETagsListCommands:
                 mock_manager.get_list.assert_not_called()
 
     def test_list_show_allowed_by_force_tags(self, runner):
-        """Test that list show works when list has required tags"""
+        """Test that list show --list works when list has required tags"""
 
         with patch(
             "interfaces.cli_modules.list_commands.get_manager"
@@ -110,7 +110,7 @@ class TestFORCETagsListCommands:
                 mock_manager.delete_list.assert_not_called()
 
     def test_list_archive_blocked_by_force_tags(self, runner):
-        """Test that list archive is blocked when list doesn't have required tags"""
+        """Test that list archive --list is blocked when list doesn't have required tags"""
 
         with patch(
             "interfaces.cli_modules.list_commands.get_manager"

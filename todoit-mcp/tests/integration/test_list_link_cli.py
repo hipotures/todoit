@@ -70,13 +70,13 @@ class TestListLinkCLI:
         """Test CLI command with proper arguments"""
         # First create a source list
         create_result = self.run_cli_command(
-            'list create test_source --title "Test Source"', temp_db_path
+            'list create --list test_source --title "Test Source"', temp_db_path
         )
         assert create_result.returncode == 0
 
         # Add an item to source list
         item_result = self.run_cli_command(
-            'item add test_source test_item "Test task"', temp_db_path
+            'item add --list test_source --item test_item --title "Test item"', temp_db_path
         )
         assert item_result.returncode == 0
 
@@ -105,10 +105,10 @@ class TestListLinkCLI:
         """Test CLI output format and statistics display"""
         # Setup: Create source list with multiple items and properties
         setup_commands = [
-            'list create rich_source --title "Rich Source List"',
-            'item add rich_source item1 "First task"',
-            'item add rich_source item2 "Second task"',
-            'item add rich_source item3 "Third task"',
+            'list create --list rich_source --title "Rich Source List"',
+            'item add --list rich_source --item item1 --title "First item"',
+            'item add --list rich_source --item item2 --title "Second item"',
+            'item add --list rich_source --item item3 --title "Third item"',
         ]
 
         for cmd in setup_commands:
@@ -153,7 +153,7 @@ class TestListLinkCLI:
         """Test CLI link command without custom title (uses default)"""
         # Create source list
         result = self.run_cli_command(
-            'list create auto_source --title "Auto Source List"', temp_db_path
+            'list create --list auto_source --title "Auto Source List"', temp_db_path
         )
         assert result.returncode == 0
 
@@ -173,8 +173,8 @@ class TestListLinkCLI:
         """Test error when target list already exists"""
         # Create both source and target lists
         commands = [
-            'list create existing_source --title "Existing Source"',
-            'list create existing_target --title "Existing Target"',
+            'list create --list existing_source --title "Existing Source"',
+            'list create --list existing_target --title "Existing Target"',
         ]
 
         for cmd in commands:

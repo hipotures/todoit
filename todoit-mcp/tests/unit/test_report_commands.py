@@ -1,6 +1,6 @@
 """
 Unit tests for report commands functionality
-Tests both CLI and MCP implementations for failed task reporting
+Tests both CLI and MCP implementations for failed item reporting
 """
 
 import pytest
@@ -22,13 +22,13 @@ class TestReportCommands:
         """Create manager with mixed status tasks including failed ones"""
         # Create test lists with different naming patterns
         list1 = manager.create_list(
-            "0001_project_alpha", "Project Alpha", ["Task 1", "Task 2", "Task 3"]
+            "0001_project_alpha", "Project Alpha", ["Item 1", "Item 2", "Item 3"]
         )
         list2 = manager.create_list(
             "0023_beta_sprint", "Beta Sprint", ["Feature A", "Bug fix"]
         )
         list3 = manager.create_list(
-            "simple_project", "Simple Project", ["Regular task"]
+            "simple_project", "Simple Project", ["Regular item"]
         )
 
         # Get actual item keys
@@ -150,7 +150,7 @@ class TestReportCommands:
     def test_get_all_failed_items_empty_result(self, manager):
         """Test behavior when no failed tasks exist"""
         # Create list with no failed items
-        manager.create_list("test_list", "Test List", ["Task 1", "Task 2"])
+        manager.create_list("test_list", "Test List", ["Item 1", "Item 2"])
 
         failed_items = manager.get_all_failed_items()
         assert len(failed_items) == 0
@@ -208,7 +208,7 @@ class TestReportCommands:
     @pytest.mark.asyncio
     async def test_mcp_todo_report_errors_no_failures(self, manager):
         """Test MCP tool when no failed tasks exist"""
-        manager.create_list("test_list", "Test List", ["Task 1"])
+        manager.create_list("test_list", "Test List", ["Item 1"])
 
         with patch("interfaces.mcp_server.init_manager", return_value=manager):
             result = await todo_report_errors()
@@ -295,7 +295,7 @@ class TestReportCommands:
     def test_properties_handling_edge_cases(self, manager):
         """Test handling of items with no properties or empty properties"""
         # Create list with failed item but no properties
-        manager.create_list("no_props_list", "No Props List", ["Failed task"])
+        manager.create_list("no_props_list", "No Props List", ["Failed item"])
         items = manager.get_list_items("no_props_list")
 
         if items:

@@ -26,7 +26,7 @@ class TestItemTreeJsonOutput:
             del os.environ["TODOIT_OUTPUT_FORMAT"]
 
     def test_item_tree_json_output_entire_list(self):
-        """Test item tree command with JSON output for entire list"""
+        """Test item list --list command --item with JSON output for entire list"""
         os.environ["TODOIT_OUTPUT_FORMAT"] = "json"
 
         with self.runner.isolated_filesystem():
@@ -48,13 +48,13 @@ class TestItemTreeJsonOutput:
             # Add some tasks with different statuses
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "testlist", "task1", "First Task"],
+                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "First Item"],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "testlist", "task2", "Second Task"],
+                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task2", "--title", "Second Item"],
             )
             assert result.exit_code == 0
 
@@ -90,7 +90,7 @@ class TestItemTreeJsonOutput:
 
             # Test JSON output for entire list tree
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "tree", "testlist"]
+                cli, ["--db", "test.db", "item", "list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -107,7 +107,7 @@ class TestItemTreeJsonOutput:
                 assert "Position" in item_data
                 assert "Key" in item_data
                 assert "Status" in item_data
-                assert "Task" in item_data
+                assert "Item" in item_data
 
             # Verify tasks are present
             keys = [item["Key"] for item in output_data["data"]]
@@ -120,7 +120,7 @@ class TestItemTreeJsonOutput:
             assert any("🔄" in status for status in statuses)  # in_progress
 
     def test_item_tree_json_output_specific_item(self):
-        """Test item tree command with JSON output for specific item"""
+        """Test item list --list command --item with JSON output for specific item"""
         os.environ["TODOIT_OUTPUT_FORMAT"] = "json"
 
         with self.runner.isolated_filesystem():
@@ -139,10 +139,10 @@ class TestItemTreeJsonOutput:
             )
             assert result.exit_code == 0
 
-            # Add a parent task
+            # Add a parent item
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "testlist", "parent", "Parent Task"],
+                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "parent", "--title", "Parent Item"],
             )
             assert result.exit_code == 0
 
@@ -153,11 +153,11 @@ class TestItemTreeJsonOutput:
                     "--db",
                     "test.db",
                     "item",
-                    "add-subtask",
+                    "add",
                     "testlist",
                     "parent",
                     "sub1",
-                    "Subtask 1",
+                    "Subitem 1",
                 ],
             )
             assert result.exit_code == 0
@@ -168,11 +168,11 @@ class TestItemTreeJsonOutput:
                     "--db",
                     "test.db",
                     "item",
-                    "add-subtask",
+                    "add",
                     "testlist",
                     "parent",
                     "sub2",
-                    "Subtask 2",
+                    "Subitem 2",
                 ],
             )
             assert result.exit_code == 0
@@ -195,7 +195,7 @@ class TestItemTreeJsonOutput:
 
             # Test JSON output for specific item hierarchy
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "tree", "testlist", "parent"]
+                cli, ["--db", "test.db", "item", "list", "testlist", "parent"]
             )
             assert result.exit_code == 0
 
@@ -209,7 +209,7 @@ class TestItemTreeJsonOutput:
             # Check hierarchy structure
             levels = [item["Level"] for item in output_data["data"]]
             assert "0" in levels  # parent level
-            assert "1" in levels  # subtask level
+            assert "1" in levels  # subitem level
 
             # Verify parent item is at level 0
             parent_items = [
@@ -217,7 +217,7 @@ class TestItemTreeJsonOutput:
             ]
             assert len(parent_items) == 1
             assert parent_items[0]["Item"] == "parent"
-            assert parent_items[0]["Content"] == "Parent Task"
+            assert parent_items[0]["Content"] == "Parent Item"
 
             # Verify subtasks are at level 1
             subtask_items = [
@@ -229,7 +229,7 @@ class TestItemTreeJsonOutput:
             assert "sub2" in subtask_keys
 
     def test_item_tree_json_output_empty_list(self):
-        """Test item tree command with JSON output for empty list"""
+        """Test item list --list command --item with JSON output for empty list"""
         os.environ["TODOIT_OUTPUT_FORMAT"] = "json"
 
         with self.runner.isolated_filesystem():
@@ -250,7 +250,7 @@ class TestItemTreeJsonOutput:
 
             # Test JSON output for empty list tree
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "tree", "emptylist"]
+                cli, ["--db", "test.db", "item", "list", "emptylist"]
             )
             assert result.exit_code == 0
 
@@ -282,32 +282,32 @@ class TestItemTreeJsonOutput:
             )
             assert result.exit_code == 0
 
-            # Add a parent task
+            # Add a parent item
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "testlist", "parent", "Parent Task"],
+                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "parent", "--title", "Parent Item"],
             )
             assert result.exit_code == 0
 
-            # Add a subtask
+            # Add a subitem
             result = self.runner.invoke(
                 cli,
                 [
                     "--db",
                     "test.db",
                     "item",
-                    "add-subtask",
+                    "add",
                     "testlist",
                     "parent",
                     "child",
-                    "Child Task",
+                    "Child Item",
                 ],
             )
             assert result.exit_code == 0
 
             # Test JSON output for specific item
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "tree", "testlist", "parent"]
+                cli, ["--db", "test.db", "item", "list", "testlist", "parent"]
             )
             assert result.exit_code == 0
 
@@ -329,7 +329,7 @@ class TestItemTreeJsonOutput:
             assert "child:" in child_item["Hierarchy"]
 
     def test_item_tree_json_output_nonexistent_item(self):
-        """Test item tree command with JSON output for nonexistent item"""
+        """Test item list --list command --item with JSON output for nonexistent item"""
         os.environ["TODOIT_OUTPUT_FORMAT"] = "json"
 
         with self.runner.isolated_filesystem():
@@ -350,7 +350,7 @@ class TestItemTreeJsonOutput:
 
             # Test JSON output for nonexistent item (should handle gracefully)
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "tree", "testlist", "nonexistent"]
+                cli, ["--db", "test.db", "item", "list", "testlist", "nonexistent"]
             )
 
             # Command may fail or return empty - either is acceptable for nonexistent items
@@ -362,7 +362,7 @@ class TestItemTreeJsonOutput:
         # Don't set TODOIT_OUTPUT_FORMAT, should default to table
 
         with self.runner.isolated_filesystem():
-            # Create a test list and task
+            # Create a test list and item
             result = self.runner.invoke(
                 cli,
                 [
@@ -379,19 +379,19 @@ class TestItemTreeJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "testlist", "task1", "Test Task"],
+                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test table output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "tree", "testlist"]
+                cli, ["--db", "test.db", "item", "list", "testlist"]
             )
             assert result.exit_code == 0
 
             # Should not be JSON format
             assert not result.output.startswith("{")
-            assert "Test Task" in result.output
+            assert "Test Item" in result.output
             assert "task1" in result.output
 
     def test_item_tree_yaml_format(self):
@@ -399,7 +399,7 @@ class TestItemTreeJsonOutput:
         os.environ["TODOIT_OUTPUT_FORMAT"] = "yaml"
 
         with self.runner.isolated_filesystem():
-            # Create a test list and task
+            # Create a test list and item
             result = self.runner.invoke(
                 cli,
                 [
@@ -416,13 +416,13 @@ class TestItemTreeJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "testlist", "task1", "Test Task"],
+                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test YAML output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "tree", "testlist"]
+                cli, ["--db", "test.db", "item", "list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -430,14 +430,14 @@ class TestItemTreeJsonOutput:
             assert "title:" in result.output
             assert "count:" in result.output
             assert "data:" in result.output
-            assert "Test Task" in result.output
+            assert "Test Item" in result.output
 
     def test_item_tree_xml_format(self):
         """Test that XML format works correctly"""
         os.environ["TODOIT_OUTPUT_FORMAT"] = "xml"
 
         with self.runner.isolated_filesystem():
-            # Create a test list and task
+            # Create a test list and item
             result = self.runner.invoke(
                 cli,
                 [
@@ -454,13 +454,13 @@ class TestItemTreeJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "testlist", "task1", "Test Task"],
+                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test XML output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "tree", "testlist"]
+                cli, ["--db", "test.db", "item", "list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -469,7 +469,7 @@ class TestItemTreeJsonOutput:
             assert "<title>" in result.output
             assert "<count>" in result.output
             assert "<data>" in result.output
-            assert "Test Task" in result.output
+            assert "Test Item" in result.output
 
     def test_item_tree_positions_and_keys_present(self):
         """Test that positions and keys are correctly present in JSON output"""
@@ -493,19 +493,19 @@ class TestItemTreeJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "testlist", "first", "First Task"],
+                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "first", "--title", "First Item"],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "testlist", "second", "Second Task"],
+                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "second", "--title", "Second Item"],
             )
             assert result.exit_code == 0
 
             # Test JSON output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "tree", "testlist"]
+                cli, ["--db", "test.db", "item", "list", "testlist"]
             )
             assert result.exit_code == 0
 

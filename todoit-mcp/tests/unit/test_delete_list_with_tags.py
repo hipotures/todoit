@@ -85,7 +85,7 @@ class TestDeleteListWithTags:
         temp_manager.add_tag_to_list("complex_tagged_list", "project")
 
         # Add items with properties (these work fine in existing tests)
-        temp_manager.add_item("complex_tagged_list", "task1", "Task 1")
+        temp_manager.add_item("complex_tagged_list", "task1", "Item 1")
         temp_manager.set_item_property(
             "complex_tagged_list", "task1", "priority", "high"
         )
@@ -114,7 +114,7 @@ class TestDeleteListWithTags:
         todo_list = temp_manager.create_list("no_tags_list", "No Tags List")
 
         # Add items and properties (known to work from existing tests)
-        temp_manager.add_item("no_tags_list", "task1", "Task 1")
+        temp_manager.add_item("no_tags_list", "task1", "Item 1")
         temp_manager.set_item_property("no_tags_list", "task1", "priority", "high")
         temp_manager.set_list_property("no_tags_list", "team", "backend")
 

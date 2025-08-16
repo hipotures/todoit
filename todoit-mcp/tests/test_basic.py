@@ -107,9 +107,9 @@ def test_todoit():
         import_file = tempfile.mktemp(suffix=".md")
         with open(import_file, "w") as f:
             f.write("# Test Import\n")
-            f.write("[ ] Task one\n")
-            f.write("[x] Task two (completed)\n")
-            f.write("[ ] Task three\n")
+            f.write("[ ] Item one\n")
+            f.write("[x] Item two (completed)\n")
+            f.write("[ ] Item three\n")
 
         imported_lists = manager.import_from_markdown(import_file, base_key="imported")
         assert len(imported_lists) > 0

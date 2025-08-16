@@ -24,7 +24,7 @@ class TestFORCETagsItemCommands:
         return CliRunner()
 
     def test_item_status_blocked_by_force_tags(self, runner):
-        """Test that item status is blocked when list doesn't have required tags"""
+        """Test that item status --list is --item blocked --status when list doesn't have required tags"""
 
         with patch(
             "interfaces.cli_modules.item_commands.get_manager"
@@ -52,7 +52,7 @@ class TestFORCETagsItemCommands:
                 mock_manager.update_item_status.assert_not_called()
 
     def test_item_status_allowed_by_force_tags(self, runner):
-        """Test that item status works when list has required tags"""
+        """Test that item status --list works --item when --status list has required tags"""
 
         with patch(
             "interfaces.cli_modules.item_commands.get_manager"
@@ -113,7 +113,7 @@ class TestFORCETagsItemCommands:
                 mock_manager.add_item.assert_not_called()
 
     def test_item_next_blocked_by_force_tags(self, runner):
-        """Test that item next is blocked when list doesn't have required tags"""
+        """Test that item next --list is blocked when list doesn't have required tags"""
 
         with patch(
             "interfaces.cli_modules.item_commands.get_manager"
@@ -136,7 +136,7 @@ class TestFORCETagsItemCommands:
                 mock_manager.get_next_pending.assert_not_called()
 
     def test_item_tree_blocked_by_force_tags(self, runner):
-        """Test that item tree is blocked when list doesn't have required tags"""
+        """Test that item list --list is --item blocked when list doesn't have required tags"""
 
         with patch(
             "interfaces.cli_modules.item_commands.get_manager"

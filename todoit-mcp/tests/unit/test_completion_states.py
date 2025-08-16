@@ -129,7 +129,7 @@ class TestClearCompletionStates:
         """Test clearing states from non-existent item"""
         manager.create_list("valid_list", "Valid List")
 
-        with pytest.raises(ValueError, match="Task 'nonexistent' does not exist"):
+        with pytest.raises(ValueError, match="Item 'nonexistent' does not exist"):
             manager.clear_item_completion_states("valid_list", "nonexistent")
 
     def test_clear_states_preserves_other_fields(self, manager_with_states):

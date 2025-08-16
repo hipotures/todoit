@@ -86,8 +86,8 @@ class TestListLinkIntegration:
         """Test MCP tool functionality with real operations"""
         # Setup source list
         manager.create_list("mcp_source", "MCP Source List")
-        manager.add_item("mcp_source", "item1", "First task")
-        manager.add_item("mcp_source", "item2", "Second task")
+        manager.add_item("mcp_source", "item1", "First item")
+        manager.add_item("mcp_source", "item2", "Second item")
 
         # Test linking
         result = manager.link_list_1to1("mcp_source", "mcp_target")

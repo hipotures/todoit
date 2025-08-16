@@ -1220,13 +1220,13 @@ def item_next(ctx, list_key, start):
 @click.argument("content")
 @click.option("--metadata", "-m", help="Metadata JSON")
 @click.pass_context
-def item_add_subtask(ctx, list_key, parent_key, subtask_key, content, metadata):
+def item_add_subitem(ctx, list_key, parent_key, subtask_key, content, metadata):
     """Add subtask to existing task"""
     manager = get_manager(ctx.obj["db_path"])
 
     try:
         meta = json.loads(metadata) if metadata else {}
-        subtask = manager.add_subtask(
+        subtask = manager.add_subitem(
             list_key=list_key,
             parent_key=parent_key,
             subtask_key=subtask_key,
@@ -1304,7 +1304,7 @@ def item_tree(ctx, list_key, item_key):
 @click.argument("new_parent_key")
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
-def item_move_to_subtask(ctx, list_key, item_key, new_parent_key, force):
+def item_move_to_subitem(ctx, list_key, item_key, new_parent_key, force):
     """Convert existing task to be a subtask of another task"""
     manager = get_manager(ctx.obj["db_path"])
 
@@ -1325,7 +1325,7 @@ def item_move_to_subtask(ctx, list_key, item_key, new_parent_key, force):
         if not force and not Confirm.ask("Proceed with move?"):
             return
 
-        moved_item = manager.move_to_subtask(list_key, item_key, new_parent_key)
+        moved_item = manager.move_to_subitem(list_key, item_key, new_parent_key)
         console.print(
             f"[green]✅ Moved '{item_key}' to be subtask of '{new_parent_key}'[/]"
         )
@@ -1355,7 +1355,7 @@ def item_subtasks(ctx, list_key, parent_key):
     manager = get_manager(ctx.obj["db_path"])
 
     try:
-        subtasks = manager.get_subtasks(list_key, parent_key)
+        subtasks = manager.get_subitems(list_key, parent_key)
 
         if not subtasks:
             console.print(

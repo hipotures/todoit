@@ -28,7 +28,7 @@ class TestItemPropertiesManager:
 
         # Create test list and items
         test_list = manager.create_list(
-            "test-project", "Test Project", ["Task 1", "Task 2"]
+            "test-project", "Test Project", ["Item 1", "Item 2"]
         )
         items = manager.get_list_items("test-project")
 
@@ -209,7 +209,7 @@ class TestItemPropertiesMCP:
 
         # Create test list and items
         test_list = manager.create_list(
-            "test-project", "Test Project", ["Task 1", "Task 2"]
+            "test-project", "Test Project", ["Item 1", "Item 2"]
         )
         items = manager.get_list_items("test-project")
 

@@ -29,9 +29,9 @@ class TestRenameCLI:
         manager = TodoManager(temp_db_path)
 
         # Create test lists
-        list1 = manager.create_list("test_list_1", "Test List 1", items=["Task 1", "Task 2"])
-        list2 = manager.create_list("test_list_2", "Test List 2", items=["Task A"])
-        list3 = manager.create_list("rename_me", "Original Title", items=["Old Task"])
+        list1 = manager.create_list("test_list_1", "Test List 1", items=["Item 1", "Item 2"])
+        list2 = manager.create_list("test_list_2", "Test List 2", items=["Item A"])
+        list3 = manager.create_list("rename_me", "Original Title", items=["Old Item"])
 
         return manager, [list1, list2, list3]
 
@@ -223,7 +223,7 @@ class TestRenameCLI:
         # Get original items
         original_items = manager.get_list_items("rename_me")
         assert len(original_items) == 1
-        assert original_items[0].content == "Old Task"
+        assert original_items[0].content == "Old Item"
 
         # Add some properties for testing
         manager.set_list_property("rename_me", "test_prop", "test_value")
@@ -241,7 +241,7 @@ class TestRenameCLI:
         # Verify items are preserved
         new_items = manager.get_list_items("preserved_list")
         assert len(new_items) == 1
-        assert new_items[0].content == "Old Task"
+        assert new_items[0].content == "Old Item"
 
         # Verify properties are preserved
         prop_value = manager.get_list_property("preserved_list", "test_prop")
@@ -299,7 +299,7 @@ class TestRenameCLI:
         # Create a list via CLI (which auto-tags with 'dev')
         runner.invoke(cli, [
             "--db", temp_db_path,
-            "list", "create", "tagged_list",
+            "list", "create", "--list", "tagged_list",
             "--title", "Tagged List"
         ])
 

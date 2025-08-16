@@ -1,6 +1,6 @@
 """
 Unit tests for hierarchical numbering in display functionality
-Tests the fix for subtask numbering to ensure proper parent-relative indexing
+Tests the fix for subitem numbering to ensure proper parent-relative indexing
 """
 
 import pytest
@@ -19,7 +19,7 @@ class TestHierarchicalNumbering:
         task1 = Mock()
         task1.id = 1
         task1.item_key = "task1"
-        task1.content = "Main Task 1"
+        task1.content = "Main Item 1"
         task1.position = 1
         task1.parent_item_id = None
         task1.status = Mock()
@@ -30,7 +30,7 @@ class TestHierarchicalNumbering:
         task2 = Mock()
         task2.id = 3
         task2.item_key = "task2"
-        task2.content = "Main Task 2"
+        task2.content = "Main Item 2"
         task2.position = 3
         task2.parent_item_id = None
         task2.status = Mock()
@@ -42,7 +42,7 @@ class TestHierarchicalNumbering:
         task1_sub1 = Mock()
         task1_sub1.id = 2
         task1_sub1.item_key = "task1_sub1"
-        task1_sub1.content = "Subtask 1 for Task 1"
+        task1_sub1.content = "Subitem 1 for Item 1"
         task1_sub1.position = 2  # Global position
         task1_sub1.parent_item_id = 1
         task1_sub1.status = Mock()
@@ -53,7 +53,7 @@ class TestHierarchicalNumbering:
         task1_sub2 = Mock()
         task1_sub2.id = 4
         task1_sub2.item_key = "task1_sub2"
-        task1_sub2.content = "Subtask 2 for Task 1"
+        task1_sub2.content = "Subitem 2 for Item 1"
         task1_sub2.position = 4  # Global position
         task1_sub2.parent_item_id = 1
         task1_sub2.status = Mock()
@@ -64,7 +64,7 @@ class TestHierarchicalNumbering:
         task1_sub3 = Mock()
         task1_sub3.id = 5
         task1_sub3.item_key = "task1_sub3"
-        task1_sub3.content = "Subtask 3 for Task 1"
+        task1_sub3.content = "Subitem 3 for Item 1"
         task1_sub3.position = 5  # Global position
         task1_sub3.parent_item_id = 1
         task1_sub3.status = Mock()
@@ -76,7 +76,7 @@ class TestHierarchicalNumbering:
         task2_sub1 = Mock()
         task2_sub1.id = 6
         task2_sub1.item_key = "task2_sub1"
-        task2_sub1.content = "Subtask 1 for Task 2"
+        task2_sub1.content = "Subitem 1 for Item 2"
         task2_sub1.position = 6  # Global position
         task2_sub1.parent_item_id = 3
         task2_sub1.status = Mock()
@@ -87,7 +87,7 @@ class TestHierarchicalNumbering:
         task2_sub2 = Mock()
         task2_sub2.id = 7
         task2_sub2.item_key = "task2_sub2"
-        task2_sub2.content = "Subtask 2 for Task 2"
+        task2_sub2.content = "Subitem 2 for Item 2"
         task2_sub2.position = 7  # Global position
         task2_sub2.parent_item_id = 3
         task2_sub2.status = Mock()
@@ -152,18 +152,18 @@ class TestHierarchicalNumbering:
                 numbering = [item["#"] for item in data_captured]
                 
                 # Expected numbering:
-                # Task 1: "1"
-                # Task 1 Subtask 1: "1.1" 
-                # Task 1 Subtask 2: "1.2"
-                # Task 1 Subtask 3: "1.3"
-                # Task 2: "3"
-                # Task 2 Subtask 1: "3.1"
-                # Task 2 Subtask 2: "3.2"
+                # Item 1: "1"
+                # Item 1 Subitem 1: "1.1" 
+                # Item 1 Subitem 2: "1.2"
+                # Item 1 Subitem 3: "1.3"
+                # Item 2: "3"
+                # Item 2 Subitem 1: "3.1"
+                # Item 2 Subitem 2: "3.2"
                 expected_numbering = ["1", "1.1", "1.2", "1.3", "3", "3.1", "3.2"]
                 
                 assert numbering == expected_numbering, f"Expected {expected_numbering}, got {numbering}"
                 
-                # Verify that task keys match expected order
+                # Verify that item keys match expected order
                 keys = [item["Key"] for item in data_captured]
                 expected_keys = ["task1", "task1_sub1", "task1_sub2", "task1_sub3", "task2", "task2_sub1", "task2_sub2"]
                 assert keys == expected_keys, f"Expected {expected_keys}, got {keys}"
@@ -173,7 +173,7 @@ class TestHierarchicalNumbering:
                 display._display_records = original_display_records
 
     def test_subtask_numbering_resets_per_parent(self, mock_items_with_hierarchy):
-        """Test that subtask numbering resets to 1 for each parent"""
+        """Test that subitem numbering resets to 1 for each parent"""
         hierarchy = _organize_items_by_hierarchy(mock_items_with_hierarchy)
         
         # Test internal numbering logic by checking the data structure

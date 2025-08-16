@@ -49,21 +49,21 @@ class TestListDeletionFix:
         temp_manager.create_list("complex_list", "Complex List")
 
         # Create parent item
-        temp_manager.add_item("complex_list", "parent_item", "Parent task")
+        temp_manager.add_item("complex_list", "parent_item", "Parent item")
         temp_manager.set_item_property(
             "complex_list", "parent_item", "priority", "high"
         )
 
-        # Create subtask
-        temp_manager.add_subtask("complex_list", "parent_item", "subtask1", "Subtask 1")
+        # Create subitem
+        temp_manager.add_subitem("complex_list", "parent_item", "subtask1", "Subitem 1")
         temp_manager.set_item_property("complex_list", "subtask1", "assignee", "alice")
 
-        # Update subtask status (creates history and auto-syncs parent)
+        # Update subitem status (creates history and auto-syncs parent)
         temp_manager.update_item_status(
             "complex_list", "subtask1", status="in_progress"
         )
         temp_manager.update_item_content(
-            "complex_list", "subtask1", "Updated subtask content"
+            "complex_list", "subtask1", "Updated subitem content"
         )
 
         # Add list properties
@@ -74,7 +74,7 @@ class TestListDeletionFix:
         parent = temp_manager.get_item("complex_list", "parent_item")
         assert parent is not None
 
-        subtasks = temp_manager.get_subtasks("complex_list", "parent_item")
+        subtasks = temp_manager.get_subitems("complex_list", "parent_item")
         assert len(subtasks) == 1
 
         # Delete list - should handle all cascade deletions properly
@@ -92,8 +92,8 @@ class TestListDeletionFix:
         temp_manager.create_list("list_b", "List B")
 
         # Create items in both lists
-        temp_manager.add_item("list_a", "task_a", "Task A")
-        temp_manager.add_item("list_b", "task_b", "Task B")
+        temp_manager.add_item("list_a", "task_a", "Item A")
+        temp_manager.add_item("list_b", "task_b", "Item B")
 
         # Add properties to both items
         temp_manager.set_item_property("list_a", "task_a", "priority", "high")

@@ -37,7 +37,7 @@ class TestCLIJSONOutputFix:
     """Test CLI JSON output fixes"""
 
     def test_cli_json_single_output(self, manager_with_test_list, monkeypatch, capsys):
-        """Test that CLI list show returns single JSON in JSON mode"""
+        """Test that CLI list show --list returns single JSON in JSON mode"""
         manager, list_key = manager_with_test_list
         
         # Set JSON output format

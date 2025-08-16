@@ -30,13 +30,13 @@ class TestPropertySearchIntegration:
 
         # Add test items
         item1 = manager.add_item(
-            "testlist", "task1", "First task", metadata={"priority": "high"}
+            "testlist", "task1", "First item", metadata={"priority": "high"}
         )
         item2 = manager.add_item(
-            "testlist", "task2", "Second task", metadata={"priority": "low"}
+            "testlist", "task2", "Second item", metadata={"priority": "low"}
         )
         item3 = manager.add_item(
-            "testlist", "task3", "Third task", metadata={"status": "reviewed"}
+            "testlist", "task3", "Third item", metadata={"status": "reviewed"}
         )
 
         # Add properties
@@ -84,7 +84,7 @@ class TestPropertySearchIntegration:
 
         assert len(results) == 1
         assert results[0].item_key == "task1"
-        assert results[0].content == "First task"
+        assert results[0].content == "First item"
 
     def test_manager_find_items_by_property_multiple_results(
         self, manager, setup_test_data
@@ -173,7 +173,7 @@ class TestPropertySearchIntegration:
 
         assert len(items) == 1
         assert items[0].item_key == "task1"
-        assert items[0].content == "First task"
+        assert items[0].content == "First item"
 
     def test_mcp_logic_simulation_find_single_not_found(self, manager, setup_test_data):
         """Test MCP logic simulation - single item search with no result."""
@@ -301,7 +301,7 @@ class TestPropertySearchIntegration:
         # Add many items with properties
         for i in range(100):
             item_key = f"item{i:03d}"
-            manager.add_item("perftest", item_key, f"Task {i}")
+            manager.add_item("perftest", item_key, f"Item {i}")
 
             # Add properties - some items will have matching properties
             if i % 10 == 0:  # Every 10th item has priority=high

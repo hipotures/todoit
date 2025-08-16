@@ -73,8 +73,8 @@ TOOLS_STANDARD = TOOLS_MINIMAL + [
     "todo_mark_completed",
     "todo_start_item",
     # Basic subtasks (2)
-    "todo_add_subtask",
-    "todo_get_subtasks",
+    "todo_add_subitem",
+    "todo_get_subitems",
     # Basic properties (6)
     "todo_set_list_property",
     "todo_get_list_property",
@@ -813,7 +813,7 @@ async def todo_get_item_history(
 # ████ STANDARD LEVEL TOOLS (+13 tools) - Useful extensions
 # ═══════════════════════════════════════════════════════════════════════════════
 # Convenience: quick_add, mark_completed, start_item
-# Basic subtasks: add_subtask, get_subtasks
+# Basic subtasks: add_subitem, get_subitems
 # Archive management: archive_list, unarchive_list
 # Basic properties: set/get list & item properties
 # Basic tagging: create_tag, add_list_tag
@@ -1298,7 +1298,7 @@ async def todo_find_subitems_by_status(
 
 @conditional_tool
 @mcp_error_handler
-async def todo_add_subtask(
+async def todo_add_subitem(
     list_key: str,
     parent_key: str,
     subtask_key: str,
@@ -1318,7 +1318,7 @@ async def todo_add_subtask(
     Returns:
         Dictionary with success status and created subtask details
     """
-    subtask = mgr.add_subtask(list_key, parent_key, subtask_key, content, metadata)
+    subtask = mgr.add_subitem(list_key, parent_key, subtask_key, content, metadata)
     return {
         "success": True,
         "subtask": subtask.to_dict(),
@@ -1328,7 +1328,7 @@ async def todo_add_subtask(
 
 @conditional_tool
 @mcp_error_handler
-async def todo_get_subtasks(list_key: str, parent_key: str, mgr=None) -> Dict[str, Any]:
+async def todo_get_subitems(list_key: str, parent_key: str, mgr=None) -> Dict[str, Any]:
     """Get all subtasks for a parent task.
 
     Args:
@@ -1338,7 +1338,7 @@ async def todo_get_subtasks(list_key: str, parent_key: str, mgr=None) -> Dict[st
     Returns:
         Dictionary with success status, subtasks list, and count
     """
-    subtasks = mgr.get_subtasks(list_key, parent_key)
+    subtasks = mgr.get_subitems(list_key, parent_key)
     return {
         "success": True,
         "subtasks": [subtask.to_dict() for subtask in subtasks],
@@ -1372,7 +1372,7 @@ async def todo_get_item_hierarchy(
 
 @conditional_tool
 @mcp_error_handler
-async def todo_move_to_subtask(
+async def todo_move_to_subitem(
     list_key: str, item_key: str, new_parent_key: str, mgr=None
 ) -> Dict[str, Any]:
     """Convert an existing task to be a subtask of another task.
@@ -1385,7 +1385,7 @@ async def todo_move_to_subtask(
     Returns:
         Dictionary with success status and updated item details
     """
-    moved_item = mgr.move_to_subtask(list_key, item_key, new_parent_key)
+    moved_item = mgr.move_to_subitem(list_key, item_key, new_parent_key)
     return {
         "success": True,
         "moved_item": moved_item.to_dict(),

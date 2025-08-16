@@ -33,7 +33,7 @@ class TestLimits:
             pass
 
     def test_very_long_task_content(self, manager):
-        """Test handling of very long task content"""
+        """Test handling of very long item content"""
         manager.create_list("test", "Test List")
 
         # Test different content sizes (keeping within Pydantic limits)
@@ -84,7 +84,7 @@ class TestLimits:
 
         # Test adding items
         for i in range(num_items):
-            item = manager.add_item("large_list", f"item_{i}", f"Task number {i}")
+            item = manager.add_item("large_list", f"item_{i}", f"Item number {i}")
             assert item.item_key == f"item_{i}"
 
         # Test retrieval performance
@@ -97,17 +97,17 @@ class TestLimits:
         assert progress.completed == 0
         assert progress.completion_percentage == 0.0
 
-        # Test next task selection with many items
+        # Test next item selection with many items
         next_task = manager.get_next_pending("large_list")
         assert next_task is not None
         assert next_task.item_key == "item_0"  # Should get first pending
 
     def test_deep_subtask_hierarchy(self, manager):
-        """Test deep nested subtask hierarchies"""
+        """Test deep nested subitem hierarchies"""
         manager.create_list("deep_list", "Deep Hierarchy List")
 
-        # Create root task
-        manager.add_item("deep_list", "root", "Root Task")
+        # Create root item
+        manager.add_item("deep_list", "root", "Root Item")
 
         # Create moderate depth hierarchy (5 levels for performance)
         max_depth = 5
@@ -115,8 +115,8 @@ class TestLimits:
 
         for depth in range(1, max_depth + 1):
             subtask_key = f"subtask_level_{depth}"
-            manager.add_subtask(
-                "deep_list", parent_key, subtask_key, f"Subtask at level {depth}"
+            manager.add_subitem(
+                "deep_list", parent_key, subtask_key, f"Subitem at level {depth}"
             )
             parent_key = subtask_key
 
@@ -124,30 +124,30 @@ class TestLimits:
         hierarchy = manager.get_item_hierarchy("deep_list", "root")
         assert hierarchy is not None
 
-        # Test next task selection with deep hierarchy
+        # Test next item selection with deep hierarchy
         next_task = manager.get_next_pending_with_subtasks("deep_list")
         assert next_task is not None
-        # Should select deepest available subtask first
+        # Should select deepest available subitem first
         assert "level" in next_task.item_key
 
     def test_many_subtasks_per_parent(self, manager):
-        """Test parent task with many subtasks"""
+        """Test parent item with many subtasks"""
         manager.create_list("wide_list", "Wide Hierarchy List")
 
-        # Create parent task
+        # Create parent item
         manager.add_item("wide_list", "parent", "Parent with Many Children")
 
         # Add many subtasks (reduced for performance)
         num_subtasks = 50
         for i in range(num_subtasks):
-            manager.add_subtask("wide_list", "parent", f"child_{i}", f"Child task {i}")
+            manager.add_subitem("wide_list", "parent", f"child_{i}", f"Child item {i}")
 
-        # Test subtask retrieval
-        subtasks = manager.get_subtasks("wide_list", "parent")
+        # Test subitem retrieval
+        subtasks = manager.get_subitems("wide_list", "parent")
         assert len(subtasks) == num_subtasks
 
         # Test completion logic with many subtasks
-        # Complete all but one subtask
+        # Complete all but one subitem
         for i in range(num_subtasks - 1):
             manager.update_item_status("wide_list", f"child_{i}", "completed")
 
@@ -155,7 +155,7 @@ class TestLimits:
         parent = manager.get_item("wide_list", "parent")
         assert parent.status != "completed"
 
-        # Complete last subtask
+        # Complete last subitem
         manager.update_item_status(
             "wide_list", f"child_{num_subtasks - 1}", "completed"
         )
@@ -174,17 +174,17 @@ class TestLimits:
             manager.create_list(list_key, f"List {i}")
             lists.append(list_key)
 
-            # Add task to each list
-            manager.add_item(list_key, f"task_{i}", f"Task in list {i}")
+            # Add item to each list
+            manager.add_item(list_key, f"task_{i}", f"Item in list {i}")
 
-        # Create many dependencies (each task depends on previous)
+        # Create many dependencies (each item depends on previous)
         for i in range(1, num_lists):
             manager.add_item_dependency(
                 lists[i], f"task_{i}", lists[i - 1], f"task_{i-1}"
             )
 
         # Test dependency resolution
-        # Only first task should be available
+        # Only first item should be available
         next_task = manager.get_next_pending(lists[0])
         assert next_task is not None
         assert next_task.item_key == "task_0"
@@ -198,7 +198,7 @@ class TestLimits:
         for i in range(min(3, num_lists)):  # Test first few
             manager.update_item_status(lists[i], f"task_{i}", "completed")
 
-            # Next task should now be available
+            # Next item should now be available
             if i < min(2, num_lists - 1):
                 is_blocked = manager.is_item_blocked(lists[i + 1], f"task_{i + 1}")
                 assert is_blocked == False

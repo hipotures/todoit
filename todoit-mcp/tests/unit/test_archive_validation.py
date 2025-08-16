@@ -39,7 +39,7 @@ class TestArchiveValidation:
         """Test archiving list with all completed tasks succeeds without force"""
         # Create list with tasks
         test_list = manager.create_list(
-            "completed-test", "Completed Test", items=["Task 1", "Task 2"]
+            "completed-test", "Completed Test", items=["Item 1", "Item 2"]
         )
 
         # Complete all tasks
@@ -54,10 +54,10 @@ class TestArchiveValidation:
         """Test archiving list with incomplete tasks fails without force"""
         # Create list with tasks
         test_list = manager.create_list(
-            "incomplete-test", "Incomplete Test", items=["Task 1", "Task 2", "Task 3"]
+            "incomplete-test", "Incomplete Test", items=["Item 1", "Item 2", "Item 3"]
         )
 
-        # Complete only one task
+        # Complete only one item
         manager.update_item_status("incomplete-test", "item_1", "completed")
 
         # Should fail without force
@@ -73,7 +73,7 @@ class TestArchiveValidation:
         """Test archiving list with incomplete tasks succeeds with force=True"""
         # Create list with tasks
         test_list = manager.create_list(
-            "force-test", "Force Test", items=["Task 1", "Task 2"]
+            "force-test", "Force Test", items=["Item 1", "Item 2"]
         )
 
         # Don't complete any tasks
@@ -83,12 +83,12 @@ class TestArchiveValidation:
         assert archived_list.status == "archived"
 
     def test_archive_mixed_status_list_without_force_fails(self, manager):
-        """Test archiving list with mixed task statuses fails without force"""
+        """Test archiving list with mixed item statuses fails without force"""
         # Create list with tasks
         test_list = manager.create_list(
             "mixed-test",
             "Mixed Status Test",
-            items=["Task 1", "Task 2", "Task 3", "Task 4"],
+            items=["Item 1", "Item 2", "Item 3", "Item 4"],
         )
 
         # Set various statuses
@@ -106,10 +106,10 @@ class TestArchiveValidation:
         assert "Incomplete: 3/4 tasks" in error_message
 
     def test_archive_mixed_status_list_with_force_succeeds(self, manager):
-        """Test archiving list with mixed task statuses succeeds with force=True"""
+        """Test archiving list with mixed item statuses succeeds with force=True"""
         # Create list with tasks
         test_list = manager.create_list(
-            "mixed-force-test", "Mixed Force Test", items=["Task 1", "Task 2"]
+            "mixed-force-test", "Mixed Force Test", items=["Item 1", "Item 2"]
         )
 
         # Set mixed statuses
@@ -149,7 +149,7 @@ class TestArchiveValidation:
         """Test that force parameter defaults to False when not specified"""
         # Create list with incomplete tasks
         test_list = manager.create_list(
-            "default-force-test", "Default Force Test", items=["Task 1"]
+            "default-force-test", "Default Force Test", items=["Item 1"]
         )
 
         # Should fail when calling without force parameter (defaults to False)

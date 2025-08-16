@@ -33,13 +33,13 @@ class TestMCPArchiveTools:
         empty_list = manager.create_list("empty-list", "Empty List")
 
         completed_list = manager.create_list(
-            "completed-list", "Completed List", items=["Task 1", "Task 2"]
+            "completed-list", "Completed List", items=["Item 1", "Item 2"]
         )
         manager.update_item_status("completed-list", "item_1", "completed")
         manager.update_item_status("completed-list", "item_2", "completed")
 
         incomplete_list = manager.create_list(
-            "incomplete-list", "Incomplete List", items=["Task A", "Task B", "Task C"]
+            "incomplete-list", "Incomplete List", items=["Item A", "Item B", "Item C"]
         )
         manager.update_item_status(
             "incomplete-list", "item_1", "completed"

@@ -50,7 +50,7 @@ def manager(temp_db):
 def sample_list(manager):
     """Create sample list with items for testing"""
     list_obj = manager.create_list(
-        list_key="test_list", title="Test List", items=["Task 1", "Task 2", "Task 3"]
+        list_key="test_list", title="Test List", items=["Item 1", "Item 2", "Item 3"]
     )
     return list_obj
 

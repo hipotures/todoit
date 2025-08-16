@@ -98,7 +98,7 @@ class TestMCPToolsFunctional:
         """Test list CRUD operations"""
         # Create list
         list_obj = temp_manager.create_list(
-            list_key="test_list", title="Test List", items=["Task 1", "Task 2"]
+            list_key="test_list", title="Test List", items=["Item 1", "Item 2"]
         )
         assert list_obj.list_key == "test_list"
         assert list_obj.title == "Test List"
@@ -143,9 +143,9 @@ class TestMCPToolsFunctional:
 
         # Update content
         updated_content = temp_manager.update_item_content(
-            "item_test", "task1", "Updated task"
+            "item_test", "task1", "Updated item"
         )
-        assert updated_content.content == "Updated task"
+        assert updated_content.content == "Updated item"
 
         # Delete item
         temp_manager.delete_item("item_test", "task1")
@@ -153,23 +153,23 @@ class TestMCPToolsFunctional:
         assert progress.total == 1
 
     def test_subtask_operations(self, temp_manager):
-        """Test subtask functionality if available"""
-        list_obj = temp_manager.create_list("subtask_test", "Subtask Test")
+        """Test subitem functionality if available"""
+        list_obj = temp_manager.create_list("subtask_test", "Subitem Test")
 
-        # Add parent task
-        parent = temp_manager.add_item("subtask_test", "parent", "Parent task")
+        # Add parent item
+        parent = temp_manager.add_item("subtask_test", "parent", "Parent item")
 
         # Test subtasks if the methods exist
-        if hasattr(temp_manager, "add_subtask"):
-            subtask = temp_manager.add_subtask(
-                "subtask_test", "parent", "sub1", "Subtask 1"
+        if hasattr(temp_manager, "add_subitem"):
+            subitem = temp_manager.add_subitem(
+                "subtask_test", "parent", "sub1", "Subitem 1"
             )
             # Note: subtask might not have parent_key attribute in the model
-            assert subtask.item_key == "sub1"
+            assert subitem.item_key == "sub1"
 
             # Get subtasks
-            if hasattr(temp_manager, "get_subtasks"):
-                subtasks = temp_manager.get_subtasks("subtask_test", "parent")
+            if hasattr(temp_manager, "get_subitems"):
+                subtasks = temp_manager.get_subitems("subtask_test", "parent")
                 assert len(subtasks) >= 1
 
     def test_dependency_operations(self, temp_manager):
@@ -227,26 +227,26 @@ class TestMCPToolsFunctional:
 
         # Test quick add if method exists
         if hasattr(temp_manager, "quick_add"):
-            items = ["Task A", "Task B", "Task C"]
+            items = ["Item A", "Item B", "Item C"]
             added = temp_manager.quick_add("quick_test", items)
 
             assert len(added) == 3
             # Check if returned as dict or object
             if isinstance(added[0], dict):
-                assert added[0]["content"] == "Task A"
+                assert added[0]["content"] == "Item A"
                 assert "item_0001" in added[0]["item_key"] or added[0][
                     "item_key"
                 ].startswith("item_")
             else:
-                assert added[0].content == "Task A"
+                assert added[0].content == "Item A"
 
     def test_smart_next_pending(self, temp_manager):
         """Test next pending algorithm"""
         list_obj = temp_manager.create_list("smart_test", "Smart Algorithm Test")
 
         # Add some items
-        temp_manager.add_item("smart_test", "task1", "Task 1")
-        temp_manager.add_item("smart_test", "task2", "Task 2")
+        temp_manager.add_item("smart_test", "task1", "Item 1")
+        temp_manager.add_item("smart_test", "task2", "Item 2")
 
         # Test next pending methods if available
         if hasattr(temp_manager, "get_next_pending"):
@@ -263,8 +263,8 @@ class TestMCPToolsFunctional:
         list_obj = temp_manager.create_list("status_test", "Status Test")
 
         # Add items
-        temp_manager.add_item("status_test", "task1", "Task 1")
-        temp_manager.add_item("status_test", "task2", "Task 2")
+        temp_manager.add_item("status_test", "task1", "Item 1")
+        temp_manager.add_item("status_test", "task2", "Item 2")
         temp_manager.update_item_status("status_test", "task1", "completed")
 
         # Test comprehensive status if method exists
@@ -273,7 +273,7 @@ class TestMCPToolsFunctional:
             assert status is not None
             # Status might have different structure
             if isinstance(status, dict):
-                assert "progress" in status or "total" in status
+                assert "stats" in status or "total" in status
 
     def test_error_handling(self, temp_manager):
         """Test error handling in MCP tools"""

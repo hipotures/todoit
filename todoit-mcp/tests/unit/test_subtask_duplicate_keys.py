@@ -1,4 +1,4 @@
-"""Tests for allowing duplicate subtask keys across different parents"""
+"""Tests for allowing duplicate subitem keys across different parents"""
 
 import pytest
 import tempfile
@@ -18,7 +18,7 @@ def temp_db_path():
 
 
 def test_duplicate_subtask_keys_different_parents(temp_db_path):
-    """Test that the same subtask key can be used for different parent tasks"""
+    """Test that the same subitem key can be used for different parent tasks"""
     manager = TodoManager(db_path=temp_db_path)
     
     # Create a list
@@ -29,11 +29,11 @@ def test_duplicate_subtask_keys_different_parents(temp_db_path):
     manager.add_item("test_list", "scene_0020", "Generate image using scene_20.yaml")
     
     # Add subtasks with the same keys to both parents - this should work now
-    manager.add_subtask("test_list", "scene_0019", "image_gen", "Image generation")
-    manager.add_subtask("test_list", "scene_0019", "image_dwn", "Image download")
+    manager.add_subitem("test_list", "scene_0019", "image_gen", "Image generation")
+    manager.add_subitem("test_list", "scene_0019", "image_dwn", "Image download")
     
-    manager.add_subtask("test_list", "scene_0020", "image_gen", "Image generation")  # Same key as above
-    manager.add_subtask("test_list", "scene_0020", "image_dwn", "Image download")    # Same key as above
+    manager.add_subitem("test_list", "scene_0020", "image_gen", "Image generation")  # Same key as above
+    manager.add_subitem("test_list", "scene_0020", "image_dwn", "Image download")    # Same key as above
     
     # Verify all items exist
     list_items = manager.get_list_items("test_list")
@@ -48,38 +48,38 @@ def test_duplicate_subtask_keys_different_parents(temp_db_path):
 
 
 def test_duplicate_subtask_keys_same_parent_fails(temp_db_path):
-    """Test that duplicate subtask keys within the same parent still fail"""
+    """Test that duplicate subitem keys within the same parent still fail"""
     manager = TodoManager(db_path=temp_db_path)
     
-    # Create a list and parent task
+    # Create a list and parent item
     manager.create_list("test_list", "Test List")
     manager.add_item("test_list", "scene_0019", "Generate image using scene_19.yaml")
     
-    # Add first subtask
-    manager.add_subtask("test_list", "scene_0019", "image_gen", "Image generation")
+    # Add first subitem
+    manager.add_subitem("test_list", "scene_0019", "image_gen", "Image generation")
     
-    # Try to add another subtask with the same key to the same parent - should fail
-    with pytest.raises(ValueError, match="Subtask key 'image_gen' already exists for parent 'scene_0019'"):
-        manager.add_subtask("test_list", "scene_0019", "image_gen", "Another image generation")
+    # Try to add another subitem with the same key to the same parent - should fail
+    with pytest.raises(ValueError, match="Subitem key 'image_gen' already exists for parent 'scene_0019'"):
+        manager.add_subitem("test_list", "scene_0019", "image_gen", "Another image generation")
 
 
 def test_main_task_keys_still_unique(temp_db_path):
-    """Test that main task keys (without parent) are still required to be unique"""
+    """Test that main item keys (without parent) are still required to be unique"""
     manager = TodoManager(db_path=temp_db_path)
     
     # Create a list
     manager.create_list("test_list", "Test List")
     
-    # Add first main task
+    # Add first main item
     manager.add_item("test_list", "scene_0019", "Generate image using scene_19.yaml")
     
-    # Try to add another main task with the same key - should fail
-    with pytest.raises(ValueError, match="Task 'scene_0019' already exists in list 'test_list'"):
-        manager.add_item("test_list", "scene_0019", "Another scene task")
+    # Try to add another main item with the same key - should fail
+    with pytest.raises(ValueError, match="Item 'scene_0019' already exists in list 'test_list'"):
+        manager.add_item("test_list", "scene_0019", "Another scene item")
 
 
 def test_database_constraint_allows_duplicate_subtask_keys(temp_db_path):
-    """Test the database constraint directly allows duplicate subtask keys with different parents"""
+    """Test the database constraint directly allows duplicate subitem keys with different parents"""
     db = Database(temp_db_path)
     
     # Create list
@@ -113,7 +113,7 @@ def test_database_constraint_allows_duplicate_subtask_keys(temp_db_path):
     subtask1_data = {
         "list_id": list_id,
         "item_key": "same_key",  # Same key
-        "content": "Subtask of parent1",
+        "content": "Subitem of parent1",
         "position": 1,
         "parent_item_id": parent1.id
     }
@@ -122,7 +122,7 @@ def test_database_constraint_allows_duplicate_subtask_keys(temp_db_path):
     subtask2_data = {
         "list_id": list_id,
         "item_key": "same_key",  # Same key, different parent
-        "content": "Subtask of parent2", 
+        "content": "Subitem of parent2", 
         "position": 1,
         "parent_item_id": parent2.id
     }
@@ -157,12 +157,12 @@ def test_get_item_by_key_and_parent_function(temp_db_path):
     })
     
     subtask1 = db.create_item({
-        "list_id": list_id, "item_key": "same_key", "content": "Subtask of parent1",
+        "list_id": list_id, "item_key": "same_key", "content": "Subitem of parent1",
         "position": 1, "parent_item_id": parent1.id
     })
     
     subtask2 = db.create_item({
-        "list_id": list_id, "item_key": "same_key", "content": "Subtask of parent2",
+        "list_id": list_id, "item_key": "same_key", "content": "Subitem of parent2",
         "position": 1, "parent_item_id": parent2.id
     })
     
@@ -172,8 +172,8 @@ def test_get_item_by_key_and_parent_function(temp_db_path):
     
     assert found_subtask1.id == subtask1.id
     assert found_subtask2.id == subtask2.id
-    assert found_subtask1.content == "Subtask of parent1"
-    assert found_subtask2.content == "Subtask of parent2"
+    assert found_subtask1.content == "Subitem of parent1"
+    assert found_subtask2.content == "Subitem of parent2"
     
     # Test searching for main tasks (parent_item_id=None)
     found_parent1 = db.get_item_by_key_and_parent(list_id, "parent1", None)

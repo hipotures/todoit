@@ -417,7 +417,7 @@ class TestDatabaseComprehensive:
                 item_data = {
                     "list_id": list_obj.id,
                     "item_key": f"task_{j}",
-                    "content": f"Task {j} in List {i}",
+                    "content": f"Item {j} in List {i}",
                     "position": j + 1,
                     "status": "completed" if j == 0 else "pending",
                     "meta_data": {"priority": "high" if j == 0 else "normal"},

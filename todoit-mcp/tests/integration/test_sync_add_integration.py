@@ -34,8 +34,8 @@ class TestSyncAddIntegration:
         """Test basic synchronization of add_item from parent to child"""
         # Setup: Create parent list with initial tasks
         manager.create_list("parent", "Parent List")
-        manager.add_item("parent", "task1", "Initial task 1")
-        manager.add_item("parent", "task2", "Initial task 2")
+        manager.add_item("parent", "task1", "Initial item 1")
+        manager.add_item("parent", "task2", "Initial item 2")
 
         # Link to create child list
         result = manager.link_list_1to1("parent", "child", "Child List")
@@ -47,8 +47,8 @@ class TestSyncAddIntegration:
         child_items = manager.get_list_items("child")
         assert len(parent_items) == len(child_items) == 2
 
-        # Add NEW task to parent - should sync to child
-        manager.add_item("parent", "task3", "NEW synced task")
+        # Add NEW item to parent - should sync to child
+        manager.add_item("parent", "task3", "NEW synced item")
 
         # Verify sync occurred
         parent_items_after = manager.get_list_items("parent")
@@ -57,7 +57,7 @@ class TestSyncAddIntegration:
         assert len(parent_items_after) == 3
         assert len(child_items_after) == 3
 
-        # Verify the new task exists in both with correct properties
+        # Verify the new item exists in both with correct properties
         parent_task3 = next(
             (item for item in parent_items_after if item.item_key == "task3"), None
         )
@@ -67,21 +67,21 @@ class TestSyncAddIntegration:
 
         assert parent_task3 is not None
         assert child_task3 is not None
-        assert parent_task3.content == child_task3.content == "NEW synced task"
+        assert parent_task3.content == child_task3.content == "NEW synced item"
         assert child_task3.status == ItemStatus.PENDING  # Always reset to pending
 
     def test_sync_add_with_properties(self, manager):
         """Test synchronization with item properties"""
         # Setup parent and child
         manager.create_list("dev", "Development")
-        manager.add_item("dev", "setup", "Setup task")
+        manager.add_item("dev", "setup", "Setup item")
         manager.link_list_1to1("dev", "test", "Testing")
 
-        # Add task with properties to parent
+        # Add item with properties to parent
         manager.add_item(
             "dev",
             "complex_task",
-            "Complex task with properties",
+            "Complex item with properties",
             metadata={"priority": "high", "category": "feature"},
         )
 
@@ -89,7 +89,7 @@ class TestSyncAddIntegration:
         manager.set_item_property("dev", "complex_task", "assignee", "john_doe")
         manager.set_item_property("dev", "complex_task", "estimated_hours", "8")
 
-        # Add another task to trigger sync
+        # Add another item to trigger sync
         manager.add_item("dev", "sync_test", "Test sync functionality")
 
         # Verify sync
@@ -98,7 +98,7 @@ class TestSyncAddIntegration:
 
         assert len(dev_items) == len(test_items) == 3
 
-        # Find the synced task
+        # Find the synced item
         test_sync = next(
             (item for item in test_items if item.item_key == "sync_test"), None
         )
@@ -110,7 +110,7 @@ class TestSyncAddIntegration:
         """Test synchronization to multiple 1:1 children"""
         # Setup parent
         manager.create_list("main", "Main List")
-        manager.add_item("main", "base", "Base task")
+        manager.add_item("main", "base", "Base item")
 
         # Create multiple children
         manager.link_list_1to1("main", "child1", "Child 1")
@@ -123,7 +123,7 @@ class TestSyncAddIntegration:
 
         assert len(main_items) == len(child1_items) == len(child2_items) == 1
 
-        # Add task to parent
+        # Add item to parent
         manager.add_item("main", "multi_sync", "Should sync to all children")
 
         # Verify sync to all children
@@ -138,7 +138,7 @@ class TestSyncAddIntegration:
             == 2
         )
 
-        # Verify the task exists in all lists
+        # Verify the item exists in all lists
         main_multi = next(
             (item for item in main_items_after if item.item_key == "multi_sync"), None
         )
@@ -157,7 +157,7 @@ class TestSyncAddIntegration:
         # Create lists with regular (non-1:1) relation
         manager.create_list("source", "Source List")
         manager.create_list("related", "Related List")
-        manager.add_item("source", "initial", "Initial task")
+        manager.add_item("source", "initial", "Initial item")
 
         # Create regular relation (not 1:1)
         source_list = manager.get_list("source")
@@ -170,7 +170,7 @@ class TestSyncAddIntegration:
             metadata={"relationship": "related"},  # NOT 1:1
         )
 
-        # Add task to source
+        # Add item to source
         manager.add_item("source", "no_sync", "Should NOT sync")
 
         # Verify no sync occurred
@@ -180,7 +180,7 @@ class TestSyncAddIntegration:
         assert len(source_items) == 2  # initial + no_sync
         assert len(related_items) == 0  # No sync occurred
 
-        # Verify the task doesn't exist in related
+        # Verify the item doesn't exist in related
         no_sync_in_related = any(item.item_key == "no_sync" for item in related_items)
         assert not no_sync_in_related
 
@@ -188,13 +188,13 @@ class TestSyncAddIntegration:
         """Test that sync skips items that already exist in child"""
         # Setup
         manager.create_list("parent", "Parent")
-        manager.add_item("parent", "task1", "Task 1")
+        manager.add_item("parent", "task1", "Item 1")
         manager.link_list_1to1("parent", "child", "Child")
 
-        # Manually add task to child with same key
+        # Manually add item to child with same key
         manager.add_item("child", "duplicate", "Child version")
 
-        # Add task with same key to parent - should not overwrite child
+        # Add item with same key to parent - should not overwrite child
         manager.add_item("parent", "duplicate", "Parent version")
 
         # Verify child version unchanged
@@ -210,12 +210,12 @@ class TestSyncAddIntegration:
         """Test that sync respects position ordering"""
         # Setup
         manager.create_list("ordered", "Ordered List")
-        manager.add_item("ordered", "first", "First task", position=1)
-        manager.add_item("ordered", "second", "Second task", position=2)
+        manager.add_item("ordered", "first", "First item", position=1)
+        manager.add_item("ordered", "second", "Second item", position=2)
         manager.link_list_1to1("ordered", "copy", "Copy List")
 
-        # Add task with specific position
-        manager.add_item("ordered", "middle", "Middle task", position=2)
+        # Add item with specific position
+        manager.add_item("ordered", "middle", "Middle item", position=2)
 
         # Verify sync maintained structure
         ordered_items = manager.get_list_items("ordered")
@@ -223,19 +223,19 @@ class TestSyncAddIntegration:
 
         assert len(ordered_items) == len(copy_items) == 3
 
-        # Find middle task in copy
+        # Find middle item in copy
         middle_in_copy = next(
             (item for item in copy_items if item.item_key == "middle"), None
         )
         assert middle_in_copy is not None
-        assert middle_in_copy.content == "Middle task"
+        assert middle_in_copy.content == "Middle item"
 
     def test_sync_performance_with_many_items(self, manager):
         """Test sync performance with larger lists"""
         # Create parent with some items
         manager.create_list("big_parent", "Big Parent")
         for i in range(10):
-            manager.add_item("big_parent", f"init_{i:02d}", f"Initial task {i}")
+            manager.add_item("big_parent", f"init_{i:02d}", f"Initial item {i}")
 
         # Link child
         manager.link_list_1to1("big_parent", "big_child", "Big Child")
@@ -252,7 +252,7 @@ class TestSyncAddIntegration:
 
         # Add multiple new tasks
         for i in range(5):
-            manager.add_item("big_parent", f"new_{i:02d}", f"New task {i}")
+            manager.add_item("big_parent", f"new_{i:02d}", f"New item {i}")
 
         end_time = time.time()
         sync_time = end_time - start_time

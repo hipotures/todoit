@@ -934,9 +934,9 @@ def list_archive(ctx, list_key, force):
         console.print("💡 Use [cyan]todoit list unarchive {list_key}[/] to restore it")
     except ValueError as e:
         console.print(f"[red]❌ Error: {e}[/]")
-        if "incomplete items" in str(e).lower() and not force:
+        if "incomplete tasks" in str(e).lower() and not force:
             console.print(
-                f"[yellow]💡 Use [cyan]todoit list archive {list_key} --force[/] to archive anyway[/]"
+                f"[yellow]💡 Use [cyan]todoit list archive --list {list_key} --force[/] to archive anyway[/]"
             )
 
 

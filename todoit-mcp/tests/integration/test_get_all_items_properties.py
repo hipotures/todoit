@@ -24,9 +24,9 @@ class TestGetAllItemsPropertiesIntegration:
         manager.create_list("testlist", "Test List", "Test description")
 
         # Add test items with different statuses
-        manager.add_item("testlist", "task1", "First task")
-        manager.add_item("testlist", "task2", "Second task")
-        manager.add_item("testlist", "task3", "Third task")
+        manager.add_item("testlist", "task1", "First item")
+        manager.add_item("testlist", "task2", "Second item")
+        manager.add_item("testlist", "task3", "Third item")
 
         # Update statuses
         manager.update_item_status("testlist", "task2", "in_progress")
@@ -144,8 +144,8 @@ class TestGetAllItemsPropertiesIntegration:
     def test_get_all_items_properties_items_without_properties(self, manager):
         """Test with items that have no properties."""
         manager.create_list("noprops", "No Properties List")
-        manager.add_item("noprops", "task1", "Task without properties")
-        manager.add_item("noprops", "task2", "Another task without properties")
+        manager.add_item("noprops", "task1", "Item without properties")
+        manager.add_item("noprops", "task2", "Another item without properties")
 
         result = manager.get_all_items_properties("noprops")
         assert len(result) == 0

@@ -37,7 +37,7 @@ class TestManagerComprehensive:
         list_obj = temp_manager.create_list(
             list_key="comprehensive_test",
             title="Comprehensive Test",
-            items=["Task 1", "Task 2", "Task 3"],
+            items=["Item 1", "Item 2", "Item 3"],
             list_type="sequential",
             metadata={"project": "test", "priority": "high"},
         )
@@ -50,7 +50,7 @@ class TestManagerComprehensive:
         # Verify items were created
         items = temp_manager.get_list_items("comprehensive_test")
         assert len(items) == 3
-        assert items[0].content == "Task 1"
+        assert items[0].content == "Item 1"
 
         # Update list properties instead of direct update
         temp_manager.set_list_property("comprehensive_test", "title", "Updated Title")
@@ -211,7 +211,7 @@ class TestManagerComprehensive:
         assert "frontend" in project_keys
         assert "testing" in project_keys
 
-        # Test cross-list progress for project
+        # Test cross-list stats --list for project
         try:
             progress = temp_manager.get_cross_list_progress("web_app")
             assert isinstance(progress, dict)
@@ -232,14 +232,14 @@ class TestManagerComprehensive:
         item3 = temp_manager.add_item("advanced_test", "item3", "Item 3")
 
         # Test subtask functionality instead of insertion
-        subtask = temp_manager.add_subtask(
-            "advanced_test", "item1", "subtask1", "Subtask Content"
+        subitem = temp_manager.add_subitem(
+            "advanced_test", "item1", "subtask1", "Subitem Content"
         )
         assert subtask.parent_item_id == item1.id
-        assert subtask.content == "Subtask Content"
+        assert subitem.content == "Subitem Content"
 
         # Get subtasks
-        subtasks = temp_manager.get_subtasks("advanced_test", "item1")
+        subtasks = temp_manager.get_subitems("advanced_test", "item1")
         assert len(subtasks) == 1
         assert subtasks[0].item_key == "subtask1"
 
@@ -249,15 +249,15 @@ class TestManagerComprehensive:
         assert "subtasks" in hierarchy
         assert len(hierarchy["subtasks"]) == 1
 
-        # Test moving subtask to different parent
-        moved_subtask = temp_manager.move_to_subtask(
+        # Test moving subitem to different parent
+        moved_subtask = temp_manager.move_to_subitem(
             "advanced_test", "subtask1", "item2"
         )
         assert moved_subtask.parent_item_id == item2.id
 
         # Verify move
-        item1_subtasks = temp_manager.get_subtasks("advanced_test", "item1")
-        item2_subtasks = temp_manager.get_subtasks("advanced_test", "item2")
+        item1_subtasks = temp_manager.get_subitems("advanced_test", "item1")
+        item2_subtasks = temp_manager.get_subitems("advanced_test", "item2")
         assert len(item1_subtasks) == 0
         assert len(item2_subtasks) == 1
 
@@ -270,7 +270,7 @@ class TestManagerComprehensive:
         temp_manager.add_item(
             "search_test",
             "task1",
-            "Important task about API",
+            "Important item about API",
             metadata={
                 "priority": "high",
                 "category": "backend",
@@ -391,12 +391,12 @@ class TestManagerComprehensive:
 [ ] Task 1 - Not done
 [x] Task 2 - Completed
 [ ] Task 3 - Another pending task
-[x] Task 4 - Another completed
+[x] Item 4 - Another completed
 
 ## Multi-column test
 [ ] [x] Multi task 1
 [x] [ ] Multi task 2
-[ ] [ ] Multi task 3
+[ ] [ ] Multi item 3
 """
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:

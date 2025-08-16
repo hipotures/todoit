@@ -16,9 +16,9 @@ class TestPropertyHierarchicalSorting:
         todo_list = manager.create_list("test_list", "Test List")
 
         # Add items in specific order: z, a, m (should stay in this order, not alphabetical)
-        task_z = manager.add_item("test_list", "task_z", "Task Z")
-        task_a = manager.add_item("test_list", "task_a", "Task A") 
-        task_m = manager.add_item("test_list", "task_m", "Task M")
+        task_z = manager.add_item("test_list", "task_z", "Item Z")
+        task_a = manager.add_item("test_list", "task_a", "Item A") 
+        task_m = manager.add_item("test_list", "task_m", "Item M")
 
         # Add properties to all tasks
         manager.set_item_property("test_list", "task_z", "priority", "high")
@@ -42,9 +42,9 @@ class TestPropertyHierarchicalSorting:
         task_2 = manager.add_item("test_list", "main_a", "Main A")  # Second position
 
         # Add subtasks
-        sub_1 = manager.add_subtask("test_list", "main_b", "sub_b1", "Sub B1")
-        sub_2 = manager.add_subtask("test_list", "main_a", "sub_a1", "Sub A1")
-        sub_3 = manager.add_subtask("test_list", "main_b", "sub_b2", "Sub B2")
+        sub_1 = manager.add_subitem("test_list", "main_b", "sub_b1", "Sub B1")
+        sub_2 = manager.add_subitem("test_list", "main_a", "sub_a1", "Sub A1")
+        sub_3 = manager.add_subitem("test_list", "main_b", "sub_b2", "Sub B2")
 
         # Add properties
         manager.set_item_property("test_list", "main_b", "type", "parent")
@@ -67,10 +67,10 @@ class TestPropertyHierarchicalSorting:
         todo_list = manager.create_list("test_list", "Test List")
 
         # Add tasks
-        task_1 = manager.add_item("test_list", "task_z", "Task Z")
-        task_2 = manager.add_item("test_list", "task_a", "Task A")
+        task_1 = manager.add_item("test_list", "task_z", "Item Z")
+        task_2 = manager.add_item("test_list", "task_a", "Item A")
 
-        # Add multiple properties to each task
+        # Add multiple properties to each item
         manager.set_item_property("test_list", "task_z", "priority", "high")
         manager.set_item_property("test_list", "task_z", "category", "urgent")
         manager.set_item_property("test_list", "task_a", "priority", "low")
@@ -96,9 +96,9 @@ class TestPropertyHierarchicalSorting:
         todo_list = manager.create_list("test_list", "Test List")
 
         # Add tasks and change some statuses
-        task_1 = manager.add_item("test_list", "task_c", "Task C")
-        task_2 = manager.add_item("test_list", "task_a", "Task A")
-        task_3 = manager.add_item("test_list", "task_b", "Task B")
+        task_1 = manager.add_item("test_list", "task_c", "Item C")
+        task_2 = manager.add_item("test_list", "task_a", "Item A")
+        task_3 = manager.add_item("test_list", "task_b", "Item B")
 
         # Change some statuses
         manager.update_item_status("test_list", "task_a", "completed")
@@ -122,9 +122,9 @@ class TestPropertyHierarchicalSorting:
         todo_list = manager.create_list("test_list", "Test List")
 
         # Add tasks
-        task_1 = manager.add_item("test_list", "task_z", "Task Z")
-        task_2 = manager.add_item("test_list", "task_a", "Task A")
-        task_3 = manager.add_item("test_list", "task_m", "Task M")
+        task_1 = manager.add_item("test_list", "task_z", "Item Z")
+        task_2 = manager.add_item("test_list", "task_a", "Item A")
+        task_3 = manager.add_item("test_list", "task_m", "Item M")
 
         # Add properties only to some tasks
         manager.set_item_property("test_list", "task_z", "priority", "high")

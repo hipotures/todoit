@@ -22,9 +22,9 @@ class TestListAllEnhancements:
         """Create manager with lists having different statuses including failed"""
         # Create test lists
         list1 = manager.create_list(
-            "test_list_1", "Test List 1", ["Task 1", "Task 2", "Task 3"]
+            "test_list_1", "Test List 1", ["Item 1", "Item 2", "Item 3"]
         )
-        list2 = manager.create_list("test_list_2", "Test List 2", ["Task A", "Task B"])
+        list2 = manager.create_list("test_list_2", "Test List 2", ["Item A", "Item B"])
 
         # Get actual item keys that were generated
         items_list1 = manager.get_list_items("test_list_1")
@@ -37,7 +37,7 @@ class TestListAllEnhancements:
             )
             manager.update_item_status(
                 "test_list_1", items_list1[1].item_key, "failed"
-            )  # Set one task to failed
+            )  # Set one item to failed
             manager.update_item_status(
                 "test_list_1", items_list1[2].item_key, "in_progress"
             )
@@ -45,7 +45,7 @@ class TestListAllEnhancements:
         if len(items_list2) >= 1:
             manager.update_item_status(
                 "test_list_2", items_list2[0].item_key, "failed"
-            )  # Another failed task
+            )  # Another failed item
             # items_list2[1] stays as pending
 
         return manager
@@ -92,7 +92,7 @@ class TestListAllEnhancements:
     def test_cli_failed_column_always_present(self, manager):
         """Test that failed column (❌) is present even when no tasks are failed"""
         # Create list with no failed tasks
-        manager.create_list("clean_list", "Clean List", ["Task 1", "Task 2"])
+        manager.create_list("clean_list", "Clean List", ["Item 1", "Item 2"])
 
         lists = manager.list_all()
         todo_list = lists[0]
@@ -135,8 +135,8 @@ class TestListAllEnhancements:
 
         # Check that each list now has progress data
         for list_data in lists:
-            assert "progress" in list_data
-            progress = list_data["progress"]
+            assert "stats" in list_data
+            progress = list_data["stats"]
 
             # Verify all expected progress fields exist
             expected_fields = [
@@ -156,13 +156,13 @@ class TestListAllEnhancements:
         test_list_1 = next(l for l in lists if l["list_key"] == "test_list_1")
         test_list_2 = next(l for l in lists if l["list_key"] == "test_list_2")
 
-        assert test_list_1["progress"]["failed"] == 1
-        assert test_list_2["progress"]["failed"] == 1
+        assert test_list_1["stats"]["failed"] == 1
+        assert test_list_2["stats"]["failed"] == 1
 
     @pytest.mark.asyncio
     async def test_mcp_list_all_failed_zero_when_no_failed_tasks(self, manager):
         """Test MCP tool shows failed: 0 when no tasks are failed"""
-        manager.create_list("no_failed_list", "No Failed List", ["Task 1"])
+        manager.create_list("no_failed_list", "No Failed List", ["Item 1"])
 
         with patch("interfaces.mcp_server.init_manager", return_value=manager):
             result = await todo_list_all(limit=5)
@@ -171,10 +171,10 @@ class TestListAllEnhancements:
         lists = result["lists"]
         list_data = lists[0]
 
-        assert "progress" in list_data
-        progress = list_data["progress"]
+        assert "stats" in list_data
+        progress = list_data["stats"]
         assert progress["failed"] == 0
-        assert progress["pending"] == 1  # The one task should be pending
+        assert progress["pending"] == 1  # The one item should be pending
 
     def test_column_styling_definitions(self):
         """Test that column styling includes proper configuration for failed status"""

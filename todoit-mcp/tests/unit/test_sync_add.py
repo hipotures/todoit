@@ -73,14 +73,14 @@ class TestSyncAddFunctionality:
         manager._db_to_model = Mock(return_value=Mock())
 
         # Execute add_item
-        manager.add_item("parent_list", "new_task", "New task content")
+        manager.add_item("parent_list", "new_task", "New item content")
 
         # Verify main item was created
         manager.db.create_item.assert_any_call(
             {
                 "list_id": 1,
                 "item_key": "new_task",
-                "content": "New task content",
+                "content": "New item content",
                 "position": 1,
                 "meta_data": {},
             }
@@ -102,7 +102,7 @@ class TestSyncAddFunctionality:
         manager._db_to_model = Mock(return_value=Mock())
 
         # Execute
-        manager.add_item("parent_list", "solo_task", "Solo task")
+        manager.add_item("parent_list", "solo_task", "Solo item")
 
         # Verify only main item created
         assert manager.db.create_item.call_count == 1
@@ -206,7 +206,7 @@ class TestSyncAddFunctionality:
         manager.add_item(
             "parent_list",
             "priority_task",
-            "High priority task",
+            "High priority item",
             metadata={"priority": "high"},
         )
 
@@ -215,7 +215,7 @@ class TestSyncAddFunctionality:
         child_data = child_call[0][0]
         assert child_data["status"] == "pending"
         assert child_data["item_key"] == "priority_task"
-        assert child_data["content"] == "High priority task"
+        assert child_data["content"] == "High priority item"
 
     def test_sync_add_error_handling(self, manager, mock_relation):
         """Test that sync errors don't break main add_item operation"""
@@ -232,7 +232,7 @@ class TestSyncAddFunctionality:
         manager._db_to_model = Mock(return_value=Mock())
 
         # Execute - should not raise exception
-        result = manager.add_item("parent_list", "error_task", "Task with sync error")
+        result = manager.add_item("parent_list", "error_task", "Item with sync error")
 
         # Verify main operation succeeded despite sync error
         assert result is not None

@@ -38,6 +38,7 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "testlist",
                     "--title",
                     "Test List",
@@ -47,13 +48,13 @@ class TestDepShowJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "testlist", "task1", "Test Task"],
+                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test JSON output for dep show
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "testlist:task1"]
+                cli, ["--db", "test.db", "dep", "show", "--item", "testlist:task1"]
             )
             assert result.exit_code == 0
 
@@ -70,7 +71,7 @@ class TestDepShowJsonOutput:
             assert properties["Item Reference"]["Value"] == "testlist:task1"
 
             assert "Content" in properties
-            assert properties["Content"]["Value"] == "Test Task"
+            assert properties["Content"]["Value"] == "Test Item"
 
             assert "Status" in properties
             # Status could be emoji (⏳) or text (pending), just check it's not empty
@@ -96,7 +97,7 @@ class TestDepShowJsonOutput:
             # Create two lists
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "list", "create", "backend", "--title", "Backend"],
+                ["--db", "test.db", "list", "create", "--list", "backend", "--title", "Backend"],
             )
             assert result.exit_code == 0
 
@@ -107,6 +108,7 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "frontend",
                     "--title",
                     "Frontend",
@@ -122,8 +124,11 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "item",
                     "add",
+                    "--list",
                     "backend",
+                    "--item",
                     "api",
+                    "--title",
                     "API Implementation",
                 ],
             )
@@ -136,8 +141,11 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "item",
                     "add",
+                    "--list",
                     "frontend",
+                    "--item",
                     "ui",
+                    "--title",
                     "UI Implementation",
                 ],
             )
@@ -151,8 +159,9 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "dep",
                     "add",
+                    "--dependent",
                     "frontend:ui",
-                    "requires",
+                    "--required",
                     "backend:api",
                     "--force",
                 ],
@@ -161,7 +170,7 @@ class TestDepShowJsonOutput:
 
             # Test JSON output for blocked item
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "frontend:ui"]
+                cli, ["--db", "test.db", "dep", "show", "--item", "frontend:ui"]
             )
             assert result.exit_code == 0
 
@@ -195,7 +204,7 @@ class TestDepShowJsonOutput:
             # Create two lists
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "list", "create", "backend", "--title", "Backend"],
+                ["--db", "test.db", "list", "create", "--list", "backend", "--title", "Backend"],
             )
             assert result.exit_code == 0
 
@@ -206,6 +215,7 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "frontend",
                     "--title",
                     "Frontend",
@@ -221,8 +231,11 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "item",
                     "add",
+                    "--list",
                     "backend",
+                    "--item",
                     "api",
+                    "--title",
                     "API Implementation",
                 ],
             )
@@ -235,8 +248,11 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "item",
                     "add",
+                    "--list",
                     "frontend",
+                    "--item",
                     "ui",
+                    "--title",
                     "UI Implementation",
                 ],
             )
@@ -250,8 +266,9 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "dep",
                     "add",
+                    "--dependent",
                     "frontend:ui",
-                    "requires",
+                    "--required",
                     "backend:api",
                     "--force",
                 ],
@@ -260,7 +277,7 @@ class TestDepShowJsonOutput:
 
             # Test JSON output for blocking item
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "backend:api"]
+                cli, ["--db", "test.db", "dep", "show", "--item", "backend:api"]
             )
             assert result.exit_code == 0
 
@@ -287,7 +304,7 @@ class TestDepShowJsonOutput:
             # Create two lists
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "list", "create", "backend", "--title", "Backend"],
+                ["--db", "test.db", "list", "create", "--list", "backend", "--title", "Backend"],
             )
             assert result.exit_code == 0
 
@@ -298,6 +315,7 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "frontend",
                     "--title",
                     "Frontend",
@@ -313,8 +331,11 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "item",
                     "add",
+                    "--list",
                     "backend",
+                    "--item",
                     "api",
+                    "--title",
                     "API Implementation",
                 ],
             )
@@ -327,8 +348,11 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "item",
                     "add",
+                    "--list",
                     "frontend",
+                    "--item",
                     "ui",
+                    "--title",
                     "UI Implementation",
                 ],
             )
@@ -342,8 +366,9 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "dep",
                     "add",
+                    "--dependent",
                     "frontend:ui",
-                    "requires",
+                    "--required",
                     "backend:api",
                     "--force",
                 ],
@@ -368,7 +393,7 @@ class TestDepShowJsonOutput:
 
             # Test JSON output for previously blocked item
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "frontend:ui"]
+                cli, ["--db", "test.db", "dep", "show", "--item", "frontend:ui"]
             )
             assert result.exit_code == 0
 
@@ -412,6 +437,7 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "testlist",
                     "--title",
                     "Test List",
@@ -421,7 +447,7 @@ class TestDepShowJsonOutput:
 
             # Test JSON output for nonexistent item
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "testlist:nonexistent"]
+                cli, ["--db", "test.db", "dep", "show", "--item", "testlist:nonexistent"]
             )
 
             # Should handle error gracefully
@@ -435,7 +461,7 @@ class TestDepShowJsonOutput:
         with self.runner.isolated_filesystem():
             # Test JSON output for malformed reference
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "malformed_reference"]
+                cli, ["--db", "test.db", "dep", "show", "--item", "malformed_reference"]
             )
 
             # Should handle error gracefully
@@ -455,6 +481,7 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "testlist",
                     "--title",
                     "Test List",
@@ -464,13 +491,13 @@ class TestDepShowJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "testlist", "task1", "Test Task"],
+                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test table output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "testlist:task1"]
+                cli, ["--db", "test.db", "dep", "show", "--item", "testlist:task1"]
             )
             assert result.exit_code == 0
 
@@ -492,6 +519,7 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "testlist",
                     "--title",
                     "Test List",
@@ -501,13 +529,13 @@ class TestDepShowJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "testlist", "task1", "Test Task"],
+                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test YAML output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "testlist:task1"]
+                cli, ["--db", "test.db", "dep", "show", "--item", "testlist:task1"]
             )
             assert result.exit_code == 0
 
@@ -530,6 +558,7 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "testlist",
                     "--title",
                     "Test List",
@@ -539,13 +568,13 @@ class TestDepShowJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "testlist", "task1", "Test Task"],
+                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test XML output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "testlist:task1"]
+                cli, ["--db", "test.db", "dep", "show", "--item", "testlist:task1"]
             )
             assert result.exit_code == 0
 
@@ -569,6 +598,7 @@ class TestDepShowJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "testlist",
                     "--title",
                     "Test List",
@@ -578,13 +608,13 @@ class TestDepShowJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "testlist", "task1", "Test Task"],
+                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test JSON output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "testlist:task1"]
+                cli, ["--db", "test.db", "dep", "show", "--item", "testlist:task1"]
             )
             assert result.exit_code == 0
 

@@ -1,5 +1,5 @@
 """
-Integration test for subtask positioning fix
+Integration test for subitem positioning fix
 Tests that subtasks are positioned correctly without conflicts
 """
 
@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 class TestSubtaskPositioningFix:
-    """Integration test for subtask positioning fix"""
+    """Integration test for subitem positioning fix"""
 
     @pytest.fixture
     def temp_db_path(self):
@@ -38,44 +38,44 @@ class TestSubtaskPositioningFix:
     def test_subtask_positioning_no_conflicts(self, temp_db_path):
         """Test that subtasks are positioned without conflicts"""
         # Create list
-        result = self.run_cli('list create test_positioning --title "Test Positioning"', temp_db_path)
+        result = self.run_cli('list create --list test_positioning --title "Test Positioning"', temp_db_path)
         assert result.returncode == 0
 
         # Add multiple main tasks
         for i in range(1, 4):
-            result = self.run_cli(f'item add test_positioning task{i} "Task {i}"', temp_db_path)
+            result = self.run_cli(f'item add test_positioning item{i} "Item {i}"', temp_db_path)
             assert result.returncode == 0
 
         # Add multiple subtasks to each task
         for task_num in range(1, 4):
             for sub_num in range(1, 4):
-                result = self.run_cli(f'item add-subtask test_positioning task{task_num} task{task_num}_sub{sub_num} "Subtask {sub_num} for Task {task_num}"', temp_db_path)
-                assert result.returncode == 0, f"Failed to add subtask {sub_num} to task {task_num}: {result.stderr}"
+                result = self.run_cli(f'item add-subitem test_positioning task{task_num} item{task_num}_sub{sub_num} "Subitem {sub_num} for Item {task_num}"', temp_db_path)
+                assert result.returncode == 0, f"Failed to add subitem {sub_num} to item {task_num}: {result.stderr}"
 
         # Verify all items are displayed correctly
-        result = self.run_cli('list show test_positioning', temp_db_path)
+        result = self.run_cli('list show --list test_positioning', temp_db_path)
         assert result.returncode == 0
 
         output = result.stdout
         
         # Verify each main task and its subtasks are present
         for task_num in range(1, 4):
-            assert f"│ {task_num}        │ task{task_num}      │" in output, f"Task {task_num} should be displayed"
+            assert f"│ {task_num}        │ item{task_num}      │" in output, f"Item {task_num} should be displayed"
             
             for sub_num in range(1, 4):
-                assert f"│ {task_num}.{sub_num}      │ task{task_num}_sub{sub_num} │" in output, f"Subtask {task_num}.{sub_num} should be displayed"
+                assert f"│ {task_num}.{sub_num}      │ item{task_num}_sub{sub_num} │" in output, f"Subitem {task_num}.{sub_num} should be displayed"
 
     def test_database_positions_are_sequential(self, temp_db_path):
         """Test that database positions are sequential without conflicts"""
         import sqlite3
         
         # Create list and tasks with subtasks
-        self.run_cli('list create test_db --title "Test DB"', temp_db_path)
-        self.run_cli('item add test_db task1 "Task 1"', temp_db_path)
-        self.run_cli('item add test_db task2 "Task 2"', temp_db_path) 
-        self.run_cli('item add-subtask test_db task1 sub1 "Sub 1"', temp_db_path)
-        self.run_cli('item add-subtask test_db task2 sub2 "Sub 2"', temp_db_path)
-        self.run_cli('item add-subtask test_db task1 sub3 "Sub 3"', temp_db_path)
+        self.run_cli('list create --list test_db --title "Test DB"', temp_db_path)
+        self.run_cli('item add --list test_db --item task1 --title "Item 1"', temp_db_path)
+        self.run_cli('item add --list test_db --item task2 --title "Item 2"', temp_db_path) 
+        self.run_cli('item add --list test_db --item task1 --subitem sub1 --title "Sub 1"', temp_db_path)
+        self.run_cli('item add --list test_db --item task2 --subitem sub2 --title "Sub 2"', temp_db_path)
+        self.run_cli('item add --list test_db --item task1 --subitem sub3 --title "Sub 3"', temp_db_path)
 
         # Check database directly
         conn = sqlite3.connect(temp_db_path)
@@ -101,10 +101,10 @@ class TestSubtaskPositioningFix:
         # - Subtasks of task2: sub2=1
         expected_positions = [
             ('task1', 1),   # Main task position 1
-            ('task2', 2),   # Main task position 2  
+            ('task2', 2),   # Main item position 2  
             ('sub1', 1),    # Subtask of task1, position 1 within parent
             ('sub3', 2),    # Subtask of task1, position 2 within parent (added after sub1)
-            ('sub2', 1)     # Subtask of task2, position 1 within parent
+            ('sub2', 1)     # Subitem of task2, position 1 within parent
         ]
         
         assert positions == expected_positions, f"Expected {expected_positions}, got {positions}"
@@ -112,30 +112,30 @@ class TestSubtaskPositioningFix:
     def test_mixed_task_and_subtask_creation(self, temp_db_path):
         """Test mixed creation order doesn't cause position conflicts"""
         # Create list
-        self.run_cli('list create test_mixed --title "Test Mixed"', temp_db_path)
+        self.run_cli('list create --list test_mixed --title "Test Mixed"', temp_db_path)
         
         # Create task1
-        result = self.run_cli('item add test_mixed task1 "Task 1"', temp_db_path)
+        result = self.run_cli('item add --list test_mixed --item task1 --title "Item 1"', temp_db_path)
         assert result.returncode == 0
         
-        # Add subtask to task1
-        result = self.run_cli('item add-subtask test_mixed task1 sub1 "Sub 1"', temp_db_path)
+        # Add subitem to task1
+        result = self.run_cli('item add --list test_mixed --item task1 --subitem sub1 --title "Sub 1"', temp_db_path)
         assert result.returncode == 0
         
-        # Create task2 (after subtask)
-        result = self.run_cli('item add test_mixed task2 "Task 2"', temp_db_path)
+        # Create task2 (after subitem)
+        result = self.run_cli('item add --list test_mixed --item task2 --title "Item 2"', temp_db_path)
         assert result.returncode == 0
         
-        # Add subtask to task2
-        result = self.run_cli('item add-subtask test_mixed task2 sub2 "Sub 2"', temp_db_path)
+        # Add subitem to task2
+        result = self.run_cli('item add --list test_mixed --item task2 --subitem sub2 --title "Sub 2"', temp_db_path)
         assert result.returncode == 0
         
-        # Add another subtask to task1
-        result = self.run_cli('item add-subtask test_mixed task1 sub3 "Sub 3"', temp_db_path)
+        # Add another subitem to task1
+        result = self.run_cli('item add --list test_mixed --item task1 --subitem sub3 --title "Sub 3"', temp_db_path)
         assert result.returncode == 0
 
         # Verify display works correctly
-        result = self.run_cli('list show test_mixed', temp_db_path)
+        result = self.run_cli('list show --list test_mixed', temp_db_path)
         assert result.returncode == 0
         
         output = result.stdout
@@ -150,15 +150,15 @@ class TestSubtaskPositioningFix:
     def test_hierarchy_organization_with_fixed_positioning(self, temp_db_path):
         """Test that hierarchy organization works correctly with fixed positioning"""
         # Create complex hierarchy
-        self.run_cli('list create test_hierarchy --title "Test Hierarchy"', temp_db_path)
-        self.run_cli('item add test_hierarchy main1 "Main 1"', temp_db_path)
-        self.run_cli('item add test_hierarchy main2 "Main 2"', temp_db_path)
-        self.run_cli('item add-subtask test_hierarchy main1 sub1_1 "Sub 1.1"', temp_db_path)
-        self.run_cli('item add-subtask test_hierarchy main1 sub1_2 "Sub 1.2"', temp_db_path)
-        self.run_cli('item add-subtask test_hierarchy main2 sub2_1 "Sub 2.1"', temp_db_path)
+        self.run_cli('list create --list test_hierarchy --title "Test Hierarchy"', temp_db_path)
+        self.run_cli('item add --list test_hierarchy --item main1 --title "Main 1"', temp_db_path)
+        self.run_cli('item add --list test_hierarchy --item main2 --title "Main 2"', temp_db_path)
+        self.run_cli('item add --list test_hierarchy --item main1 --subitem sub1_1 --title "Sub 1.1"', temp_db_path)
+        self.run_cli('item add --list test_hierarchy --item main1 --subitem sub1_2 --title "Sub 1.2"', temp_db_path)
+        self.run_cli('item add --list test_hierarchy --item main2 --subitem sub2_1 --title "Sub 2.1"', temp_db_path)
 
         # Test tree view
-        result = self.run_cli('list show test_hierarchy --tree', temp_db_path)
+        result = self.run_cli('list show --list test_hierarchy --tree', temp_db_path)
         assert result.returncode == 0
         
         tree_output = result.stdout
@@ -169,7 +169,7 @@ class TestSubtaskPositioningFix:
         assert "Sub 2.1" in tree_output
 
         # Test table view 
-        result = self.run_cli('list show test_hierarchy', temp_db_path)
+        result = self.run_cli('list show --list test_hierarchy', temp_db_path)
         assert result.returncode == 0
         
         table_output = result.stdout

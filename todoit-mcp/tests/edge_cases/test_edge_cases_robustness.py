@@ -162,7 +162,7 @@ class TestRobustness:
         
         Random text without structure
         
-        - This looks like a task but missing checkbox
+        - This looks like a item but missing checkbox
         [x This is malformed checkbox
         [ ] This one is fine
         - [x] This should work
@@ -201,9 +201,9 @@ class TestRobustness:
         manager.create_list("list2", "List 2")
         manager.create_list("list3", "List 3")
 
-        manager.add_item("list1", "task1", "Task 1")
-        manager.add_item("list2", "task2", "Task 2")
-        manager.add_item("list3", "task3", "Task 3")
+        manager.add_item("list1", "task1", "Item 1")
+        manager.add_item("list2", "task2", "Item 2")
+        manager.add_item("list3", "task3", "Item 3")
 
         # Create chain: task1 -> task2 -> task3
         manager.add_item_dependency("list2", "task2", "list1", "task1")
@@ -223,12 +223,12 @@ class TestRobustness:
     def test_orphaned_subtask_handling(self, manager):
         """Test handling of subtasks when parent is deleted"""
         manager.create_list("orphan_test", "Orphan Test List")
-        manager.add_item("orphan_test", "parent", "Parent Task")
-        manager.add_subtask("orphan_test", "parent", "child1", "Child 1")
-        manager.add_subtask("orphan_test", "parent", "child2", "Child 2")
+        manager.add_item("orphan_test", "parent", "Parent Item")
+        manager.add_subitem("orphan_test", "parent", "child1", "Child 1")
+        manager.add_subitem("orphan_test", "parent", "child2", "Child 2")
 
-        # Verify subtasks exist
-        children = manager.get_subtasks("orphan_test", "parent")
+        # Verify subitems exist
+        children = manager.get_subitems("orphan_test", "parent")
         assert len(children) == 2
 
         # Try to delete parent - this should handle orphaned subtasks gracefully

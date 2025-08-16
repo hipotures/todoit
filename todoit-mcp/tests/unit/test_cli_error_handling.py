@@ -30,7 +30,7 @@ class TestCLIErrorHandling:
             # Test --status flag without value (uses flag_value='_show_help')
             result = runner.invoke(
                 item_status,
-                ["test_list", "test_item", "--status"],
+                ["--list", "test_list", "--item", "test_item", "--status"],
                 obj={"db_path": "test.db"},
             )
 
@@ -63,7 +63,7 @@ class TestCLIErrorHandling:
 
             result = runner.invoke(
                 item_status,
-                ["test_list", "test_item", "--status", "completed"],
+                ["--list", "test_list", "--item", "test_item", "--status", "completed"],
                 obj={"db_path": "test.db"},
             )
 
@@ -76,7 +76,7 @@ class TestCLIErrorHandling:
             )
 
             # Should show success message
-            assert "Updated 'test_item'" in result.output
+            assert "Updated item 'test_item'" in result.output
             assert result.exit_code == 0
 
     def test_status_command_with_states(self, runner):
@@ -100,7 +100,9 @@ class TestCLIErrorHandling:
             result = runner.invoke(
                 item_status,
                 [
+                    "--list",
                     "test_list",
+                    "--item",
                     "test_item",
                     "--status",
                     "in_progress",
@@ -122,7 +124,7 @@ class TestCLIErrorHandling:
             )
 
             # Should show success and states
-            assert "Updated 'test_item'" in result.output
+            assert "Updated item 'test_item'" in result.output
             assert "States:" in result.output
             assert result.exit_code == 0
 
@@ -144,7 +146,7 @@ class TestCLIErrorHandling:
 
             result = runner.invoke(
                 item_status,
-                ["test_list", "test_item", "--status", "completed"],
+                ["--list", "test_list", "--item", "test_item", "--status", "completed"],
                 obj={"db_path": "test.db"},
             )
 
@@ -163,7 +165,7 @@ class TestCLIErrorHandling:
 
             result = runner.invoke(
                 item_status,
-                ["test_list", "test_item", "--status", "invalid_status"],
+                ["--list", "test_list", "--item", "test_item", "--status", "invalid_status"],
                 obj={"db_path": "test.db"},
             )
 

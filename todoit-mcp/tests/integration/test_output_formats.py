@@ -174,8 +174,8 @@ class TestOutputFormatsWithCLI:
     @pytest.fixture
     def populated_manager(self, manager):
         """Manager with test data"""
-        manager.create_list("test1", "Test List 1", ["Task 1", "Task 2"])
-        manager.create_list("test2", "Test List 2", ["Task A", "Task B", "Task C"])
+        manager.create_list("test1", "Test List 1", ["Item 1", "Item 2"])
+        manager.create_list("test2", "Test List 2", ["Item A", "Item B", "Item C"])
         return manager
 
     def test_cli_list_all_json_format(self, populated_manager):

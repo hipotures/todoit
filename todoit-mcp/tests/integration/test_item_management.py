@@ -66,15 +66,15 @@ class TestItemManagement:
         test_list, test_item = sample_list_and_item
 
         # Add subtasks
-        subtask1 = temp_manager.add_subtask(
-            "test_list", "test_item", "sub1", "Subtask 1"
+        subtask1 = temp_manager.add_subitem(
+            "test_list", "test_item", "sub1", "Subitem 1"
         )
-        subtask2 = temp_manager.add_subtask(
-            "test_list", "test_item", "sub2", "Subtask 2"
+        subtask2 = temp_manager.add_subitem(
+            "test_list", "test_item", "sub2", "Subitem 2"
         )
 
-        # Add sub-subtask
-        temp_manager.add_subtask("test_list", "sub1", "subsub1", "Sub-subtask 1")
+        # Add sub-subitem
+        temp_manager.add_subitem("test_list", "sub1", "subsub1", "Sub-subitem 1")
 
         # Verify all items exist
         assert temp_manager.get_item("test_list", "test_item") is not None
