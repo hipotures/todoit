@@ -1248,13 +1248,30 @@ class TodoManager:
         for item_order, item in enumerate(items):
             # Get all properties for this item
             properties = self.db.get_item_properties(item.id)
-            for prop_key, prop_value in properties.items():
-                parent_item_key = parent_id_to_key.get(item.parent_item_id) if item.parent_item_id else None
+            parent_item_key = parent_id_to_key.get(item.parent_item_id) if item.parent_item_id else None
+            
+            if properties:
+                # Item has properties - add each property
+                for prop_key, prop_value in properties.items():
+                    result.append(
+                        {
+                            "item_key": item.item_key,
+                            "property_key": prop_key,
+                            "property_value": prop_value,
+                            "status": item.status,
+                            "item_order": item_order,
+                            "parent_item_id": item.parent_item_id,
+                            "parent_item_key": parent_item_key,
+                            "position": item.position
+                        }
+                    )
+            else:
+                # Item has no properties - add placeholder entry to show hierarchy
                 result.append(
                     {
                         "item_key": item.item_key,
-                        "property_key": prop_key,
-                        "property_value": prop_value,
+                        "property_key": "—",
+                        "property_value": "—",
                         "status": item.status,
                         "item_order": item_order,
                         "parent_item_id": item.parent_item_id,

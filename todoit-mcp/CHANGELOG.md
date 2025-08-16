@@ -5,6 +5,46 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.8] - 2025-08-16
+
+### 🔧 BUGFIX - Complete Hierarchy Display in Properties
+
+#### ✨ Fixed Missing Parent Items
+- **FIXED**: Property display now shows ALL items in hierarchy, even those without properties
+- **ENHANCED**: Parent items without properties display with placeholder `—` to maintain hierarchy context
+- **SOLVED**: Users can now see which subitems belong to which parent items
+- **IMPROVED**: Complete hierarchical structure is always visible
+
+#### 📊 Display Example
+
+**Before (Missing Context):**
+```
+Key                │ Property Key    │ Value
+  scene_gen        │ thread_id       │ 12345
+  image_dwn        │ dwn_pathfile    │ /path/file.png
+  scene_gen        │ thread_id       │ 67890
+```
+
+**After (Clear Hierarchy):**
+```
+Key                │ Property Key    │ Value
+scene_0001         │ —               │ —
+  scene_gen        │ thread_id       │ 12345
+  image_dwn        │ dwn_pathfile    │ /path/file.png
+scene_0002         │ —               │ —
+  scene_gen        │ thread_id       │ 67890
+```
+
+#### 🎯 Problem Solved
+- **Before**: Only items with properties were shown, breaking hierarchy context
+- **After**: All items shown with placeholders for items without properties
+- **Benefit**: Clear parent-child relationships always visible
+
+#### 🔧 Technical Enhancement
+- **Manager API**: Enhanced `get_all_items_properties()` to include placeholder entries
+- **Display Logic**: Items without properties get `—` placeholder to maintain hierarchy
+- **Sorting Preserved**: Hierarchical sorting still works correctly with placeholders
+
 ## [2.5.7] - 2025-08-16
 
 ### 🎨 IMPROVEMENT - Simplified Property Display
