@@ -5,6 +5,44 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.3] - 2025-08-16
+
+### 🆕 NEW FEATURE - Subitem Property Support
+
+#### ✨ CLI Enhancements
+- **ADDED**: `--subitem` option to all item property commands
+- **NEW**: `todoit item property set --list "project" --item "task1" --subitem "subtask1" --key "difficulty" --value "medium"`
+- **NEW**: `todoit item property get --list "project" --item "task1" --subitem "subtask1" --key "difficulty"`
+- **NEW**: `todoit item property list --list "project" --item "task1" --subitem "subtask1"`
+- **NEW**: `todoit item property delete --list "project" --item "task1" --subitem "subtask1" --key "difficulty"`
+
+#### 🔧 Manager API Enhancements
+- **ENHANCED**: `set_item_property()` - Added optional `parent_item_key` parameter for subitem support
+- **ENHANCED**: `get_item_property()` - Added optional `parent_item_key` parameter for subitem support
+- **ENHANCED**: `get_item_properties()` - Added optional `parent_item_key` parameter for subitem support
+- **ENHANCED**: `delete_item_property()` - Added optional `parent_item_key` parameter for subitem support
+
+#### 🌐 MCP Tools Enhancements
+- **ENHANCED**: `todo_set_item_property` - Added optional `parent_item_key` parameter for subitem support
+- **ENHANCED**: `todo_get_item_property` - Added optional `parent_item_key` parameter for subitem support
+- **ENHANCED**: `todo_get_item_properties` - Added optional `parent_item_key` parameter for subitem support
+- **ENHANCED**: `todo_delete_item_property` - Added optional `parent_item_key` parameter for subitem support
+
+#### 📚 Documentation Updates
+- **UPDATED**: CLI Guide with subitem property examples
+- **UPDATED**: MCP Tools documentation with subitem property usage
+- **ADDED**: Comprehensive examples for both CLI and MCP interfaces
+
+#### 🔍 Bug Fixed
+- **FIXED**: Property listing now correctly shows both main item and subitem properties in unified view
+- **FIXED**: `todoit item property list --list "project"` now displays all properties including subitems
+
+#### Technical Implementation
+- **File Changed**: `core/manager.py` - Extended property methods with parent_item_key support
+- **File Changed**: `interfaces/cli_modules/property_commands.py` - Added --subitem option to all commands
+- **File Changed**: `interfaces/mcp_server.py` - Enhanced MCP tools with subitem support
+- **Backward Compatibility**: All existing property commands continue to work unchanged
+
 ## [2.5.2] - 2025-08-16
 
 ### 🔧 BUGFIX - Environment Variable Expansion

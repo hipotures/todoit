@@ -1070,31 +1070,45 @@ class TodoManager:
     # ===== ITEM PROPERTIES METHODS =====
 
     def set_item_property(
-        self, list_key: str, item_key: str, property_key: str, property_value: str
+        self, list_key: str, item_key: str, property_key: str, property_value: str,
+        parent_item_key: Optional[str] = None
     ) -> ItemProperty:
-        """Set a key-value property for an item, creating or updating it.
+        """Set a key-value property for an item or subitem, creating or updating it.
 
         Args:
             list_key: The key of the list containing the item.
             item_key: The key of the item to set the property for.
             property_key: The key of the property to set.
             property_value: The value to assign to the property.
+            parent_item_key: Optional parent item key (for subitems).
 
         Returns:
             The created or updated ItemProperty object.
 
         Raises:
-            ValueError: If the list or item is not found.
+            ValueError: If the list, item, or parent item is not found.
         """
         # Get list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             raise ValueError(f"List '{list_key}' not found")
 
-        # Get item
-        db_item = self.db.get_item_by_key(db_list.id, item_key)
-        if not db_item:
-            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+        # Get item (handling subitems)
+        if parent_item_key:
+            # Get parent item first
+            parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+            if not parent_item:
+                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+            
+            # Get subitem
+            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+            if not db_item:
+                raise ValueError(f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+        else:
+            # Get main item
+            db_item = self.db.get_item_by_key(db_list.id, item_key)
+            if not db_item:
+                raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
 
         # Create/update property
         db_property = self.db.create_item_property(
@@ -1103,51 +1117,81 @@ class TodoManager:
         return self._db_to_model(db_property, ItemProperty)
 
     def get_item_property(
-        self, list_key: str, item_key: str, property_key: str
+        self, list_key: str, item_key: str, property_key: str,
+        parent_item_key: Optional[str] = None
     ) -> Optional[str]:
-        """Get the value of a specific property for an item.
+        """Get the value of a specific property for an item or subitem.
 
         Args:
             list_key: The key of the list containing the item.
             item_key: The key of the item.
             property_key: The key of the property to retrieve.
+            parent_item_key: Optional parent item key (for subitems).
 
         Returns:
             The value of the property as a string, or None if the property, item, or list does not exist.
 
         Raises:
-            ValueError: If the list or item is not found.
+            ValueError: If the list, item, or parent item is not found.
         """
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             raise ValueError(f"List '{list_key}' not found")
 
-        db_item = self.db.get_item_by_key(db_list.id, item_key)
-        if not db_item:
-            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+        # Get item (handling subitems)
+        if parent_item_key:
+            # Get parent item first
+            parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+            if not parent_item:
+                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+            
+            # Get subitem
+            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+            if not db_item:
+                raise ValueError(f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+        else:
+            # Get main item
+            db_item = self.db.get_item_by_key(db_list.id, item_key)
+            if not db_item:
+                raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
 
         return self.db.get_item_property(db_item.id, property_key)
 
-    def get_item_properties(self, list_key: str, item_key: str) -> Dict[str, str]:
-        """Get all properties for an item as a key-value dictionary.
+    def get_item_properties(self, list_key: str, item_key: str, 
+                           parent_item_key: Optional[str] = None) -> Dict[str, str]:
+        """Get all properties for an item or subitem as a key-value dictionary.
 
         Args:
             list_key: The key of the list containing the item.
             item_key: The key of the item.
+            parent_item_key: Optional parent item key (for subitems).
 
         Returns:
             A dictionary containing all properties of the item. Returns an empty dictionary if the item has no properties.
 
         Raises:
-            ValueError: If the list or item is not found.
+            ValueError: If the list, item, or parent item is not found.
         """
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             raise ValueError(f"List '{list_key}' not found")
 
-        db_item = self.db.get_item_by_key(db_list.id, item_key)
-        if not db_item:
-            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+        # Get item (handling subitems)
+        if parent_item_key:
+            # Get parent item first
+            parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+            if not parent_item:
+                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+            
+            # Get subitem
+            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+            if not db_item:
+                raise ValueError(f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+        else:
+            # Get main item
+            db_item = self.db.get_item_by_key(db_list.id, item_key)
+            if not db_item:
+                raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
 
         return self.db.get_item_properties(db_item.id)
 
@@ -1284,28 +1328,43 @@ class TodoManager:
         return [self._db_to_model(db_item, TodoItem) for db_item in db_items]
 
     def delete_item_property(
-        self, list_key: str, item_key: str, property_key: str
+        self, list_key: str, item_key: str, property_key: str,
+        parent_item_key: Optional[str] = None
     ) -> bool:
-        """Delete a specific property from an item.
+        """Delete a specific property from an item or subitem.
 
         Args:
             list_key: The key of the list containing the item.
             item_key: The key of the item.
             property_key: The key of the property to delete.
+            parent_item_key: Optional parent item key (for subitems).
 
         Returns:
             True if the property was deleted, False if it did not exist.
 
         Raises:
-            ValueError: If the list or item is not found.
+            ValueError: If the list, item, or parent item is not found.
         """
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             raise ValueError(f"List '{list_key}' not found")
 
-        db_item = self.db.get_item_by_key(db_list.id, item_key)
-        if not db_item:
-            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+        # Get item (handling subitems)
+        if parent_item_key:
+            # Get parent item first
+            parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+            if not parent_item:
+                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+            
+            # Get subitem
+            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+            if not db_item:
+                raise ValueError(f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+        else:
+            # Get main item
+            db_item = self.db.get_item_by_key(db_list.id, item_key)
+            if not db_item:
+                raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
 
         return self.db.delete_item_property(db_item.id, property_key)
 

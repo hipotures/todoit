@@ -1023,45 +1023,52 @@ async def todo_delete_list_property(
 @conditional_tool
 @mcp_error_handler
 async def todo_set_item_property(
-    list_key: str, item_key: str, property_key: str, property_value: str, mgr=None
+    list_key: str, item_key: str, property_key: str, property_value: str, 
+    parent_item_key: str = None, mgr=None
 ) -> Dict[str, Any]:
-    """Set a property for an item (create or update).
+    """Set a property for an item or subitem (create or update).
 
     Args:
         list_key: Key of the list containing the item (required)
         item_key: Key of the item to set property for (required)
         property_key: Name of the property (required)
         property_value: Value to set (required)
+        parent_item_key: Key of parent item (optional, for subitems)
 
     Returns:
         Dictionary with success status and property details
     """
     property_obj = mgr.set_item_property(
-        list_key, item_key, property_key, property_value
+        list_key, item_key, property_key, property_value, parent_item_key
     )
+    
+    target = f"subitem '{item_key}' under item '{parent_item_key}'" if parent_item_key else f"item '{item_key}'"
     return {
         "success": True,
         "property": property_obj.to_dict(),
-        "message": f"Property '{property_key}' set for item '{item_key}' in list '{list_key}'",
+        "message": f"Property '{property_key}' set for {target} in list '{list_key}'",
     }
 
 
 @conditional_tool
 @mcp_error_handler
 async def todo_get_item_property(
-    list_key: str, item_key: str, property_key: str, mgr=None
+    list_key: str, item_key: str, property_key: str, parent_item_key: str = None, mgr=None
 ) -> Dict[str, Any]:
-    """Get a property value for an item.
+    """Get a property value for an item or subitem.
 
     Args:
         list_key: Key of the list containing the item (required)
         item_key: Key of the item to get property from (required)
         property_key: Name of the property (required)
+        parent_item_key: Key of parent item (optional, for subitems)
 
     Returns:
         Dictionary with success status and property value
     """
-    value = mgr.get_item_property(list_key, item_key, property_key)
+    value = mgr.get_item_property(list_key, item_key, property_key, parent_item_key)
+    target = f"subitem '{item_key}' under item '{parent_item_key}'" if parent_item_key else f"item '{item_key}'"
+    
     if value is not None:
         return {
             "success": True,
@@ -1069,33 +1076,36 @@ async def todo_get_item_property(
             "property_value": value,
             "list_key": list_key,
             "item_key": item_key,
+            "parent_item_key": parent_item_key,
         }
     else:
         return {
             "success": False,
-            "error": f"Property '{property_key}' not found for item '{item_key}' in list '{list_key}'",
+            "error": f"Property '{property_key}' not found for {target} in list '{list_key}'",
         }
 
 
 @conditional_tool
 @mcp_error_handler
 async def todo_get_item_properties(
-    list_key: str, item_key: str, mgr=None
+    list_key: str, item_key: str, parent_item_key: str = None, mgr=None
 ) -> Dict[str, Any]:
-    """Get all properties for an item.
+    """Get all properties for an item or subitem.
 
     Args:
         list_key: Key of the list containing the item (required)
         item_key: Key of the item to get properties from (required)
+        parent_item_key: Key of parent item (optional, for subitems)
 
     Returns:
         Dictionary with success status, properties, and count
     """
-    properties = mgr.get_item_properties(list_key, item_key)
+    properties = mgr.get_item_properties(list_key, item_key, parent_item_key)
     return {
         "success": True,
         "list_key": list_key,
         "item_key": item_key,
+        "parent_item_key": parent_item_key,
         "properties": properties,
         "count": len(properties),
     }
@@ -1133,28 +1143,31 @@ async def todo_get_all_items_properties(
 @conditional_tool
 @mcp_error_handler
 async def todo_delete_item_property(
-    list_key: str, item_key: str, property_key: str, mgr=None
+    list_key: str, item_key: str, property_key: str, parent_item_key: str = None, mgr=None
 ) -> Dict[str, Any]:
-    """Delete a property from an item.
+    """Delete a property from an item or subitem.
 
     Args:
         list_key: Key of the list containing the item (required)
         item_key: Key of the item to delete property from (required)
         property_key: Name of the property to delete (required)
+        parent_item_key: Key of parent item (optional, for subitems)
 
     Returns:
         Dictionary with success status and confirmation message
     """
-    success = mgr.delete_item_property(list_key, item_key, property_key)
+    success = mgr.delete_item_property(list_key, item_key, property_key, parent_item_key)
+    target = f"subitem '{item_key}' under item '{parent_item_key}'" if parent_item_key else f"item '{item_key}'"
+    
     if success:
         return {
             "success": True,
-            "message": f"Property '{property_key}' deleted from item '{item_key}' in list '{list_key}'",
+            "message": f"Property '{property_key}' deleted from {target} in list '{list_key}'",
         }
     else:
         return {
             "success": False,
-            "error": f"Property '{property_key}' not found for item '{item_key}' in list '{list_key}'",
+            "error": f"Property '{property_key}' not found for {target} in list '{list_key}'",
         }
 
 
