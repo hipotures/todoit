@@ -325,8 +325,12 @@ def _display_item_properties_table(properties_data, list_key):
     # Transform data for unified display
     data = []
     for prop in properties_data:
+        # Determine item type based on parent_item_id
+        item_type = "📝 Item" if prop.get("parent_item_id") is None else "└─ Subitem"
+        
         data.append(
             {
+                "Type": item_type,
                 "Item Key": prop["item_key"],
                 "Property Key": prop["property_key"],
                 "Value": prop["property_value"],
@@ -335,7 +339,8 @@ def _display_item_properties_table(properties_data, list_key):
 
     # Define columns for unified display
     columns = {
-        "Item Key": {"style": "cyan", "width": 20},
+        "Type": {"style": "blue", "width": 12},
+        "Item Key": {"style": "cyan", "width": 18},
         "Property Key": {"style": "magenta", "width": 20},
         "Value": {"style": "white"},
     }
@@ -345,25 +350,56 @@ def _display_item_properties_table(properties_data, list_key):
 
 
 def _display_item_properties_tree(properties_data, list_key):
-    """Display item properties in tree format grouped by item"""
+    """Display item properties in tree format grouped by item hierarchy"""
     from rich.tree import Tree
 
     tree = Tree(f"📋 All Item Properties for list '{list_key}'")
 
-    # Group properties by item
-    items_properties = {}
+    # Group properties by item hierarchy
+    main_items = {}
+    subitems_by_parent = {}
+    
     for prop in properties_data:
         item_key = prop["item_key"]
-        if item_key not in items_properties:
-            items_properties[item_key] = []
-        items_properties[item_key].append(
-            (prop["property_key"], prop["property_value"])
-        )
+        parent_item_key = prop.get("parent_item_key")
+        
+        if parent_item_key is None:
+            # Main item
+            if item_key not in main_items:
+                main_items[item_key] = []
+            main_items[item_key].append((prop["property_key"], prop["property_value"]))
+        else:
+            # Subitem - group by parent key
+            if parent_item_key not in subitems_by_parent:
+                subitems_by_parent[parent_item_key] = {}
+            if item_key not in subitems_by_parent[parent_item_key]:
+                subitems_by_parent[parent_item_key][item_key] = []
+            subitems_by_parent[parent_item_key][item_key].append((prop["property_key"], prop["property_value"]))
 
-    # Add each item as a branch
-    for item_key, properties in items_properties.items():
+    # Build hierarchical tree
+    for item_key, properties in main_items.items():
         item_branch = tree.add(f"📝 {item_key}")
+        
+        # Add properties for main item
         for prop_key, prop_value in properties:
             item_branch.add(f"[cyan]{prop_key}[/]: [white]{prop_value}[/]")
+        
+        # Add subitems under this main item (if any)
+        if item_key in subitems_by_parent:
+            for subitem_key, subitem_properties in subitems_by_parent[item_key].items():
+                subitem_branch = item_branch.add(f"└─ {subitem_key}")
+                for prop_key, prop_value in subitem_properties:
+                    subitem_branch.add(f"[cyan]{prop_key}[/]: [white]{prop_value}[/]")
+    
+    # Add orphaned subitems (subitems whose parents don't have properties)
+    orphaned_parents = set(subitems_by_parent.keys()) - set(main_items.keys())
+    if orphaned_parents:
+        orphans_branch = tree.add("🔗 Items with Subitems (no main item properties)")
+        for parent_key in orphaned_parents:
+            parent_branch = orphans_branch.add(f"📝 {parent_key}")
+            for subitem_key, subitem_properties in subitems_by_parent[parent_key].items():
+                subitem_branch = parent_branch.add(f"└─ {subitem_key}")
+                for prop_key, prop_value in subitem_properties:
+                    subitem_branch.add(f"[cyan]{prop_key}[/]: [white]{prop_value}[/]")
 
     console.print(tree)

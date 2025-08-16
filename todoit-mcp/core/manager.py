@@ -1235,23 +1235,46 @@ class TodoManager:
         if limit is not None:
             items = items[:limit]
 
+        # Create lookup for parent item keys
+        parent_id_to_key = {}
+        for item in items:
+            if item.parent_item_id is not None:
+                # Find parent item key
+                parent_item = next((i for i in items if i.id == item.parent_item_id), None)
+                if parent_item:
+                    parent_id_to_key[item.parent_item_id] = parent_item.item_key
+
         result = []
         for item_order, item in enumerate(items):
             # Get all properties for this item
             properties = self.db.get_item_properties(item.id)
             for prop_key, prop_value in properties.items():
+                parent_item_key = parent_id_to_key.get(item.parent_item_id) if item.parent_item_id else None
                 result.append(
                     {
                         "item_key": item.item_key,
                         "property_key": prop_key,
                         "property_value": prop_value,
                         "status": item.status,
-                        "item_order": item_order
+                        "item_order": item_order,
+                        "parent_item_id": item.parent_item_id,
+                        "parent_item_key": parent_item_key,
+                        "position": item.position
                     }
                 )
 
-        # Sort by item order first, then by property_key for consistent ordering
-        result.sort(key=lambda x: (x["item_order"], x["property_key"]))
+        # Sort by hierarchy: main items first (parent_item_id=None), then their subitems, then by position and property_key
+        def sort_key(x):
+            if x["parent_item_id"] is None:
+                # Main item: sort by position, then property_key
+                return (0, x["position"], x["property_key"])
+            else:
+                # Subitem: sort by parent order, then by subitem position, then property_key
+                # Find parent's position for proper grouping
+                parent_position = next((item.position for item in items if item.id == x["parent_item_id"]), 999)
+                return (1, parent_position, x["position"], x["property_key"])
+        
+        result.sort(key=sort_key)
         return result
 
     def find_items_by_property(
