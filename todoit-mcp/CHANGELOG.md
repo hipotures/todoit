@@ -5,6 +5,55 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.5] - 2025-08-16
+
+### 🎨 ENHANCEMENT - Property Display Hierarchy
+
+#### ✨ Visual Hierarchy Improvements
+- **NEW**: Added "Type" column to property list display showing `📝 Item` vs `└─ Subitem`
+- **ENHANCED**: Hierarchical sorting - main items first, followed by their subitems
+- **IMPROVED**: Tree view with proper parent-child relationships for complex structures
+
+#### 📊 Display Examples
+
+**Table Format (Enhanced):**
+```
+Type         │ Item Key   │ Property Key    │ Value
+📝 Item      │ feature1   │ priority        │ high
+└─ Subitem   │ backend    │ difficulty      │ medium
+└─ Subitem   │ frontend   │ framework       │ react
+```
+
+**Tree Format (Enhanced):**
+```
+📋 All Item Properties
+├── 📝 feature1
+│   ├── priority: high
+│   ├── └─ backend
+│   │   └── difficulty: medium
+│   └── └─ frontend
+│       └── framework: react
+```
+
+#### 🔧 Technical Enhancements
+- **Manager API**: Added `parent_item_id` and `parent_item_key` to `get_all_items_properties()`
+- **Sorting Algorithm**: Hierarchical sorting with proper parent-child grouping
+- **CLI Display**: Enhanced both table and tree formats with clear visual hierarchy
+
+#### 🎯 Problem Solved
+- **Before**: Confusing duplicate item keys without context
+- **After**: Clear visual distinction between main items and subitems
+- **Benefit**: Eliminates confusion in complex hierarchical property structures
+
+#### 📚 Documentation Updates
+- **Updated**: CLI Guide with new hierarchy display examples
+- **Added**: Visual examples for both table and tree formats
+
+#### ✅ Backward Compatibility
+- All existing commands work unchanged
+- Enhanced display is automatically applied
+- No breaking changes to API or CLI interface
+
 ## [2.5.4] - 2025-08-16
 
 ### 🔧 BUGFIX - CLI Parameter Consistency
