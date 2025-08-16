@@ -18,7 +18,6 @@ import dicttoxml
 # Mapping emoji keys to human-readable names for JSON/YAML/XML output
 EMOJI_TO_NAME_MAPPING = {
     "🏷️": "tags",
-    "🔀": "type",
     "📋": "pending_count",
     "🔄": "in_progress_count",
     "❌": "failed_count",
@@ -232,14 +231,6 @@ def _display_lists_tree(lists, manager):
         else:
             list_text = f"[cyan]{todo_list.list_key}[/] - [white]{todo_list.title}[/] "
 
-        # Show first letter of type for clarity
-        list_type_str = str(
-            todo_list.list_type.value
-            if hasattr(todo_list.list_type, "value")
-            else todo_list.list_type
-        )
-        type_short = list_type_str[0].upper()  # S, P, H, L
-        list_text += f"([yellow]{type_short}[/]) "
 
         # Add archived indicator
         if is_archived:

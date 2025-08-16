@@ -142,8 +142,7 @@ def schema_info(ctx):
     # Get schema info from manager (we'll implement this logic directly)
     schema_info = {
         "item_statuses": ["pending", "in_progress", "completed", "failed"],
-        "list_types": ["sequential", "parallel"],
-        "relation_types": ["dependency", "parent", "related", "project"],
+        "list_types": ["sequential"],
         "dependency_types": ["blocks", "requires", "related"],
         "history_actions": ["created", "updated", "status_changed", "deleted"],
     }
@@ -157,13 +156,6 @@ def schema_info(ctx):
         },
         "list_types": {
             "sequential": "Tasks should be completed in order",
-            "parallel": "Tasks can be completed in any order",
-        },
-        "relation_types": {
-            "dependency": "Lists have dependency relationship",
-            "parent": "Parent-child relationship between lists",
-            "related": "Lists are loosely related",
-            "project": "Lists belong to the same project",
         },
         "dependency_types": {
             "blocks": "This item blocks another from starting",

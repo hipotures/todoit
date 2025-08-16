@@ -66,12 +66,6 @@ def list_group():
 @click.option(
     "--item-prefix", default="Process", help="Item name prefix (default: Process)"
 )
-@click.option(
-    "--type",
-    "list_type",
-    default="sequential",
-    type=click.Choice(["sequential"]),
-)
 @click.option("--metadata", "-m", help="Metadata JSON")
 @click.pass_context
 def list_create(
@@ -82,7 +76,6 @@ def list_create(
     from_folder,
     filter_ext,
     item_prefix,
-    list_type,
     metadata,
 ):
     """Create a new TODO list"""
@@ -131,7 +124,7 @@ def list_create(
                 list_key=list_key,
                 title=title,
                 items=final_items if final_items else None,
-                list_type=list_type,
+                list_type="sequential",
                 metadata=meta,
             )
 
@@ -154,7 +147,6 @@ def list_create(
             f"[bold cyan]ID:[/] {todo_list.id}\n"
             f"[bold cyan]Key:[/] {todo_list.list_key}\n"
             f"[bold cyan]Title:[/] {todo_list.title}\n"
-            f"[bold cyan]Type:[/] {todo_list.list_type}\n"
             f"[bold cyan]Items:[/] {len(final_items)}",
             title="✅ List Created",
             border_style="green",
@@ -303,11 +295,6 @@ def list_all(ctx, limit, details, archived, include_archived, filter_tags):
                 else ""
             )
 
-            # Show first letter of type for clarity
-            list_type_str = (
-                str(todo_list.list_type).replace("ListType.", "").lower()
-            )
-            type_short = list_type_str[0].upper()  # S
 
             # Show short indicator for status
             if hasattr(todo_list, "status") and todo_list.status:
@@ -326,7 +313,6 @@ def list_all(ctx, limit, details, archived, include_archived, filter_tags):
                 "Key": todo_list.list_key,
                 "Title": todo_list.title,
                 "🏷️": tags_display,
-                "🔀": type_short,
                 "📋": str(progress.pending),
                 "🔄": str(progress.in_progress),
                 "❌": str(progress.failed),
@@ -351,7 +337,6 @@ def list_all(ctx, limit, details, archived, include_archived, filter_tags):
             "Key": {"style": "cyan"},
             "Title": {"style": "white"},
             "🏷️": {"style": "white", "justify": "left", "width": tags_column_width},
-            "🔀": {"style": "yellow", "justify": "center", "width": 3},
             "📋": {"style": "blue", "justify": "right", "width": 3},
             "🔄": {"style": "yellow", "justify": "right", "width": 3},
             "❌": {"style": "red", "justify": "right", "width": 3},
@@ -939,7 +924,6 @@ def list_rename(ctx, current_key, new_key, new_title, yes):
         
         result_table.add_row("Key", renamed_list.list_key)
         result_table.add_row("Title", renamed_list.title)
-        result_table.add_row("Type", renamed_list.list_type)
         result_table.add_row("Status", renamed_list.status)
         result_table.add_row("Updated", _format_date(renamed_list.updated_at))
         
