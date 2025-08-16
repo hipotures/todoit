@@ -855,19 +855,26 @@ class Database:
         list_id: int,
         conditions: Dict[str, str],
         limit: int = 10,
-    ) -> List[TodoItemDB]:
-        """Find subitems based on sibling status conditions
+    ) -> List[Dict[str, Any]]:
+        """Find grouped parent-subitem matches based on sibling status conditions
 
         Args:
             list_id: List ID to search in
             conditions: Dictionary of {subitem_key: expected_status}
-            limit: Maximum number of results
+            limit: Maximum number of parent matches to return
 
         Returns:
-            List of TodoItemDB objects that match the conditions
+            List of dictionaries with format:
+            [
+                {
+                    "parent": TodoItemDB object,
+                    "matching_subitems": [TodoItemDB objects that match conditions]
+                },
+                ...
+            ]
         """
         with self.get_session() as session:
-            results = []
+            matches = []
 
             # Find all unique parent_item_id values in the list
             parents_query = (
@@ -880,10 +887,16 @@ class Database:
             )
 
             for (parent_id,) in parents_query:
+                # Get parent item
+                parent_item = session.query(TodoItemDB).filter(TodoItemDB.id == parent_id).first()
+                if not parent_item:
+                    continue
+
                 # Get all subitems for this parent
                 siblings = (
                     session.query(TodoItemDB)
                     .filter(TodoItemDB.parent_item_id == parent_id)
+                    .order_by(TodoItemDB.position)
                     .all()
                 )
 
@@ -896,18 +909,23 @@ class Database:
                 )
 
                 if all_conditions_met:
-                    # Add subitems that are mentioned in conditions
+                    # Collect subitems that are mentioned in conditions
+                    matching_subitems = []
                     for sibling in siblings:
                         if sibling.item_key in conditions:
-                            results.append(sibling)
-                            if len(results) >= limit:
-                                # Sort by position before returning
-                                results.sort(key=lambda x: x.position)
-                                return results
+                            matching_subitems.append(sibling)
 
-            # Sort by position before returning
-            results.sort(key=lambda x: x.position)
-            return results
+                    # Add this match to results
+                    matches.append({
+                        "parent": parent_item,
+                        "matching_subitems": matching_subitems
+                    })
+
+                    # Check limit on number of matches (parent groups)
+                    if len(matches) >= limit:
+                        return matches
+
+            return matches
 
     # Hierarchical item operations (for subtasks)
     def get_item_children(self, item_id: int) -> List[TodoItemDB]:

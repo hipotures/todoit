@@ -1236,15 +1236,15 @@ async def todo_find_subitems_by_status(
     limit: int = 10,
     mgr=None,
 ) -> Dict[str, Any]:
-    """Find subitems based on sibling status conditions.
+    """Find grouped parent-subitem matches based on sibling status conditions.
 
     Args:
         list_key: Key of the list to search in (required)
         conditions: Dictionary of {subitem_key: expected_status} (required)
-        limit: Maximum number of results to return (default: 10)
+        limit: Maximum number of parent matches to return (default: 10)
 
     Returns:
-        Dictionary with success status, found subitems, and search details
+        Dictionary with success status, grouped matches, and search details
 
     Example:
         # Find downloads ready to process (where generation is completed)
@@ -1253,13 +1253,24 @@ async def todo_find_subitems_by_status(
             "conditions": {"generate": "completed", "download": "pending"},
             "limit": 5
         }
+        
+        # Returns:
+        {
+            "success": true,
+            "matches": [
+                {
+                    "parent": {...},
+                    "matching_subitems": [...]
+                }
+            ],
+            "matches_count": 1
+        }
     """
-    items = mgr.find_subitems_by_status(list_key, conditions, limit)
+    matches = mgr.find_subitems_by_status(list_key, conditions, limit)
 
-    # Convert items to dictionaries
-    items_data = []
-    for item in items:
-        item_dict = {
+    def _convert_item_to_dict(item):
+        """Helper to convert TodoItem to dictionary"""
+        return {
             "id": item.id,
             "list_id": item.list_id,
             "item_key": item.item_key,
@@ -1273,12 +1284,25 @@ async def todo_find_subitems_by_status(
             "completed_at": item.completed_at.isoformat() if item.completed_at else None,
             "metadata": item.metadata,
         }
-        items_data.append(item_dict)
+
+    # Convert matches to dictionaries
+    matches_data = []
+    for match in matches:
+        parent_dict = _convert_item_to_dict(match["parent"])
+        matching_subitems_data = [
+            _convert_item_to_dict(subitem) 
+            for subitem in match["matching_subitems"]
+        ]
+        
+        matches_data.append({
+            "parent": parent_dict,
+            "matching_subitems": matching_subitems_data
+        })
 
     return {
         "success": True,
-        "items": items_data,
-        "count": len(items_data),
+        "matches": matches_data,
+        "matches_count": len(matches_data),
         "list_key": list_key,
         "search_criteria": {
             "conditions": conditions,

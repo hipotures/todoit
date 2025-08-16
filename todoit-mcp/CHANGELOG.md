@@ -5,6 +5,32 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2025-08-16
+
+### 🚀 MAJOR ENHANCEMENT - Improved JSON Structure for `todo_find_subitems_by_status`
+
+#### ✨ **BREAKING CHANGE**: New Grouped Response Format
+- **CHANGED**: `todo_find_subitems_by_status` now returns grouped matches with full parent context
+- **NEW STRUCTURE**: Returns `{"matches": [...], "matches_count": N}` instead of flat `{"items": [...], "count": N}`
+- **ENHANCEMENT**: Each match includes complete parent item + matching subitems in logical groups
+- **IMPROVEMENT**: Limit now applies to parent groups, not individual subitems (prevents fragmented results)
+
+#### 🎯 **API Improvements**
+- **OLD RESPONSE**: Flat list of subitems without parent context
+- **NEW RESPONSE**: Hierarchical structure with parent + grouped subitems
+- **BENEFIT**: One API call replaces two - no need for separate parent context retrieval
+- **PERFORMANCE**: More logical grouping reduces need for additional queries
+
+#### 📖 **Updated Documentation**
+- **UPDATED**: MCP_TOOLS.md with new response structure examples
+- **ADDED**: Migration guide showing old vs new JSON format
+- **ENHANCED**: Clear examples of grouped matches with parent context
+
+#### ⚠️ **Breaking Change Notice**
+- **IMPACT**: Code using `result["items"]` must change to `result["matches"][0]["matching_subitems"]`
+- **MIGRATION**: Update client code to handle new grouped structure
+- **VERSION**: This is a major version bump due to breaking API changes
+
 ## [2.6.0] - 2025-08-16
 
 ### 🔧 IMPROVEMENT - Environment Variable Centralization and CLI Consistency

@@ -405,9 +405,9 @@ ready_downloads = await todo_find_subitems_by_status(
     {"generate": "completed", "download": "pending"},
     limit=5
 )
-# Returns: {"success": True, "items": [...], "count": 3, "search_criteria": {...}}
+# Returns grouped matches with parent context - BREAKING CHANGE in v2.3.0
 
-# Find items where upload failed but processing succeeded (needs retry)
+# Find items where upload failed but processing succeeded (needs retry)  
 failed_uploads = await todo_find_subitems_by_status(
     "images", 
     {"process": "completed", "upload": "failed"},
@@ -437,27 +437,58 @@ deployment_ready = await todo_find_subitems_by_status(
     limit=5
 )
 
-# Response structure:
+# NEW RESPONSE STRUCTURE (v2.3.0+): Grouped matches with parent context
 # {
 #   "success": True,
-#   "items": [
+#   "matches": [
 #     {
-#       "id": 42,
-#       "item_key": "img_001", 
-#       "content": "Process user avatar",
-#       "status": "in_progress",
-#       "parent_item_id": 15,
-#       "created_at": "2025-08-15T10:30:00",
-#       # ... full item details
+#       "parent": {
+#         "id": 15,
+#         "item_key": "image_batch_001", 
+#         "content": "Process image batch 001",
+#         "status": "in_progress",
+#         "parent_item_id": null,
+#         "created_at": "2025-08-15T10:30:00",
+#         # ... full parent item details
+#       },
+#       "matching_subitems": [
+#         {
+#           "id": 42,
+#           "item_key": "generate", 
+#           "content": "Generate thumbnails",
+#           "status": "completed",
+#           "parent_item_id": 15,
+#           "created_at": "2025-08-15T10:31:00",
+#           # ... full subitem details
+#         },
+#         {
+#           "id": 43,
+#           "item_key": "download", 
+#           "content": "Download processed images",
+#           "status": "pending", 
+#           "parent_item_id": 15,
+#           "created_at": "2025-08-15T10:32:00",
+#           # ... full subitem details
+#         }
+#       ]
 #     }
 #   ],
-#   "count": 3,
+#   "matches_count": 1,  # Number of parent groups found
 #   "list_key": "images",
 #   "search_criteria": {
 #     "conditions": {"generate": "completed", "download": "pending"},
 #     "limit": 5
 #   }
 # }
+
+# MAJOR IMPROVEMENT: One call replaces two!
+# OLD WAY (required 2 API calls):
+# 1. Find matching groups
+# 2. Get parent + all subitems context
+# NEW WAY (single API call):
+# - Complete parent context included
+# - All matching subitems grouped logically
+# - Limit applies to parent groups, not individual subitems
 ```
 
 ### Reports & Analytics
