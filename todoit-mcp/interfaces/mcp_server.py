@@ -72,9 +72,6 @@ TOOLS_STANDARD = TOOLS_MINIMAL + [
     "todo_quick_add",
     "todo_mark_completed",
     "todo_start_item",
-    # Basic subtasks (2)
-    "todo_add_subitem",
-    "todo_get_subitems",
     # Basic properties (6)
     "todo_set_list_property",
     "todo_get_list_property",
@@ -1361,68 +1358,7 @@ async def todo_find_subitems_by_status(
 # ===== SUBTASK MANAGEMENT MCP TOOLS (Phase 1) =====
 
 
-@conditional_tool
-@mcp_error_handler
-async def todo_add_subitem(
-    list_key: str,
-    parent_key: str,
-    subtask_key: str,
-    content: str,
-    metadata: Optional[Dict[str, Any]] = None,
-    mgr=None,
-) -> Dict[str, Any]:
-    """Add a subtask to an existing task.
-    
-    DEPRECATED: Use todo_add_item with subitem_key parameter instead.
-    
-    Args:
-        list_key: Key of the list containing the parent task (required)
-        parent_key: Key of the parent task (required)
-        subtask_key: Unique key for the new subtask (required)
-        content: Content/description of the subtask (required)
-        metadata: Optional metadata for the subtask
 
-    Returns:
-        Dictionary with success status and created subtask details
-        
-    Migration:
-        OLD: todo_add_subitem("list", "parent", "subkey", "content")
-        NEW: todo_add_item("list", "parent", "content", subitem_key="subkey")
-    """
-    # Delegate to unified todo_add_item
-    return await todo_add_item(
-        list_key=list_key,
-        item_key=parent_key,
-        content=content,
-        metadata=metadata,
-        subitem_key=subtask_key
-    )
-
-
-@conditional_tool
-@mcp_error_handler
-async def todo_get_subitems(list_key: str, parent_key: str, mgr=None) -> Dict[str, Any]:
-    """Get all subtasks for a parent task.
-    
-    DEPRECATED: Use todo_get_item with subitem_key="all" parameter instead.
-
-    Args:
-        list_key: Key of the list containing the parent task (required)
-        parent_key: Key of the parent task (required)
-
-    Returns:
-        Dictionary with success status, subtasks list, and count
-        
-    Migration:
-        OLD: todo_get_subitems("list", "parent")
-        NEW: todo_get_item("list", "parent", subitem_key="all")
-    """
-    # Delegate to unified todo_get_item
-    return await todo_get_item(
-        list_key=list_key,
-        item_key=parent_key,
-        subitem_key="all"
-    )
 
 
 @conditional_tool

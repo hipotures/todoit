@@ -110,8 +110,6 @@ Extended functionality for complex workflows.
 ### 🌳 Subitem Operations (5 tools)
 Hierarchical task management with parent-child relationships.
 
-- **`todo_add_subitem`** - ⚠️ **DEPRECATED** - Use `todo_add_item` with `subitem_key` parameter instead
-- **`todo_get_subitems`** - ⚠️ **DEPRECATED** - Use `todo_get_item` with `subitem_key="all"` parameter instead  
 - **`todo_get_item_hierarchy`** - Get complete hierarchy tree for item
 - **`todo_move_to_subitem`** - Convert existing task to subitem
 - **`todo_get_next_pending_smart`** - Smart next task with subitem prioritization
@@ -179,16 +177,6 @@ await todo_add_item_dependency("frontend", "ui_task", "backend", "api_task")
 next_task = await todo_get_next_pending_enhanced("project", smart_subtasks=True)
 ```
 
-### Migration from Deprecated Commands
-```python
-# DEPRECATED (still works, but not recommended):
-await todo_add_subitem("project", "task1", "subtask1", "Backend work")
-await todo_get_subitems("project", "task1")
-
-# NEW UNIFIED APPROACH:
-await todo_add_item("project", "task1", "Backend work", subitem_key="subtask1")
-await todo_get_item("project", "task1", subitem_key="all")
-```
 
 ### Enhanced List Retrieval (New in v1.21.0)
 ```python
