@@ -1263,16 +1263,17 @@ class TodoManager:
                     }
                 )
 
-        # Sort by hierarchy: main items first (parent_item_id=None), then their subitems, then by position and property_key
+        # Sort by hierarchy: group by parent_item_key, then by position and property_key
         def sort_key(x):
             if x["parent_item_id"] is None:
                 # Main item: sort by position, then property_key
-                return (0, x["position"], x["property_key"])
+                return (x["position"], 0, x["property_key"])
             else:
-                # Subitem: sort by parent order, then by subitem position, then property_key
-                # Find parent's position for proper grouping
-                parent_position = next((item.position for item in items if item.id == x["parent_item_id"]), 999)
-                return (1, parent_position, x["position"], x["property_key"])
+                # Subitem: find parent's position to group subitems under their parents
+                parent_key = x.get("parent_item_key", "")
+                parent_item = next((item for item in items if item.item_key == parent_key), None)
+                parent_position = parent_item.position if parent_item else 999
+                return (parent_position, 1, x["position"], x["property_key"])
         
         result.sort(key=sort_key)
         return result
