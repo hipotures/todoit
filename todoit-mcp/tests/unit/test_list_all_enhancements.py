@@ -135,8 +135,8 @@ class TestListAllEnhancements:
 
         # Check that each list now has progress data
         for list_data in lists:
-            assert "stats" in list_data
-            progress = list_data["stats"]
+            assert "progress" in list_data
+            progress = list_data["progress"]
 
             # Verify all expected progress fields exist
             expected_fields = [
@@ -156,8 +156,8 @@ class TestListAllEnhancements:
         test_list_1 = next(l for l in lists if l["list_key"] == "test_list_1")
         test_list_2 = next(l for l in lists if l["list_key"] == "test_list_2")
 
-        assert test_list_1["stats"]["failed"] == 1
-        assert test_list_2["stats"]["failed"] == 1
+        assert test_list_1["progress"]["failed"] == 1
+        assert test_list_2["progress"]["failed"] == 1
 
     @pytest.mark.asyncio
     async def test_mcp_list_all_failed_zero_when_no_failed_tasks(self, manager):
@@ -171,8 +171,8 @@ class TestListAllEnhancements:
         lists = result["lists"]
         list_data = lists[0]
 
-        assert "stats" in list_data
-        progress = list_data["stats"]
+        assert "progress" in list_data
+        progress = list_data["progress"]
         assert progress["failed"] == 0
         assert progress["pending"] == 1  # The one item should be pending
 

@@ -34,14 +34,9 @@ class TestCLIErrorHandling:
                 obj={"db_path": "test.db"},
             )
 
-            # Should show our custom error message with available options
+            # Should show standard Click error message
             assert "Option '--status' requires an argument" in result.output
-            assert "pending" in result.output
-            assert "in_progress" in result.output
-            assert "completed" in result.output
-            assert "failed" in result.output
-            assert "Example:" in result.output
-            assert "For more help:" in result.output
+            assert result.exit_code == 2
 
     def test_status_command_with_valid_status_works(self, runner):
         """Test that valid status argument works correctly"""
@@ -169,9 +164,6 @@ class TestCLIErrorHandling:
                 obj={"db_path": "test.db"},
             )
 
-            # Should show validation error with available options
-            assert "Invalid status 'invalid_status'" in result.output
-            assert "pending" in result.output
-            assert "in_progress" in result.output
-            assert "completed" in result.output
-            assert "failed" in result.output
+            # Should show Click Choice validation error
+            assert "Invalid value for '--status'" in result.output or "invalid_status" in result.output
+            assert result.exit_code == 2

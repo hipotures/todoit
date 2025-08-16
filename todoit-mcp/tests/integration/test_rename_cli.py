@@ -43,7 +43,7 @@ class TestRenameCLI:
         # Rename list key
         result = runner.invoke(cli, [
             "--db", temp_db_path,
-            "list", "rename", "rename_me",
+            "list", "rename", "--current", "rename_me",
             "--key", "renamed_list",
             "--yes"
         ])
@@ -71,7 +71,7 @@ class TestRenameCLI:
         # Rename list title
         result = runner.invoke(cli, [
             "--db", temp_db_path,
-            "list", "rename", "rename_me",
+            "list", "rename", "--current", "rename_me",
             "--title", "New Awesome Title",
             "--yes"
         ])
@@ -94,7 +94,7 @@ class TestRenameCLI:
         # Rename both key and title
         result = runner.invoke(cli, [
             "--db", temp_db_path,
-            "list", "rename", "rename_me",
+            "list", "rename", "--current", "rename_me",
             "--key", "complete_rename",
             "--title", "Completely New Title",
             "--yes"
@@ -119,7 +119,7 @@ class TestRenameCLI:
         # Rename without --yes to see preview
         result = runner.invoke(cli, [
             "--db", temp_db_path,
-            "list", "rename", "rename_me",
+            "list", "rename", "--current", "rename_me",
             "--key", "preview_test",
             "--title", "Preview Title"
         ], input="n\n")  # Say no to confirmation
@@ -141,7 +141,7 @@ class TestRenameCLI:
         # Rename with confirmation
         result = runner.invoke(cli, [
             "--db", temp_db_path,
-            "list", "rename", "rename_me",
+            "list", "rename", "--current", "rename_me",
             "--key", "confirmed_rename"
         ], input="y\n")  # Say yes to confirmation
 
@@ -158,10 +158,10 @@ class TestRenameCLI:
         manager, lists = setup_test_lists
         runner = CliRunner()
 
-        # Try rename without parameters
+        # Try rename without --key or --title parameters (but with --current)
         result = runner.invoke(cli, [
             "--db", temp_db_path,
-            "list", "rename", "rename_me"
+            "list", "rename", "--current", "rename_me"
         ])
 
         assert result.exit_code != 0
@@ -175,7 +175,7 @@ class TestRenameCLI:
         # Try to rename non-existent list
         result = runner.invoke(cli, [
             "--db", temp_db_path,
-            "list", "rename", "nonexistent",
+            "list", "rename", "--current", "nonexistent",
             "--key", "new_key",
             "--yes"
         ])
@@ -191,7 +191,7 @@ class TestRenameCLI:
         # Try to rename to existing key
         result = runner.invoke(cli, [
             "--db", temp_db_path,
-            "list", "rename", "rename_me",
+            "list", "rename", "--current", "rename_me",
             "--key", "test_list_1",  # This key already exists
             "--yes"
         ])
@@ -207,7 +207,7 @@ class TestRenameCLI:
         # Try to rename to invalid key
         result = runner.invoke(cli, [
             "--db", temp_db_path,
-            "list", "rename", "rename_me",
+            "list", "rename", "--current", "rename_me",
             "--key", "123",  # Invalid - no letters
             "--yes"
         ])
@@ -231,7 +231,7 @@ class TestRenameCLI:
         # Rename the list
         result = runner.invoke(cli, [
             "--db", temp_db_path,
-            "list", "rename", "rename_me",
+            "list", "rename", "--current", "rename_me",
             "--key", "preserved_list",
             "--yes"
         ])
@@ -255,7 +255,7 @@ class TestRenameCLI:
         # Rename with standard output
         result = runner.invoke(cli, [
             "--db", temp_db_path,
-            "list", "rename", "rename_me",
+            "list", "rename", "--current", "rename_me",
             "--key", "format_test",
             "--yes"
         ])
@@ -279,7 +279,7 @@ class TestRenameCLI:
         env = {"TODOIT_FORCE_TAGS": "test_tag"}
         result = runner.invoke(cli, [
             "--db", temp_db_path,
-            "list", "rename", "rename_me",
+            "list", "rename", "--current", "rename_me",
             "--key", "tagged_rename",
             "--yes"
         ], env=env)
@@ -307,7 +307,7 @@ class TestRenameCLI:
         env = {"TODOIT_FORCE_TAGS": "production"}
         result = runner.invoke(cli, [
             "--db", temp_db_path,
-            "list", "rename", "tagged_list",
+            "list", "rename", "--current", "tagged_list",
             "--key", "blocked_rename",
             "--yes"
         ], env=env)

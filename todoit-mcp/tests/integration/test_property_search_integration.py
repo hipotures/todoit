@@ -190,7 +190,7 @@ class TestPropertySearchIntegration:
         # Test successful search
         result = runner.invoke(
             item_find,
-            ["testlist", "--property", "category", "--value", "bug"],
+            ["--list", "testlist", "--property", "category", "--value", "bug"],
             obj={"db_path": manager.db.db_path},
         )
 
@@ -206,7 +206,7 @@ class TestPropertySearchIntegration:
 
         result = runner.invoke(
             item_find,
-            ["testlist", "--property", "category", "--value", "bug", "--limit", "1"],
+            ["--list", "testlist", "--property", "category", "--value", "bug", "--limit", "1"],
             obj={"db_path": manager.db.db_path},
         )
 
@@ -223,7 +223,7 @@ class TestPropertySearchIntegration:
 
         result = runner.invoke(
             item_find,
-            ["testlist", "--property", "category", "--value", "bug", "--first"],
+            ["--list", "testlist", "--property", "category", "--value", "bug", "--first"],
             obj={"db_path": manager.db.db_path},
         )
 
@@ -240,7 +240,7 @@ class TestPropertySearchIntegration:
 
         result = runner.invoke(
             item_find,
-            ["testlist", "--property", "nonexistent", "--value", "value"],
+            ["--list", "testlist", "--property", "nonexistent", "--value", "value"],
             obj={"db_path": manager.db.db_path},
         )
 
@@ -261,7 +261,7 @@ class TestPropertySearchIntegration:
         try:
             result = runner.invoke(
                 item_find,
-                ["testlist", "--property", "category", "--value", "bug"],
+                ["--list", "testlist", "--property", "category", "--value", "bug"],
                 obj={"db_path": manager.db.db_path},
             )
 
@@ -286,7 +286,7 @@ class TestPropertySearchIntegration:
 
         result = runner.invoke(
             item_find,
-            ["nonexistent", "--property", "test", "--value", "value"],
+            ["--list", "nonexistent", "--property", "test", "--value", "value"],
             obj={"db_path": manager.db.db_path},
         )
 

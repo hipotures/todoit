@@ -39,7 +39,7 @@ class TestFORCETagsListCommands:
                 mock_get_tags.return_value = ["dev"]  # FORCE_TAGS=dev
 
                 result = runner.invoke(
-                    list_show, ["test_list"], obj={"db_path": "test.db"}
+                    list_show, ["--list", "test_list"], obj={"db_path": "test.db"}
                 )
 
                 # Should be blocked
@@ -75,7 +75,7 @@ class TestFORCETagsListCommands:
                 mock_get_tags.return_value = ["dev"]  # FORCE_TAGS=dev
 
                 result = runner.invoke(
-                    list_show, ["test_list"], obj={"db_path": "test.db"}
+                    list_show, ["--list", "test_list"], obj={"db_path": "test.db"}
                 )
 
                 # Should work - no error message
@@ -101,7 +101,7 @@ class TestFORCETagsListCommands:
                 mock_get_tags.return_value = ["dev"]
 
                 result = runner.invoke(
-                    list_delete, ["test_list", "--force"], obj={"db_path": "test.db"}
+                    list_delete, ["--lists", "test_list", "--force"], obj={"db_path": "test.db"}
                 )
 
                 # Should be blocked
@@ -125,7 +125,7 @@ class TestFORCETagsListCommands:
                 mock_get_tags.return_value = ["dev"]
 
                 result = runner.invoke(
-                    list_archive, ["test_list", "--force"], obj={"db_path": "test.db"}
+                    list_archive, ["--list", "test_list", "--force"], obj={"db_path": "test.db"}
                 )
 
                 # Should be blocked
@@ -148,7 +148,7 @@ class TestFORCETagsListCommands:
                 mock_get_tags.return_value = ["dev"]
 
                 result = runner.invoke(
-                    list_unarchive, ["test_list"], obj={"db_path": "test.db"}
+                    list_unarchive, ["--list", "test_list"], obj={"db_path": "test.db"}
                 )
 
                 # Should be blocked
@@ -176,7 +176,7 @@ class TestFORCETagsListCommands:
                 mock_get_tags.return_value = []  # No FORCE_TAGS
 
                 result = runner.invoke(
-                    list_show, ["test_list"], obj={"db_path": "test.db"}
+                    list_show, ["--list", "test_list"], obj={"db_path": "test.db"}
                 )
 
                 # Should work without checking tags
@@ -201,7 +201,7 @@ class TestFORCETagsListCommands:
                 mock_get_tags.return_value = ["dev"]
 
                 result = runner.invoke(
-                    list_show, ["test_list"], obj={"db_path": "test.db"}
+                    list_show, ["--list", "test_list"], obj={"db_path": "test.db"}
                 )
 
                 # Should be blocked when error occurs

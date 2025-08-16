@@ -32,18 +32,18 @@ class TestTagListJsonOutput:
         with self.runner.isolated_filesystem():
             # Create some tags
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "work", "--color", "blue"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "work", "--color", "blue"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "tag", "create", "personal", "--color", "green"],
+                ["--db", "test.db", "tag", "create", "--name", "personal", "--color", "green"],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "urgent", "--color", "red"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "urgent", "--color", "red"]
             )
             assert result.exit_code == 0
 
@@ -86,12 +86,12 @@ class TestTagListJsonOutput:
         with self.runner.isolated_filesystem():
             # Create tags with specific colors
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "blue_tag", "--color", "blue"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "blue_tag", "--color", "blue"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "red_tag", "--color", "red"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "red_tag", "--color", "red"]
             )
             assert result.exit_code == 0
 
@@ -143,7 +143,7 @@ class TestTagListJsonOutput:
         with self.runner.isolated_filesystem():
             # Create a single tag
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "solo"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "solo"]
             )
             assert result.exit_code == 0
 
@@ -169,7 +169,7 @@ class TestTagListJsonOutput:
         with self.runner.isolated_filesystem():
             # Create a tag
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "test"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "test"]
             )
             assert result.exit_code == 0
 
@@ -189,7 +189,7 @@ class TestTagListJsonOutput:
         with self.runner.isolated_filesystem():
             # Create a tag
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "yaml_test"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "yaml_test"]
             )
             assert result.exit_code == 0
 
@@ -210,7 +210,7 @@ class TestTagListJsonOutput:
         with self.runner.isolated_filesystem():
             # Create a tag
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "xml_test"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "xml_test"]
             )
             assert result.exit_code == 0
 
@@ -232,17 +232,17 @@ class TestTagListJsonOutput:
         with self.runner.isolated_filesystem():
             # Create tags in non-alphabetical order
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "zebra"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "zebra"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "alpha"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "alpha"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "beta"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "beta"]
             )
             assert result.exit_code == 0
 

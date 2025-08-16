@@ -62,8 +62,8 @@ class TestListLinkCLI:
 
         assert result.returncode == 0
         assert "Create a linked copy" in result.stdout
-        assert "source_key" in result.stdout.lower()
-        assert "target_key" in result.stdout.lower()
+        assert "source list key" in result.stdout.lower()
+        assert "target list key" in result.stdout.lower()
         assert "--title" in result.stdout
 
     def test_cli_list_link_arguments(self, temp_db_path):
@@ -82,7 +82,7 @@ class TestListLinkCLI:
 
         # Now test linking
         link_result = self.run_cli_command(
-            'list link test_source test_target --title "Test Target"', temp_db_path
+            'list link --source test_source --target test_target --title "Test Target"', temp_db_path
         )
 
         assert link_result.returncode == 0
@@ -94,7 +94,7 @@ class TestListLinkCLI:
     def test_cli_list_link_error_handling(self, temp_db_path):
         """Test CLI error handling for various failure scenarios"""
         # Test source list not exists
-        result = self.run_cli_command("list link nonexistent target_list", temp_db_path)
+        result = self.run_cli_command("list link --source nonexistent --target target_list", temp_db_path)
 
         assert (
             result.returncode == 0
@@ -117,7 +117,7 @@ class TestListLinkCLI:
 
         # Test link command
         result = self.run_cli_command(
-            'list link rich_source rich_target --title "Rich Target List"', temp_db_path
+            'list link --source rich_source --target rich_target --title "Rich Target List"', temp_db_path
         )
 
         assert result.returncode == 0
@@ -158,7 +158,7 @@ class TestListLinkCLI:
         assert result.returncode == 0
 
         # Link without title
-        result = self.run_cli_command("list link auto_source auto_target", temp_db_path)
+        result = self.run_cli_command("list link --source auto_source --target auto_target", temp_db_path)
 
         assert result.returncode == 0
         assert "Successfully linked list" in result.stdout
@@ -183,7 +183,7 @@ class TestListLinkCLI:
 
         # Try to link when target already exists
         result = self.run_cli_command(
-            "list link existing_source existing_target", temp_db_path
+            "list link --source existing_source --target existing_target", temp_db_path
         )
 
         assert result.returncode == 0  # CLI doesn't crash

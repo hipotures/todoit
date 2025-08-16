@@ -235,31 +235,31 @@ class TestManagerComprehensive:
         subitem = temp_manager.add_subitem(
             "advanced_test", "item1", "subtask1", "Subitem Content"
         )
-        assert subtask.parent_item_id == item1.id
+        assert subitem.parent_item_id == item1.id
         assert subitem.content == "Subitem Content"
 
-        # Get subtasks
-        subtasks = temp_manager.get_subitems("advanced_test", "item1")
-        assert len(subtasks) == 1
-        assert subtasks[0].item_key == "subtask1"
+        # Get subitems
+        subitems = temp_manager.get_subitems("advanced_test", "item1")
+        assert len(subitems) == 1
+        assert subitems[0].item_key == "subtask1"
 
         # Test hierarchical structure
         hierarchy = temp_manager.get_item_hierarchy("advanced_test", "item1")
         assert hierarchy is not None
-        assert "subtasks" in hierarchy
-        assert len(hierarchy["subtasks"]) == 1
+        assert "subitems" in hierarchy
+        assert len(hierarchy["subitems"]) == 1
 
         # Test moving subitem to different parent
-        moved_subtask = temp_manager.move_to_subitem(
+        moved_subitem = temp_manager.move_to_subitem(
             "advanced_test", "subtask1", "item2"
         )
-        assert moved_subtask.parent_item_id == item2.id
+        assert moved_subitem.parent_item_id == item2.id
 
         # Verify move
-        item1_subtasks = temp_manager.get_subitems("advanced_test", "item1")
-        item2_subtasks = temp_manager.get_subitems("advanced_test", "item2")
-        assert len(item1_subtasks) == 0
-        assert len(item2_subtasks) == 1
+        item1_subitems = temp_manager.get_subitems("advanced_test", "item1")
+        item2_subitems = temp_manager.get_subitems("advanced_test", "item2")
+        assert len(item1_subitems) == 0
+        assert len(item2_subitems) == 1
 
     def test_search_and_filtering(self, temp_manager):
         """Test search and filtering functionality using existing methods"""

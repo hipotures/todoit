@@ -68,7 +68,7 @@ class TestPropertyJsonFormat:
 
         result = runner.invoke(
             item_property_list,
-            ["testlist"],
+            ["--list", "testlist"],
             obj={"db_path": manager.db.db_path},
             env=env,
         )
@@ -109,7 +109,7 @@ class TestPropertyJsonFormat:
 
         # Default table format
         result = runner.invoke(
-            item_property_list, ["testlist"], obj={"db_path": manager.db.db_path}
+            item_property_list, ["--list", "testlist"], obj={"db_path": manager.db.db_path}
         )
 
         assert result.exit_code == 0
@@ -131,7 +131,7 @@ class TestPropertyJsonFormat:
 
         result = runner.invoke(
             item_property_list,
-            ["testlist", "--tree"],
+            ["--list", "testlist", "--tree"],
             obj={"db_path": manager.db.db_path},
         )
 
@@ -160,7 +160,7 @@ class TestPropertyJsonFormat:
 
         result = runner.invoke(
             item_property_list,
-            ["singletest"],
+            ["--list", "singletest"],
             obj={"db_path": manager.db.db_path},
             env=env,
         )
@@ -186,7 +186,7 @@ class TestPropertyJsonFormat:
 
         result = runner.invoke(
             item_property_list,
-            ["emptytest"],
+            ["--list", "emptytest"],
             obj={"db_path": manager.db.db_path},
             env=env,
         )
@@ -208,7 +208,7 @@ class TestPropertyJsonFormat:
 
         result = runner.invoke(
             item_property_list,
-            ["nopropstest"],
+            ["--list", "nopropstest"],
             obj={"db_path": manager.db.db_path},
             env=env,
         )
@@ -226,7 +226,7 @@ class TestPropertyJsonFormat:
         # Test YAML format
         result_yaml = runner.invoke(
             item_property_list,
-            ["testlist"],
+            ["--list", "testlist"],
             obj={"db_path": manager.db.db_path},
             env={"TODOIT_OUTPUT_FORMAT": "yaml"},
         )
@@ -239,7 +239,7 @@ class TestPropertyJsonFormat:
         # Test XML format
         result_xml = runner.invoke(
             item_property_list,
-            ["testlist"],
+            ["--list", "testlist"],
             obj={"db_path": manager.db.db_path},
             env={"TODOIT_OUTPUT_FORMAT": "xml"},
         )

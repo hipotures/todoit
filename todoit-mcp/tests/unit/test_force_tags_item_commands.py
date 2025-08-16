@@ -41,7 +41,7 @@ class TestFORCETagsItemCommands:
 
                 result = runner.invoke(
                     item_status,
-                    ["test_list", "test_item", "--status", "completed"],
+                    ["--list", "test_list", "--item", "test_item", "--status", "completed"],
                     obj={"db_path": "test.db"},
                 )
 
@@ -75,12 +75,12 @@ class TestFORCETagsItemCommands:
 
                 result = runner.invoke(
                     item_status,
-                    ["test_list", "test_item", "--status", "completed"],
+                    ["--list", "test_list", "--item", "test_item", "--status", "completed"],
                     obj={"db_path": "test.db"},
                 )
 
                 # Should work
-                assert "Updated 'test_item'" in result.output
+                assert "Updated item 'test_item'" in result.output
                 # Should call update_item_status
                 mock_manager.update_item_status.assert_called_once()
 
@@ -103,7 +103,7 @@ class TestFORCETagsItemCommands:
 
                 result = runner.invoke(
                     item_add,
-                    ["test_list", "test_item", "Test content"],
+                    ["--list", "test_list", "--item", "test_item", "--title", "Test content"],
                     obj={"db_path": "test.db"},
                 )
 
@@ -128,7 +128,7 @@ class TestFORCETagsItemCommands:
                 mock_get_tags.return_value = ["dev"]
 
                 result = runner.invoke(
-                    item_next, ["test_list"], obj={"db_path": "test.db"}
+                    item_next, ["--list", "test_list"], obj={"db_path": "test.db"}
                 )
 
                 # Should be blocked
@@ -151,7 +151,7 @@ class TestFORCETagsItemCommands:
                 mock_get_tags.return_value = ["dev"]
 
                 result = runner.invoke(
-                    item_tree, ["test_list"], obj={"db_path": "test.db"}
+                    item_tree, ["--list", "test_list"], obj={"db_path": "test.db"}
                 )
 
                 # Should be blocked
@@ -177,12 +177,12 @@ class TestFORCETagsItemCommands:
 
                 result = runner.invoke(
                     item_status,
-                    ["test_list", "test_item", "--status", "completed"],
+                    ["--list", "test_list", "--item", "test_item", "--status", "completed"],
                     obj={"db_path": "test.db"},
                 )
 
                 # Should work without checking tags
-                assert "Updated 'test_item'" in result.output
+                assert "Updated item 'test_item'" in result.output
                 mock_manager.update_item_status.assert_called_once()
                 # Should not call get_lists_by_tags when no filtering
                 mock_manager.get_lists_by_tags.assert_not_called()
@@ -205,7 +205,7 @@ class TestFORCETagsItemCommands:
 
                 result = runner.invoke(
                     item_status,
-                    ["test_list", "test_item", "--status", "completed"],
+                    ["--list", "test_list", "--item", "test_item", "--status", "completed"],
                     obj={"db_path": "test.db"},
                 )
 

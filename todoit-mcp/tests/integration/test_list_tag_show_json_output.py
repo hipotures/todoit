@@ -38,6 +38,7 @@ class TestListTagShowJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "testlist",
                     "--title",
                     "Test List",
@@ -47,34 +48,34 @@ class TestListTagShowJsonOutput:
 
             # Create some tags
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "work"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "work"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "urgent"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "urgent"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "personal"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "personal"]
             )
             assert result.exit_code == 0
 
             # Assign tags to the list
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "tag", "add", "testlist", "work"]
+                cli, ["--db", "test.db", "list", "tag", "add", "--list", "testlist", "--tag", "work"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "tag", "add", "testlist", "urgent"]
+                cli, ["--db", "test.db", "list", "tag", "add", "--list", "testlist", "--tag", "urgent"]
             )
             assert result.exit_code == 0
 
             # Test JSON output for list tag show
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "tag", "show", "testlist"]
+                cli, ["--db", "test.db", "list", "tag", "show", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -116,6 +117,7 @@ class TestListTagShowJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "testlist",
                     "--title",
                     "Test List",
@@ -125,18 +127,18 @@ class TestListTagShowJsonOutput:
 
             # Create and assign a single tag
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "solo"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "solo"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "tag", "add", "testlist", "solo"]
+                cli, ["--db", "test.db", "list", "tag", "add", "--list", "testlist", "--tag", "solo"]
             )
             assert result.exit_code == 0
 
             # Test JSON output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "tag", "show", "testlist"]
+                cli, ["--db", "test.db", "list", "tag", "show", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -163,6 +165,7 @@ class TestListTagShowJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "emptylist",
                     "--title",
                     "Empty List",
@@ -172,7 +175,7 @@ class TestListTagShowJsonOutput:
 
             # Test JSON output when no tags assigned
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "tag", "show", "emptylist"]
+                cli, ["--db", "test.db", "list", "tag", "show", "--list", "emptylist"]
             )
             assert result.exit_code == 0
 
@@ -197,6 +200,7 @@ class TestListTagShowJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "mylist",
                     "--title",
                     "My Custom List",
@@ -206,18 +210,18 @@ class TestListTagShowJsonOutput:
 
             # Create and assign a tag
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "testtag"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "testtag"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "tag", "add", "mylist", "testtag"]
+                cli, ["--db", "test.db", "list", "tag", "add", "--list", "mylist", "--tag", "testtag"]
             )
             assert result.exit_code == 0
 
             # Test JSON output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "tag", "show", "mylist"]
+                cli, ["--db", "test.db", "list", "tag", "show", "--list", "mylist"]
             )
             assert result.exit_code == 0
 
@@ -233,7 +237,7 @@ class TestListTagShowJsonOutput:
         with self.runner.isolated_filesystem():
             # Test JSON output for nonexistent list (should show error message)
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "tag", "show", "nonexistent"]
+                cli, ["--db", "test.db", "list", "tag", "show", "--list", "nonexistent"]
             )
 
             # Command should fail gracefully
@@ -254,6 +258,7 @@ class TestListTagShowJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "testlist",
                     "--title",
                     "Test List",
@@ -262,18 +267,18 @@ class TestListTagShowJsonOutput:
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "test"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "test"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "tag", "add", "testlist", "test"]
+                cli, ["--db", "test.db", "list", "tag", "add", "--list", "testlist", "--tag", "test"]
             )
             assert result.exit_code == 0
 
             # Test table output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "tag", "show", "testlist"]
+                cli, ["--db", "test.db", "list", "tag", "show", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -295,6 +300,7 @@ class TestListTagShowJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "testlist",
                     "--title",
                     "Test List",
@@ -303,18 +309,18 @@ class TestListTagShowJsonOutput:
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "yaml_test"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "yaml_test"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "tag", "add", "testlist", "yaml_test"]
+                cli, ["--db", "test.db", "list", "tag", "add", "--list", "testlist", "--tag", "yaml_test"]
             )
             assert result.exit_code == 0
 
             # Test YAML output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "tag", "show", "testlist"]
+                cli, ["--db", "test.db", "list", "tag", "show", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -337,6 +343,7 @@ class TestListTagShowJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "testlist",
                     "--title",
                     "Test List",
@@ -345,18 +352,18 @@ class TestListTagShowJsonOutput:
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "xml_test"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "xml_test"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "tag", "add", "testlist", "xml_test"]
+                cli, ["--db", "test.db", "list", "tag", "add", "--list", "testlist", "--tag", "xml_test"]
             )
             assert result.exit_code == 0
 
             # Test XML output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "tag", "show", "testlist"]
+                cli, ["--db", "test.db", "list", "tag", "show", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -380,6 +387,7 @@ class TestListTagShowJsonOutput:
                     "test.db",
                     "list",
                     "create",
+                    "--list",
                     "colorlist",
                     "--title",
                     "Color List",
@@ -389,31 +397,31 @@ class TestListTagShowJsonOutput:
 
             # Create tags with different colors
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "red_tag", "--color", "red"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "red_tag", "--color", "red"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "blue_tag", "--color", "blue"]
+                cli, ["--db", "test.db", "tag", "create", "--name", "blue_tag", "--color", "blue"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "tag", "create", "green_tag", "--color", "green"],
+                ["--db", "test.db", "tag", "create", "--name", "green_tag", "--color", "green"],
             )
             assert result.exit_code == 0
 
             # Assign all tags to the list
             for tag in ["red_tag", "blue_tag", "green_tag"]:
                 result = self.runner.invoke(
-                    cli, ["--db", "test.db", "list", "tag", "add", "colorlist", tag]
+                    cli, ["--db", "test.db", "list", "tag", "add", "--list", "colorlist", "--tag", tag]
                 )
                 assert result.exit_code == 0
 
             # Test JSON output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "tag", "show", "colorlist"]
+                cli, ["--db", "test.db", "list", "tag", "show", "--list", "colorlist"]
             )
             assert result.exit_code == 0
 

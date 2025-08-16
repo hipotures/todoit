@@ -89,7 +89,7 @@ def test_item_status_update(temp_db_path):
         ],
     )
     assert result.exit_code == 0
-    assert "Updated 'task1'" in result.output
+    assert "Updated item 'task1'" in result.output
 
     # Verify the status change
     result = runner.invoke(

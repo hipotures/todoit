@@ -51,8 +51,11 @@ class TestPropertyJsonOutput:
                     "list",
                     "property",
                     "set",
+                    "--list",
                     "testlist",
+                    "--key",
                     "prop1",
+                    "--value",
                     "value1",
                 ],
             )
@@ -66,8 +69,11 @@ class TestPropertyJsonOutput:
                     "list",
                     "property",
                     "set",
+                    "--list",
                     "testlist",
+                    "--key",
                     "prop2",
+                    "--value",
                     "value2",
                 ],
             )
@@ -75,7 +81,7 @@ class TestPropertyJsonOutput:
 
             # Test JSON output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "property", "list", "testlist"]
+                cli, ["--db", "test.db", "list", "property", "list", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -114,7 +120,7 @@ class TestPropertyJsonOutput:
 
             # Test JSON output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "property", "list", "testlist"]
+                cli, ["--db", "test.db", "list", "property", "list", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -158,9 +164,13 @@ class TestPropertyJsonOutput:
                     "item",
                     "property",
                     "set",
+                    "--list",
                     "testlist",
+                    "--item",
                     "testitem",
+                    "--key",
                     "priority",
+                    "--value",
                     "high",
                 ],
             )
@@ -174,9 +184,13 @@ class TestPropertyJsonOutput:
                     "item",
                     "property",
                     "set",
+                    "--list",
                     "testlist",
+                    "--item",
                     "testitem",
+                    "--key",
                     "category",
+                    "--value",
                     "work",
                 ],
             )
@@ -279,9 +293,13 @@ class TestPropertyJsonOutput:
                     "item",
                     "property",
                     "set",
+                    "--list",
                     "testlist",
+                    "--item",
                     "item1",
+                    "--key",
                     "priority",
+                    "--value",
                     "high",
                 ],
             )
@@ -295,9 +313,13 @@ class TestPropertyJsonOutput:
                     "item",
                     "property",
                     "set",
+                    "--list",
                     "testlist",
+                    "--item",
                     "item2",
+                    "--key",
                     "category",
+                    "--value",
                     "work",
                 ],
             )
@@ -376,8 +398,11 @@ class TestPropertyJsonOutput:
                     "list",
                     "property",
                     "set",
+                    "--list",
                     "testlist",
+                    "--key",
                     "prop1",
+                    "--value",
                     "value1",
                 ],
             )
@@ -385,7 +410,7 @@ class TestPropertyJsonOutput:
 
             # Test table output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "list", "property", "list", "testlist"]
+                cli, ["--db", "test.db", "list", "property", "list", "--list", "testlist"]
             )
             assert result.exit_code == 0
 

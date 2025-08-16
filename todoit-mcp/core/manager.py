@@ -495,7 +495,7 @@ class TodoManager:
         # Check if the task already exists
         existing_item = self.db.get_item_by_key(db_list.id, item_key)
         if existing_item:
-            raise ValueError(f"Task '{item_key}' already exists in list '{list_key}'")
+            raise ValueError(f"Item '{item_key}' already exists in list '{list_key}'")
 
         # Set position if not provided (for main tasks, parent_item_id=None)
         if position is None:
@@ -546,7 +546,7 @@ class TodoManager:
         # Get the task
         db_item = self.db.get_item_by_key(db_list.id, item_key)
         if not db_item:
-            raise ValueError(f"Task '{item_key}' does not exist in list '{list_key}'")
+            raise ValueError(f"Item '{item_key}' does not exist in list '{list_key}'")
 
         # Block manual status changes for tasks with subtasks
         if status and self.db.has_subtasks(db_item.id):
@@ -614,7 +614,7 @@ class TodoManager:
         # Get the item
         db_item = self.db.get_item_by_key(db_list.id, item_key)
         if not db_item:
-            raise ValueError(f"Task '{item_key}' does not exist in list '{list_key}'")
+            raise ValueError(f"Item '{item_key}' does not exist in list '{list_key}'")
 
         # Store old states for history
         old_states = db_item.completion_states or {}
@@ -872,7 +872,7 @@ class TodoManager:
             if db_list.description:
                 f.write(f"{db_list.description}\n\n")
 
-            # Tasks
+            # Items
             for item in sorted(items, key=lambda x: x.position):
                 status_mark = "[x]" if item.status == "completed" else "[ ]"
                 f.write(f"{status_mark} {item.content}\n")
@@ -1490,9 +1490,9 @@ class TodoManager:
            a. If has pending subtasks → return first pending subtask
            b. If no subtasks → return task itself
         4. Priority:
-           - Tasks with in_progress parents (continue working on started tasks)
-           - Tasks without cross-list dependencies
-           - Tasks by position
+           - Items with in_progress parents (continue working on started items)
+           - Items without cross-list dependencies
+           - Items by position
         """
         # Get list
         db_list = self.db.get_list_by_key(list_key)

@@ -114,11 +114,11 @@ class TestLimits:
         parent_key = "root"
 
         for depth in range(1, max_depth + 1):
-            subtask_key = f"subtask_level_{depth}"
+            subitem_key = f"subtask_level_{depth}"
             manager.add_subitem(
-                "deep_list", parent_key, subtask_key, f"Subitem at level {depth}"
+                "deep_list", parent_key, subitem_key, f"Subitem at level {depth}"
             )
-            parent_key = subtask_key
+            parent_key = subitem_key
 
         # Test hierarchy retrieval
         hierarchy = manager.get_item_hierarchy("deep_list", "root")

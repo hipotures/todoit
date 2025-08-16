@@ -43,13 +43,13 @@ class TestSubtaskPositioningFix:
 
         # Add multiple main tasks
         for i in range(1, 4):
-            result = self.run_cli(f'item add test_positioning item{i} "Item {i}"', temp_db_path)
+            result = self.run_cli(f'item add --list test_positioning --item item{i} --title "Item {i}"', temp_db_path)
             assert result.returncode == 0
 
         # Add multiple subtasks to each task
         for task_num in range(1, 4):
             for sub_num in range(1, 4):
-                result = self.run_cli(f'item add-subitem test_positioning task{task_num} item{task_num}_sub{sub_num} "Subitem {sub_num} for Item {task_num}"', temp_db_path)
+                result = self.run_cli(f'item add --list test_positioning --item item{task_num} --subitem item{task_num}_sub{sub_num} --title "Subitem {sub_num} for Item {task_num}"', temp_db_path)
                 assert result.returncode == 0, f"Failed to add subitem {sub_num} to item {task_num}: {result.stderr}"
 
         # Verify all items are displayed correctly
@@ -62,6 +62,7 @@ class TestSubtaskPositioningFix:
         for task_num in range(1, 4):
             assert f"│ {task_num}        │ item{task_num}      │" in output, f"Item {task_num} should be displayed"
             
+            # Verify subitems are displayed with correct hierarchical numbering
             for sub_num in range(1, 4):
                 assert f"│ {task_num}.{sub_num}      │ item{task_num}_sub{sub_num} │" in output, f"Subitem {task_num}.{sub_num} should be displayed"
 

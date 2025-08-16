@@ -17,11 +17,11 @@ class TestSubtasksAPI:
         subitem = manager.add_subitem(
             list_key="test_list",
             parent_key="item_1",
-            subtask_key="subtask_1",
+            subitem_key="subtask_1",
             content="Subitem 1 content",
         )
 
-        assert subtask is not None
+        assert subitem is not None
         assert subitem.content == "Subitem 1 content"
         assert subitem.parent_item_id is not None
 
@@ -33,7 +33,7 @@ class TestSubtasksAPI:
 
         subtasks = manager.get_subitems("test_list", "item_1")
         assert len(subtasks) == 2
-        assert all(task.parent_item_id is not None for item in subtasks)
+        assert all(item.parent_item_id is not None for item in subtasks)
 
     def test_get_item_hierarchy(self, manager, sample_list):
         """Test retrieving full hierarchy for an item"""
@@ -43,8 +43,8 @@ class TestSubtasksAPI:
 
         hierarchy = manager.get_item_hierarchy("test_list", "item_1")
         assert hierarchy is not None
-        assert "subtasks" in hierarchy
-        assert len(hierarchy["subtasks"]) == 1
+        assert "subitems" in hierarchy
+        assert len(hierarchy["subitems"]) == 1
 
     def test_move_to_subitem(self, manager, sample_list):
         """Test converting existing item to subitem"""
@@ -106,9 +106,9 @@ class TestSubtasksAPI:
         manager.add_subitem("test_list", "item_1", "sub2", "Subitem 2")
 
         # Next item should be first subitem, not parent
-        next_task = manager.get_next_pending_with_subtasks("test_list")
-        assert next_task is not None
-        assert next_task.item_key == "sub1"  # Should prioritize subitem
+        next_item = manager.get_next_pending_with_subtasks("test_list")
+        assert next_item is not None
+        assert next_item.item_key == "sub1"  # Should prioritize subitem
 
     def test_subtask_depth_limits(self, manager, sample_list):
         """Test maximum subitem depth (3 levels)"""

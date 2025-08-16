@@ -300,7 +300,7 @@ class TestTodoManagerUnit:
             manager_with_mock.add_subitem(
                 list_key="test",
                 parent_key="nonexistent_parent",
-                subtask_key="new_subtask",
+                subitem_key="new_subtask",
                 content="some content",
             )
 
