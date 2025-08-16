@@ -40,20 +40,20 @@ Commands supporting unified output formats:
 - `schema` - Show system schema
 - `dep graph` - Visualize dependency graphs
 
-### Subtask Key Flexibility
+### Subitem Key Flexibility
 
-Starting from version 1.25.3, TODOIT supports **duplicate subtask keys** across different parent tasks. This enables standardized workflows where multiple items can share common subtask patterns:
+Starting from version 1.25.3, TODOIT supports **duplicate subitem keys** across different parent tasks. This enables standardized workflows where multiple items can share common subitem patterns:
 
 ```bash
-# Example: Multiple scenes with identical subtask workflow
-todoit item add-subtask scene_list scene_0019 image_gen "Generate image for scene 19"
-todoit item add-subtask scene_list scene_0019 image_dwn "Download generated image"
+# Example: Multiple scenes with identical subitem workflow
+todoit item add --list scene_list --item scene_0019 --subitem image_gen --title "Generate image for scene 19"
+todoit item add --list scene_list --item scene_0019 --subitem image_dwn --title "Download generated image"
 
-todoit item add-subtask scene_list scene_0020 image_gen "Generate image for scene 20"  # Same key!
-todoit item add-subtask scene_list scene_0020 image_dwn "Download generated image"     # Same key!
+todoit item add --list scene_list --item scene_0020 --subitem image_gen --title "Generate image for scene 20"  # Same key!
+todoit item add --list scene_list --item scene_0020 --subitem image_dwn --title "Download generated image"     # Same key!
 ```
 
 This improvement allows:
-- **Standardized Workflows**: Common subtask patterns across different parent tasks
+- **Standardized Workflows**: Common subitem patterns across different parent tasks
 - **Generic MCP Searches**: Use `todo_find_subitems_by_status` with generic keys like `{"image_gen":"completed","image_dwn":"pending"}`
 - **Simplified Naming**: No need for unique prefixes like `scene_0019_image_gen`

@@ -30,21 +30,21 @@ All 55 MCP tools are automatically available - no additional setup required!
 ### Command Line Interface
 ```bash
 # Create project and add hierarchical tasks
-todoit list create "project" --title "My Project"
-todoit item add "project" "feature" "Implement feature"  
-todoit item add-subtask "project" "feature" "backend" "Backend work"
+todoit list create --list "project" --title "My Project"
+todoit item add --list "project" --item "feature" --title "Implement feature"  
+todoit item add --list "project" --item "feature" --subitem "backend" --title "Backend work"
 
 # Add cross-list dependencies
-todoit dep add "frontend:ui" requires "backend:api" --force
+todoit dep add --dependent "frontend:ui" --required "backend:api" --force
 
 # Get smart next task
-todoit item next-smart "project"
+todoit item next-smart --list "project"
 ```
 
 ## 🎯 Key Features
 
 - **55 MCP Tools** - Complete Claude Code integration
-- **Hierarchical Tasks** - Subtasks with parent-child relationships  
+- **Hierarchical Tasks** - Subitems with parent-child relationships  
 - **Cross-List Dependencies** - Coordinate work across multiple lists
 - **Smart Algorithms** - Intelligent next task selection
 - **Rich CLI** - Beautiful tables with status indicators

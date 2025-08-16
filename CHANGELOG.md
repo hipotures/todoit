@@ -14,8 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### 🆕 What's New
 
 **📋 Bulk Properties Viewing**
-- **All Items at Once**: `todoit item property list LIST_KEY` now shows properties for ALL items in the list
-- **Backward Compatibility**: Original syntax `todoit item property list LIST_KEY ITEM_KEY` unchanged
+- **All Items at Once**: `todoit item property list --list LIST_KEY` now shows properties for ALL items in the list
+- **Backward Compatibility**: Original syntax `todoit item property list --list LIST_KEY --item ITEM_KEY` unchanged
 - **Smart Detection**: Automatically detects whether to show single item or all items
 
 **🎨 Visual Display Enhancements**
@@ -32,13 +32,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Table Format (Default):**
 ```bash
-todoit item property list my-project
+todoit item property list --list my-project
 # Displays alternating row styles to visually separate items
 ```
 
 **Tree Format:**
 ```bash
-todoit item property list my-project --tree
+todoit item property list --list my-project --tree
 # Shows hierarchical view:
 # 📋 All Item Properties for list 'my-project'
 # ├── 📝 item1
@@ -88,17 +88,17 @@ todoit item property list my-project --tree
 
 **Before v1.16.1:**
 ```bash
-todoit tag create frontend    # Always got stored color (e.g., blue)
-todoit tag create backend     # Always got stored color (e.g., blue)
-todoit tag create testing     # Always got stored color (e.g., blue)
+todoit tag create --tag frontend    # Always got stored color (e.g., blue)
+todoit tag create --tag backend     # Always got stored color (e.g., blue)
+todoit tag create --tag testing     # Always got stored color (e.g., blue)
 # Colors were static and could become inconsistent
 ```
 
 **After v1.16.1:**
 ```bash
-todoit tag create zebra       # Gets blue (3rd alphabetically)
-todoit tag create alpha       # Gets red (1st alphabetically)  
-todoit tag create beta        # Gets green (2nd alphabetically)
+todoit tag create --tag zebra       # Gets blue (3rd alphabetically)
+todoit tag create --tag alpha       # Gets red (1st alphabetically)  
+todoit tag create --tag beta        # Gets green (2nd alphabetically)
 
 # CLI Display with dynamic width:
 ╭──────┬──────────┬───────────┬──────┬─────╮

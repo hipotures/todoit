@@ -7,10 +7,10 @@ TODOIT (Todo It) is a comprehensive task management platform that scales from si
 ## 🚀 Key Features
 
 ### 🧠 **Smart Task Management**
-- **Hierarchical Tasks** - Break down complex tasks into subtasks with parent-child relationships
+- **Hierarchical Tasks** - Break down complex tasks into subitems with parent-child relationships
 - **Cross-List Dependencies** - Coordinate work across different lists and teams
 - **Intelligent Next Task Algorithm** - Smart prioritization for optimal workflow
-- **Auto-completion Logic** - Parents auto-complete when all subtasks are done
+- **Auto-completion Logic** - Parents auto-complete when all subitems are done
 - **Circular Dependency Prevention** - Automatic detection and prevention of dependency loops
 
 ### 📊 **Advanced Progress Tracking**
@@ -44,7 +44,7 @@ Claude Code <--MCP--> TodoMCPServer <--API--> TodoManager <--ORM--> SQLite
 
 ### Database Schema (9 Tables)
 - **todo_lists** - List management with metadata and hierarchical relationships
-- **todo_items** - Items with subtask support via `parent_item_id`
+- **todo_items** - Items with subitem support via `parent_item_id`
 - **item_dependencies** - Cross-list task dependencies and blocking logic
 - **list_relations** - Project grouping and 1:1 list linking
 - **list_properties** - Key-value configuration storage for lists
@@ -111,11 +111,11 @@ todoit-mcp/
 - `get_next_pending` - Get next available task
 - `get_progress` - Track completion statistics
 
-### **Hierarchical Tasks (Subtasks)**
-- `add_subtask` - Create parent-child task relationships
+### **Hierarchical Tasks (Subitems)**
+- `add_subitem` - Create parent-child task relationships
 - `get_item_hierarchy` - View complete task breakdown
 - `auto_complete_parent` - Smart parent completion logic
-- `get_next_pending_with_subtasks` - Priority-based task selection
+- `get_next_pending_with_subitems` - Priority-based task selection
 
 ### **Cross-List Dependencies**
 - `add_item_dependency` - Create dependencies between different lists
@@ -132,7 +132,7 @@ todoit-mcp/
 ### **MCP Integration (44 Tools)**
 All functionality available via MCP for Claude Code:
 - List management (create, update, delete, relations)
-- Item operations (add, update status, move, convert to subtask)  
+- Item operations (add, update status, move, convert to subitem)  
 - Smart algorithms (next task, blocking analysis, progress tracking)
 - Import/Export (Markdown format with checkbox support)
 - Project coordination (dependency graphs, cross-list progress)
@@ -156,7 +156,7 @@ All functionality available via MCP for Claude Code:
 
 ### **Personal Productivity**
 - **Simple lists** - Basic todo functionality
-- **Goal breakdown** - Large goals into manageable subtasks
+- **Goal breakdown** - Large goals into manageable subitems
 - **Habit tracking** - Sequential task completion with progress metrics
 
 ## 🚀 Quick Start
@@ -164,24 +164,24 @@ All functionality available via MCP for Claude Code:
 ### Basic Usage (After Installation)
 ```bash
 # Create your first project
-todoit list create "my-project" --title "My First Project"
+todoit list create --list "my-project" --title "My First Project"
 
 # Add some tasks
-todoit item add "my-project" "setup" "Set up development environment"
-todoit item add "my-project" "feature" "Implement main feature"
+todoit item add --list "my-project" --item "setup" --title "Set up development environment"
+todoit item add --list "my-project" --item "feature" --title "Implement main feature"
 
-# Add subtasks for better organization
-todoit item add-subtask "my-project" "setup" "install-deps" "Install dependencies"
-todoit item add-subtask "my-project" "setup" "config" "Configure environment"
+# Add subitems for better organization
+todoit item add --list "my-project" --item "setup" --subitem "install-deps" --title "Install dependencies"
+todoit item add --list "my-project" --item "setup" --subitem "config" --title "Configure environment"
 
 # Check what to work on next
-todoit item next "my-project"
+todoit item next --list "my-project"
 
 # Mark tasks as completed
-todoit item status "my-project" "install-deps" --status completed
+todoit item status --list "my-project" --item "setup" --subitem "install-deps" --status completed
 
 # View project progress
-todoit list show "my-project" --tree
+todoit list show --list "my-project"
 ```
 
 ### Using with Claude Code (MCP)
@@ -196,7 +196,7 @@ some task lists for your web application.
 
 *Uses todo_create_list to create "backend", "frontend", and "deployment" lists*
 *Uses todo_add_item to add initial tasks*
-*Uses todo_add_subtask to break down complex tasks*
+*Uses todo_add_subitem to break down complex tasks*
 *Uses todo_add_item_dependency to set up proper task ordering*
 
 You: "What should I work on first?"
@@ -208,7 +208,7 @@ in the backend list, as the frontend components depend on this being completed f
 
 **Available MCP Tools:**
 - **Project Management**: Create lists, set up relationships
-- **Task Management**: Add/update tasks, hierarchical subtasks
+- **Task Management**: Add/update tasks, hierarchical subitems
 - **Properties Management**: Set runtime properties on lists and individual items
 - **Smart Workflow**: Next task recommendations, dependency management  
 - **Progress Tracking**: Statistics, completion status, project overviews
@@ -217,18 +217,18 @@ in the backend list, as the frontend components depend on this being completed f
 ### Advanced Workflows
 ```bash
 # Multi-list project with dependencies
-todoit list create "backend" --title "Backend Development"
-todoit list create "frontend" --title "Frontend Development"
+todoit list create --list "backend" --title "Backend Development"
+todoit list create --list "frontend" --title "Frontend Development"
 
-todoit item add "backend" "api" "REST API implementation"
-todoit item add "frontend" "ui" "User interface"
+todoit item add --list "backend" --item "api" --title "REST API implementation"
+todoit item add --list "frontend" --item "ui" --title "User interface"
 
 # Create dependency: frontend depends on backend
 todoit dep add "frontend:ui" requires "backend:api" --force
 
 # Smart task selection respects dependencies
-todoit item next "frontend"  # Will be blocked until backend:api is done
-todoit item next "backend"   # Will suggest api task
+todoit item next --list "frontend"  # Will be blocked until backend:api is done
+todoit item next --list "backend"   # Will suggest api task
 ```
 
 ## 🔧 Troubleshooting

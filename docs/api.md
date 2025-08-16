@@ -12,7 +12,7 @@ Creates a new TODO list.
 **Parameters:**
 - `list_key: str`: A unique key for the list.
 - `title: str`: A human-readable title.
-- `items: Optional[List[str]]`: A list of strings to create as initial tasks.
+- `items: Optional[List[str]]`: A list of strings to create as initial items.
 - `list_type: str`: The list's ordering and behavior strategy (`"sequential"`, `"parallel"`, `"hierarchical"`).
 - `metadata: Optional[Dict]`: A dictionary for custom metadata.
 
@@ -21,12 +21,12 @@ Creates a new TODO list.
 [Source](../todoit-mcp/core/manager.py)
 
 ### `add_item`
-Adds a new task to a list.
+Adds a new item to a list.
 
 **Parameters:**
 - `list_key: str`: The key of the target list.
 - `item_key: str`: A unique key for the item within the list.
-- `content: str`: The task's description.
+- `content: str`: The item's description.
 - `position: Optional[int]`: The insertion position. If omitted, it's added to the end.
 - `metadata: Optional[Dict]`: A dictionary for custom metadata.
 
@@ -35,9 +35,9 @@ Adds a new task to a list.
 [Source](../todoit-mcp/core/manager.py)
 
 ### `update_item_status`
-Updates the status of a task.
+Updates the status of an item.
 
-> ⚠️ **Automatic Status Synchronization**: Tasks with subtasks cannot have manually changed status. Their status is automatically calculated from subtask statuses. See [Status Synchronization](#automatic-status-synchronization) for details.
+> ⚠️ **Automatic Status Synchronization**: Items with subitems cannot have manually changed status. Their status is automatically calculated from subitem statuses. See [Status Synchronization](#automatic-status-synchronization) for details.
 
 **Parameters:**
 - `list_key: str`: The key of the list containing the item.
@@ -47,43 +47,43 @@ Updates the status of a task.
 
 **Returns:** `TodoItem` – The updated item object.
 
-**Raises:** `ValueError` if attempting to manually change status of a task with subtasks.
+**Raises:** `ValueError` if attempting to manually change status of an item with subitems.
 
 [Source](../todoit-mcp/core/manager.py)
 
 ---
 
-## Subtask and Hierarchy Management
+## Subitem and Hierarchy Management
 
-### `add_subtask`
-Adds a new subtask to an existing parent task.
+### `add_subitem`
+Adds a new subitem to an existing parent item.
 
-> 🔄 **Automatic Sync**: Adding a subtask triggers automatic parent status synchronization.
+> 🔄 **Automatic Sync**: Adding a subitem triggers automatic parent status synchronization.
 
 **Parameters:**
 - `list_key: str`: The key of the list.
-- `parent_key: str`: The key of the parent task.
-- `subtask_key: str`: A unique key for the new subtask.
-- `content: str`: The content of the subtask.
+- `parent_key: str`: The key of the parent item.
+- `subitem_key: str`: A unique key for the new subitem.
+- `content: str`: The content of the subitem.
 - `metadata: Optional[Dict]`: Custom metadata.
 
-**Returns:** `TodoItem` – The created subtask object.
+**Returns:** `TodoItem` – The created subitem object.
 
 [Source](../todoit-mcp/core/manager.py)
 
-### `get_subtasks`
-Retrieves all direct subtasks for a parent task.
+### `get_subitems`
+Retrieves all direct subitems for a parent item.
 
 **Parameters:**
 - `list_key: str`: The key of the list.
-- `parent_key: str`: The key of the parent task.
+- `parent_key: str`: The key of the parent item.
 
-**Returns:** `List[TodoItem]` – A list of subtask objects.
+**Returns:** `List[TodoItem]` – A list of subitem objects.
 
 [Source](../todoit-mcp/core/manager.py)
 
 ### `get_item_hierarchy`
-Retrieves the full hierarchy for an item, including all its subtasks recursively.
+Retrieves the full hierarchy for an item, including all its subitems recursively.
 
 **Parameters:**
 - `list_key: str`: The key of the list.
@@ -99,27 +99,27 @@ Retrieves the full hierarchy for an item, including all its subtasks recursively
 
 *Added in version 1.20.0*
 
-TODOIT automatically synchronizes the status of parent tasks based on their subtasks. This feature ensures hierarchical task consistency and prevents manual status conflicts.
+TODOIT automatically synchronizes the status of parent items based on their subitems. This feature ensures hierarchical item consistency and prevents manual status conflicts.
 
 ### Core Rules
 
 **Status Calculation Priority:**
-1. **`failed`** - If any subtask is failed → parent becomes `failed`
-2. **`pending`** - If all subtasks are pending → parent becomes `pending`  
-3. **`completed`** - If all subtasks are completed → parent becomes `completed`
+1. **`failed`** - If any subitem is failed → parent becomes `failed`
+2. **`pending`** - If all subitems are pending → parent becomes `pending`  
+3. **`completed`** - If all subitems are completed → parent becomes `completed`
 4. **`in_progress`** - Any other combination → parent becomes `in_progress`
 
 **Manual Update Protection:**
-- Tasks with subtasks **cannot** have manually changed status
-- Attempting `update_item_status()` on parent tasks raises `ValueError`
-- Use subtask status changes to control parent status instead
+- Items with subitems **cannot** have manually changed status
+- Attempting `update_item_status()` on parent items raises `ValueError`
+- Use subitem status changes to control parent status instead
 
 ### Automatic Triggers
 
 Status synchronization occurs automatically on:
-- **`add_subtask()`** - Adding first subtask to parent
-- **`update_item_status()`** - Changing any subtask status  
-- **`delete_item()`** - Removing subtasks from parent
+- **`add_subitem()`** - Adding first subitem to parent
+- **`update_item_status()`** - Changing any subitem status  
+- **`delete_item()`** - Removing subitems from parent
 
 ### Recursive Propagation
 
@@ -138,15 +138,15 @@ Status synchronization occurs automatically on:
 ### Usage Examples
 
 ```python
-# Create parent task
+# Create parent item
 manager.add_item("project", "feature", "Implement new feature")
 
-# Add subtasks - parent automatically becomes 'pending'
-manager.add_subtask("project", "feature", "design", "Create design")
-manager.add_subtask("project", "feature", "code", "Write code")
-manager.add_subtask("project", "feature", "test", "Write tests")
+# Add subitems - parent automatically becomes 'pending'
+manager.add_subitem("project", "feature", "design", "Create design")
+manager.add_subitem("project", "feature", "code", "Write code")
+manager.add_subitem("project", "feature", "test", "Write tests")
 
-# Update subtask status - parent automatically updates
+# Update subitem status - parent automatically updates
 manager.update_item_status("project", "design", status="completed")
 # Parent "feature" is now 'in_progress' (mixed statuses)
 
@@ -162,9 +162,9 @@ manager.update_item_status("project", "feature", status="failed")
 
 ```python
 try:
-    manager.update_item_status("project", "parent_task", status="completed")
+    manager.update_item_status("project", "parent_item", status="completed")
 except ValueError as e:
-    print(e)  # "Cannot manually change status of task 'parent_task' because it has subtasks..."
+    print(e)  # "Cannot manually change status of item 'parent_item' because it has subitems..."
 ```
 
 ### Interface Support
