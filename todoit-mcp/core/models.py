@@ -13,9 +13,6 @@ class ListType(str, Enum):
     """Types of TODO lists"""
 
     SEQUENTIAL = "sequential"
-    PARALLEL = "parallel"
-    HIERARCHICAL = "hierarchical"
-    LINKED = "linked"
 
 
 class ListStatus(str, Enum):
@@ -34,13 +31,6 @@ class ItemStatus(str, Enum):
     FAILED = "failed"
 
 
-class RelationType(str, Enum):
-    """Types of relations between lists"""
-
-    DEPENDENCY = "dependency"
-    PARENT = "parent"
-    RELATED = "related"
-    PROJECT = "project"
 
 
 class HistoryAction(str, Enum):
@@ -95,7 +85,6 @@ class TodoListBase(BaseModel):
     description: Optional[str] = None
     list_type: ListType = ListType.SEQUENTIAL
     status: ListStatus = ListStatus.ACTIVE
-    parent_list_id: Optional[int] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("list_key")
@@ -141,7 +130,6 @@ class TodoList(TodoListBase):
             "title": self.title,
             "description": self.description,
             "list_type": self.list_type,
-            "parent_list_id": self.parent_list_id,
             "metadata": self.metadata,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
@@ -222,52 +210,6 @@ class TodoItem(TodoItemBase):
         return self.completion_states or {}
 
 
-class ListRelationBase(BaseModel):
-    """Base model for list relations"""
-
-    source_list_id: int
-    target_list_id: int
-    relation_type: RelationType
-    relation_key: Optional[str] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-
-    @field_validator("target_list_id")
-    def validate_different_lists(cls, v, info):
-        """Ensure source and target are different lists"""
-        if (
-            info.data
-            and "source_list_id" in info.data
-            and v == info.data["source_list_id"]
-        ):
-            raise ValueError("source_list_id and target_list_id must be different")
-        return v
-
-
-class ListRelationCreate(ListRelationBase):
-    """Model for creating list relations"""
-
-    pass
-
-
-class ListRelation(ListRelationBase):
-    """Complete list relation model"""
-
-    id: int
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for JSON serialization"""
-        return {
-            "id": self.id,
-            "source_list_id": self.source_list_id,
-            "target_list_id": self.target_list_id,
-            "relation_type": self.relation_type,
-            "relation_key": self.relation_key,
-            "metadata": self.metadata,
-            "created_at": self.created_at.isoformat(),
-        }
 
 
 class ListPropertyBase(BaseModel):

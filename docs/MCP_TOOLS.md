@@ -62,7 +62,6 @@ Core functionality for list and item management.
 - **`todo_archive_list`** - Archive list (hide from normal view) with completion validation 
 - **`todo_unarchive_list`** - Unarchive list (restore to normal view)
 - **`todo_list_all`** - List all TODO lists with progress statistics and optional tag filtering
-- **`todo_link_list_1to1`** - Create linked copy of list with 1:1 task mapping and automatic relation
 
 #### Item Management  
 - **`todo_add_item`** - 🆕 **UNIFIED** - Add item or subitem to list (smart detection via subitem_key parameter)
@@ -87,7 +86,6 @@ Extended functionality for complex workflows.
 - **`todo_export_to_markdown`** - Export lists to markdown with checkboxes
 
 #### List Relations & Properties
-- **`todo_create_list_relation`** - Create relationships between lists
 - **`todo_get_lists_by_relation`** - Get lists by relation type and key
 - **`todo_set_list_property`** - Set key-value properties on lists
 - **`todo_get_list_property`** - Get specific property value
@@ -129,7 +127,6 @@ Cross-list task dependencies for complex project coordination.
 ### 🧠 Smart Algorithms (5 tools)
 Advanced algorithms for intelligent task management.
 
-- **`todo_get_list_items_hierarchical`** - Get items with hierarchical organization
 - **`todo_get_cross_list_progress`** - Progress tracking across multiple related lists
 - **`todo_get_dependency_graph`** - Get dependency graph for visualization
 - **`todo_get_next_pending_enhanced`** - Enhanced next task with full Phase 2 logic
@@ -259,25 +256,6 @@ await todo_quick_add("api-dev", ["Setup environment", "Implement endpoints", "Wr
 await todo_set_list_property("api-dev", "project_id", "proj-123")
 await todo_set_item_property("api-dev", "item1", "priority", "high")
 
-# Link to create testing list with identical structure
-result = await todo_link_list_1to1("api-dev", "api-test", "API Testing Tasks")
-
-# Result contains:
-# {
-#   "success": true,
-#   "source_list": "api-dev",
-#   "target_list": "api-test", 
-#   "items_copied": 3,
-#   "list_properties_copied": 1,
-#   "item_properties_copied": 1,
-#   "all_items_set_to_pending": true,
-#   "relation_created": true,
-#   "relation_key": "api-dev_linked"
-# }
-
-# Both lists now have identical tasks and properties
-# Testing tasks are all "pending" status (reset from source statuses)
-# Automatic project relationship created between lists
 ```
 
 ### Project Coordination
@@ -651,7 +629,7 @@ await todo_remove_list_tag("project-alpha", "urgent")
 - **Advanced subtask operations** (4 tools): `todo_get_item_hierarchy`, `todo_move_to_subtask`, etc.
 - **Smart algorithms** (5 tools): `todo_get_next_pending_enhanced`, `todo_get_comprehensive_status`, etc.
 - **Import/Export** (2 tools): `todo_import_from_markdown`, `todo_export_to_markdown`
-- **Relations & Projects** (3 tools): `todo_create_list_relation`, `todo_project_overview`, etc.
+- **Relations & Projects** (1 tool): `todo_project_overview`
 - **Advanced properties** (4 tools): `todo_get_list_properties`, `todo_delete_item_property`, etc.
 - **Analytics & Reports** (1 tool): `todo_report_errors`
 - **Advanced tagging** (3 tools): `todo_remove_list_tag`, `todo_get_lists_by_tag`, etc.

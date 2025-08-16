@@ -11,7 +11,6 @@ from .database import (
     Database,
     TodoListDB,
     TodoItemDB,
-    ListRelationDB,
     TodoHistoryDB,
     ListPropertyDB,
     ItemPropertyDB,
@@ -23,14 +22,12 @@ from .database import (
 from .models import (
     TodoList,
     TodoItem,
-    ListRelation,
     TodoHistory,
     ProgressStats,
     ListProperty,
     ItemProperty,
     TodoListCreate,
     TodoItemCreate,
-    ListRelationCreate,
     TodoHistoryCreate,
     ItemDependency,
     DependencyType,
@@ -39,7 +36,6 @@ from .models import (
     ListTagAssignment,
     ItemStatus,
     ListType,
-    RelationType,
     HistoryAction,
 )
 
@@ -521,12 +517,6 @@ class TodoManager:
             new_value={"item_key": item_key, "content": content},
         )
 
-        # ===== SYNCHRONIZATION: Add to 1:1 child lists =====
-        try:
-            self._sync_add_to_children(list_key, item_key, content, position, metadata)
-        except Exception as e:
-            print(f"Warning: Failed to sync item '{item_key}' to child lists: {e}")
-            # Continue - don't fail the main operation
 
         return self._db_to_model(db_item, TodoItem)
 
@@ -886,32 +876,6 @@ class TodoManager:
 
     # === Helper functions ===
 
-    def create_list_relation(
-        self,
-        source_list_id: int,
-        target_list_id: int,
-        relation_type: str,
-        relation_key: Optional[str] = None,
-        metadata: Optional[Dict] = None,
-    ) -> ListRelation:
-        """Creates a relationship between lists"""
-        relation_data = {
-            "source_list_id": source_list_id,
-            "target_list_id": target_list_id,
-            "relation_type": relation_type,
-            "relation_key": relation_key,
-            "meta_data": metadata or {},
-        }
-
-        db_relation = self.db.create_list_relation(relation_data)
-        return self._db_to_model(db_relation, ListRelation)
-
-    def get_lists_by_relation(
-        self, relation_type: str, relation_key: str
-    ) -> List[TodoList]:
-        """Gets lists related by a relationship (e.g., project_id)"""
-        db_lists = self.db.get_lists_by_relation(relation_type, relation_key)
-        return [self._db_to_model(db_list, TodoList) for db_list in db_lists]
 
     def get_item(self, list_key: str, item_key: str) -> Optional[TodoItem]:
         """Gets a specific task"""
@@ -1231,11 +1195,11 @@ class TodoManager:
                         "property_key": prop_key,
                         "property_value": prop_value,
                         "status": item.status,
-                        "item_order": item_order,  # Add hierarchical order for sorting
+                        "item_order": item_order
                     }
                 )
 
-        # Sort by hierarchical item order first, then by property_key for consistent ordering
+        # Sort by item order first, then by property_key for consistent ordering
         result.sort(key=lambda x: (x["item_order"], x["property_key"]))
         return result
 
@@ -2391,208 +2355,6 @@ class TodoManager:
 
         return depth
 
-    def link_list_1to1(
-        self,
-        source_list_key: str,
-        target_list_key: str,
-        target_title: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """Create a linked copy of a list with 1:1 task mapping and automatic relation.
-
-        Creates a complete copy of the source list including all items and properties,
-        but with all item statuses reset to 'pending'. Establishes a 'project' relation
-        between the source and target lists.
-
-        Args:
-            source_list_key: Key of the existing list to copy from
-            target_list_key: Key for the new list to create (must not exist)
-            target_title: Optional custom title for new list
-
-        Returns:
-            Dict with operation results and statistics
-
-        Raises:
-            ValueError: If source list doesn't exist or target list already exists
-        """
-        # Step 1: Validation
-        source_list = self.get_list(source_list_key)
-        if not source_list:
-            raise ValueError(f"Source list '{source_list_key}' does not exist")
-
-        existing_target = self.get_list(target_list_key)
-        if existing_target:
-            raise ValueError(f"Target list '{target_list_key}' already exists")
-
-        # Step 2: Create target list
-        if target_title is None:
-            target_title = f"{source_list.title} - Linked"
-
-        target_list = self.create_list(
-            list_key=target_list_key,
-            title=target_title,
-            list_type="linked",
-            metadata=source_list.metadata or {},
-        )
-
-        # Step 3: Copy list properties
-        source_properties = self.get_list_properties(source_list_key)
-        list_properties_copied = 0
-
-        for property_key, property_value in source_properties.items():
-            self.set_list_property(target_list_key, property_key, property_value)
-            list_properties_copied += 1
-
-        # Step 4: Copy items with status reset
-        source_items = self.get_list_items(source_list_key)
-        items_copied = 0
-        item_properties_copied = 0
-
-        for source_item in source_items:
-            # Create new item with status reset to pending
-            target_item = self.add_item(
-                list_key=target_list_key,
-                item_key=source_item.item_key,  # Keep same item key
-                content=source_item.content,
-                position=source_item.position,
-                metadata=source_item.metadata or {},
-            )
-            items_copied += 1
-
-            # Copy item properties
-            source_item_properties = self.get_item_properties(
-                source_list_key, source_item.item_key
-            )
-            for prop_key, prop_value in source_item_properties.items():
-                self.set_item_property(
-                    target_list_key, source_item.item_key, prop_key, prop_value
-                )
-                item_properties_copied += 1
-
-        # Step 5: Create project relation
-        relation_key = f"{source_list_key}_linked"
-        relation_metadata = {
-            "linked_from": source_list_key,
-            "relationship": "1:1",
-            "created_by": "link_command",
-        }
-
-        self.create_list_relation(
-            source_list_id=source_list.id,
-            target_list_id=target_list.id,
-            relation_type="project",
-            relation_key=relation_key,
-            metadata=relation_metadata,
-        )
-
-        # Step 6: Return detailed report
-        return {
-            "success": True,
-            "source_list": source_list_key,
-            "target_list": target_list_key,
-            "target_list_id": target_list.id,
-            "target_list_created": True,
-            "items_copied": items_copied,
-            "list_properties_copied": list_properties_copied,
-            "item_properties_copied": item_properties_copied,
-            "all_items_set_to_pending": True,
-            "relation_created": True,
-            "relation_key": relation_key,
-            "relation_type": "project",
-            "operation": "link_list_1to1",
-        }
-
-    # ===== LINKED LIST SYNCHRONIZATION HELPERS =====
-
-    def _get_1to1_child_lists(self, parent_list_id: int) -> List[Any]:
-        """Get child lists linked with 1:1 relationship where this list is the parent"""
-        relations = self.db.get_list_relations(parent_list_id, as_source=True)
-        child_lists = []
-
-        for relation in relations:
-            if (
-                relation.relation_type == "project"
-                and relation.meta_data
-                and relation.meta_data.get("relationship") == "1:1"
-            ):
-                child_lists.append(relation)
-
-        return child_lists
-
-    def _sync_add_to_children(
-        self,
-        parent_list_key: str,
-        item_key: str,
-        content: str,
-        position: Optional[int] = None,
-        metadata: Optional[Dict] = None,
-    ):
-        """Synchronously add item to all 1:1 child lists"""
-        # Get parent list
-        parent_list = self.db.get_list_by_key(parent_list_key)
-        if not parent_list:
-            return
-
-        # Find all 1:1 child lists
-        child_relations = self._get_1to1_child_lists(parent_list.id)
-
-        for relation in child_relations:
-            try:
-                # Get child list
-                child_list = self.db.get_list_by_id(relation.target_list_id)
-                if not child_list:
-                    continue
-
-                # Check if item already exists in child
-                existing_child_item = self.db.get_item_by_key(child_list.id, item_key)
-                if existing_child_item:
-                    continue  # Skip if already exists
-
-                # Set position for child list
-                child_position = position
-                if child_position is None:
-                    child_position = self.db.get_next_position(child_list.id, parent_item_id=None)
-
-                # Prepare child item data
-                child_item_data = {
-                    "list_id": child_list.id,
-                    "item_key": item_key,
-                    "content": content,
-                    "position": child_position,
-                    "status": "pending",  # Always start as pending in child
-                    "meta_data": metadata or {},
-                }
-
-                # Create child item
-                child_db_item = self.db.create_item(child_item_data)
-
-                # Copy item properties if any exist in parent
-                if metadata:
-                    parent_item = self.db.get_item_by_key(parent_list.id, item_key)
-                    if parent_item:
-                        parent_properties = self.db.get_item_properties(parent_item.id)
-                        for prop in parent_properties:
-                            self.db.create_item_property(
-                                child_db_item.id, prop.property_key, prop.property_value
-                            )
-
-                # Record history for child
-                self._record_history(
-                    item_id=child_db_item.id,
-                    list_id=child_list.id,
-                    action="created",
-                    new_value={
-                        "item_key": item_key,
-                        "content": content,
-                        "synced_from_parent": True,
-                    },
-                )
-
-            except Exception as e:
-                # Log error but don't fail the main operation
-                print(
-                    f"Warning: Failed to sync item '{item_key}' to child list {relation.target_list_id}: {e}"
-                )
-                continue
 
     # ===== LIST TAG MANAGEMENT METHODS =====
 

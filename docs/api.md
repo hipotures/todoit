@@ -13,7 +13,7 @@ Creates a new TODO list.
 - `list_key: str`: A unique key for the list.
 - `title: str`: A human-readable title.
 - `items: Optional[List[str]]`: A list of strings to create as initial items.
-- `list_type: str`: The list's ordering and behavior strategy (`"sequential"`, `"parallel"`, `"hierarchical"`).
+- `list_type: str`: The list's ordering and behavior strategy (`"sequential"`).
 - `metadata: Optional[Dict]`: A dictionary for custom metadata.
 
 **Returns:** `TodoList` – The created list object.

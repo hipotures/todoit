@@ -4,7 +4,6 @@ The database schema is defined using SQLAlchemy ORM models in `core/database.py`
 
 *   **`todo_lists`**: Stores information about TODO lists.
 *   **`todo_items`**: Stores information about individual TODO items.
-*   **`list_relations`**: Stores relationships between TODO lists.
 *   **`list_properties`**: Stores key-value properties for TODO lists.
 *   **`item_properties`**: Stores key-value properties for individual TODO items.
 *   **`todo_history`**: Stores a history of changes made to TODO items and lists.

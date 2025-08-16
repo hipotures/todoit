@@ -1,6 +1,6 @@
 # TODOIT MCP Documentation
 
-Welcome to the official documentation for TODOIT MCP, an intelligent TODO list management system with hierarchical tasks, cross-list dependencies, and complete Claude Code integration.
+Welcome to the official documentation for TODOIT MCP, an intelligent TODO list management system with cross-list dependencies and complete Claude Code integration.
 
 ## 📚 Table of Contents
 
@@ -29,7 +29,7 @@ All 56 MCP tools are automatically available - no additional setup required!
 
 ### Command Line Interface
 ```bash
-# Create project and add hierarchical tasks
+# Create project and add tasks
 todoit list create --list "project" --title "My Project"
 todoit item add --list "project" --item "feature" --title "Implement feature"  
 todoit item add --list "project" --item "feature" --subitem "backend" --title "Backend work"
@@ -44,7 +44,7 @@ todoit item next-smart --list "project"
 ## 🎯 Key Features
 
 - **55 MCP Tools** - Complete Claude Code integration
-- **Hierarchical Tasks** - Subitems with parent-child relationships  
+  
 - **Cross-List Dependencies** - Coordinate work across multiple lists
 - **Smart Algorithms** - Intelligent next task selection
 - **Rich CLI** - Beautiful tables with status indicators

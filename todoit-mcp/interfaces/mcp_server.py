@@ -316,30 +316,6 @@ async def todo_unarchive_list(list_key: str) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 
-@conditional_tool
-async def todo_link_list_1to1(
-    source_list_key: str, target_list_key: str, target_title: Optional[str] = None
-) -> Dict[str, Any]:
-    """Create a linked copy of a list with 1:1 task mapping and automatic relation.
-
-    Creates a complete copy of the source list including all items and properties,
-    but with all item statuses reset to 'pending'. Establishes a 'project' relation
-    between the source and target lists.
-
-    Args:
-        source_list_key: Key of the existing list to copy from (required)
-        target_list_key: Key for the new list to create (required, must not exist)
-        target_title: Optional custom title for new list
-
-    Returns:
-        Dictionary with success status, operation details and copy statistics
-    """
-    try:
-        mgr = init_manager()
-        result = mgr.link_list_1to1(source_list_key, target_list_key, target_title)
-        return result
-    except Exception as e:
-        return {"success": False, "error": str(e)}
 
 
 @conditional_tool
@@ -780,67 +756,6 @@ async def todo_get_list_items(
         return {"success": False, "error": str(e)}
 
 
-@conditional_tool
-async def todo_create_list_relation(
-    source_list_id: int,
-    target_list_id: int,
-    relation_type: str,
-    relation_key: Optional[str] = None,
-    metadata: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
-    """Create a relationship between two todo lists.
-
-    Args:
-        source_list_id: ID of the source list (required)
-        target_list_id: ID of the target list (required)
-        relation_type: Type of relationship (e.g., 'project', 'dependency') (required)
-        relation_key: Optional key to group related lists
-        metadata: Optional dictionary of custom metadata for the relation
-
-    Returns:
-        Dictionary with success status and created relation details
-    """
-    try:
-        mgr = init_manager()
-        if metadata is None:
-            metadata = {}
-        relation = mgr.create_list_relation(
-            source_list_id=source_list_id,
-            target_list_id=target_list_id,
-            relation_type=relation_type,
-            relation_key=relation_key,
-            metadata=metadata,
-        )
-        return {"success": True, "relation": relation.to_dict()}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-
-@conditional_tool
-async def todo_get_lists_by_relation(
-    relation_type: str, relation_key: str
-) -> Dict[str, Any]:
-    """Get todo lists filtered by relation type and key.
-
-    Args:
-        relation_type: Type of relationship to filter by (required)
-        relation_key: Specific key to match within the relation type (required)
-
-    Returns:
-        Dictionary with success status, list of matching todo lists, and count
-    """
-    try:
-        mgr = init_manager()
-        lists = mgr.get_lists_by_relation(
-            relation_type=relation_type, relation_key=relation_key
-        )
-        return {
-            "success": True,
-            "lists": [todo_list.to_dict() for todo_list in lists],
-            "count": len(lists),
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
 
 
 @conditional_tool
@@ -1457,63 +1372,6 @@ async def todo_can_complete_item(
     }
 
 
-# Enhanced existing tools to support hierarchy
-
-
-@conditional_tool
-@mcp_error_handler
-async def todo_get_list_items_hierarchical(
-    list_key: str, status: Optional[str] = None, limit: Optional[int] = None, mgr=None
-) -> Dict[str, Any]:
-    """Get all items from a list with hierarchical organization.
-
-    Args:
-        list_key: Key of the list to get items from (required)
-        status: Optional status filter (pending, completed, in_progress, etc.)
-        limit: Optional maximum number of root items to return (subtasks are always included)
-
-    Returns:
-        Dictionary with success status, hierarchically organized items, and count
-    """
-    items = mgr.get_list_items(list_key, status, limit)
-
-    # Organize items hierarchically
-    items_by_id = {item.id: item for item in items}
-    root_items = []
-    children_map = {}
-
-    for item in items:
-        if item.parent_item_id is None:
-            root_items.append(item)
-        else:
-            if item.parent_item_id not in children_map:
-                children_map[item.parent_item_id] = []
-            children_map[item.parent_item_id].append(item)
-
-    def build_hierarchy(item):
-        item_dict = item.to_dict()
-        children = children_map.get(item.id, [])
-        if children:
-            item_dict["subtasks"] = [
-                build_hierarchy(child)
-                for child in sorted(children, key=lambda x: x.position)
-            ]
-        else:
-            item_dict["subtasks"] = []
-        return item_dict
-
-    hierarchical_items = [
-        build_hierarchy(item) for item in sorted(root_items, key=lambda x: x.position)
-    ]
-
-    return {
-        "success": True,
-        "items": hierarchical_items,
-        "total_count": len(items),
-        "root_count": len(root_items),
-        "status_filter": status,
-        "list_key": list_key,
-    }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1809,8 +1667,8 @@ async def todo_get_comprehensive_status(list_key: str, mgr=None) -> Dict[str, An
     # Get next task using Phase 3 smart algorithm
     next_task = mgr.get_next_pending_with_subtasks(list_key)
 
-    # Get hierarchical items structure
-    items = mgr.get_list_items_hierarchical(list_key)
+    # Get items structure
+    items = mgr.get_list_items(list_key)
 
     # Get all items and their blocking status
     all_items = mgr.get_list_items(list_key)
@@ -1871,7 +1729,7 @@ async def todo_get_comprehensive_status(list_key: str, mgr=None) -> Dict[str, An
         "next_task": next_task.to_dict() if next_task else None,
         "blocked_items": blocked_items,
         "available_items": available_items,
-        "items_hierarchical": items,
+        "items": [item.to_dict() for item in items],
         "dependency_summary": dependency_summary,
         "recommendations": {
             "action": (
@@ -1956,8 +1814,7 @@ async def todo_get_schema_info(mgr=None) -> Dict[str, Any]:
         "success": True,
         "schema_info": {
             "item_statuses": ["pending", "in_progress", "completed", "failed"],
-            "list_types": ["sequential", "parallel"],
-            "relation_types": ["dependency", "parent", "related", "project"],
+            "list_types": ["sequential"],
             "dependency_types": ["blocks", "requires", "related"],
             "history_actions": ["created", "updated", "status_changed", "deleted"],
         },
@@ -1970,13 +1827,6 @@ async def todo_get_schema_info(mgr=None) -> Dict[str, Any]:
             },
             "list_types": {
                 "sequential": "Tasks should be completed in order",
-                "parallel": "Tasks can be completed in any order",
-            },
-            "relation_types": {
-                "dependency": "Lists have dependency relationship",
-                "parent": "Parent-child relationship between lists",
-                "related": "Lists are loosely related",
-                "project": "Lists belong to the same project",
             },
             "dependency_types": {
                 "blocks": "This item blocks another from starting",

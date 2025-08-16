@@ -19,9 +19,7 @@ from rich.table import Table
 from rich import box
 
 from .display import (
-    _render_tree_view,
     _render_table_view,
-    _display_lists_tree,
     _display_records,
     _format_date,
     console,
@@ -72,7 +70,7 @@ def list_group():
     "--type",
     "list_type",
     default="sequential",
-    type=click.Choice(["sequential", "parallel", "hierarchical", "linked"]),
+    type=click.Choice(["sequential"]),
 )
 @click.option("--metadata", "-m", help="Metadata JSON")
 @click.pass_context
@@ -167,92 +165,12 @@ def list_create(
         console.print(f"[bold red]❌ Error:[/] {e}")
 
 
-@list_group.command("link")
-@click.option("--source", "source_key", required=True, help="Source list key")
-@click.option("--target", "target_key", required=True, help="Target list key")
-@click.option("--title", help="Title for the linked list")
-@click.pass_context
-def list_link(ctx, source_key, target_key, title):
-    """Create a linked copy of a list with 1:1 item mapping
-
-    Creates a complete copy of the source list including all items and properties,
-    but with all item statuses reset to 'pending'. Establishes a 'project' relation
-    between the source and target lists.
-
-    Examples:
-        todoit list link 0008_emma 0008_emma-download
-        todoit list link project_a project_a-testing --title "Testing Tasks"
-    """
-    manager = get_manager(ctx.obj["db_path"])
-
-    try:
-        result = manager.link_list_1to1(source_key, target_key, title)
-
-        if result.get("success"):
-            # Auto-tag target list with TODOIT_FORCE_TAGS if set (same as create command)
-            from .tag_commands import _get_force_tags
-
-            force_tags = _get_force_tags()
-            if force_tags:
-                for tag_name in force_tags:
-                    try:
-                        manager.add_tag_to_list(target_key, tag_name)
-                    except ValueError:
-                        # Tag doesn't exist, create it
-                        manager.create_tag(tag_name, "blue")
-                        manager.add_tag_to_list(target_key, tag_name)
-            # Display success message with statistics
-            console.print(f"[bold green]✅ Successfully linked list![/]")
-            console.print(f"[dim]Source:[/] {result['source_list']}")
-            console.print(
-                f"[dim]Target:[/] {result['target_list']} (ID: {result['target_list_id']})"
-            )
-            console.print()
-
-            # Statistics table
-            stats_table = Table(
-                title="Link Statistics", show_header=True, header_style="bold blue"
-            )
-            stats_table.add_column("Operation", style="cyan")
-            stats_table.add_column("Count", justify="right", style="green")
-
-            stats_table.add_row("Items copied", str(result["items_copied"]))
-            stats_table.add_row(
-                "List properties copied", str(result["list_properties_copied"])
-            )
-            stats_table.add_row(
-                "Item properties copied", str(result["item_properties_copied"])
-            )
-            stats_table.add_row(
-                "Items set to pending",
-                "✅ All" if result["all_items_set_to_pending"] else "❌ None",
-            )
-            stats_table.add_row(
-                "Project relation created",
-                "✅ Yes" if result["relation_created"] else "❌ No",
-            )
-
-            console.print(stats_table)
-            console.print()
-            console.print(f"[dim]Relation key:[/] {result['relation_key']}")
-            console.print(
-                f"[dim]Both lists are now linked in project:[/] {result['relation_key']}"
-            )
-
-        else:
-            console.print(
-                f"[bold red]❌ Link failed:[/] {result.get('error', 'Unknown error')}"
-            )
-
-    except Exception as e:
-        console.print(f"[bold red]❌ Error linking lists:[/] {e}")
 
 
 @list_group.command("show")
 @click.option("--list", "list_key", required=True, help="List key to show")
-@click.option("--tree", is_flag=True, help="Display as tree")
 @click.pass_context
-def list_show(ctx, list_key, tree):
+def list_show(ctx, list_key):
     """Show list details"""
     manager = get_manager(ctx.obj["db_path"])
 
@@ -302,11 +220,7 @@ def list_show(ctx, list_key, tree):
         items = manager.get_list_items(actual_list_key)
         properties = manager.get_list_properties(actual_list_key)
 
-        if tree:
-            tree_view = _render_tree_view(todo_list, items, properties, manager)
-            console.print(tree_view)
-        else:
-            _render_table_view(todo_list, items, properties, manager)
+        _render_table_view(todo_list, items, properties, manager)
 
             # Show progress only in table/vertical modes
             from .display import _get_output_format
@@ -324,7 +238,6 @@ def list_show(ctx, list_key, tree):
 
 @list_group.command("all")
 @click.option("--limit", type=int, help="Limit number of results")
-@click.option("--tree", is_flag=True, help="Show hierarchical view with list relations")
 @click.option(
     "--details", is_flag=True, help="Show detailed information including creation date"
 )
@@ -339,7 +252,7 @@ def list_show(ctx, list_key, tree):
     help="Filter by tags (can use multiple times)",
 )
 @click.pass_context
-def list_all(ctx, limit, tree, details, archived, include_archived, filter_tags):
+def list_all(ctx, limit, details, archived, include_archived, filter_tags):
     """List all TODO lists"""
     manager = get_manager(ctx.obj["db_path"])
 
@@ -367,10 +280,6 @@ def list_all(ctx, limit, tree, details, archived, include_archived, filter_tags)
         # Sort lists alphabetically by list key for consistent ordering
         lists = sorted(lists, key=lambda x: x.list_key)
 
-        if tree:
-            # Show hierarchical view with relations
-            _display_lists_tree(lists, manager)
-        else:
             # Prepare data for unified display
             data = []
 

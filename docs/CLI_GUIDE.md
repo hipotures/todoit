@@ -168,29 +168,6 @@ todoit list live --list "my-project" --filter-status in_progress
 todoit list live --list "my-project" --no-heartbeat
 ```
 
-#### Link Lists (1:1 Relationships)
-```bash
-# Create a linked copy of a list with 1:1 task mapping
-todoit list link --source "source-list" --target "target-list"
-
-# Link with custom title for the target list
-todoit list link --source "api-dev" --target "api-test" --title "API Testing Tasks"
-
-# Example workflow: Create development and testing lists
-todoit list create --list "frontend-dev" --title "Frontend Development"
-todoit item add --list "frontend-dev" --item "component1" --title "Build user dashboard"
-todoit item add --list "frontend-dev" --item "component2" --title "Implement authentication"
-todoit list link --source "frontend-dev" --target "frontend-test" --title "Frontend Testing"
-```
-
-**What the link command does:**
-- Creates a new target list (fails if target already exists)
-- Copies all tasks from source to target with 1:1 mapping
-- Resets all target task statuses to "pending" 
-- Copies all list properties from source to target
-- Copies all item properties from source to target
-- Creates automatic project relationship between lists
-- Displays comprehensive statistics of the linking operation
 
 ### 📝 Item Management (`item`)
 
@@ -611,9 +588,6 @@ todoit interactive
 TODOIT supports several list types, each with a corresponding icon in the `list all` table view.
 
 - **S (Sequential)**: Tasks must be completed in their defined order.
-- **P (Parallel)**: Tasks can be worked on simultaneously in any order.
-- **H (Hierarchical)**: Tasks are organized in parent-child relationships (subtasks).
-- **L (Linked)**: A list that is a 1:1 copy of another list.
 
 The `list all` command provides a rich, at-a-glance view of all your projects using these icons:
 

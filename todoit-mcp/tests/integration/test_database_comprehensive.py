@@ -7,7 +7,7 @@ import pytest
 import tempfile
 import os
 from core.database import Database
-from core.models import TodoList, TodoItem, ListRelation, ItemDependency
+from core.models import TodoList, TodoItem, ItemDependency
 
 
 class TestDatabaseComprehensive:
@@ -137,42 +137,6 @@ class TestDatabaseComprehensive:
         deleted_item = temp_db.get_item_by_id(item_obj.id)
         assert deleted_item is None
 
-    def test_list_relations_comprehensive(self, temp_db):
-        """Test comprehensive list relations"""
-        # Create two lists
-        list1_data = {"list_key": "list1", "title": "List 1"}
-        list2_data = {"list_key": "list2", "title": "List 2"}
-
-        list1_obj = temp_db.create_list(list1_data)
-        list2_obj = temp_db.create_list(list2_data)
-
-        # Create relation
-        relation_data = {
-            "source_list_id": list1_obj.id,
-            "target_list_id": list2_obj.id,
-            "relation_type": "project",
-            "relation_key": "test_project",
-            "metadata": {"description": "Test relation"},
-        }
-
-        relation_obj = temp_db.create_list_relation(relation_data)
-        assert relation_obj is not None
-
-        # Get relations for list
-        relations = temp_db.get_list_relations(list1_obj.id, as_source=True)
-        assert len(relations) == 1
-        assert relations[0].source_list_id == list1_obj.id
-        assert relations[0].target_list_id == list2_obj.id
-        assert relations[0].relation_type == "project"
-
-        # Get lists by relation
-        related_lists = temp_db.get_lists_by_relation("project", "test_project")
-        assert len(related_lists) >= 2
-
-        # Delete relations for list
-        temp_db.delete_list_relations(list1_obj.id)
-        deleted_relations = temp_db.get_list_relations(list1_obj.id, as_source=True)
-        assert len(deleted_relations) == 0
 
     def test_item_dependencies_comprehensive(self, temp_db):
         """Test comprehensive item dependencies"""

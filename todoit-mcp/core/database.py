@@ -64,7 +64,6 @@ class TodoListDB(Base):
     description = Column(Text)
     list_type = Column(String(20), default="sequential")
     status = Column(String(20), default="active")
-    parent_list_id = Column(Integer, ForeignKey("todo_lists.id"))
     meta_data = Column("metadata", JSON, default=lambda: {})
     created_at = Column(DateTime, default=utc_now)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
@@ -73,13 +72,10 @@ class TodoListDB(Base):
     items = relationship(
         "TodoItemDB", back_populates="list", cascade="all, delete-orphan"
     )
-    parent = relationship("TodoListDB", remote_side=[id], back_populates="children")
-    children = relationship("TodoListDB", back_populates="parent")
 
     # Indexes
     __table_args__ = (
         Index("idx_todo_lists_list_key", "list_key"),
-        Index("idx_todo_lists_parent", "parent_list_id"),
     )
 
 
@@ -118,35 +114,6 @@ class TodoItemDB(Base):
     )
 
 
-class ListRelationDB(Base):
-    """SQLAlchemy model for list_relations table"""
-
-    __tablename__ = "list_relations"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    source_list_id = Column(Integer, ForeignKey("todo_lists.id"), nullable=False)
-    target_list_id = Column(Integer, ForeignKey("todo_lists.id"), nullable=False)
-    relation_type = Column(String(20), nullable=False)
-    relation_key = Column(String(100))
-    meta_data = Column("metadata", JSON, default=lambda: {})
-    created_at = Column(DateTime, default=utc_now)
-
-    # Relationships
-    source_list = relationship("TodoListDB", foreign_keys=[source_list_id])
-    target_list = relationship("TodoListDB", foreign_keys=[target_list_id])
-
-    # Indexes
-    __table_args__ = (
-        Index("idx_list_relations_source", "source_list_id"),
-        Index("idx_list_relations_target", "target_list_id"),
-        Index(
-            "idx_list_relations_unique",
-            "source_list_id",
-            "target_list_id",
-            "relation_type",
-            unique=True,
-        ),
-    )
 
 
 class ListPropertyDB(Base):
@@ -454,22 +421,6 @@ class Database:
                 return True
             return False
 
-    def get_dependent_lists(self, list_id: int) -> List[TodoListDB]:
-        """Get lists that depend on this list"""
-        with self.get_session() as session:
-            relations = (
-                session.query(ListRelationDB)
-                .filter(ListRelationDB.source_list_id == list_id)
-                .all()
-            )
-            dependent_list_ids = [rel.target_list_id for rel in relations]
-            if dependent_list_ids:
-                return (
-                    session.query(TodoListDB)
-                    .filter(TodoListDB.id.in_(dependent_list_ids))
-                    .all()
-                )
-            return []
 
     # TodoItem operations
     def create_item(self, item_data: Dict[str, Any]) -> TodoItemDB:
@@ -645,85 +596,6 @@ class Database:
 
             return stats
 
-    # List relations
-    def create_list_relation(self, relation_data: Dict[str, Any]) -> ListRelationDB:
-        """Create list relation"""
-        with self.get_session() as session:
-            db_relation = ListRelationDB(**relation_data)
-            session.add(db_relation)
-            session.commit()
-            session.refresh(db_relation)
-            return db_relation
-
-    def get_list_relations(
-        self, list_id: int, as_source: bool = True
-    ) -> List[ListRelationDB]:
-        """Get list relations"""
-        with self.get_session() as session:
-            if as_source:
-                return (
-                    session.query(ListRelationDB)
-                    .filter(ListRelationDB.source_list_id == list_id)
-                    .all()
-                )
-            else:
-                return (
-                    session.query(ListRelationDB)
-                    .filter(ListRelationDB.target_list_id == list_id)
-                    .all()
-                )
-
-    def delete_list_relations(self, list_id: int):
-        """Delete all relations for a list"""
-        with self.get_session() as session:
-            relations = (
-                session.query(ListRelationDB)
-                .filter(
-                    (ListRelationDB.source_list_id == list_id)
-                    | (ListRelationDB.target_list_id == list_id)
-                )
-                .all()
-            )
-            for relation in relations:
-                session.delete(relation)
-            session.commit()
-
-    def get_lists_by_relation(
-        self, relation_type: str, relation_key: str
-    ) -> List[TodoListDB]:
-        """Get lists by relation type and key"""
-        with self.get_session() as session:
-            relations = (
-                session.query(ListRelationDB)
-                .filter(
-                    ListRelationDB.relation_type == relation_type,
-                    ListRelationDB.relation_key == relation_key,
-                )
-                .all()
-            )
-            list_ids = list(
-                set(
-                    [rel.source_list_id for rel in relations]
-                    + [rel.target_list_id for rel in relations]
-                )
-            )
-            if list_ids:
-                return (
-                    session.query(TodoListDB).filter(TodoListDB.id.in_(list_ids)).all()
-                )
-            return []
-
-    def get_list_dependencies(self, list_id: int) -> List[ListRelationDB]:
-        """Get dependencies for a list"""
-        with self.get_session() as session:
-            return (
-                session.query(ListRelationDB)
-                .filter(
-                    ListRelationDB.target_list_id == list_id,
-                    ListRelationDB.relation_type == "dependency",
-                )
-                .all()
-            )
 
     # History operations
     def create_history_entry(self, history_data: Dict[str, Any]) -> TodoHistoryDB:

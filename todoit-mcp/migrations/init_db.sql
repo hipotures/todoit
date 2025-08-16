@@ -7,8 +7,7 @@ CREATE TABLE todo_lists (
     list_key TEXT UNIQUE NOT NULL,  -- e.g., "project_alpha", "shopping_weekly"
     title TEXT NOT NULL,
     description TEXT,
-    list_type TEXT DEFAULT 'sequential',  -- 'sequential', 'parallel', 'hierarchical'
-    parent_list_id INTEGER REFERENCES todo_lists(id),
+    list_type TEXT DEFAULT 'sequential',  -- 'sequential'
     metadata JSON DEFAULT '{}',  -- additional data like project_id, tags, priority
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -32,17 +31,6 @@ CREATE TABLE todo_items (
     UNIQUE(list_id, item_key)
 );
 
--- Relations between lists
-CREATE TABLE list_relations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    source_list_id INTEGER NOT NULL REFERENCES todo_lists(id) ON DELETE CASCADE,
-    target_list_id INTEGER NOT NULL REFERENCES todo_lists(id) ON DELETE CASCADE,
-    relation_type TEXT NOT NULL,  -- 'dependency', 'parent', 'related'
-    relation_key TEXT,  -- e.g., project_id, sprint_id
-    metadata JSON DEFAULT '{}',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(source_list_id, target_list_id, relation_type)
-);
 
 -- Change history (audit log)
 CREATE TABLE todo_history (
@@ -58,13 +46,10 @@ CREATE TABLE todo_history (
 
 -- Indexes for performance
 CREATE INDEX idx_todo_lists_list_key ON todo_lists(list_key);
-CREATE INDEX idx_todo_lists_parent ON todo_lists(parent_list_id);
 CREATE INDEX idx_todo_items_list_id ON todo_items(list_id);
 CREATE INDEX idx_todo_items_status ON todo_items(status);
 CREATE INDEX idx_todo_items_position ON todo_items(list_id, position);
 CREATE INDEX idx_todo_items_parent ON todo_items(parent_item_id);
-CREATE INDEX idx_list_relations_source ON list_relations(source_list_id);
-CREATE INDEX idx_list_relations_target ON list_relations(target_list_id);
 CREATE INDEX idx_todo_history_item ON todo_history(item_id);
 CREATE INDEX idx_todo_history_list ON todo_history(list_id);
 CREATE INDEX idx_todo_history_timestamp ON todo_history(timestamp);

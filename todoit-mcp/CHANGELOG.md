@@ -5,6 +5,34 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-08-16
+
+### 🗑️ BREAKING CHANGES - Feature Removal
+
+#### Removed List Types and Relations
+- **REMOVED**: Parallel, hierarchical, and linked list types functionality 
+- **REMOVED**: `list_relations` table and all related database operations
+- **REMOVED**: `parent_list_id` column from `todo_lists` table
+- **REMOVED**: MCP tools: `todo_link_list_1to1`, `todo_create_list_relation`, `todo_get_list_items_hierarchical`
+- **REMOVED**: CLI command: `todoit list link`
+- **REMOVED**: CLI options: `--tree` flag from list commands
+- **SIMPLIFIED**: Only sequential list type is now supported
+- **MIGRATION**: Database migration 005 removes deprecated schema elements
+
+#### Code Cleanup
+- **REMOVED**: All related model classes: `ListRelation`, `ListRelationCreate`, `RelationType` enum
+- **REMOVED**: Database methods: `create_list_relation()`, `get_list_relations()`, `delete_list_relations()`
+- **REMOVED**: Manager methods: `link_list_1to1()`, `create_list_relation()`, `get_lists_by_relation()`
+- **REMOVED**: Dedicated test files for removed functionality
+- **UPDATED**: Documentation to reflect simplified feature set
+
+### 📖 Documentation Updates
+- **UPDATED**: MCP tools documentation (MCP_TOOLS.md) - removed deprecated tools
+- **UPDATED**: CLI guide (CLI_GUIDE.md) - removed link command documentation  
+- **UPDATED**: API documentation (api.md) - simplified list type options
+- **UPDATED**: Database schema documentation (database.md) - removed list_relations table
+- **UPDATED**: README.md - removed hierarchical tasks from feature list
+
 ## [2.0.0] - 2025-08-16
 
 ### 🔄 BREAKING CHANGES - CLI Complete Refactoring

@@ -13,8 +13,6 @@ from core.models import (
     TodoItem,
     TodoItemCreate,
     TodoItemUpdate,
-    ListRelation,
-    ListRelationCreate,
     ItemDependency,
     ItemDependencyCreate,
     ListProperty,
@@ -28,7 +26,6 @@ from core.models import (
     BlockedItemsResult,
     ListType,
     ItemStatus,
-    RelationType,
     HistoryAction,
     DependencyType,
 )
@@ -40,8 +37,6 @@ class TestModelsComprehensive:
     def test_list_type_enum(self):
         """Test ListType enum"""
         assert ListType.SEQUENTIAL == "sequential"
-        assert ListType.PARALLEL == "parallel"
-        assert ListType.HIERARCHICAL == "hierarchical"
 
     def test_item_status_enum(self):
         """Test ItemStatus enum"""
@@ -131,7 +126,6 @@ class TestModelsComprehensive:
             "title": "Test List",
             "description": "Test Description",
             "list_type": ListType.SEQUENTIAL,
-            "parent_list_id": None,
             "metadata": {"project": "test"},
             "created_at": now,
             "updated_at": now,
@@ -248,49 +242,6 @@ class TestModelsComprehensive:
         assert update.content == "Updated content"
         assert update.status == ItemStatus.IN_PROGRESS
 
-    def test_list_relation_validation(self):
-        """Test ListRelation validation"""
-        # Valid relation
-        relation_data = {
-            "source_list_id": 1,
-            "target_list_id": 2,
-            "relation_type": RelationType.PROJECT,
-            "relation_key": "test_project",
-        }
-        relation = ListRelationCreate(**relation_data)
-        assert relation.source_list_id == 1
-        assert relation.target_list_id == 2
-
-        # Self-relation should be rejected
-        with pytest.raises(ValidationError) as exc_info:
-            ListRelationCreate(
-                source_list_id=1, target_list_id=1, relation_type=RelationType.PROJECT
-            )
-        assert "different" in str(exc_info.value).lower()
-
-    def test_list_relation_model(self):
-        """Test complete ListRelation model"""
-        now = datetime.now(timezone.utc)
-
-        relation_data = {
-            "id": 1,
-            "source_list_id": 1,
-            "target_list_id": 2,
-            "relation_type": RelationType.PROJECT,
-            "relation_key": "test_project",
-            "metadata": {"description": "Test relation"},
-            "created_at": now,
-        }
-
-        relation = ListRelation(**relation_data)
-        assert relation.id == 1
-        assert relation.relation_type == RelationType.PROJECT
-
-        # Test to_dict method
-        dict_repr = relation.to_dict()
-        assert dict_repr["id"] == 1
-        assert dict_repr["source_list_id"] == 1
-        assert dict_repr["target_list_id"] == 2
 
     def test_item_dependency_validation(self):
         """Test ItemDependency validation"""
@@ -557,7 +508,6 @@ class TestModelsComprehensive:
             "title": "Test",
             "description": None,
             "list_type": ListType.SEQUENTIAL,
-            "parent_list_id": None,
             "metadata": {},
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
@@ -566,7 +516,6 @@ class TestModelsComprehensive:
         todo_list = TodoList(**list_data)
         dict_repr = todo_list.to_dict()
         assert dict_repr["description"] is None
-        assert dict_repr["parent_list_id"] is None
 
         # TodoItem with None timestamps
         item_data = {
