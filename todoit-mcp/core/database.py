@@ -26,7 +26,6 @@ from sqlalchemy.engine import Engine
 from .models import (
     TodoList as TodoListModel,
     TodoItem as TodoItemModel,
-    ListRelation as ListRelationModel,
     TodoHistory as TodoHistoryModel,
     ListProperty as ListPropertyModel,
     ItemProperty as ItemPropertyModel,
@@ -37,7 +36,6 @@ from .models import (
     ListType,
     ListStatus,
     ItemStatus,
-    RelationType,
     HistoryAction,
     DependencyType,
 )

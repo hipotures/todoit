@@ -222,15 +222,15 @@ def list_show(ctx, list_key):
 
         _render_table_view(todo_list, items, properties, manager)
 
-            # Show progress only in table/vertical modes
-            from .display import _get_output_format
+        # Show progress only in table/vertical modes
+        from .display import _get_output_format
 
-            if _get_output_format() in ["table", "vertical"]:
-                progress = manager.get_progress(actual_list_key)
-                console.print(
-                    f"\n[bold]Progress:[/] {progress.completion_percentage:.1f}% "
-                    f"({progress.completed}/{progress.total})"
-                )
+        if _get_output_format() in ["table", "vertical"]:
+            progress = manager.get_progress(actual_list_key)
+            console.print(
+                f"\n[bold]Progress:[/] {progress.completion_percentage:.1f}% "
+                f"({progress.completed}/{progress.total})"
+            )
 
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
@@ -280,99 +280,99 @@ def list_all(ctx, limit, details, archived, include_archived, filter_tags):
         # Sort lists alphabetically by list key for consistent ordering
         lists = sorted(lists, key=lambda x: x.list_key)
 
-            # Prepare data for unified display
-            data = []
+        # Prepare data for unified display
+        data = []
 
-            # Calculate optimal tags column width based on maximum tags per list
-            max_tags_per_list = 0
-            for todo_list in lists:
-                list_tags = manager.get_tags_for_list(todo_list.list_key)
-                max_tags_per_list = max(max_tags_per_list, len(list_tags))
+        # Calculate optimal tags column width based on maximum tags per list
+        max_tags_per_list = 0
+        for todo_list in lists:
+            list_tags = manager.get_tags_for_list(todo_list.list_key)
+            max_tags_per_list = max(max_tags_per_list, len(list_tags))
 
-            # Dynamic width: minimum 3, each tag needs ~2 chars (● + space), max 12
-            tags_column_width = max(3, min(12, max_tags_per_list * 2))
+        # Dynamic width: minimum 3, each tag needs ~2 chars (● + space), max 12
+        tags_column_width = max(3, min(12, max_tags_per_list * 2))
 
-            for todo_list in lists:
-                progress = manager.get_progress(todo_list.list_key)
+        for todo_list in lists:
+            progress = manager.get_progress(todo_list.list_key)
 
-                # Get tags for this list and format as colored dots
-                list_tags = manager.get_tags_for_list(todo_list.list_key)
-                tags_display = (
-                    " ".join([f"[{tag.color}]●[/{tag.color}]" for tag in list_tags])
-                    if list_tags
-                    else ""
+            # Get tags for this list and format as colored dots
+            list_tags = manager.get_tags_for_list(todo_list.list_key)
+            tags_display = (
+                " ".join([f"[{tag.color}]●[/{tag.color}]" for tag in list_tags])
+                if list_tags
+                else ""
+            )
+
+            # Show first letter of type for clarity
+            list_type_str = (
+                str(todo_list.list_type).replace("ListType.", "").lower()
+            )
+            type_short = list_type_str[0].upper()  # S
+
+            # Show short indicator for status
+            if hasattr(todo_list, "status") and todo_list.status:
+                status_value = (
+                    todo_list.status.value
+                    if hasattr(todo_list.status, "value")
+                    else str(todo_list.status)
                 )
+            else:
+                status_value = "active"
+            # Use specific letters: A for active, Z for archived (from Polish "zarchiwizowana")
+            status_short = "A" if status_value == "active" else "Z"
 
-                # Show first letter of type for clarity
-                list_type_str = (
-                    str(todo_list.list_type).replace("ListType.", "").lower()
-                )
-                type_short = list_type_str[0].upper()  # S, P, H, L
-
-                # Show short indicator for status
-                if hasattr(todo_list, "status") and todo_list.status:
-                    status_value = (
-                        todo_list.status.value
-                        if hasattr(todo_list.status, "value")
-                        else str(todo_list.status)
-                    )
-                else:
-                    status_value = "active"
-                # Use specific letters: A for active, Z for archived (from Polish "zarchiwizowana")
-                status_short = "A" if status_value == "active" else "Z"
-
-                record = {
-                    "ID": str(todo_list.id),
-                    "Key": todo_list.list_key,
-                    "Title": todo_list.title,
-                    "🏷️": tags_display,
-                    "🔀": type_short,
-                    "📋": str(progress.pending),
-                    "🔄": str(progress.in_progress),
-                    "❌": str(progress.failed),
-                    "✅": str(progress.completed),
-                    "⏳": f"{progress.completion_percentage:.0f}%",
-                }
-
-                # Only show status column when there are mixed statuses
-                if include_archived or archived:
-                    record["📦"] = status_short
-
-                # Add date columns if details requested
-                if details:
-                    record["Created"] = _format_date(todo_list.created_at)
-                    record["Updated"] = _format_date(todo_list.updated_at)
-
-                data.append(record)
-
-            # Define column styling for table format
-            columns = {
-                "ID": {"style": "dim", "width": 4},
-                "Key": {"style": "cyan"},
-                "Title": {"style": "white"},
-                "🏷️": {"style": "white", "justify": "left", "width": tags_column_width},
-                "🔀": {"style": "yellow", "justify": "center", "width": 3},
-                "📋": {"style": "blue", "justify": "right", "width": 3},
-                "🔄": {"style": "yellow", "justify": "right", "width": 3},
-                "❌": {"style": "red", "justify": "right", "width": 3},
-                "✅": {"style": "green", "justify": "right", "width": 3},
-                "⏳": {"style": "magenta", "justify": "right"},
+            record = {
+                "ID": str(todo_list.id),
+                "Key": todo_list.list_key,
+                "Title": todo_list.title,
+                "🏷️": tags_display,
+                "🔀": type_short,
+                "📋": str(progress.pending),
+                "🔄": str(progress.in_progress),
+                "❌": str(progress.failed),
+                "✅": str(progress.completed),
+                "⏳": f"{progress.completion_percentage:.0f}%",
             }
 
             # Only show status column when there are mixed statuses
             if include_archived or archived:
-                columns["📦"] = {
-                    "style": "bright_blue",
-                    "justify": "center",
-                    "width": 3,
-                }
+                record["📦"] = status_short
 
+            # Add date columns if details requested
             if details:
-                columns["Created"] = {"style": "green"}
-                columns["Updated"] = {"style": "blue"}
+                record["Created"] = _format_date(todo_list.created_at)
+                record["Updated"] = _format_date(todo_list.updated_at)
 
-            # Use unified display system
-            _display_records(data, "📋 All TODO Lists", columns)
+            data.append(record)
+
+        # Define column styling for table format
+        columns = {
+            "ID": {"style": "dim", "width": 4},
+            "Key": {"style": "cyan"},
+            "Title": {"style": "white"},
+            "🏷️": {"style": "white", "justify": "left", "width": tags_column_width},
+            "🔀": {"style": "yellow", "justify": "center", "width": 3},
+            "📋": {"style": "blue", "justify": "right", "width": 3},
+            "🔄": {"style": "yellow", "justify": "right", "width": 3},
+            "❌": {"style": "red", "justify": "right", "width": 3},
+            "✅": {"style": "green", "justify": "right", "width": 3},
+            "⏳": {"style": "magenta", "justify": "right"},
+        }
+
+        # Only show status column when there are mixed statuses
+        if include_archived or archived:
+            columns["📦"] = {
+                "style": "bright_blue",
+                "justify": "center",
+                "width": 3,
+            }
+
+        if details:
+            columns["Created"] = {"style": "green"}
+            columns["Updated"] = {"style": "blue"}
+
+        # Use unified display system
+        _display_records(data, "📋 All TODO Lists", columns)
 
         # Show tags legend if any lists have tags
         from .display import _get_output_format
