@@ -65,11 +65,11 @@ def list_property_get(ctx, list_key, property_key):
         console.print(f"[bold red]❌ Error:[/] {e}")
 
 
-@list_property_group.command("list")
+@list_property_group.command("show")
 @click.option("--list", "list_key", required=True, help="List key")
 @click.pass_context
-def list_property_list(ctx, list_key):
-    """List all properties for a list"""
+def list_property_show(ctx, list_key):
+    """Show all properties for a list"""
     manager = get_manager(ctx.obj["db_path"])
 
     try:

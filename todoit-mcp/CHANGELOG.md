@@ -5,6 +5,26 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.2] - 2025-08-16
+
+### 🔧 CLI IMPROVEMENT - Command Redundancy Fix
+- **FIXED**: Redundant command syntax in property management
+- **RENAMED**: `todoit list property list` → `todoit list property show`
+- **IMPROVED**: Cleaner command structure eliminates confusion
+- **ENHANCED**: Better CLI ergonomics for property operations
+
+#### Technical Details:
+- **File Changed**: `interfaces/cli_modules/property_commands.py` line 68
+- **Before**: `@list_property_group.command("list")`
+- **After**: `@list_property_group.command("show")`
+- **Impact**: Property commands now have consistent, non-redundant naming
+
+#### Benefits:
+- **Clarity**: Eliminates confusing double "list" in command syntax
+- **Consistency**: Aligns with other CLI patterns using "show" for display operations
+- **Usability**: Reduces cognitive load when using property commands
+- **Professional**: More polished command interface
+
 ## [2.4.1] - 2025-08-16
 
 ### 🎨 UI IMPROVEMENT - Enhanced Table Formatting
