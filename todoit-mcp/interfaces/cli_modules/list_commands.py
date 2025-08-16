@@ -863,7 +863,7 @@ def list_unarchive(ctx, list_key):
 
 
 @list_group.command("rename")
-@click.option("--current", "current_key", required=True, help="Current list key")
+@click.option("--list", "current_key", required=True, help="List key to rename")
 @click.option("--key", "new_key", help="New list key")
 @click.option("--title", "new_title", help="New list title")
 @click.option("--yes", "-y", is_flag=True, help="Skip confirmation")

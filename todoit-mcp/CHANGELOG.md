@@ -5,6 +5,15 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### 🔧 IMPROVEMENT - CLI Consistency Enhancement
+
+#### ✨ Standardized List Parameter Naming
+- **CHANGED**: `todoit list rename --current` parameter renamed to `--list` for consistency
+- **IMPROVED**: All list commands now use uniform `--list` parameter naming convention
+- **ENHANCED**: Better CLI consistency across all list management operations
+
 ## [2.5.9] - 2025-08-16
 
 ### 🔧 BUGFIX - Critical Test Suite Fixes and Subitem Disambiguation
