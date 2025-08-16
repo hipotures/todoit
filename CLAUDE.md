@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-TODOIT MCP is an intelligent task management system with MCP integration for Claude Code. The system provides 55+ MCP tools for programmatic task management, featuring hierarchical tasks, cross-list dependencies, smart workflow algorithms, and dynamic tag system with 12-color visual support.
+TODOIT MCP is an intelligent task management system with MCP integration for Claude Code. The system provides 56+ MCP tools for programmatic task management, featuring hierarchical tasks, cross-list dependencies, smart workflow algorithms, and dynamic tag system with 12-color visual support.
 
 **Key Architecture**: Clean 3-layer design with `core/` (business logic), `interfaces/` (MCP server + CLI), and SQLite database with comprehensive schema for tasks, dependencies, and relationships.
 
@@ -83,7 +83,7 @@ todoit list create "test" --title "Test List"
 - **`core/models.py`** - Pydantic models with comprehensive validation (6 enums, 20+ model classes)
 
 ### Interface Layer
-- **`interfaces/mcp_server.py`** (1488 lines) - 55+ MCP tools for Claude Code integration
+- **`interfaces/mcp_server.py`** (1488 lines) - 56+ MCP tools for Claude Code integration
 - **`interfaces/cli.py`** - Rich CLI with modular commands in `cli_modules/`
 - **`interfaces/cli_modules/`** - Modular CLI commands (list, item, dependency, property management)
 
@@ -124,7 +124,7 @@ Database layer includes graph traversal algorithms in `_would_create_circular_de
 - **Dependency management**: Circular detection, cross-list blocking logic
 - **Data integrity**: SQLite foreign key constraints and cascade operations
 - **Tag system**: Dynamic color assignment and self-healing capabilities
-- **MCP interface**: All 55 tools have basic coverage but need edge case expansion
+- **MCP interface**: All 56 tools have basic coverage but need edge case expansion
 
 ## Common Development Patterns
 

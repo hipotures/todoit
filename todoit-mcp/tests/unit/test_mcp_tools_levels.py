@@ -57,7 +57,6 @@ class TestMCPToolsLevels:
             assert should_register_tool("todo_add_item") == True
 
             # Test that STANDARD tools should register
-            assert should_register_tool("todo_add_subitem") == True
             assert should_register_tool("todo_quick_add") == True
             assert should_register_tool("todo_set_list_property") == True
             assert should_register_tool("todo_find_subitems_by_status") == True
@@ -69,9 +68,10 @@ class TestMCPToolsLevels:
             assert should_register_tool("todo_archive_list") == False
             assert should_register_tool("todo_unarchive_list") == False
 
-            # Verify STANDARD has 24 tools (10 MINIMAL + 14 additional)
-            assert len(TOOLS_STANDARD) == 24
-            assert len(TOOLS_STANDARD) - len(TOOLS_MINIMAL) == 14
+            # Verify STANDARD has 22 tools (10 MINIMAL + 12 additional)
+            # Note: Reduced from 24 to 22 after removing todo_add_subitem and todo_get_subitems
+            assert len(TOOLS_STANDARD) == 22
+            assert len(TOOLS_STANDARD) - len(TOOLS_MINIMAL) == 12
 
     def test_tools_max_level(self):
         """Test that MAX level registers all tools"""
@@ -110,7 +110,7 @@ class TestMCPToolsLevels:
 
             # Should behave like STANDARD level
             assert should_register_tool("todo_create_list") == True  # MINIMAL
-            assert should_register_tool("todo_add_subitem") == True  # STANDARD
+            assert should_register_tool("todo_quick_add") == True  # STANDARD
             assert should_register_tool("todo_add_item_dependency") == False  # MAX only
 
     def test_unknown_level_defaults_to_standard(self):
@@ -125,7 +125,7 @@ class TestMCPToolsLevels:
 
             # Should behave like STANDARD level for unknown values
             assert should_register_tool("todo_create_list") == True  # MINIMAL
-            assert should_register_tool("todo_add_subitem") == True  # STANDARD
+            assert should_register_tool("todo_quick_add") == True  # STANDARD
             assert should_register_tool("todo_add_item_dependency") == False  # MAX only
 
     def test_level_case_insensitive(self):
@@ -209,9 +209,8 @@ class TestMCPToolsLevels:
         assert "todo_mark_completed" in TOOLS_STANDARD
         assert "todo_start_item" in TOOLS_STANDARD
 
-        # Should add basic subtasks
-        assert "todo_add_subitem" in TOOLS_STANDARD
-        assert "todo_get_subitems" in TOOLS_STANDARD
+        # Should include unified item/subitem tools (note: unified tools are already in MINIMAL)
+        # No separate subitem tools needed - unified tools handle both
 
         # Should add basic properties (including search functions)
         assert "todo_set_list_property" in TOOLS_STANDARD

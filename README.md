@@ -70,7 +70,7 @@ todoit-mcp/
 │   ├── database.py        # Database layer (SQLAlchemy)
 │   └── validators.py      # Business rules
 ├── interfaces/            # User Interfaces  
-│   ├── mcp_server.py     # MCP Server (55 tools)
+│   ├── mcp_server.py     # MCP Server (56 tools)
 │   └── cli.py            # Command-line interface
 ├── migrations/           # Database migrations
 ├── docs/                 # Documentation & examples
@@ -185,7 +185,7 @@ todoit list show --list "my-project"
 ```
 
 ### Using with Claude Code (MCP)
-After MCP setup, all 55 tools are available directly in Claude Code:
+After MCP setup, all 56 tools are available directly in Claude Code:
 
 **Example conversation with Claude Code:**
 ```
@@ -277,7 +277,7 @@ python -m interfaces.mcp_server
 Complete documentation available in the [docs/](docs/) directory:
 
 - **[CLI User Guide](docs/CLI_GUIDE.md)** - Comprehensive command-line interface guide
-- **[MCP Tools Reference](docs/MCP_TOOLS.md)** - All 55 MCP tools for Claude Code
+- **[MCP Tools Reference](docs/MCP_TOOLS.md)** - All 56 MCP tools for Claude Code
 - **[Architecture](docs/architecture.md)** - System design and patterns
 - **[API Reference](docs/api.md)** - TodoManager class documentation
 - **[CHANGELOG](CHANGELOG.md)** - Version history and release notes
