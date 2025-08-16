@@ -7,12 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### 🔧 IMPROVEMENT - CLI Consistency Enhancement
+### 🔧 IMPROVEMENT - Environment Variable Centralization and CLI Consistency
+
+#### ✨ Centralized Environment Variable Handling
+- **REFACTORED**: Environment variable handling moved to `TodoManager` constructor
+- **UNIFIED**: Both CLI and MCP now use `TODOIT_DB_PATH` consistently (removed `TODOIT_DATABASE`)
+- **ENHANCED**: `TODOIT_FORCE_TAGS` support added to MCP server through `TodoManager`
+- **IMPROVED**: Single source of truth for environment configuration across all interfaces
 
 #### ✨ Standardized List Parameter Naming
 - **CHANGED**: `todoit list rename --current` parameter renamed to `--list` for consistency
 - **IMPROVED**: All list commands now use uniform `--list` parameter naming convention
 - **ENHANCED**: Better CLI consistency across all list management operations
+
+#### 🧪 Testing Coverage
+- **ADDED**: Comprehensive unit tests for environment variable handling in `TodoManager`
+- **FIXED**: MCP integration tests updated to use unified environment variables
+- **VERIFIED**: All 653 tests pass with new centralized configuration
 
 ## [2.5.9] - 2025-08-16
 

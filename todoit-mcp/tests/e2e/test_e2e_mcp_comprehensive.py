@@ -24,8 +24,8 @@ class TestE2EComprehensiveMCP:
         os.unlink(path)  # Remove file so it's created fresh
         
         # Set environment variable for MCP tools
-        original_db = os.getenv('TODOIT_DATABASE')
-        os.environ['TODOIT_DATABASE'] = path
+        original_db = os.getenv('TODOIT_DB_PATH')
+        os.environ['TODOIT_DB_PATH'] = path
         
         # Reset MCP manager state
         import interfaces.mcp_server
@@ -37,9 +37,9 @@ class TestE2EComprehensiveMCP:
         if os.path.exists(path):
             os.unlink(path)
         if original_db:
-            os.environ['TODOIT_DATABASE'] = original_db
-        elif 'TODOIT_DATABASE' in os.environ:
-            del os.environ['TODOIT_DATABASE']
+            os.environ['TODOIT_DB_PATH'] = original_db
+        elif 'TODOIT_DB_PATH' in os.environ:
+            del os.environ['TODOIT_DB_PATH']
 
     @pytest.mark.asyncio
     async def test_complete_mcp_project_lifecycle(self, temp_db):

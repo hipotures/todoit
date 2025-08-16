@@ -20,18 +20,11 @@ def init_manager(db_path: Optional[str] = None):
     """Initialize the TodoManager instance"""
     global manager
     if manager is None:
-        # Use TODOIT_DATABASE environment variable if no path provided
         if db_path is None:
-            import os
-            db_path = os.getenv('TODOIT_DATABASE')
-        
-        # Fallback to temp database if still no path (for testing)
-        if db_path is None:
-            import tempfile
-            fd, db_path = tempfile.mkstemp(suffix=".db")
-            os.close(fd)
-        
-        manager = TodoManager(db_path)
+            # Let TodoManager handle TODOIT_DB_PATH environment variable
+            manager = TodoManager()
+        else:
+            manager = TodoManager(db_path)
     return manager
 
 

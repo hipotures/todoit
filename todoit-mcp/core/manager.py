@@ -56,17 +56,20 @@ class TodoManager:
                 console = Console()
                 console.print("[bold red]❌ Error:[/] Database path not specified!", style="red")
                 console.print()
-                console.print("[yellow]TODOIT v2.5.0+ requires explicit database configuration.[/]")
+                console.print("[yellow]TODOIT requires explicit database configuration.[/]")
                 console.print()
                 console.print("[cyan]Quick fix:[/]")
-                console.print("  [white]export TODOIT_DB_PATH=/tmp/todoit.db[/]")
+                console.print("  [white]export TODOIT_DB_PATH=/path/to/your/todoit.db[/]")
                 console.print("  [white]todoit list all[/]")
                 console.print()
                 console.print("[cyan]Or use parameter:[/]")
-                console.print("  [white]todoit --db-path /tmp/todoit.db list all[/]")
+                console.print("  [white]todoit --db-path /path/to/your/todoit.db list all[/]")
                 console.print()
-                console.print("[dim]See migration guide: https://github.com/hipotures/todoit/releases/tag/v2.5.0[/]")
+                console.print("[dim]Database path must be explicitly configured[/]")
                 raise SystemExit(1)
+
+        # Initialize environment variables
+        self.force_tags = self._get_force_tags()
 
         # Validate database path before creating Database instance
         try:
@@ -95,7 +98,7 @@ class TodoManager:
             console.print()
             console.print("[cyan]Possible solutions:[/]")
             console.print("  [white]• Check if directory exists and is writable[/]")
-            console.print("  [white]• Use absolute path: /tmp/todoit.db[/]") 
+            console.print("  [white]• Use absolute path: /path/to/your/todoit.db[/]") 
             console.print("  [white]• Check permissions: ls -la $(dirname path)[/]")
             raise SystemExit(1)
         except Exception as e:
@@ -113,9 +116,18 @@ class TodoManager:
                 console.print("  [white]• Path contains special characters[/]")
                 console.print()
                 console.print("[cyan]Try:[/]")
-                console.print("  [white]export TODOIT_DB_PATH=/tmp/test.db[/]")
+                console.print("  [white]export TODOIT_DB_PATH=/path/to/your/test.db[/]")
                 console.print("  [white]todoit list all[/]")
             raise SystemExit(1)
+
+    def _get_force_tags(self) -> List[str]:
+        """Get forced tags from TODOIT_FORCE_TAGS environment variable
+        
+        FORCE_TAGS creates environment isolation - all operations are limited
+        to lists with these tags, and new lists automatically get these tags.
+        """
+        env_tags = os.environ.get("TODOIT_FORCE_TAGS", "").split(",")
+        return [tag.strip().lower() for tag in env_tags if tag.strip()]
 
     def _db_to_model(self, db_obj: Any, model_class: type) -> Any:
         """Convert database object to Pydantic model"""

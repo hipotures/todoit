@@ -489,7 +489,7 @@ def get_manager(db_path: Optional[str]) -> TodoManager:
 @click.option(
     "--db",
     default="todoit.db",
-    help="Path to database file (default: ~/.todoit/todoit.db)",
+    help="Path to database file (default: todoit.db)",
 )
 @click.version_option(package_name="todoit-mcp", prog_name="TODOIT")
 @click.pass_context

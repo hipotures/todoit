@@ -16,7 +16,7 @@ Usage:
   python migrate_subtask_keys.py [--db-path PATH] [--backup] [--dry-run]
   
 Options:
-  --db-path PATH    Path to database (default: ~/.todoit/todoit.db)
+  --db-path PATH    Path to database (default: todoit.db)
   --backup         Create backup before migration
   --dry-run        Show what would be changed without applying
   --force          Skip confirmation prompt
@@ -134,8 +134,8 @@ def main():
     
     parser.add_argument(
         "--db-path", 
-        default=os.path.expanduser("~/.todoit/todoit.db"),
-        help="Path to database file (default: ~/.todoit/todoit.db)"
+        default="todoit.db",
+        help="Path to database file (default: todoit.db)"
     )
     
     parser.add_argument(
