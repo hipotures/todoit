@@ -40,9 +40,7 @@ def get_manager(db_path: Optional[str]) -> TodoManager:
         dev_db = Path.home() / ".todoit" / "todoit_dev.db"
         return TodoManager(str(dev_db))
 
-    # Production mode: use normal database
-    if db_path == "todoit.db":
-        return TodoManager()
+    # Production mode: use provided database path
     return TodoManager(db_path)
 
 
@@ -51,13 +49,12 @@ def get_manager(db_path: Optional[str]) -> TodoManager:
 
 @click.group(invoke_without_command=True)
 @click.option(
-    "--db",
-    default="todoit.db",
-    help="Path to database file (default: ~/.todoit/todoit.db)",
+    "--db-path",
+    help="Path to database file (overrides TODOIT_DB_PATH environment variable)",
 )
 @click.version_option(package_name="todoit-mcp", prog_name="TODOIT")
 @click.pass_context
-def cli(ctx, db):
+def cli(ctx, db_path):
     """TODOIT - Intelligent TODO list management system"""
     # Load environment variables from .env file (CLI only, not MCP)
     # Skip loading .env during pytest tests to avoid FORCE_TAGS conflicts
@@ -73,7 +70,7 @@ def cli(ctx, db):
             pass
 
     ctx.ensure_object(dict)
-    ctx.obj["db_path"] = db
+    ctx.obj["db_path"] = db_path
 
     # Always check if in development mode and show warning
     try:
@@ -92,11 +89,6 @@ def cli(ctx, db):
     if ctx.invoked_subcommand is None:
         console.print(ctx.get_help())
 
-    # Show DB location on first use for production
-    elif db == "todoit.db" and is_production:
-        default_db = Path.home() / ".todoit" / "todoit.db"
-        if not default_db.exists():
-            console.print(f"[dim]Using database: {default_db}[/dim]")
 
 
 # Register command groups from modules

@@ -124,7 +124,7 @@ You can customize the MCP server startup, for example, by specifying a different
       "command": "/path/to/your/virtualenv/bin/python",
       "args": ["-m", "interfaces.mcp_server"],
       "env": {
-        "TODOIT_DB_PATH": "/custom/path/to/todoit.db"
+        "TODOIT_DB_PATH": "/custom/path/to/your_project.db"
       },
       "timeout": 30
     }

@@ -56,7 +56,7 @@ Please report security vulnerabilities by creating a **private security advisory
 ### Production Deployment
 ```bash
 # Secure database file permissions
-chmod 600 ~/.todoit/todoit.db
+chmod 600 $TODOIT_DB_PATH
 
 # Use environment isolation
 export TODOIT_FORCE_TAGS=production

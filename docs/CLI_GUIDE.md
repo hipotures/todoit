@@ -87,7 +87,7 @@ todoit [OPTIONS] COMMAND [ARGS]...
 **Note:** You can also use the module form `todoit` if needed for development.
 
 ### Global Options
-- `--db TEXT` - Path to database file (default: ~/.todoit/todoit.db)
+- `--db-path TEXT` - Path to database file (overrides TODOIT_DB_PATH environment variable)
 - `--help` - Show help and exit
 
 ## Command Categories

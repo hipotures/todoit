@@ -46,13 +46,10 @@ class TodoManager:
     def __init__(self, db_path: Optional[str] = None):
         """Initialize TodoManager with database connection"""
         if db_path is None:
-            # Use default location in user's home directory
-            import os
-            from pathlib import Path
-
-            todoit_dir = Path.home() / ".todoit"
-            todoit_dir.mkdir(exist_ok=True)
-            db_path = str(todoit_dir / "todoit.db")
+            # Check for TODOIT_DB_PATH environment variable
+            db_path = os.getenv('TODOIT_DB_PATH')
+            if db_path is None:
+                raise ValueError("Database path must be provided via --db-path parameter or TODOIT_DB_PATH environment variable")
 
         self.db = Database(db_path)
 

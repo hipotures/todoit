@@ -11,7 +11,7 @@ For installation instructions, please see the [main documentation](../docs/insta
 - See `pyproject.toml` for dependencies.
 
 ### Database
-The default database location is `~/.todoit/todoit.db`.
+Database location must be specified via `--db-path` parameter or `TODOIT_DB_PATH` environment variable.
 
 ### Output Formats
 TODOIT CLI supports multiple output formats for better integration and automation:

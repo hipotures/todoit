@@ -5,6 +5,33 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2025-08-16
+
+### 🔥 BREAKING CHANGE - Database Path Management
+- **REMOVED**: Default database location `~/.todoit/todoit.db`
+- **ADDED**: Required database path specification via `--db-path` or `TODOIT_DB_PATH`
+- **RENAMED**: Environment variable from `TODOIT_DATABASE` to `TODOIT_DB_PATH`
+- **RENAMED**: CLI parameter from `--db` to `--db-path`
+- **ENHANCED**: Explicit database path requirement prevents accidental production access
+- **IMPROVED**: Clear priority: `--db-path` > `TODOIT_DB_PATH` > error
+
+#### Migration Guide:
+- **Before**: `todoit list all` (used `~/.todoit/todoit.db`)
+- **After**: `TODOIT_DB_PATH=/path/to/db todoit list all` or `todoit --db-path /path/to/db list all`
+
+#### Technical Details:
+- **Files Changed**: 
+  - `core/manager.py` - removed default path logic, added environment variable check
+  - `interfaces/cli.py` - renamed parameter, removed default handling
+- **Documentation Updated**: All references to default database path removed
+- **Environment**: Added `.env` files with `TODOIT_DB_PATH=/tmp/test_todoit.db`
+
+#### Benefits:
+- **Security**: No accidental production database access
+- **Explicit**: Clear database path requirement
+- **Flexible**: Environment variable or parameter support
+- **Consistent**: Uniform naming convention across CLI and env vars
+
 ## [2.4.2] - 2025-08-16
 
 ### 🔧 CLI IMPROVEMENT - Command Redundancy Fix

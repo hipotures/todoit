@@ -243,7 +243,7 @@ todoit item next --list "backend"   # Will suggest api task
 #### CLI Issues
 - **"Command not found: todoit"**: Install with `pip install -e .` or use `python -m interfaces.cli`
 - **"Database locked"**: Close other TODOIT instances, or specify different DB with `--db`
-- **"No such table"**: Database migration needed, delete and recreate: `rm ~/.todoit/todoit.db`
+- **"No such table"**: Database migration needed, delete and recreate the database file specified in your `TODOIT_DB_PATH`
 
 #### Tag System
 - **"Tags not showing colors"**: Ensure Rich library is updated: `pip install --upgrade rich`
