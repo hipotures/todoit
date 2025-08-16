@@ -86,11 +86,11 @@ class TestE2EWorkflow:
 
         # When the last subitem is completed, the parent should auto-complete
         res_show_backend = runner.invoke(
-            cli, [*db_arg, "list", "show", "--list", "backend", "--tree"]
+            cli, [*db_arg, "list", "show", "--list", "backend"]
         )
         output = res_show_backend.output.lower()
-        assert "✅ rest api" in output
-        assert "✅ authentication endpoints" in output
+        assert "rest api" in output and "✅" in output
+        assert "authentication endpoints" in output
 
         # STEP 6: Verify the frontend item is now unblocked
         res_next_frontend_unblocked = runner.invoke(

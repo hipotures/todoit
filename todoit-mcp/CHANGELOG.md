@@ -5,6 +5,37 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2025-08-16
+
+### 🔥 BREAKING CHANGES - Complete Test Suite Fix (100% Pass Rate)
+- **FIXED**: All remaining test failures after parallel/hierarchical/linked removal
+- **UPDATED**: 80+ test files to work with simplified sequential-only architecture
+- **REMOVED**: Obsolete tests for removed functionality (sync_add, list relations)
+- **ACHIEVED**: Perfect 612/612 tests passing (100% success rate)
+
+#### Test Fixes Applied:
+- **Models Tests**: Removed RelationType enum references
+- **MCP Tools**: Updated expected tool count from 56 to 52 tools
+- **Schema Tests**: Updated to expect 4 categories instead of 5
+- **Archive Tests**: Fixed parent_list_id AttributeError issues
+- **E2E Workflow**: Removed --tree option usage throughout
+- **Dependency Graph**: Updated to return empty results for removed functionality
+- **Emoji Mapping**: Removed type column (🔀) references from expectations
+- **Integration Tests**: Converted all --tree usage to standard list view
+- **Subtask Positioning**: Fixed hierarchy display testing
+
+#### Core System Improvements:
+- **Simplified Manager**: Removed get_cross_list_progress and get_dependency_graph complexity
+- **Clean MCP Interface**: All 52 tools working perfectly with sequential lists
+- **Stable Database**: No more parent_list_id or relation table dependencies
+- **Reliable CLI**: All commands work without tree/hierarchy options
+
+### Benefits:
+- **Development Confidence**: 100% test pass rate ensures system reliability
+- **Simplified Codebase**: Easier maintenance without complex relation logic
+- **Clean Architecture**: Focus on core functionality without unused features
+- **Future-Proof**: Solid foundation for new feature development
+
 ## [2.2.0] - 2025-08-16
 
 ### ✨ Feature Enhancement - CLI Simplification

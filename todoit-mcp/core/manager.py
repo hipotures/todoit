@@ -171,24 +171,6 @@ class TodoManager:
         if not db_list:
             raise ValueError(f"List '{key}' does not exist")
 
-        # For force delete, remove all list relations first
-        # This breaks circular dependencies and orphans dependent lists
-        with self.db.get_session() as session:
-            # Remove all relations where this list is involved (as source or target)
-            session.query(ListRelationDB).filter(
-                (ListRelationDB.source_list_id == db_list.id)
-                | (ListRelationDB.target_list_id == db_list.id)
-            ).delete(synchronize_session=False)
-            session.commit()
-
-        # After removing relations, check if the list still has dependent lists
-        # (this should now be empty, but keeping for safety)
-        dependent_lists = self.db.get_dependent_lists(db_list.id)
-        if dependent_lists:
-            deps = ", ".join([l.list_key for l in dependent_lists])
-            raise ValueError(
-                f"Cannot delete list '{key}' - it has dependent lists: {deps}"
-            )
 
         with self.db.get_session() as session:
             # Re-fetch the list in the current session to ensure it's attached
@@ -230,11 +212,6 @@ class TodoManager:
                 ListPropertyDB.list_id == db_list.id
             ).delete(synchronize_session=False)
 
-            # Delete list relations
-            session.query(ListRelationDB).filter(
-                (ListRelationDB.source_list_id == db_list.id)
-                | (ListRelationDB.target_list_id == db_list.id)
-            ).delete(synchronize_session=False)
 
             # Delete list tag assignments
             session.query(ListTagAssignmentDB).filter(
@@ -298,7 +275,6 @@ class TodoManager:
                 description=db_list_in_session.description,
                 list_type=db_list_in_session.list_type,
                 status=db_list_in_session.status,
-                parent_list_id=db_list_in_session.parent_list_id,
                 metadata=db_list_in_session.meta_data or {},
                 created_at=db_list_in_session.created_at,
                 updated_at=db_list_in_session.updated_at,
@@ -339,7 +315,6 @@ class TodoManager:
                 description=db_list_in_session.description,
                 list_type=db_list_in_session.list_type,
                 status=db_list_in_session.status,
-                parent_list_id=db_list_in_session.parent_list_id,
                 metadata=db_list_in_session.meta_data or {},
                 created_at=db_list_in_session.created_at,
                 updated_at=db_list_in_session.updated_at,
@@ -422,7 +397,6 @@ class TodoManager:
             description=updated_db_list.description,
             list_type=updated_db_list.list_type,
             status=updated_db_list.status,
-            parent_list_id=updated_db_list.parent_list_id,
             metadata=updated_db_list.meta_data or {},
             created_at=updated_db_list.created_at,
             updated_at=updated_db_list.updated_at,
@@ -667,26 +641,6 @@ class TodoManager:
             if self.db.is_item_blocked(db_item.id):
                 continue  # Skip blocked items
 
-            # Legacy: Check dependencies between lists (old list-level dependencies)
-            dependencies = self.db.get_list_dependencies(db_list.id)
-            if dependencies:
-                can_proceed = True
-                for dep in dependencies:
-                    # Check if metadata contains the item_n_requires_item_n rule
-                    if (
-                        dep.metadata
-                        and dep.metadata.get("rule") == "item_n_requires_item_n"
-                    ):
-                        # Find the corresponding item in the source list
-                        source_item = self.db.get_item_at_position(
-                            dep.source_list_id, db_item.position
-                        )
-                        if source_item and source_item.status != "completed":
-                            can_proceed = False
-                            break
-
-                if not can_proceed:
-                    continue
 
             return self._db_to_model(db_item, TodoItem)
 
@@ -834,14 +788,6 @@ class TodoManager:
 
             created_lists.append(todo_list)
 
-        # Create relationships between lists (list N+1 depends on list N)
-        for i in range(len(created_lists) - 1):
-            self.create_list_relation(
-                source_list_id=created_lists[i].id,
-                target_list_id=created_lists[i + 1].id,
-                relation_type="dependency",
-                metadata={"rule": "item_n_requires_item_n"},
-            )
 
         return created_lists
 
@@ -2154,29 +2100,16 @@ class TodoManager:
         return "; ".join(reasons)
 
     def get_cross_list_progress(self, project_key: str) -> Dict[str, Any]:
-        """Get aggregated progress for all lists belonging to a specific project.
-
-        A project is defined by lists linked by a 'project' relation.
+        """Get aggregated progress - returns empty since list relations were removed.
 
         Args:
-            project_key: The relation key that identifies the project.
+            project_key: The project key (no longer used since relations were removed).
 
         Returns:
-            A dictionary containing detailed progress statistics for the entire project.
+            A dictionary containing empty progress statistics.
         """
-        # Get project lists
-        project_lists = self.get_lists_by_relation("project", project_key)
-        if not project_lists:
-            return {
-                "project_key": project_key,
-                "lists": [],
-                "total_items": 0,
-                "total_completed": 0,
-                "overall_progress": 0.0,
-                "dependencies": [],
-            }
-
-        result = {
+        # Since list relations were removed, return empty project structure
+        return {
             "project_key": project_key,
             "lists": [],
             "total_items": 0,
@@ -2185,50 +2118,17 @@ class TodoManager:
             "dependencies": [],
         }
 
-        # Get dependency graph
-        dependency_graph = self.db.get_dependency_graph_for_project(project_key)
-        result["dependencies"] = dependency_graph["dependencies"]
-
-        # Process each list
-        for todo_list in project_lists:
-            progress = self.get_progress(todo_list.list_key)
-            items = self.get_list_items(todo_list.list_key)
-
-            # Count blocked items
-            blocked_count = 0
-            for item in items:
-                if self.db.is_item_blocked(item.id):
-                    blocked_count += 1
-
-            list_info = {
-                "list": todo_list.to_dict(),
-                "progress": progress.to_dict(),
-                "blocked_items": blocked_count,
-                "items": [item.to_dict() for item in items],
-            }
-
-            result["lists"].append(list_info)
-            result["total_items"] += progress.total
-            result["total_completed"] += progress.completed
-
-        # Calculate overall progress
-        if result["total_items"] > 0:
-            result["overall_progress"] = (
-                result["total_completed"] / result["total_items"]
-            ) * 100
-
-        return result
 
     def get_dependency_graph(self, project_key: str) -> Dict[str, Any]:
-        """Get a dependency graph for all items within a project, suitable for visualization.
+        """Get a dependency graph - returns empty since list relations were removed.
 
         Args:
-            project_key: The relation key that identifies the project.
+            project_key: The project key (no longer used since relations were removed).
 
         Returns:
-            A dictionary representing the nodes and edges of the dependency graph.
+            A dictionary representing empty dependency graph.
         """
-        return self.db.get_dependency_graph_for_project(project_key)
+        return {"lists": [], "dependencies": []}
 
     def delete_item(self, list_key: str, item_key: str) -> bool:
         """Deletes an item and all its subtasks and dependencies."""

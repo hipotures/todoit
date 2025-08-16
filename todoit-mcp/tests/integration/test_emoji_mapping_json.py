@@ -77,7 +77,7 @@ class TestEmojiMappingJSON:
 
             # These should be readable names, not emoji
             assert "tags" in list_record  # was 🏷️
-            assert "type" in list_record  # was 🔀
+            # Note: "type" column was removed since only sequential type exists
             assert "pending_count" in list_record  # was 📋
             assert "in_progress_count" in list_record  # was 🔄
             assert "failed_count" in list_record  # was ❌
@@ -86,7 +86,7 @@ class TestEmojiMappingJSON:
 
             # These should NOT contain emoji
             assert "🏷️" not in list_record
-            assert "🔀" not in list_record
+            # Note: 🔀 column was removed since only sequential type exists
             assert "📋" not in list_record
             assert "🔄" not in list_record
             assert "❌" not in list_record
@@ -135,7 +135,7 @@ class TestEmojiMappingJSON:
             # Check that emoji keys are mapped to readable names in YAML too
             list_record = yaml_data["data"][0]
             assert "tags" in list_record
-            assert "type" in list_record
+            # Note: "type" column was removed since only sequential type exists
             assert "pending_count" in list_record
             assert "completed_count" in list_record
 
@@ -175,7 +175,7 @@ class TestEmojiMappingJSON:
             # Check that XML contains readable names, not emoji
             xml_output = result.output
             assert "<tags>" in xml_output or "<tags />" in xml_output
-            assert "<type>" in xml_output
+            # Note: "<type>" was removed since only sequential type exists
             assert "<pending_count>" in xml_output
             assert "<completed_count>" in xml_output
 
@@ -218,7 +218,8 @@ class TestEmojiMappingJSON:
         from interfaces.cli_modules.display import EMOJI_TO_NAME_MAPPING
 
         # All the emoji used in list display should be mapped
-        expected_emoji = ["🏷️", "🔀", "📋", "🔄", "❌", "✅", "⏳", "📦"]
+        # Note: "🔀" removed since only sequential type exists
+        expected_emoji = ["🏷️", "📋", "🔄", "❌", "✅", "⏳", "📦"]
 
         for emoji in expected_emoji:
             assert emoji in EMOJI_TO_NAME_MAPPING, f"Missing mapping for emoji: {emoji}"

@@ -158,8 +158,8 @@ class TestSubtaskPositioningFix:
         self.run_cli('item add --list test_hierarchy --item main1 --subitem sub1_2 --title "Sub 1.2"', temp_db_path)
         self.run_cli('item add --list test_hierarchy --item main2 --subitem sub2_1 --title "Sub 2.1"', temp_db_path)
 
-        # Test tree view
-        result = self.run_cli('list show --list test_hierarchy --tree', temp_db_path)
+        # Test list view
+        result = self.run_cli('list show --list test_hierarchy', temp_db_path)
         assert result.returncode == 0
         
         tree_output = result.stdout

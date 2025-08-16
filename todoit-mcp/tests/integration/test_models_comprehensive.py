@@ -45,12 +45,6 @@ class TestModelsComprehensive:
         assert ItemStatus.COMPLETED == "completed"
         assert ItemStatus.FAILED == "failed"
 
-    def test_relation_type_enum(self):
-        """Test RelationType enum"""
-        assert RelationType.DEPENDENCY == "dependency"
-        assert RelationType.PARENT == "parent"
-        assert RelationType.RELATED == "related"
-        assert RelationType.PROJECT == "project"
 
     def test_history_action_enum(self):
         """Test HistoryAction enum"""

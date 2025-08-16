@@ -886,8 +886,8 @@ async def todo_project_overview(project_key: str) -> Dict[str, Any]:
     try:
         mgr = init_manager()
 
-        # Get lists by project relation
-        lists = mgr.get_lists_by_relation("project", project_key)
+        # Since list relations were removed, return empty lists
+        lists = []
 
         overview = {
             "project_key": project_key,

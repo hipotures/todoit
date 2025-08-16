@@ -176,50 +176,6 @@ class TestManagerComprehensive:
         completed_items = temp_manager.get_list_items("bulk_test", "completed")
         assert len(completed_items) == 2
 
-    def test_list_relations_comprehensive(self, temp_manager):
-        """Test comprehensive list relations"""
-        # Create related lists
-        backend = temp_manager.create_list("backend", "Backend Tasks")
-        frontend = temp_manager.create_list("frontend", "Frontend Tasks")
-        testing = temp_manager.create_list("testing", "Testing Tasks")
-
-        # Create relations
-        relation1 = temp_manager.create_list_relation(
-            backend.id,
-            frontend.id,
-            "project",
-            "web_app",
-            metadata={"description": "Frontend depends on backend"},
-        )
-        relation2 = temp_manager.create_list_relation(
-            frontend.id,
-            testing.id,
-            "project",
-            "web_app",
-            metadata={"description": "Testing depends on frontend"},
-        )
-
-        assert relation1 is not None
-        assert relation2 is not None
-
-        # Get lists by relation
-        project_lists = temp_manager.get_lists_by_relation("project", "web_app")
-        assert len(project_lists) >= 3
-
-        project_keys = [l.list_key for l in project_lists]
-        assert "backend" in project_keys
-        assert "frontend" in project_keys
-        assert "testing" in project_keys
-
-        # Test cross-list stats --list for project
-        try:
-            progress = temp_manager.get_cross_list_progress("web_app")
-            assert isinstance(progress, dict)
-            if "lists" in progress:
-                assert len(progress["lists"]) >= 3
-        except AttributeError:
-            # Method might not exist, skip gracefully
-            pass
 
     def test_advanced_item_operations(self, temp_manager):
         """Test advanced item operations using existing methods"""
@@ -478,27 +434,6 @@ class TestManagerComprehensive:
         normal_item = temp_manager.add_item("error_test", "normal", normal_content)
         assert normal_item.content == normal_content
 
-    def test_list_dependency_validation(self, temp_manager):
-        """Test list dependency validation"""
-        # Create dependent lists
-        list1 = temp_manager.create_list("parent_list", "Parent List")
-        list2 = temp_manager.create_list("child_list", "Child List")
-
-        # Create relation
-        temp_manager.create_list_relation(
-            list1.id, list2.id, "dependency", "test_dependency"
-        )
-
-        # Test that list can be deleted (current implementation removes relations automatically)
-        result = temp_manager.delete_list("parent_list")
-        assert result is True
-
-        # Verify child list still exists
-        child_list = temp_manager.get_list("child_list")
-        assert child_list is not None
-
-        # Clean up
-        temp_manager.delete_list("child_list")
 
     def test_list_key_validation(self, temp_manager):
         """Test that list keys must contain at least one letter to distinguish from IDs."""

@@ -76,7 +76,6 @@ class TestSchemaJsonOutput:
             expected_categories = {
                 "Item Statuses",
                 "List Types",
-                "Relation Types",
                 "Dependency Types",
                 "History Actions",
             }
@@ -170,13 +169,13 @@ class TestSchemaJsonOutput:
                 if item["Category"] == "List Types"
                 or (
                     item["Category"] == ""
-                    and item["Value"] in ["sequential", "parallel"]
+                    and item["Value"] in ["sequential"]
                 )
             ]
 
-            # Should have both list types
+            # Should have only sequential list type
             list_values = [item["Value"] for item in list_items]
-            expected_types = ["sequential", "parallel"]
+            expected_types = ["sequential"]
 
             for expected_type in expected_types:
                 assert expected_type in list_values
@@ -275,8 +274,8 @@ class TestSchemaJsonOutput:
 
             # Should have reasonable number of schema entries
             assert (
-                output_data["count"] >= 15
-            )  # We have 5 categories with multiple values each
+                output_data["count"] >= 12
+            )  # We have 4 categories with multiple values each
             assert output_data["count"] <= 30  # But not too many
 
     def test_schema_json_category_grouping(self):
@@ -306,7 +305,7 @@ class TestSchemaJsonOutput:
                         category_positions[item["Category"]] = i
 
             # Should have the expected number of categories
-            assert len(seen_categories) == 5  # 5 main categories in schema
+            assert len(seen_categories) == 4  # 4 main categories in schema
 
             # Check that we have items without categories (grouped under each category)
             empty_category_items = [

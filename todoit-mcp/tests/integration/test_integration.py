@@ -37,10 +37,10 @@ def test_list_create_and_show(temp_db_path):
 
     # Show the list
     result = runner.invoke(
-        cli, ["--db", temp_db_path, "list", "show", "--list", "test-list", "--tree"]
+        cli, ["--db", temp_db_path, "list", "show", "--list", "test-list"]
     )
     assert result.exit_code == 0
-    assert "My Test List" in result.output
+    assert "my test list" in result.output.lower()
 
 
 def test_item_add_and_list(temp_db_path):
@@ -63,7 +63,7 @@ def test_item_add_and_list(temp_db_path):
 
     # Show the list and check for the item
     result = runner.invoke(
-        cli, ["--db", temp_db_path, "list", "show", "--list", "item-list", "--tree"]
+        cli, ["--db", temp_db_path, "list", "show", "--list", "item-list"]
     )
     assert result.exit_code == 0
     assert "My first item" in result.output
@@ -93,7 +93,7 @@ def test_item_status_update(temp_db_path):
 
     # Verify the status change
     result = runner.invoke(
-        cli, ["--db", temp_db_path, "list", "show", "--list", "status-list", "--tree"]
+        cli, ["--db", temp_db_path, "list", "show", "--list", "status-list"]
     )
     assert "🔄" in result.output
 
@@ -120,7 +120,7 @@ def test_subtask_creation_and_hierarchy(temp_db_path):
 
     # Check the tree view
     result = runner.invoke(
-        cli, ["--db", temp_db_path, "list", "show", "--list", "hier-list", "--tree"]
+        cli, ["--db", temp_db_path, "list", "show", "--list", "hier-list"]
     )
     assert "Parent Item" in result.output
     assert "Child Item" in result.output

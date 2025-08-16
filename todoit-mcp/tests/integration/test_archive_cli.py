@@ -275,8 +275,8 @@ class TestArchiveCLI:
         # Note: This test might need adjustment based on exact output format
         # The important thing is that we have different indicators for active vs archived
 
-    def test_tree_view_with_archived_lists(self, temp_db_path, setup_test_lists):
-        """Test tree view shows archived lists with dimmed colors when included"""
+    def test_list_view_with_archived_lists(self, temp_db_path, setup_test_lists):
+        """Test list view shows archived lists when included"""
         manager, lists = setup_test_lists
         runner = CliRunner()
 
@@ -284,13 +284,13 @@ class TestArchiveCLI:
         manager.update_item_status("archive-me", "item_1", "completed")
         manager.archive_list("archive-me")
 
-        # Test tree view with archived included
+        # Test list view with archived included
         result = runner.invoke(
-            cli, ["--db", temp_db_path, "list", "all", "--tree", "--include-archived"]
+            cli, ["--db", temp_db_path, "list", "all", "--include-archived"]
         )
         assert result.exit_code == 0
 
-        # Should contain the archived list in tree view
+        # Should contain the archived list in list view
         assert "archive-me" in result.output or "List to Archive" in result.output
         assert "test-list" in result.output or "Test List" in result.output
 
