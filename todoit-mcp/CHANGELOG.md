@@ -5,6 +5,19 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2025-08-16
+
+### ✨ Feature Enhancement - CLI Simplification
+- **REMOVED**: `--type` option from `list create` command (auto-set to sequential)
+- **REMOVED**: Type column from `list all` table display (🔀 column)
+- **REMOVED**: Type information from list creation success messages
+- **REMOVED**: Type from list rename command output
+- **UPDATED**: Schema command no longer shows obsolete relation types
+- **SIMPLIFIED**: CLI interface is now cleaner and more focused
+
+Since only sequential list type exists, displaying type information was redundant.
+The CLI now focuses on actual functionality rather than implementation details.
+
 ## [2.1.1] - 2025-08-16
 
 ### 🐛 Bug Fixes
