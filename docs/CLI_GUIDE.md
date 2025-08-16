@@ -509,7 +509,7 @@ todoit list property set "my-project" "priority" "high"
 todoit list property get "my-project" "priority"
 
 # List all list properties
-todoit list property list "my-project"
+todoit list property show "my-project"
 
 # Delete list property
 todoit list property delete "my-project" "old-property"
