@@ -322,12 +322,8 @@ def item_property_delete(ctx, list_key, item_key, subitem_key, property_key):
 
 def _display_item_properties_table(properties_data, list_key):
     """Display item properties in table format using unified display system"""
-    # Transform data for unified display with hierarchical numbering
+    # Transform data for unified display with hierarchical indentation
     data = []
-    item_counter = {}  # Track numbering for items
-    current_parent = None
-    parent_number = 0
-    subitem_counter = 0
     
     for prop in properties_data:
         item_key = prop["item_key"]
@@ -335,32 +331,13 @@ def _display_item_properties_table(properties_data, list_key):
         
         if parent_item_key is None:
             # Main item
-            if item_key not in item_counter:
-                parent_number += 1
-                item_counter[item_key] = parent_number
-                subitem_counter = 0  # Reset subitem counter for new parent
-            
-            hierarchy_number = str(item_counter[item_key])
             display_key = item_key
-            current_parent = item_key
         else:
-            # Subitem
-            if current_parent != parent_item_key:
-                # Parent changed, reset subitem counter
-                current_parent = parent_item_key
-                subitem_counter = 0
-                if parent_item_key not in item_counter:
-                    parent_number += 1
-                    item_counter[parent_item_key] = parent_number
-            
-            subitem_counter += 1
-            parent_num = item_counter.get(parent_item_key, parent_number)
-            hierarchy_number = f"{parent_num}.{subitem_counter}"
-            display_key = f"  {item_key}"  # Indent subitem keys
+            # Subitem - indent with spaces
+            display_key = f"  {item_key}"
         
         data.append(
             {
-                "#": hierarchy_number,
                 "Key": display_key,
                 "Property Key": prop["property_key"],
                 "Value": prop["property_value"],
@@ -369,7 +346,6 @@ def _display_item_properties_table(properties_data, list_key):
 
     # Define columns for unified display
     columns = {
-        "#": {"style": "blue", "width": 8},
         "Key": {"style": "cyan", "width": 18},
         "Property Key": {"style": "magenta", "width": 20},
         "Value": {"style": "white"},

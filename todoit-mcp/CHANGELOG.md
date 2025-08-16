@@ -5,6 +5,32 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.7] - 2025-08-16
+
+### 🎨 IMPROVEMENT - Simplified Property Display
+
+#### ✨ Clean Visual Hierarchy
+- **REMOVED**: Unnecessary "#" column with hierarchical numbering
+- **SIMPLIFIED**: Display now shows only Key, Property Key, and Value columns
+- **MAINTAINED**: Hierarchical indentation in Key column with `  ` prefix for subitems
+- **CLEANER**: More focused table layout without redundant numbering information
+
+#### 📊 Display Example
+
+**Simplified Clean Format:**
+```
+Key                │ Property Key    │ Value
+scene_0001         │ priority        │ high
+  scene_gen        │ thread_id       │ 12345
+scene_0002         │ status          │ in_progress
+  audio_sync       │ format          │ wav
+```
+
+#### 🎯 Problem Solved
+- **Before**: Redundant "#" column with numbering that wasn't referenced elsewhere
+- **After**: Clean 3-column layout with only essential information
+- **Benefit**: Less visual clutter, focus on actual property data
+
 ## [2.5.6] - 2025-08-16
 
 ### 🎨 ENHANCEMENT - Hierarchical Numbering in Property Display
