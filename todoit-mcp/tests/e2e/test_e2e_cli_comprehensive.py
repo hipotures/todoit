@@ -245,11 +245,11 @@ class TestE2EComprehensiveCLI:
         # ============ PHASE 8: CLEANUP ============
 
         # Delete lists
-        result = runner.invoke(cli, [*db_arg, "list", "delete", "--lists", "testing"], input="y\n")
+        result = runner.invoke(cli, [*db_arg, "list", "delete", "--list", "testing"], input="y\n")
         assert result.exit_code == 0
         assert "Successfully deleted" in result.output
 
-        result = runner.invoke(cli, [*db_arg, "list", "delete", "--lists", "frontend"], input="y\n")
+        result = runner.invoke(cli, [*db_arg, "list", "delete", "--list", "frontend"], input="y\n")
         assert result.exit_code == 0
 
         # Final verification

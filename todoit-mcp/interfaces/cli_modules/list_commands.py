@@ -385,16 +385,16 @@ def list_all(ctx, limit, details, archived, include_archived, filter_tags):
 
 
 @list_group.command("delete")
-@click.option("--lists", "list_keys", required=True, help="Comma-separated list keys to delete")
+@click.option("--list", "list_keys", required=True, help="List key or comma-separated list keys to delete")
 @click.option("--force", is_flag=True, help="Force deletion")
 @click.pass_context
 def list_delete(ctx, list_keys, force):
     """Delete TODO lists (with dependency validation)
 
     Examples:
-    todoit list delete --lists "key1"
-    todoit list delete --lists "key1,key2,key3"
-    todoit list delete --lists "old-project" --force
+    todoit list delete --list "key1"
+    todoit list delete --list "key1,key2,key3"
+    todoit list delete --list "old-project" --force
     """
     manager = get_manager(ctx.obj["db_path"])
 

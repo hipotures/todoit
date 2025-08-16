@@ -101,7 +101,7 @@ class TestFORCETagsListCommands:
                 mock_get_tags.return_value = ["dev"]
 
                 result = runner.invoke(
-                    list_delete, ["--lists", "test_list", "--force"], obj={"db_path": "test.db"}
+                    list_delete, ["--list", "test_list", "--force"], obj={"db_path": "test.db"}
                 )
 
                 # Should be blocked
