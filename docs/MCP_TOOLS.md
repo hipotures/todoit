@@ -2,7 +2,7 @@
 
 ## Overview
 
-TODOIT MCP provides 56 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
+TODOIT MCP provides 54 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
 
 ## 🎛️ Tools Level Configuration
 
@@ -14,7 +14,7 @@ TODOIT MCP provides 56 comprehensive tools for Claude Code integration, offering
 |-------|-------------|---------------|----------|
 | **MINIMAL** | 10 tools | 82% savings | Essential operations only, maximum performance |
 | **STANDARD** | 25 tools | 57% savings | Balanced functionality (default) | 
-| **MAX** | 56 tools | 0% savings | Complete feature set |
+| **MAX** | 54 tools | 0% savings | Complete feature set |
 
 ### 🔧 Configuration
 
@@ -27,7 +27,7 @@ export TODOIT_MCP_TOOLS_LEVEL=minimal
 # Standard set (25 tools) - Balanced functionality (DEFAULT)
 export TODOIT_MCP_TOOLS_LEVEL=standard
 
-# Complete set (56 tools) - All features
+# Complete set (54 tools) - All features
 export TODOIT_MCP_TOOLS_LEVEL=max
 ```
 

@@ -5,6 +5,38 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2025-08-16
+
+### 🔧 BUGFIX - MCP Server Environment Variable Support
+- **FIXED**: Critical bug in MCP server where `TODOIT_DATABASE` environment variable was ignored
+- **UPDATED**: `init_manager()` function now properly respects environment variable settings
+- **RESOLVED**: MCP validation errors caused by using wrong database with old 'linked' types
+- **ENHANCED**: MCP server now works correctly in isolated test environments
+
+#### Technical Details:
+- **File Changed**: `interfaces/mcp_server.py` lines 19-28
+- **Root Cause**: MCP server always used default `~/.todoit/todoit.db` regardless of environment
+- **Solution**: Check `TODOIT_DATABASE` environment variable before creating TodoManager instance
+- **Impact**: All 54 MCP tools now work correctly in test environments
+
+### 🧪 TESTING IMPROVEMENTS
+- **ADDED**: Comprehensive E2E test for MCP server (`test_e2e_mcp_comprehensive.py`)
+- **TESTED**: All 54 discovered MCP tools systematically
+- **VERIFIED**: Complete MCP workflow including dependencies, properties, tags, and advanced operations
+- **ACHIEVED**: Robust testing coverage for entire MCP interface
+
+#### New Test Coverage:
+- **Project Lifecycle**: Full workflow from list creation to archive
+- **System Robustness**: Error handling and edge cases
+- **Data Consistency**: Business logic validation and automatic status synchronization
+- **Tool Count**: 54 MCP tools discovered and tested (exceeded expected 52)
+
+### Benefits:
+- **Reliable MCP Testing**: Environment isolation now works correctly
+- **Comprehensive Coverage**: All MCP functionality thoroughly tested
+- **Future-Proof**: Robust test suite prevents regressions
+- **Claude Code Integration**: MCP server works properly with custom database paths
+
 ## [2.3.0] - 2025-08-16
 
 ### 🔥 BREAKING CHANGES - Complete Test Suite Fix (100% Pass Rate)
