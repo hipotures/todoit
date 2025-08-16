@@ -5,6 +5,37 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.4] - 2025-08-16
+
+### 🔧 BUGFIX - CLI Parameter Consistency
+
+#### ✨ CLI Standardization
+- **FIXED**: Inconsistent parameter naming in `list delete` command
+- **CHANGED**: `--lists` parameter renamed to `--list` for consistency across all CLI commands
+- **MAINTAINED**: Full backward functionality - comma-separated values still supported
+
+#### 📋 Usage Examples
+```bash
+# Single list deletion
+todoit list delete --list "project1"
+
+# Multiple lists deletion (comma-separated)
+todoit list delete --list "project1,project2,project3"
+
+# With force flag
+todoit list delete --list "old-project" --force
+```
+
+#### 🔍 Technical Changes
+- **File Changed**: `interfaces/cli_modules/list_commands.py` - standardized parameter name
+- **Tests Updated**: Updated unit and e2e tests to use consistent parameter naming
+- **Documentation**: Already consistent, no changes needed
+
+#### 🎯 Benefits
+- **Consistent UX**: All CLI commands now use predictable `--list` parameter
+- **Better DX**: Developers can expect uniform command structure
+- **Maintained Functionality**: Multi-list operations work exactly as before
+
 ## [2.5.3] - 2025-08-16
 
 ### 🆕 NEW FEATURE - Subitem Property Support
