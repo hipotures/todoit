@@ -50,29 +50,33 @@ class TestFindSubitemsByStatus:
         manager = manager_with_test_data
 
         # Find subitems where generate is completed
-        results = manager.find_subitems_by_status(
+        matches = manager.find_subitems_by_status(
             "test_list", {"generate": "completed"}, limit=10
         )
 
-        # Should find the generate subitem
-        assert len(results) == 1
-        assert results[0].item_key == "generate"
-        assert results[0].status.value == "completed"
+        # Should find one parent group with generate subitem
+        assert len(matches) == 1
+        assert matches[0]["parent"].item_key == "parent_task"
+        assert len(matches[0]["matching_subitems"]) == 1
+        assert matches[0]["matching_subitems"][0].item_key == "generate"
+        assert matches[0]["matching_subitems"][0].status.value == "completed"
 
     def test_search_multiple_conditions(self, manager_with_test_data):
         """Test search with multiple conditions"""
         manager = manager_with_test_data
 
         # Find subitems where generate is completed AND download is pending
-        results = manager.find_subitems_by_status(
+        matches = manager.find_subitems_by_status(
             "test_list",
             {"generate": "completed", "download": "pending"},
             limit=10,
         )
 
-        # Should find both generate and download subitems
-        assert len(results) == 2
-        found_keys = {item.item_key for item in results}
+        # Should find one parent group with both generate and download subitems
+        assert len(matches) == 1
+        assert matches[0]["parent"].item_key == "parent_task"
+        assert len(matches[0]["matching_subitems"]) == 2
+        found_keys = {item.item_key for item in matches[0]["matching_subitems"]}
         assert found_keys == {"generate", "download"}
 
     def test_search_with_failing_conditions(self, manager_with_test_data):
@@ -94,15 +98,17 @@ class TestFindSubitemsByStatus:
         manager = manager_with_test_data
 
         # Find subitems where design and code are both completed
-        results = manager.find_subitems_by_status(
+        matches = manager.find_subitems_by_status(
             "test_list",
             {"design": "completed", "code": "completed"},
             limit=10,
         )
 
-        # Should find design and code subitems from second parent
-        assert len(results) == 2
-        found_keys = {item.item_key for item in results}
+        # Should find one parent group with design and code subitems from second parent
+        assert len(matches) == 1
+        assert matches[0]["parent"].item_key == "parent_task2"
+        assert len(matches[0]["matching_subitems"]) == 2
+        found_keys = {item.item_key for item in matches[0]["matching_subitems"]}
         assert found_keys == {"design", "code"}
 
     def test_search_with_limit(self, manager_with_test_data):
@@ -137,15 +143,16 @@ class TestFindSubitemsByStatus:
         manager = manager_with_test_data
 
         # Find multiple subitems
-        results = manager.find_subitems_by_status(
+        matches = manager.find_subitems_by_status(
             "test_list",
             {"generate": "completed", "download": "pending", "process": "pending"},
             limit=10,
         )
 
-        # Should be ordered by position
-        assert len(results) == 3
-        positions = [item.position for item in results]
+        # Should find one parent group with 3 matching subitems ordered by position
+        assert len(matches) == 1
+        assert len(matches[0]["matching_subitems"]) == 3
+        positions = [item.position for item in matches[0]["matching_subitems"]]
         assert positions == sorted(positions)
 
     def test_workflow_scenario_image_processing(self, manager_with_test_data):
@@ -153,14 +160,16 @@ class TestFindSubitemsByStatus:
         manager = manager_with_test_data
 
         # Scenario: Find downloads ready to process (generation completed)
-        ready_downloads = manager.find_subitems_by_status(
+        ready_matches = manager.find_subitems_by_status(
             "test_list",
             {"generate": "completed", "download": "pending"},
             limit=5,
         )
 
-        # Should find download subitem
-        downloads = [item for item in ready_downloads if item.item_key == "download"]
+        # Should find one parent group with download subitem
+        assert len(ready_matches) == 1
+        matching_subitems = ready_matches[0]["matching_subitems"]
+        downloads = [item for item in matching_subitems if item.item_key == "download"]
         assert len(downloads) == 1
         assert downloads[0].status.value == "pending"
 
@@ -169,14 +178,16 @@ class TestFindSubitemsByStatus:
         manager = manager_with_test_data
 
         # Scenario: Find tests ready to run (design and code completed)
-        ready_tests = manager.find_subitems_by_status(
+        ready_matches = manager.find_subitems_by_status(
             "test_list",
             {"design": "completed", "code": "completed", "test": "pending"},
             limit=5,
         )
 
-        # Should find test subitem
-        tests = [item for item in ready_tests if item.item_key == "test"]
+        # Should find one parent group with test subitem
+        assert len(ready_matches) == 1
+        matching_subitems = ready_matches[0]["matching_subitems"]
+        tests = [item for item in matching_subitems if item.item_key == "test"]
         assert len(tests) == 1
         assert tests[0].status.value == "pending"
 
@@ -194,19 +205,21 @@ class TestFindSubitemsByStatus:
         manager.update_item_status("test_list", "download_v3", status="pending")
 
         # Search for original conditions should still work
-        results = manager.find_subitems_by_status(
+        matches = manager.find_subitems_by_status(
             "test_list",
             {"generate": "completed", "download": "pending"},
             limit=10,
         )
 
-        # Should only find from first parent (where generate is completed)
-        assert len(results) == 2
-        found_keys = {item.item_key for item in results}
+        # Should only find one parent group (where generate is completed)
+        assert len(matches) == 1
+        assert matches[0]["parent"].item_key == "parent_task"
+        assert len(matches[0]["matching_subitems"]) == 2
+        found_keys = {item.item_key for item in matches[0]["matching_subitems"]}
         assert found_keys == {"generate", "download"}
 
-        # Verify these are from the same parent group
-        parent_ids = {item.parent_item_id for item in results}
+        # Verify these are from the same parent group (inherently true with new structure)
+        parent_ids = {item.parent_item_id for item in matches[0]["matching_subitems"]}
         assert len(parent_ids) == 1  # Only one parent group
 
 
@@ -224,15 +237,16 @@ class TestFindSubitemsByStatusIntegration:
         manager.update_item_status("test_list", "download", status="completed")
 
         # Now search for completed downloads with completed generation
-        results = manager.find_subitems_by_status(
+        matches = manager.find_subitems_by_status(
             "test_list",
             {"generate": "completed", "download": "completed"},
             limit=10,
         )
 
-        # Should find both
-        assert len(results) == 2
-        found_keys = {item.item_key for item in results}
+        # Should find one parent group with both subitems
+        assert len(matches) == 1
+        assert len(matches[0]["matching_subitems"]) == 2
+        found_keys = {item.item_key for item in matches[0]["matching_subitems"]}
         assert found_keys == {"generate", "download"}
 
     def test_large_dataset_performance(self, tmp_path):
@@ -261,17 +275,19 @@ class TestFindSubitemsByStatusIntegration:
 
         # For this test, we need to search for specific conditions that exist
         # Let's search for one specific group we know exists (parent_0)
-        results = manager.find_subitems_by_status(
+        matches = manager.find_subitems_by_status(
             "perf_test",
             {"step1_0": "completed", "step2_0": "pending"},
             limit=50,
         )
 
-        # Should find step1_0 and step2_0
-        assert len(results) == 2
-        found_keys = {item.item_key for item in results}
+        # Should find one parent group with step1_0 and step2_0
+        assert len(matches) == 1
+        assert matches[0]["parent"].item_key == "parent_0"
+        assert len(matches[0]["matching_subitems"]) == 2
+        found_keys = {item.item_key for item in matches[0]["matching_subitems"]}
         assert found_keys == {"step1_0", "step2_0"}
 
         # Verify all results are correct
-        for item in results:
+        for item in matches[0]["matching_subitems"]:
             assert item.item_key in ["step1_0", "step2_0"]
