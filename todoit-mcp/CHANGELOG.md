@@ -5,6 +5,31 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1] - 2025-08-16
+
+### 🎨 UI IMPROVEMENT - Enhanced Table Formatting
+- **IMPROVED**: Cleaner subtask display in list show command
+- **REMOVED**: Tree symbols (└─) from task titles for better readability
+- **ENHANCED**: Consistent indentation in both Key and Task columns
+- **SIMPLIFIED**: Visual hierarchy without cluttered symbols
+
+#### Visual Changes:
+- **Key Column**: Subtasks now use clean indentation instead of tree symbols
+- **Task Column**: Removed unnecessary tree prefixes, improved alignment
+- **Hierarchy**: Maintained clear parent-child relationships with simple spacing
+- **Readability**: Significantly improved table clarity and visual appeal
+
+#### Technical Details:
+- **File Changed**: `interfaces/cli_modules/display.py` lines 463, 514-515
+- **Impact**: All `list show` commands now display with improved formatting
+- **Compatibility**: Fully backward compatible, only visual improvements
+
+### Benefits:
+- **Cleaner Look**: Reduced visual noise in table output
+- **Better Scanning**: Easier to read hierarchical task structures
+- **Professional Appearance**: More polished CLI interface
+- **Consistency**: Uniform indentation across all columns
+
 ## [2.4.0] - 2025-08-16
 
 ### 🔧 BUGFIX - MCP Server Environment Variable Support

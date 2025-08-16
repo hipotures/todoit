@@ -460,7 +460,7 @@ def _render_table_view(
         # Create indentation for visual hierarchy
         indent = "  " * depth
         if depth > 0:
-            indent += "└─ "
+            indent += ""  # Remove tree symbols for cleaner look
 
         # Phase 2: Check if item is blocked
         is_blocked = False
@@ -510,9 +510,13 @@ def _render_table_view(
             states_str = " ".join(states)
 
         # Build record for unified display
+        # Format key column: use indentation for subitems
+        key_indent = "  " * depth
+        key_display = f"{key_indent}{item.item_key}"
+        
         record = {
             "#": hierarchical_num,
-            "Key": item.item_key,
+            "Key": key_display,
             "Task": f"{indent}{item.content}",
             "Status": status_display,  # No Rich formatting for vertical format
         }
