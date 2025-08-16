@@ -401,31 +401,57 @@ async def todo_add_item(
     content: str,
     position: Optional[int] = None,
     metadata: Optional[Dict[str, Any]] = None,
+    subitem_key: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Add item to TODO list.
+    """Add item or subitem to TODO list (unified smart command).
 
     Args:
         list_key: Key of the list to add item to (required)
-        item_key: Unique key for the new item (required)
-        content: Text content of the todo item (required)
+        item_key: Unique key for the new item, or parent key if adding subitem (required)
+        content: Text content of the todo item/subitem (required)
         position: Optional position to insert item at
-        metadata: Optional dictionary of custom metadata for the item
+        metadata: Optional dictionary of custom metadata for the item/subitem
+        subitem_key: Optional subitem key. If provided, adds subitem to item_key as parent
 
     Returns:
-        Dictionary with success status and created item details
+        Dictionary with success status and created item/subitem details
+
+    Examples:
+        # Add item:
+        await todo_add_item("project", "task1", "Main task")
+        
+        # Add subitem:
+        await todo_add_item("project", "task1", "Sub work", subitem_key="subtask1")
     """
     try:
         mgr = init_manager()
         if metadata is None:
             metadata = {}
-        item = mgr.add_item(
-            list_key=list_key,
-            item_key=item_key,
-            content=content,
-            position=position,
-            metadata=metadata,
-        )
-        return {"success": True, "item": item.to_dict()}
+            
+        if subitem_key is not None:
+            # Add subitem: item_key becomes parent_key, subitem_key is the new subitem
+            subitem = mgr.add_subitem(
+                list_key=list_key,
+                parent_key=item_key,
+                subitem_key=subitem_key,
+                content=content,
+                metadata=metadata,
+            )
+            return {
+                "success": True, 
+                "subitem": subitem.to_dict(),
+                "message": f"Subitem '{subitem_key}' added to '{item_key}' in list '{list_key}'"
+            }
+        else:
+            # Add regular item
+            item = mgr.add_item(
+                list_key=list_key,
+                item_key=item_key,
+                content=content,
+                position=position,
+                metadata=metadata,
+            )
+            return {"success": True, "item": item.to_dict()}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -647,26 +673,65 @@ async def todo_export_to_markdown(list_key: str, file_path: str) -> Dict[str, An
 
 
 @conditional_tool
-async def todo_get_item(list_key: str, item_key: str) -> Dict[str, Any]:
-    """Get specific todo item from a list.
+async def todo_get_item(
+    list_key: str, 
+    item_key: str, 
+    subitem_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """Get specific todo item or its subitems from a list (unified smart command).
 
     Args:
         list_key: Key of the list containing the item (required)
         item_key: Key of the item to retrieve (required)
+        subitem_key: Optional subitem key. If provided, returns specific subitem.
+                     If "all", returns all subitems of the parent item.
 
     Returns:
-        Dictionary with success status and item details if found
+        Dictionary with success status and item/subitem(s) details if found
+
+    Examples:
+        # Get item:
+        await todo_get_item("project", "task1")
+        
+        # Get specific subitem:
+        await todo_get_item("project", "task1", subitem_key="subtask1")
+        
+        # Get all subitems:
+        await todo_get_item("project", "task1", subitem_key="all")
     """
     try:
         mgr = init_manager()
-        item = mgr.get_item(list_key=list_key, item_key=item_key)
-        if item:
-            return {"success": True, "item": item.to_dict()}
+        
+        if subitem_key is not None:
+            if subitem_key == "all":
+                # Get all subitems of the parent item
+                subitems = mgr.get_subitems(list_key=list_key, parent_key=item_key)
+                return {
+                    "success": True,
+                    "subitems": [subitem.to_dict() for subitem in subitems],
+                    "count": len(subitems),
+                    "parent_key": item_key,
+                }
+            else:
+                # Get specific subitem by key
+                subitem = mgr.get_item(list_key=list_key, item_key=subitem_key)
+                if subitem:
+                    return {"success": True, "subitem": subitem.to_dict()}
+                else:
+                    return {
+                        "success": False,
+                        "error": f"Subitem '{subitem_key}' not found in list '{list_key}'",
+                    }
         else:
-            return {
-                "success": False,
-                "error": f"Item '{item_key}' not found in list '{list_key}'",
-            }
+            # Get regular item
+            item = mgr.get_item(list_key=list_key, item_key=item_key)
+            if item:
+                return {"success": True, "item": item.to_dict()}
+            else:
+                return {
+                    "success": False,
+                    "error": f"Item '{item_key}' not found in list '{list_key}'",
+                }
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -1307,7 +1372,9 @@ async def todo_add_subitem(
     mgr=None,
 ) -> Dict[str, Any]:
     """Add a subtask to an existing task.
-
+    
+    DEPRECATED: Use todo_add_item with subitem_key parameter instead.
+    
     Args:
         list_key: Key of the list containing the parent task (required)
         parent_key: Key of the parent task (required)
@@ -1317,19 +1384,27 @@ async def todo_add_subitem(
 
     Returns:
         Dictionary with success status and created subtask details
+        
+    Migration:
+        OLD: todo_add_subitem("list", "parent", "subkey", "content")
+        NEW: todo_add_item("list", "parent", "content", subitem_key="subkey")
     """
-    subtask = mgr.add_subitem(list_key, parent_key, subtask_key, content, metadata)
-    return {
-        "success": True,
-        "subtask": subtask.to_dict(),
-        "message": f"Subtask '{subtask_key}' added to '{parent_key}' in list '{list_key}'",
-    }
+    # Delegate to unified todo_add_item
+    return await todo_add_item(
+        list_key=list_key,
+        item_key=parent_key,
+        content=content,
+        metadata=metadata,
+        subitem_key=subtask_key
+    )
 
 
 @conditional_tool
 @mcp_error_handler
 async def todo_get_subitems(list_key: str, parent_key: str, mgr=None) -> Dict[str, Any]:
     """Get all subtasks for a parent task.
+    
+    DEPRECATED: Use todo_get_item with subitem_key="all" parameter instead.
 
     Args:
         list_key: Key of the list containing the parent task (required)
@@ -1337,14 +1412,17 @@ async def todo_get_subitems(list_key: str, parent_key: str, mgr=None) -> Dict[st
 
     Returns:
         Dictionary with success status, subtasks list, and count
+        
+    Migration:
+        OLD: todo_get_subitems("list", "parent")
+        NEW: todo_get_item("list", "parent", subitem_key="all")
     """
-    subtasks = mgr.get_subitems(list_key, parent_key)
-    return {
-        "success": True,
-        "subtasks": [subtask.to_dict() for subtask in subtasks],
-        "count": len(subtasks),
-        "parent_key": parent_key,
-    }
+    # Delegate to unified todo_get_item
+    return await todo_get_item(
+        list_key=list_key,
+        item_key=parent_key,
+        subitem_key="all"
+    )
 
 
 @conditional_tool

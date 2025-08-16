@@ -65,11 +65,11 @@ Core functionality for list and item management.
 - **`todo_link_list_1to1`** - Create linked copy of list with 1:1 task mapping and automatic relation
 
 #### Item Management  
-- **`todo_add_item`** - Add new item to list
+- **`todo_add_item`** - 🆕 **UNIFIED** - Add item or subitem to list (smart detection via subitem_key parameter)
 - **`todo_update_item_status`** - Update item status (pending/in_progress/completed/failed)
 - **`todo_update_item_content`** - Update item description/content text
 - **`todo_delete_item`** - Delete item permanently from list
-- **`todo_get_item`** - Get specific item details
+- **`todo_get_item`** - 🆕 **UNIFIED** - Get item details or subitems (smart detection via subitem_key parameter)
 - **`todo_get_list_items`** - Get all items from list with optional status filter and pagination limit
 
 #### Core Operations
@@ -107,15 +107,15 @@ Extended functionality for complex workflows.
 - **`todo_get_item_history`** - Get complete change history for items
 - **`todo_get_schema_info`** - Get system schema information (available statuses, types, constants)
 
-### 🌳 Subtask Operations (7 tools)
+### 🌳 Subitem Operations (5 tools)
 Hierarchical task management with parent-child relationships.
 
-- **`todo_add_subtask`** - Add subtask to existing task
-- **`todo_get_subtasks`** - Get all subtasks for parent task
+- **`todo_add_subitem`** - ⚠️ **DEPRECATED** - Use `todo_add_item` with `subitem_key` parameter instead
+- **`todo_get_subitems`** - ⚠️ **DEPRECATED** - Use `todo_get_item` with `subitem_key="all"` parameter instead  
 - **`todo_get_item_hierarchy`** - Get complete hierarchy tree for item
-- **`todo_move_to_subtask`** - Convert existing task to subtask
-- **`todo_get_next_pending_smart`** - Smart next task with subtask prioritization
-- **`todo_can_complete_item`** - Check if item can be completed (no pending subtasks)
+- **`todo_move_to_subitem`** - Convert existing task to subitem
+- **`todo_get_next_pending_smart`** - Smart next task with subitem prioritization
+- **`todo_can_complete_item`** - Check if item can be completed (no pending subitems)
 - **`todo_find_subitems_by_status`** - **STANDARD** Find subitems based on sibling status conditions for complex workflow management
 
 ### 🔗 Dependency Operations (6 tools)  
@@ -144,19 +144,50 @@ Generate comprehensive reports for project management and troubleshooting.
 
 ## Usage Examples
 
+### 🆕 Unified Commands (v2.0.0)
+```python
+# NEW UNIFIED APPROACH - Smart item/subitem detection
+
+# Add regular item
+item = await todo_add_item("project", "task1", "Main task implementation")
+
+# Add subitem using same command with subitem_key parameter
+subitem = await todo_add_item("project", "task1", "Backend work", subitem_key="backend")
+
+# Get regular item
+item_data = await todo_get_item("project", "task1")
+
+# Get all subitems of a parent
+subitems = await todo_get_item("project", "task1", subitem_key="all")
+
+# Get specific subitem
+subitem_data = await todo_get_item("project", "task1", subitem_key="backend")
+```
+
 ### Basic Workflow
 ```python
 # Create list and add items
 await todo_create_list("project", "My Project", items=["Task 1", "Task 2"])
 
-# Add subtasks
-await todo_add_subtask("project", "task1", "subtask1", "Backend implementation")
+# Add subitems using NEW unified command
+await todo_add_item("project", "task1", "Backend implementation", subitem_key="subtask1")
 
 # Create dependencies
 await todo_add_item_dependency("frontend", "ui_task", "backend", "api_task")
 
 # Get smart next task
 next_task = await todo_get_next_pending_enhanced("project", smart_subtasks=True)
+```
+
+### Migration from Deprecated Commands
+```python
+# DEPRECATED (still works, but not recommended):
+await todo_add_subitem("project", "task1", "subtask1", "Backend work")
+await todo_get_subitems("project", "task1")
+
+# NEW UNIFIED APPROACH:
+await todo_add_item("project", "task1", "Backend work", subitem_key="subtask1")
+await todo_get_item("project", "task1", subitem_key="all")
 ```
 
 ### Enhanced List Retrieval (New in v1.21.0)
