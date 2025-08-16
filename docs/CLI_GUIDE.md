@@ -97,16 +97,16 @@ todoit [OPTIONS] COMMAND [ARGS]...
 #### Create Lists
 ```bash
 # Basic list creation
-todoit list create "my-project" --title "My Project"
+todoit list create --list "my-project" --title "My Project"
 
 # With initial items
-todoit list create "tasks" --title "Daily Tasks" --items "Task 1" --items "Task 2"
+todoit list create --list "tasks" --title "Daily Tasks" --items "Task 1" --items "Task 2"
 
 # From folder contents
-todoit list create "docs" --title "Documentation" --from-folder ./docs --filter-ext .md
+todoit list create --list "docs" --title "Documentation" --from-folder ./docs --filter-ext .md
 
 # With metadata
-todoit list create "project" --title "Project" -m '{"priority": "high", "team": "backend"}'
+todoit list create --list "project" --title "Project" -m '{"priority": "high", "team": "backend"}'
 ```
 
 #### List Operations
@@ -115,24 +115,24 @@ todoit list create "project" --title "Project" -m '{"priority": "high", "team": 
 todoit list all
 
 # Show specific list with beautiful table
-todoit list show "my-project"
+todoit list show --list "my-project"
 
 # Delete list
-todoit list delete "old-project"
-todoit list delete "old-project" --force  # Skip confirmation
+todoit list delete --list "old-project"
+todoit list delete --list "old-project" --force  # Skip confirmation
 ```
 
 
 #### Archive Management
 ```bash
 # Archive completed list (requires all tasks to be completed)
-todoit list archive "completed-project"
+todoit list archive --list "completed-project"
 
 # Force archive list with incomplete tasks
-todoit list archive "incomplete-project" --force
+todoit list archive --list "incomplete-project" --force
 
 # Unarchive list (restore to active status)
-todoit list unarchive "archived-project"
+todoit list unarchive --list "archived-project"
 
 # View archived lists only
 todoit list all --archived
@@ -141,46 +141,46 @@ todoit list all --archived
 todoit list all --include-archived
 
 # Example workflow with archive validation
-todoit list create "sprint-1" --title "Sprint 1" --items "Feature A" "Bug fix" "Testing"
+todoit list create --list "sprint-1" --title "Sprint 1" --items "Feature A" "Bug fix" "Testing"
 todoit item status --list "sprint-1" --item "item_1" --status completed  # Complete some items
-todoit list archive "sprint-1"  # Will fail - shows incomplete items count
+todoit list archive --list "sprint-1"  # Will fail - shows incomplete items count
 todoit item status --list "sprint-1" --item "item_2" --status completed  # Complete more
 todoit item status --list "sprint-1" --item "item_3" --status completed  # Complete all
-todoit list archive "sprint-1"  # Now succeeds
+todoit list archive --list "sprint-1"  # Now succeeds
 ```
 
 #### Live Monitoring
 ```bash
 # Real-time monitoring of list changes
-todoit list live "my-project"
+todoit list live --list "my-project"
 
 # With faster refresh rate
-todoit list live "my-project" --refresh 1
+todoit list live --list "my-project" --refresh 1
 
 # Show change history panel
-todoit list live "my-project" --show-history
+todoit list live --list "my-project" --show-history
 
 # Filter by status
-todoit list live "my-project" --filter-status pending
-todoit list live "my-project" --filter-status in_progress
+todoit list live --list "my-project" --filter-status pending
+todoit list live --list "my-project" --filter-status in_progress
 
 # Disable heartbeat animation (reduces flicker)
-todoit list live "my-project" --no-heartbeat
+todoit list live --list "my-project" --no-heartbeat
 ```
 
 #### Link Lists (1:1 Relationships)
 ```bash
 # Create a linked copy of a list with 1:1 task mapping
-todoit list link "source-list" "target-list"
+todoit list link --source "source-list" --target "target-list"
 
 # Link with custom title for the target list
-todoit list link "api-dev" "api-test" --title "API Testing Tasks"
+todoit list link --source "api-dev" --target "api-test" --title "API Testing Tasks"
 
 # Example workflow: Create development and testing lists
-todoit list create "frontend-dev" --title "Frontend Development"
+todoit list create --list "frontend-dev" --title "Frontend Development"
 todoit item add --list "frontend-dev" --item "component1" --title "Build user dashboard"
 todoit item add --list "frontend-dev" --item "component2" --title "Implement authentication"
-todoit list link "frontend-dev" "frontend-test" --title "Frontend Testing"
+todoit list link --source "frontend-dev" --target "frontend-test" --title "Frontend Testing"
 ```
 
 **What the link command does:**
@@ -299,30 +299,30 @@ todoit item find --list "frontend" --property "framework" --value "react" --firs
 todoit tags
 
 # Create new tags for organization
-todoit tag create work --color blue
-todoit tag create urgent --color red
-todoit tag create client --color green
-todoit tag create personal --color yellow
+todoit tag create --name work --color blue
+todoit tag create --name urgent --color red
+todoit tag create --name client --color green
+todoit tag create --name personal --color yellow
 
 # List all available tags (explicit command)
 todoit tag list
 
 # Delete unused tags
-todoit tag delete old-tag --force  # Skip confirmation
+todoit tag delete --name old-tag --force  # Skip confirmation
 ```
 
 #### List Tagging
 ```bash
 # Add tags to lists for categorization
-todoit list tag add project-alpha work
-todoit list tag add project-alpha client
-todoit list tag add hotfix-123 urgent
+todoit list tag add --list project-alpha --tag work
+todoit list tag add --list project-alpha --tag client
+todoit list tag add --list hotfix-123 --tag urgent
 
 # Remove tags from lists
-todoit list tag remove project-alpha urgent
+todoit list tag remove --list project-alpha --tag urgent
 
 # Show all tags for a specific list
-todoit list tag show project-alpha
+todoit list tag show --list project-alpha
 ```
 
 #### Tag Filtering
@@ -361,7 +361,7 @@ For complete environment separation (dev/test/prod), use `TODOIT_FORCE_TAGS` ins
 export TODOIT_FORCE_TAGS=dev
 
 # Create new list - automatically gets 'dev' tag
-todoit list create my-feature "My Feature"  # Auto-tagged with 'dev'
+todoit list create --list my-feature --title "My Feature"  # Auto-tagged with 'dev'
 
 # View lists - only shows lists tagged with 'dev'
 todoit list all                             # Only 'dev' tagged lists
@@ -375,7 +375,7 @@ todoit reports errors                       # Only errors from 'dev' lists
 export TODOIT_FORCE_TAGS=dev,test
 
 # Create lists - automatically get both tags
-todoit list create integration "Integration Tests"  # Tagged: dev,test
+todoit list create --list integration --title "Integration Tests"  # Tagged: dev,test
 
 # View all - shows lists with dev OR test tags
 todoit list all                             # Shows dev and test lists
@@ -415,31 +415,31 @@ source .env.test # Test mode
 #### Add Dependencies
 ```bash
 # Create dependency between tasks from different lists
-todoit dep add "frontend:ui-component" requires "backend:api-endpoint"
-todoit dep add "frontend:ui-component" requires "backend:api-endpoint" --force  # Skip confirmation
+todoit dep add --dependent "frontend:ui-component" --required "backend:api-endpoint"
+todoit dep add --dependent "frontend:ui-component" --required "backend:api-endpoint" --force  # Skip confirmation
 
 # With custom dependency type
-todoit dep add "task1:item1" requires "task2:item2" --type "related"
+todoit dep add --dependent "task1:item1" --required "task2:item2" --type "related"
 ```
 
 #### Manage Dependencies
 ```bash
 # Show dependencies for item
-todoit dep show "frontend:ui-component"
+todoit dep show --item "frontend:ui-component"
 
 # Remove dependency
-todoit dep remove "frontend:ui-component" "backend:api-endpoint" 
-todoit dep remove "frontend:ui-component" "backend:api-endpoint" --force  # Skip confirmation
+todoit dep remove --dependent "frontend:ui-component" --required "backend:api-endpoint" 
+todoit dep remove --dependent "frontend:ui-component" --required "backend:api-endpoint" --force  # Skip confirmation
 
 # Show dependency graph
-todoit dep graph "my-project"
+todoit dep graph --project "my-project"
 ```
 
 ### 📊 Statistics & Reports (`stats`)
 
 ```bash
 # Show progress for list
-todoit stats progress "my-project"
+todoit stats progress --list "my-project"
 ```
 
 ### 📋 Reports & Analytics (`reports`)
@@ -505,14 +505,14 @@ Filter applied: ^\d{4}_.*
 #### Export
 ```bash
 # Export to markdown
-todoit io export "my-project" "/path/to/export.md"
+todoit io export --list "my-project" --file "/path/to/export.md"
 ```
 
 #### Import
 ```bash
 # Import from markdown (supports both formats)
-todoit io import "/path/to/tasks.md"
-todoit io import "/path/to/tasks.md" --key "imported"
+todoit io import --file "/path/to/tasks.md"
+todoit io import --file "/path/to/tasks.md" --key "imported"
 
 # Supported markdown formats:
 # [x] Completed task
@@ -655,9 +655,9 @@ The `list all` command provides a rich, at-a-glance view of all your projects us
 ### Complex Project Setup
 ```bash
 # Create related lists
-todoit list create "backend" --title "Backend Development"
-todoit list create "frontend" --title "Frontend Development"  
-todoit list create "testing" --title "QA Testing"
+todoit list create --list "backend" --title "Backend Development"
+todoit list create --list "frontend" --title "Frontend Development"  
+todoit list create --list "testing" --title "QA Testing"
 
 # Add items with hierarchies
 todoit item add --list "backend" --item "api" --title "Implement REST API"
@@ -665,20 +665,20 @@ todoit item add --list "backend" --item "api" --subitem "auth" --title "Authenti
 todoit item add --list "backend" --item "api" --subitem "crud" --title "CRUD operations"
 
 # Create dependencies
-todoit dep add "frontend:components" requires "backend:api" --force
-todoit dep add "testing:integration" requires "backend:api" --force
-todoit dep add "testing:e2e" requires "frontend:components" --force
+todoit dep add --dependent "frontend:components" --required "backend:api" --force
+todoit dep add --dependent "testing:integration" --required "backend:api" --force
+todoit dep add --dependent "testing:e2e" --required "frontend:components" --force
 
 # Monitor progress
 todoit item next-smart --list "backend"  # Get next backend item
-todoit stats progress "backend"   # Check backend progress
-todoit dep graph "project"        # Visualize dependencies
+todoit stats progress --list "backend"   # Check backend progress
+todoit dep graph --project "project"        # Visualize dependencies
 ```
 
 ### Development-Testing Workflow with List Linking
 ```bash
 # Create development list with tasks
-todoit list create "feature-dev" --title "Feature Development"
+todoit list create --list "feature-dev" --title "Feature Development"
 todoit item add --list "feature-dev" --item "setup" --title "Setup development environment"
 todoit item add --list "feature-dev" --item "implement" --title "Implement core functionality"
 todoit item add --list "feature-dev" --item "review" --title "Code review and cleanup"
@@ -688,7 +688,7 @@ todoit list property set "feature-dev" "project_id" "proj-123"
 todoit list property set "feature-dev" "team" "backend"
 
 # Link to create testing list with 1:1 task mapping
-todoit list link "feature-dev" "feature-test" --title "Feature Testing"
+todoit list link --source "feature-dev" --target "feature-test" --title "Feature Testing"
 
 # Both lists now have identical tasks and properties, but testing tasks are all pending
 # Development list maintains original task statuses
@@ -707,7 +707,7 @@ todoit item status --list "my-project" --item "current-feature" --status in_prog
 todoit item status --list "my-project" --item "current-feature" --status completed
 
 # Check overall progress
-todoit stats progress "my-project"
+todoit stats progress --list "my-project"
 ```
 
 ## Tips & Best Practices

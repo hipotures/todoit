@@ -10,10 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🔄 BREAKING CHANGES - CLI Complete Refactoring
 
 #### Major CLI Syntax Changes
-- **NEW SYNTAX**: All CLI commands now use explicit switches instead of positional arguments
-  - **OLD**: `todoit item status "list" "item" --status completed`
-  - **NEW**: `todoit item status --list "list" --item "item" --status completed`
-  - **NEW**: `todoit item status --list "list" --item "item" --subitem "subitem" --status completed`
+- **NEW SYNTAX**: ALL CLI commands now use explicit switches instead of positional arguments
+  - **Item Commands**: `todoit item status --list "list" --item "item" --status completed`
+  - **List Commands**: `todoit list create --list "project" --title "My Project"`
+  - **Dependency Commands**: `todoit dep add --dependent "frontend:ui" --required "backend:api"`
+  - **Property Commands**: `todoit property set --list "project" --key "priority" --value "high"`
+  - **Stats Commands**: `todoit stats progress --list "project"`
+  - **I/O Commands**: `todoit io export --list "project" --file "export.md"`
+  - **Tag Commands**: `todoit tag create --name "urgent" --color "red"`
 
 #### Terminology Standardization
 - **BREAKING**: Replaced all "task/subtask" terminology with "item/subitem" throughout CLI interface
@@ -42,17 +46,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Example New Syntax
 ```bash
-# Add items and subitems
+# Item commands
 todoit item add --list "project" --item "feature1" --title "Implement login"
 todoit item add --list "project" --item "feature1" --subitem "step1" --title "Design UI"
-
-# Update status
 todoit item status --list "project" --item "feature1" --status completed
-todoit item status --list "project" --item "feature1" --subitem "step1" --status completed
+todoit item list --list "project"
 
-# List operations
-todoit item list --list "project"                    # List items
-todoit item list --list "project" --item "feature1" # List subitems
+# List commands  
+todoit list create --list "project" --title "My Project"
+todoit list delete --list "old-project" --force
+todoit list live --list "project" --refresh 5
+
+# Dependencies
+todoit dep add --dependent "frontend:component" --required "backend:api"
+todoit dep show --item "frontend:component"
+
+# Properties
+todoit property set --list "project" --key "priority" --value "high"
+todoit property list --list "project"
+
+# Stats and I/O
+todoit stats progress --list "project" --detailed
+todoit io export --list "project" --file "/path/export.md"
+
+# Tags
+todoit tag create --name "urgent" --color "red"
+todoit list tag add --list "project" --tag "urgent"
 ```
 
 ### Benefits

@@ -311,6 +311,9 @@ class Database:
 
         # Run Phase 2 migration if needed
         self.run_phase2_migration()
+        
+        # Note: Subtask flexibility migration is available via migrate_subtask_keys.py
+        # It's not run automatically to give users full control over schema changes
 
     def create_tables(self):
         """Create all database tables"""
@@ -325,13 +328,16 @@ class Database:
         with open(sql_file_path, "r") as f:
             sql_content = f.read()
 
+        from sqlalchemy import text
         with self.engine.connect() as conn:
             # Split by semicolon and execute each statement
             statements = [
                 stmt.strip() for stmt in sql_content.split(";") if stmt.strip()
             ]
             for statement in statements:
-                conn.execute(statement)
+                # Skip comments and empty lines
+                if statement and not statement.startswith('--'):
+                    conn.execute(text(statement))
             conn.commit()
 
     def run_phase2_migration(self):
@@ -364,6 +370,33 @@ class Database:
         except Exception as e:
             print(f"Warning: Could not run Phase 2 migration: {e}")
             # Continue anyway - table might already exist
+
+    def run_subtask_flexibility_migration(self):
+        """Run migration to enable duplicate subtask keys across different parent tasks"""
+        try:
+            # Check if new index already exists
+            from sqlalchemy import text
+            
+            with self.get_session() as session:
+                result = session.execute(
+                    text("SELECT name FROM sqlite_master WHERE type='index' AND name='idx_todo_items_unique_key_hierarchical'")
+                )
+                if result.fetchone():
+                    print("Subtask flexibility migration already applied")
+                    return
+                    
+            # Run migration
+            import os
+            migration_path = os.path.join(os.path.dirname(__file__), "..", "migrations", "004_subtask_key_flexibility.sql")
+            if os.path.exists(migration_path):
+                print("Running subtask flexibility migration...")
+                self.execute_migration(migration_path)
+                print("✅ Subtask flexibility migration completed successfully!")
+            else:
+                print(f"Warning: Migration file not found: {migration_path}")
+        except Exception as e:
+            print(f"Error: Could not run subtask flexibility migration: {e}")
+            raise
 
     # TodoList operations
     def create_list(self, list_data: Dict[str, Any]) -> TodoListDB:

@@ -31,7 +31,7 @@ def stats():
 
 
 @stats.command("progress")
-@click.argument("list_key")
+@click.option("--list", "list_key", required=True, help="List key")
 @click.option("--detailed", is_flag=True, help="Detailed statistics")
 @click.pass_context
 def stats_progress(ctx, list_key, detailed):
@@ -93,7 +93,7 @@ def io():
 
 
 @io.command("import")
-@click.argument("file_path")
+@click.option("--file", "file_path", required=True, help="File path to import from")
 @click.option("--key", help="Base key for imported lists")
 @click.pass_context
 def io_import(ctx, file_path, key):
@@ -117,8 +117,8 @@ def io_import(ctx, file_path, key):
 
 
 @io.command("export")
-@click.argument("list_key")
-@click.argument("file_path")
+@click.option("--list", "list_key", required=True, help="List key to export")
+@click.option("--file", "file_path", required=True, help="File path to export to")
 @click.pass_context
 def io_export(ctx, list_key, file_path):
     """Export list to markdown [x] format"""

@@ -28,9 +28,9 @@ def list_property_group():
 
 
 @list_property_group.command("set")
-@click.argument("list_key")
-@click.argument("property_key")
-@click.argument("property_value")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--key", "property_key", required=True, help="Property key")
+@click.option("--value", "property_value", required=True, help="Property value")
 @click.pass_context
 def list_property_set(ctx, list_key, property_key, property_value):
     """Set a property for a list"""
@@ -46,8 +46,8 @@ def list_property_set(ctx, list_key, property_key, property_value):
 
 
 @list_property_group.command("get")
-@click.argument("list_key")
-@click.argument("property_key")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--key", "property_key", required=True, help="Property key")
 @click.pass_context
 def list_property_get(ctx, list_key, property_key):
     """Get a property value for a list"""
@@ -66,7 +66,7 @@ def list_property_get(ctx, list_key, property_key):
 
 
 @list_property_group.command("list")
-@click.argument("list_key")
+@click.option("--list", "list_key", required=True, help="List key")
 @click.pass_context
 def list_property_list(ctx, list_key):
     """List all properties for a list"""
@@ -91,8 +91,8 @@ def list_property_list(ctx, list_key):
 
 
 @list_property_group.command("delete")
-@click.argument("list_key")
-@click.argument("property_key")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--key", "property_key", required=True, help="Property key")
 @click.pass_context
 def list_property_delete(ctx, list_key, property_key):
     """Delete a property from a list"""
@@ -122,10 +122,10 @@ def item_property_group():
 
 
 @item_property_group.command("set")
-@click.argument("list_key")
-@click.argument("item_key")
-@click.argument("property_key")
-@click.argument("property_value")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--item", "item_key", required=True, help="Item key")
+@click.option("--key", "property_key", required=True, help="Property key")
+@click.option("--value", "property_value", required=True, help="Property value")
 @click.pass_context
 def item_property_set(ctx, list_key, item_key, property_key, property_value):
     """Set a property for an item"""
@@ -143,9 +143,9 @@ def item_property_set(ctx, list_key, item_key, property_key, property_value):
 
 
 @item_property_group.command("get")
-@click.argument("list_key")
-@click.argument("item_key")
-@click.argument("property_key")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--item", "item_key", required=True, help="Item key")
+@click.option("--key", "property_key", required=True, help="Property key")
 @click.pass_context
 def item_property_get(ctx, list_key, item_key, property_key):
     """Get a property value for an item"""
@@ -164,8 +164,8 @@ def item_property_get(ctx, list_key, item_key, property_key):
 
 
 @item_property_group.command("list")
-@click.argument("list_key")
-@click.argument("item_key", required=False)
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--item", "item_key", help="Item key (optional - if not provided, shows all items)")
 @click.option(
     "--tree", is_flag=True, help="Display properties in tree format grouped by item"
 )
@@ -238,9 +238,9 @@ def item_property_list(ctx, list_key, item_key, tree):
 
 
 @item_property_group.command("delete")
-@click.argument("list_key")
-@click.argument("item_key")
-@click.argument("property_key")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--item", "item_key", required=True, help="Item key")
+@click.option("--key", "property_key", required=True, help="Property key")
 @click.pass_context
 def item_property_delete(ctx, list_key, item_key, property_key):
     """Delete a property from an item"""

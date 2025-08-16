@@ -60,7 +60,7 @@ def list_group():
 
 
 @list_group.command("create")
-@click.argument("list_key")
+@click.option("--list", "list_key", required=True, help="List key")
 @click.option("--title", help="List title")
 @click.option("--items", "-i", multiple=True, help="Initial items")
 @click.option("--from-folder", help="Create items from folder contents")
@@ -168,8 +168,8 @@ def list_create(
 
 
 @list_group.command("link")
-@click.argument("source_key")
-@click.argument("target_key")
+@click.option("--source", "source_key", required=True, help="Source list key")
+@click.option("--target", "target_key", required=True, help="Target list key")
 @click.option("--title", help="Title for the linked list")
 @click.pass_context
 def list_link(ctx, source_key, target_key, title):
@@ -249,7 +249,7 @@ def list_link(ctx, source_key, target_key, title):
 
 
 @list_group.command("show")
-@click.argument("list_key")
+@click.option("--list", "list_key", required=True, help="List key to show")
 @click.option("--tree", is_flag=True, help="Display as tree")
 @click.pass_context
 def list_show(ctx, list_key, tree):
@@ -491,26 +491,24 @@ def list_all(ctx, limit, tree, details, archived, include_archived, filter_tags)
 
 
 @list_group.command("delete")
-@click.argument("list_keys", nargs=-1, required=True)
+@click.option("--lists", "list_keys", required=True, help="Comma-separated list keys to delete")
 @click.option("--force", is_flag=True, help="Force deletion")
 @click.pass_context
 def list_delete(ctx, list_keys, force):
     """Delete TODO lists (with dependency validation)
 
     Examples:
-    todoit list delete key1
-    todoit list delete key1 key2 key3
-    todoit list delete key1,key2,key3
+    todoit list delete --lists "key1"
+    todoit list delete --lists "key1,key2,key3"
+    todoit list delete --lists "old-project" --force
     """
     manager = get_manager(ctx.obj["db_path"])
 
-    # Handle comma-separated keys
-    all_keys = []
-    for key_arg in list_keys:
-        if "," in key_arg:
-            all_keys.extend([k.strip() for k in key_arg.split(",")])
-        else:
-            all_keys.append(key_arg)
+    # Handle comma-separated keys from single string
+    if "," in list_keys:
+        all_keys = [k.strip() for k in list_keys.split(",")]
+    else:
+        all_keys = [list_keys.strip()]
 
     if not all_keys:
         console.print("[red]No list keys provided[/]")
@@ -622,7 +620,7 @@ def list_delete(ctx, list_keys, force):
 
 
 @list_group.command("live")
-@click.argument("list_key")
+@click.option("--list", "list_key", required=True, help="List key to monitor")
 @click.option(
     "--refresh",
     "-r",
@@ -903,7 +901,7 @@ def _create_changes_panel(changes_history):
 
 
 @list_group.command("archive")
-@click.argument("list_key")
+@click.option("--list", "list_key", required=True, help="List key to archive")
 @click.option(
     "--force", is_flag=True, help="Force archiving even with incomplete items"
 )
@@ -943,7 +941,7 @@ def list_archive(ctx, list_key, force):
 
 
 @list_group.command("unarchive")
-@click.argument("list_key")
+@click.option("--list", "list_key", required=True, help="List key to unarchive")
 @click.pass_context
 def list_unarchive(ctx, list_key):
     """Unarchive a TODO list (restore to normal view)"""
@@ -971,7 +969,7 @@ def list_unarchive(ctx, list_key):
 
 
 @list_group.command("rename")
-@click.argument("current_key")
+@click.option("--current", "current_key", required=True, help="Current list key")
 @click.option("--key", "new_key", help="New list key")
 @click.option("--title", "new_title", help="New list title")
 @click.option("--yes", "-y", is_flag=True, help="Skip confirmation")
@@ -1056,8 +1054,8 @@ def tag():
 
 
 @tag.command("add")
-@click.argument("list_key")
-@click.argument("tag_name")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--tag", "tag_name", required=True, help="Tag name")
 @click.pass_context
 def add_tag_to_list(ctx, list_key, tag_name):
     """Add tag to a list"""
@@ -1078,8 +1076,8 @@ def add_tag_to_list(ctx, list_key, tag_name):
 
 
 @tag.command("remove")
-@click.argument("list_key")
-@click.argument("tag_name")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--tag", "tag_name", required=True, help="Tag name")
 @click.pass_context
 def remove_tag_from_list(ctx, list_key, tag_name):
     """Remove tag from a list"""
@@ -1102,7 +1100,7 @@ def remove_tag_from_list(ctx, list_key, tag_name):
 
 
 @tag.command("show")
-@click.argument("list_key")
+@click.option("--list", "list_key", required=True, help="List key")
 @click.pass_context
 def show_list_tags(ctx, list_key):
     """Show all tags assigned to a list"""

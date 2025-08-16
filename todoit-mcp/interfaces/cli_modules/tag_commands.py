@@ -72,7 +72,7 @@ def tag():
 
 
 @tag.command("create")
-@click.argument("name")
+@click.option("--name", required=True, help="Tag name")
 @click.option(
     "--color", default=None, help="Tag color (auto-assigned if not specified)"
 )
@@ -139,7 +139,7 @@ def list_tags(ctx):
 
 
 @tag.command("delete")
-@click.argument("name")
+@click.option("--name", required=True, help="Tag name to delete")
 @click.option("--force", "-f", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
 def delete_tag(ctx, name, force):

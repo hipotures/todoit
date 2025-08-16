@@ -36,9 +36,8 @@ def dep():
 
 
 @dep.command("add")
-@click.argument("dependent_ref")  # list:item that depends
-@click.argument("requires_word")  # literally "requires"
-@click.argument("required_ref")  # list:item that is required
+@click.option("--dependent", "dependent_ref", required=True, help="Dependent item reference (list:item)")
+@click.option("--required", "required_ref", required=True, help="Required item reference (list:item)")
 @click.option(
     "--type",
     "dep_type",
@@ -47,16 +46,11 @@ def dep():
 )
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
-def dep_add(ctx, dependent_ref, requires_word, required_ref, dep_type, force):
+def dep_add(ctx, dependent_ref, required_ref, dep_type, force):
     """Add dependency between items from different lists
 
-    Example: cli dep add frontend:auth_ui requires backend:auth_api
+    Example: todoit dep add --dependent "frontend:auth_ui" --required "backend:auth_api"
     """
-    if requires_word.lower() not in ["requires", "depends", "needs"]:
-        console.print(
-            f"[red]Expected 'requires', 'depends', or 'needs', got '{requires_word}'[/]"
-        )
-        return
 
     manager = get_manager(ctx.obj["db_path"])
 
@@ -90,14 +84,14 @@ def dep_add(ctx, dependent_ref, requires_word, required_ref, dep_type, force):
 
 
 @dep.command("remove")
-@click.argument("dependent_ref")  # list:item that depends
-@click.argument("required_ref")  # list:item that is required
+@click.option("--dependent", "dependent_ref", required=True, help="Dependent item reference (list:item)")
+@click.option("--required", "required_ref", required=True, help="Required item reference (list:item)")
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
 def dep_remove(ctx, dependent_ref, required_ref, force):
     """Remove dependency between items
 
-    Example: cli dep remove frontend:auth_ui backend:auth_api
+    Example: todoit dep remove --dependent "frontend:auth_ui" --required "backend:auth_api"
     """
     manager = get_manager(ctx.obj["db_path"])
 
@@ -131,12 +125,12 @@ def dep_remove(ctx, dependent_ref, required_ref, force):
 
 
 @dep.command("show")
-@click.argument("item_ref")  # list:item to analyze
+@click.option("--item", "item_ref", required=True, help="Item reference to analyze (list:item)")
 @click.pass_context
 def dep_show(ctx, item_ref):
     """Show all dependencies for an item
 
-    Example: cli dep show frontend:auth_ui
+    Example: todoit dep show --item "frontend:auth_ui"
     """
     manager = get_manager(ctx.obj["db_path"])
 
