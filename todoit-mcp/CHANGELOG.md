@@ -5,6 +5,56 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.6] - 2025-08-16
+
+### 🎨 ENHANCEMENT - Hierarchical Numbering in Property Display
+
+#### ✨ Visual Hierarchy Improvements
+- **REPLACED**: "Type" column with text labels (`📝 Item`, `└─ Subitem`) with hierarchical numbering
+- **NEW**: Hierarchical numbering system using `#` column showing `1`, `1.1`, `1.2`, `2`, `2.1` etc.
+- **ENHANCED**: Proper indentation for subitems in Key column with `  ` prefix
+- **IMPROVED**: Display matches item list hierarchy format for consistent user experience
+
+#### 📊 Display Examples
+
+**Enhanced Table Format:**
+```
+#        │ Key           │ Property Key    │ Value
+1        │ scene_0001    │ priority        │ high
+1.1      │   scene_gen   │ thread_id       │ 12345
+2        │ scene_0002    │ status          │ in_progress
+2.1      │   audio_sync  │ format          │ wav
+```
+
+**Tree Format (Unchanged):**
+```
+📋 All Item Properties
+├── 📝 scene_0001
+│   ├── priority: high
+│   └── └─ scene_gen
+│       └── thread_id: 12345
+└── 📝 scene_0002
+    ├── status: in_progress
+    └── └─ audio_sync
+        └── format: wav
+```
+
+#### 🔧 Technical Enhancements
+- **Numbering Algorithm**: Smart hierarchical numbering with parent-child relationship tracking
+- **Display Logic**: Enhanced `_display_item_properties_table()` function with proper sorting
+- **Key Indentation**: Visual hierarchy through indented subitem keys
+- **Consistent Layout**: Unified format matching item list display standards
+
+#### 🎯 Problem Solved
+- **Before**: Confusing text labels (`📝 Item`, `└─ Subitem`) in Type column
+- **After**: Clear hierarchical numbering (`1`, `1.1`, `1.2`) with indented keys
+- **User Feedback**: Addressed user preference for numerical hierarchy like item list display
+
+#### ✅ Backward Compatibility
+- Tree format display unchanged
+- All existing commands work unchanged
+- No breaking changes to API or CLI interface
+
 ## [2.5.5] - 2025-08-16
 
 ### 🎨 ENHANCEMENT - Property Display Hierarchy

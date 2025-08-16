@@ -518,15 +518,24 @@ todoit list property delete "my-project" "old-property"
 #### Item Properties (`item property`)
 ```bash
 # Set item property for runtime tracking
-todoit item property set --list "my-project" --item "feature1" "priority" "high"
-todoit item property set --list "my-project" --item "feature1" "estimated_hours" "8"
-todoit item property set --list "my-project" --item "feature1" "assignee" "john_doe"
+todoit item property set --list "my-project" --item "feature1" --key "priority" --value "high"
+todoit item property set --list "my-project" --item "feature1" --key "estimated_hours" --value "8"
+todoit item property set --list "my-project" --item "feature1" --key "assignee" --value "john_doe"
+
+# Set subitem property (NEW!)
+todoit item property set --list "my-project" --item "feature1" --subitem "subtask1" --key "difficulty" --value "medium"
 
 # Get item property
-todoit item property get --list "my-project" --item "feature1" "priority"
+todoit item property get --list "my-project" --item "feature1" --key "priority"
+
+# Get subitem property (NEW!)
+todoit item property get --list "my-project" --item "feature1" --subitem "subtask1" --key "difficulty"
 
 # List all properties for a specific item
 todoit item property list --list "my-project" --item "feature1"
+
+# List all properties for a specific subitem (NEW!)
+todoit item property list --list "my-project" --item "feature1" --subitem "subtask1"
 
 # List ALL properties for ALL items in the list (NEW!)
 todoit item property list --list "my-project"
@@ -535,33 +544,42 @@ todoit item property list --list "my-project"
 todoit item property list --list "my-project" --tree
 
 # Delete item property when no longer needed
-todoit item property delete --list "my-project" --item "feature1" "assignee"
+todoit item property delete --list "my-project" --item "feature1" --key "assignee"
+
+# Delete subitem property (NEW!)
+todoit item property delete --list "my-project" --item "feature1" --subitem "subtask1" --key "difficulty"
 ```
 
 **Example Output:**
 
-**Table format (default):**
+**Table format (default with hierarchy support):**
 ```
-      📋 All Item Properties for list 'my-project'       
-╭──────────────────────┬──────────────────────┬────────╮
-│ Item Key             │ Property Key         │ Value  │
-├──────────────────────┼──────────────────────┼────────┤
-│ task1                │ assignee             │ john   │
-│ task1                │ priority             │ high   │
-│ task2                │ priority             │ low    │
-│ task2                │ status               │ active │
-╰──────────────────────┴──────────────────────┴────────╯
+             All Item Properties for list 'my-project'              
+╭──────────────┬────────────┬──────────────────────┬─────────────╮
+│ Type         │ Item Key   │ Property Key         │ Value       │
+├──────────────┼────────────┼──────────────────────┼─────────────┤
+│ 📝 Item      │ feature1   │ assignee             │ john        │
+│ 📝 Item      │ feature1   │ priority             │ high        │
+│ └─ Subitem   │ backend    │ estimated_hours      │ 8           │
+│ └─ Subitem   │ backend    │ difficulty           │ medium      │
+│ └─ Subitem   │ frontend   │ framework            │ react       │
+│ 📝 Item      │ feature2   │ priority             │ low         │
+╰──────────────┴────────────┴──────────────────────┴─────────────╯
 ```
 
-**Tree format (with --tree):**
+**Tree format (with --tree and hierarchy):**
 ```
 📋 All Item Properties for list 'my-project'
-├── 📝 task1
+├── 📝 feature1
 │   ├── assignee: john
-│   └── priority: high
-└── 📝 task2
-    ├── priority: low
-    └── status: active
+│   ├── priority: high
+│   ├── └─ backend
+│   │   ├── estimated_hours: 8
+│   │   └── difficulty: medium
+│   └── └─ frontend
+│       └── framework: react
+└── 📝 feature2
+    └── priority: low
 ```
 
 **Property Use Cases:**

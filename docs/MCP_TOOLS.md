@@ -324,23 +324,37 @@ graph = await todo_get_dependency_graph("my-project")
 
 ### Item Properties Management
 ```python
-# Set properties for runtime tracking
+# Set properties for runtime tracking on main items
 await todo_set_item_property("project", "task1", "priority", "high")
 await todo_set_item_property("project", "task1", "estimated_hours", "8")
 await todo_set_item_property("project", "task1", "assignee", "john_doe")
 
-# Get specific property
+# 🆕 Set properties on subitems (NEW!)
+await todo_set_item_property("project", "subtask1", "difficulty", "medium", parent_item_key="task1")
+await todo_set_item_property("project", "subtask1", "category", "frontend", parent_item_key="task1")
+
+# Get specific property from main item
 priority = await todo_get_item_property("project", "task1", "priority")
 
-# Get all properties for an item
+# 🆕 Get specific property from subitem (NEW!)
+difficulty = await todo_get_item_property("project", "subtask1", "difficulty", parent_item_key="task1")
+
+# Get all properties for a main item
 props = await todo_get_item_properties("project", "task1")
 # Returns: {"priority": "high", "estimated_hours": "8", "assignee": "john_doe"}
+
+# 🆕 Get all properties for a subitem (NEW!)
+subitem_props = await todo_get_item_properties("project", "subtask1", parent_item_key="task1")
+# Returns: {"difficulty": "medium", "category": "frontend"}
 
 # Update property (automatically overwrites existing)
 await todo_set_item_property("project", "task1", "priority", "critical")
 
 # Remove property when no longer needed
 await todo_delete_item_property("project", "task1", "assignee")
+
+# 🆕 Remove property from subitem (NEW!)
+await todo_delete_item_property("project", "subtask1", "category", parent_item_key="task1")
 
 # 🆕 SEARCH for items by property values
 # Find all items with high priority
