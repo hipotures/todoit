@@ -26,7 +26,7 @@ class TestSubtasksCLI:
     def run_cli(self, cmd, db_path=None):
         """Helper to run CLI commands"""
         if db_path:
-            full_cmd = f"python -m interfaces.cli --db {db_path} {cmd}"
+            full_cmd = f"python -m interfaces.cli --db-path {db_path} {cmd}"
         else:
             full_cmd = f"python -m interfaces.cli {cmd}"
 
@@ -34,7 +34,7 @@ class TestSubtasksCLI:
             shlex.split(full_cmd),
             capture_output=True,
             text=True,
-            cwd=Path(__file__).parent.parent,
+            cwd=Path(__file__).parent.parent.parent,  # Go to root project directory
         )
         return result
 

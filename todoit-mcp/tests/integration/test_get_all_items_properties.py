@@ -21,7 +21,7 @@ class TestGetAllItemsPropertiesIntegration:
     def setup_test_data(self, manager):
         """Setup test data with items and properties."""
         # Create test list
-        manager.create_list("testlist", "Test List", "Test description")
+        manager.create_list("testlist", "Test List")
 
         # Add test items with different statuses
         manager.add_item("testlist", "task1", "First item")
@@ -49,8 +49,11 @@ class TestGetAllItemsPropertiesIntegration:
         """Test getting all properties for all items without status filter."""
         result = manager.get_all_items_properties("testlist")
 
+        # Filter only actual properties (exclude placeholder entries with "—")
+        actual_properties = [p for p in result if p["property_key"] != "—"]
+        
         # Should have 7 total properties (3+2+2)
-        assert len(result) == 7
+        assert len(actual_properties) == 7
 
         # Check structure
         for prop in result:
@@ -71,8 +74,9 @@ class TestGetAllItemsPropertiesIntegration:
         """Test getting properties only for pending items."""
         result = manager.get_all_items_properties("testlist", "pending")
 
-        # Should have 3 properties from task1 only
-        assert len(result) == 3
+        # Filter only actual properties and check count
+        actual_properties = [p for p in result if p["property_key"] != "—"]
+        assert len(actual_properties) == 3
 
         # All should be from task1 and have pending status
         for prop in result:
@@ -89,32 +93,36 @@ class TestGetAllItemsPropertiesIntegration:
         """Test getting properties only for in_progress items."""
         result = manager.get_all_items_properties("testlist", "in_progress")
 
-        # Should have 2 properties from task2 only
-        assert len(result) == 2
+        # Filter only actual properties and check count
+        actual_properties = [p for p in result if p["property_key"] != "—"]
+        assert len(actual_properties) == 2
 
         # All should be from task2 and have in_progress status
         for prop in result:
             assert prop["item_key"] == "task2"
             assert prop["status"] == "in_progress"
 
-        # Check property keys
-        property_keys = set(prop["property_key"] for prop in result)
+        # Check property keys (excluding placeholders)
+        actual_properties = [p for p in result if p["property_key"] != "—"]
+        property_keys = set(prop["property_key"] for prop in actual_properties)
         assert property_keys == {"priority", "image_downloaded"}
 
     def test_get_all_items_properties_completed_filter(self, manager, setup_test_data):
         """Test getting properties only for completed items."""
         result = manager.get_all_items_properties("testlist", "completed")
 
-        # Should have 2 properties from task3 only
-        assert len(result) == 2
+        # Filter only actual properties and check count
+        actual_properties = [p for p in result if p["property_key"] != "—"]
+        assert len(actual_properties) == 2
 
         # All should be from task3 and have completed status
         for prop in result:
             assert prop["item_key"] == "task3"
             assert prop["status"] == "completed"
 
-        # Check property keys
-        property_keys = set(prop["property_key"] for prop in result)
+        # Check property keys (excluding placeholders)
+        actual_properties = [p for p in result if p["property_key"] != "—"]
+        property_keys = set(prop["property_key"] for prop in actual_properties)
         assert property_keys == {"priority", "process_status"}
 
     def test_get_all_items_properties_failed_filter(self, manager, setup_test_data):
@@ -148,7 +156,12 @@ class TestGetAllItemsPropertiesIntegration:
         manager.add_item("noprops", "task2", "Another item without properties")
 
         result = manager.get_all_items_properties("noprops")
-        assert len(result) == 0
+        # Should have placeholder entries for items without properties
+        assert len(result) == 2
+        # All entries should be placeholders
+        for prop in result:
+            assert prop["property_key"] == "—"
+            assert prop["property_value"] == "—"
 
     def test_get_all_items_properties_sorting(self, manager, setup_test_data):
         """Test that results are sorted by item_key and then property_key."""
@@ -160,9 +173,10 @@ class TestGetAllItemsPropertiesIntegration:
         # Should be sorted
         assert sort_keys == sorted(sort_keys)
 
-        # First item should be task1 with image_downloaded (alphabetically first)
-        assert result[0]["item_key"] == "task1"
-        assert result[0]["property_key"] == "image_downloaded"
+        # First actual property should be task1 with image_downloaded (alphabetically first)
+        actual_properties = [p for p in result if p["property_key"] != "—"]
+        assert actual_properties[0]["item_key"] == "task1"
+        assert actual_properties[0]["property_key"] == "image_downloaded"
 
     def test_get_all_items_properties_with_limit(self, manager, setup_test_data):
         """Test getting properties with item limit."""
@@ -176,8 +190,9 @@ class TestGetAllItemsPropertiesIntegration:
         result = manager.get_all_items_properties("testlist", limit=len(all_items))
 
         # Should include all properties from items that have them
+        actual_properties = [p for p in result if p["property_key"] != "—"]
         expected_props = 7  # 3 + 2 + 2 from setup_test_data
-        assert len(result) == expected_props
+        assert len(actual_properties) == expected_props
 
         # Test with smaller limit - get just first 2 items with properties
         first_two_items = sorted(items_with_props, key=lambda x: x.position)[:2]

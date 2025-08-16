@@ -31,7 +31,7 @@ class TestSchemaJsonOutput:
 
         with self.runner.isolated_filesystem():
             # Test JSON output for schema
-            result = self.runner.invoke(cli, ["--db", "test.db", "schema"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "schema"])
             assert result.exit_code == 0
 
             # Verify JSON format
@@ -61,7 +61,7 @@ class TestSchemaJsonOutput:
 
         with self.runner.isolated_filesystem():
             # Test JSON output for schema
-            result = self.runner.invoke(cli, ["--db", "test.db", "schema"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "schema"])
             assert result.exit_code == 0
 
             # Verify JSON format
@@ -89,7 +89,7 @@ class TestSchemaJsonOutput:
 
         with self.runner.isolated_filesystem():
             # Test JSON output for schema
-            result = self.runner.invoke(cli, ["--db", "test.db", "schema"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "schema"])
             assert result.exit_code == 0
 
             # Verify JSON format
@@ -126,7 +126,7 @@ class TestSchemaJsonOutput:
 
         with self.runner.isolated_filesystem():
             # Test JSON output for schema
-            result = self.runner.invoke(cli, ["--db", "test.db", "schema"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "schema"])
             assert result.exit_code == 0
 
             # Verify JSON format
@@ -156,7 +156,7 @@ class TestSchemaJsonOutput:
 
         with self.runner.isolated_filesystem():
             # Test JSON output for schema
-            result = self.runner.invoke(cli, ["--db", "test.db", "schema"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "schema"])
             assert result.exit_code == 0
 
             # Verify JSON format
@@ -186,7 +186,7 @@ class TestSchemaJsonOutput:
 
         with self.runner.isolated_filesystem():
             # Test JSON output for schema
-            result = self.runner.invoke(cli, ["--db", "test.db", "schema"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "schema"])
             assert result.exit_code == 0
 
             # Verify JSON format
@@ -217,7 +217,7 @@ class TestSchemaJsonOutput:
 
         with self.runner.isolated_filesystem():
             # Test table output
-            result = self.runner.invoke(cli, ["--db", "test.db", "schema"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "schema"])
             assert result.exit_code == 0
 
             # Should not be JSON format
@@ -232,7 +232,7 @@ class TestSchemaJsonOutput:
 
         with self.runner.isolated_filesystem():
             # Test YAML output
-            result = self.runner.invoke(cli, ["--db", "test.db", "schema"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "schema"])
             assert result.exit_code == 0
 
             # Should be YAML format
@@ -247,7 +247,7 @@ class TestSchemaJsonOutput:
 
         with self.runner.isolated_filesystem():
             # Test XML output
-            result = self.runner.invoke(cli, ["--db", "test.db", "schema"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "schema"])
             assert result.exit_code == 0
 
             # Should be XML format
@@ -263,7 +263,7 @@ class TestSchemaJsonOutput:
 
         with self.runner.isolated_filesystem():
             # Test JSON output for schema
-            result = self.runner.invoke(cli, ["--db", "test.db", "schema"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "schema"])
             assert result.exit_code == 0
 
             # Verify JSON format
@@ -284,7 +284,7 @@ class TestSchemaJsonOutput:
 
         with self.runner.isolated_filesystem():
             # Test JSON output for schema
-            result = self.runner.invoke(cli, ["--db", "test.db", "schema"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "schema"])
             assert result.exit_code == 0
 
             # Verify JSON format

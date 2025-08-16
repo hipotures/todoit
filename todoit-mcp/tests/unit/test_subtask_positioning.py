@@ -15,9 +15,17 @@ class TestSubtaskPositioning:
     @pytest.fixture
     def mock_manager(self):
         """Create a TodoManager with mocked database"""
-        manager = TodoManager()
-        manager.db = Mock()
-        return manager
+        import tempfile
+        import os
+        fd, db_path = tempfile.mkstemp(suffix=".db")
+        os.close(fd)
+        try:
+            manager = TodoManager(db_path)
+            manager.db = Mock()
+            return manager
+        finally:
+            if os.path.exists(db_path):
+                os.unlink(db_path)
 
     @pytest.fixture
     def mock_list(self):

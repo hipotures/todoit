@@ -155,15 +155,22 @@ def item_status(ctx, list_key, item_key, subitem_key, status, state):
             k, v = s.split("=", 1)
             states[k] = v.lower() in ["true", "1", "yes"]
 
-        # Determine target key - if subitem is specified, update the subitem
-        target_key = subitem_key if subitem_key else item_key
-        target_type = "subitem" if subitem_key else "item"
+        # Determine target key and parent - if subitem is specified, update the subitem
+        if subitem_key:
+            target_key = subitem_key
+            target_type = "subitem"
+            parent_key = item_key
+        else:
+            target_key = item_key
+            target_type = "item"
+            parent_key = None
 
         item = manager.update_item_status(
             list_key=list_key,
             item_key=target_key,
             status=status,
             completion_states=states if states else None,
+            parent_item_key=parent_key,
         )
 
         console.print(f"[green]✅ Updated {target_type} '{target_key}' status to {status}[/]")
@@ -204,12 +211,18 @@ def item_edit(ctx, list_key, item_key, subitem_key, title):
         return
 
     try:
-        # Determine target key - if subitem is specified, edit the subitem
-        target_key = subitem_key if subitem_key else item_key
-        target_type = "subitem" if subitem_key else "item"
+        # Determine target key and parent - if subitem is specified, edit the subitem
+        if subitem_key:
+            target_key = subitem_key
+            target_type = "subitem"
+            parent_key = item_key
+        else:
+            target_key = item_key
+            target_type = "item"
+            parent_key = None
 
         # Get current item/subitem
-        current_item = manager.get_item(list_key, target_key)
+        current_item = manager.get_item(list_key, target_key, parent_key)
         if not current_item:
             console.print(f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]")
             return
@@ -219,7 +232,7 @@ def item_edit(ctx, list_key, item_key, subitem_key, title):
         console.print(f"[green]New title:[/] {title}")
 
         # Update the content
-        updated_item = manager.update_item_content(list_key, target_key, title)
+        updated_item = manager.update_item_content(list_key, target_key, title, parent_key)
         console.print(
             f"[green]✅ Title updated for {target_type} '{target_key}' in list '{list_key}'[/]"
         )
@@ -255,12 +268,18 @@ def item_delete(ctx, list_key, item_key, subitem_key, force):
         return
 
     try:
-        # Determine target key - if subitem is specified, delete the subitem
-        target_key = subitem_key if subitem_key else item_key
-        target_type = "subitem" if subitem_key else "item"
+        # Determine target key and parent - if subitem is specified, delete the subitem
+        if subitem_key:
+            target_key = subitem_key
+            target_type = "subitem"
+            parent_key = item_key
+        else:
+            target_key = item_key
+            target_type = "item"
+            parent_key = None
 
         # Get item details for confirmation
-        item = manager.get_item(list_key, target_key)
+        item = manager.get_item(list_key, target_key, parent_key)
         if not item:
             console.print(f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]")
             return
@@ -277,7 +296,7 @@ def item_delete(ctx, list_key, item_key, subitem_key, force):
             return
 
         # Delete the item/subitem
-        success = manager.delete_item(list_key, target_key)
+        success = manager.delete_item(list_key, target_key, parent_key)
         if success:
             console.print(
                 f"[green]✅ {target_type.capitalize()} '{target_key}' deleted from list '{list_key}'[/]"
@@ -916,11 +935,17 @@ def state_list(ctx, list_key, item_key, subitem_key):
         return
 
     try:
-        # Determine target key - if subitem is specified, check the subitem
-        target_key = subitem_key if subitem_key else item_key
-        target_type = "subitem" if subitem_key else "item"
+        # Determine target key and parent - if subitem is specified, check the subitem
+        if subitem_key:
+            target_key = subitem_key
+            target_type = "subitem"
+            parent_key = item_key
+        else:
+            target_key = item_key
+            target_type = "item"
+            parent_key = None
 
-        item = manager.get_item(list_key, target_key)
+        item = manager.get_item(list_key, target_key, parent_key)
         if not item:
             console.print(f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]")
             return
@@ -966,11 +991,17 @@ def state_clear(ctx, list_key, item_key, subitem_key, force):
         return
 
     try:
-        # Determine target key - if subitem is specified, clear the subitem
-        target_key = subitem_key if subitem_key else item_key
-        target_type = "subitem" if subitem_key else "item"
+        # Determine target key and parent - if subitem is specified, clear the subitem
+        if subitem_key:
+            target_key = subitem_key
+            target_type = "subitem"
+            parent_key = item_key
+        else:
+            target_key = item_key
+            target_type = "item"
+            parent_key = None
 
-        item = manager.get_item(list_key, target_key)
+        item = manager.get_item(list_key, target_key, parent_key)
         if not item:
             console.print(f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]")
             return
@@ -989,7 +1020,7 @@ def state_clear(ctx, list_key, item_key, subitem_key, force):
             return
 
         # Clear all states
-        updated_item = manager.clear_item_completion_states(list_key, target_key)
+        updated_item = manager.clear_item_completion_states(list_key, target_key, parent_item_key=parent_key)
         console.print(f"[green]✅ Cleared all completion states from {target_type} '{target_key}'[/]")
 
     except Exception as e:
@@ -1027,11 +1058,17 @@ def state_remove(ctx, list_key, item_key, subitem_key, state_keys, force):
         # Parse state keys
         state_key_list = [key.strip() for key in state_keys.split(",")]
         
-        # Determine target key - if subitem is specified, remove from the subitem
-        target_key = subitem_key if subitem_key else item_key
-        target_type = "subitem" if subitem_key else "item"
+        # Determine target key and parent - if subitem is specified, remove from the subitem
+        if subitem_key:
+            target_key = subitem_key
+            target_type = "subitem"
+            parent_key = item_key
+        else:
+            target_key = item_key
+            target_type = "item"
+            parent_key = None
 
-        item = manager.get_item(list_key, target_key)
+        item = manager.get_item(list_key, target_key, parent_key)
         if not item:
             console.print(f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]")
             return
@@ -1070,7 +1107,7 @@ def state_remove(ctx, list_key, item_key, subitem_key, state_keys, force):
 
         # Remove specific states
         updated_item = manager.clear_item_completion_states(
-            list_key, target_key, existing_keys
+            list_key, target_key, existing_keys, parent_item_key=parent_key
         )
         console.print(
             f"[green]✅ Removed {len(existing_keys)} completion state(s) from {target_type} '{target_key}'[/]"

@@ -32,23 +32,23 @@ class TestTagListJsonOutput:
         with self.runner.isolated_filesystem():
             # Create some tags
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "--name", "work", "--color", "blue"]
+                cli, ["--db-path", "test.db", "tag", "create", "--name", "work", "--color", "blue"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "tag", "create", "--name", "personal", "--color", "green"],
+                ["--db-path", "test.db", "tag", "create", "--name", "personal", "--color", "green"],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "--name", "urgent", "--color", "red"]
+                cli, ["--db-path", "test.db", "tag", "create", "--name", "urgent", "--color", "red"]
             )
             assert result.exit_code == 0
 
             # Test JSON output for tag list
-            result = self.runner.invoke(cli, ["--db", "test.db", "tag", "list"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "tag", "list"])
             assert result.exit_code == 0
 
             # Verify JSON format
@@ -86,17 +86,17 @@ class TestTagListJsonOutput:
         with self.runner.isolated_filesystem():
             # Create tags with specific colors
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "--name", "blue_tag", "--color", "blue"]
+                cli, ["--db-path", "test.db", "tag", "create", "--name", "blue_tag", "--color", "blue"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "--name", "red_tag", "--color", "red"]
+                cli, ["--db-path", "test.db", "tag", "create", "--name", "red_tag", "--color", "red"]
             )
             assert result.exit_code == 0
 
             # Test JSON output
-            result = self.runner.invoke(cli, ["--db", "test.db", "tag", "list"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "tag", "list"])
             assert result.exit_code == 0
 
             # Verify JSON format
@@ -125,7 +125,7 @@ class TestTagListJsonOutput:
 
         with self.runner.isolated_filesystem():
             # Test JSON output with no tags
-            result = self.runner.invoke(cli, ["--db", "test.db", "tag", "list"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "tag", "list"])
             assert result.exit_code == 0
 
             # Verify JSON format for empty result
@@ -143,12 +143,12 @@ class TestTagListJsonOutput:
         with self.runner.isolated_filesystem():
             # Create a single tag
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "--name", "solo"]
+                cli, ["--db-path", "test.db", "tag", "create", "--name", "solo"]
             )
             assert result.exit_code == 0
 
             # Test JSON output
-            result = self.runner.invoke(cli, ["--db", "test.db", "tag", "list"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "tag", "list"])
             assert result.exit_code == 0
 
             # Verify JSON format
@@ -169,12 +169,12 @@ class TestTagListJsonOutput:
         with self.runner.isolated_filesystem():
             # Create a tag
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "--name", "test"]
+                cli, ["--db-path", "test.db", "tag", "create", "--name", "test"]
             )
             assert result.exit_code == 0
 
             # Test table output
-            result = self.runner.invoke(cli, ["--db", "test.db", "tag", "list"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "tag", "list"])
             assert result.exit_code == 0
 
             # Should not be JSON format
@@ -189,12 +189,12 @@ class TestTagListJsonOutput:
         with self.runner.isolated_filesystem():
             # Create a tag
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "--name", "yaml_test"]
+                cli, ["--db-path", "test.db", "tag", "create", "--name", "yaml_test"]
             )
             assert result.exit_code == 0
 
             # Test YAML output
-            result = self.runner.invoke(cli, ["--db", "test.db", "tag", "list"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "tag", "list"])
             assert result.exit_code == 0
 
             # Should be YAML format
@@ -210,12 +210,12 @@ class TestTagListJsonOutput:
         with self.runner.isolated_filesystem():
             # Create a tag
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "--name", "xml_test"]
+                cli, ["--db-path", "test.db", "tag", "create", "--name", "xml_test"]
             )
             assert result.exit_code == 0
 
             # Test XML output
-            result = self.runner.invoke(cli, ["--db", "test.db", "tag", "list"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "tag", "list"])
             assert result.exit_code == 0
 
             # Should be XML format
@@ -232,22 +232,22 @@ class TestTagListJsonOutput:
         with self.runner.isolated_filesystem():
             # Create tags in non-alphabetical order
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "--name", "zebra"]
+                cli, ["--db-path", "test.db", "tag", "create", "--name", "zebra"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "--name", "alpha"]
+                cli, ["--db-path", "test.db", "tag", "create", "--name", "alpha"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "tag", "create", "--name", "beta"]
+                cli, ["--db-path", "test.db", "tag", "create", "--name", "beta"]
             )
             assert result.exit_code == 0
 
             # Test JSON output
-            result = self.runner.invoke(cli, ["--db", "test.db", "tag", "list"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "tag", "list"])
             assert result.exit_code == 0
 
             # Verify JSON format

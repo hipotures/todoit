@@ -263,8 +263,11 @@ def item_property_list(ctx, list_key, item_key, subitem_key, tree):
 
             if output_format == "json":
                 # For JSON, group properties by item_key for better API usability
+                # Filter out placeholder entries (property_key "—") for JSON output
                 grouped_data = {}
                 for prop in all_properties:
+                    if prop["property_key"] == "—":
+                        continue  # Skip placeholder entries in JSON output
                     item_key = prop["item_key"]
                     if item_key not in grouped_data:
                         grouped_data[item_key] = {}

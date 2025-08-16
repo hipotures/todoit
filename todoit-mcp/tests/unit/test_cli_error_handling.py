@@ -68,6 +68,7 @@ class TestCLIErrorHandling:
                 item_key="test_item",
                 status="completed",
                 completion_states=None,
+                parent_item_key=None,
             )
 
             # Should show success message
@@ -116,6 +117,7 @@ class TestCLIErrorHandling:
                 item_key="test_item",
                 status="in_progress",
                 completion_states=expected_states,
+                parent_item_key=None,
             )
 
             # Should show success and states

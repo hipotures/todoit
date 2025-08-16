@@ -24,6 +24,13 @@ def init_manager(db_path: Optional[str] = None):
         if db_path is None:
             import os
             db_path = os.getenv('TODOIT_DATABASE')
+        
+        # Fallback to temp database if still no path (for testing)
+        if db_path is None:
+            import tempfile
+            fd, db_path = tempfile.mkstemp(suffix=".db")
+            os.close(fd)
+        
         manager = TodoManager(db_path)
     return manager
 
@@ -1137,7 +1144,7 @@ async def todo_get_all_items_properties(
             grouped_data[item_key] = {}
         grouped_data[item_key][prop["property_key"]] = prop["property_value"]
 
-    return grouped_data
+    return {"success": True, "properties": grouped_data, "count": len(grouped_data)}
 
 
 @conditional_tool

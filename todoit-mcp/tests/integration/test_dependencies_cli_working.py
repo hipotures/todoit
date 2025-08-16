@@ -25,12 +25,12 @@ class TestDependenciesCLIWorking:
 
     def run_cli_command(self, command, db_path):
         """Helper to run CLI commands with proper database path"""
-        full_cmd = f"python -m interfaces.cli --db {db_path} {command}"
+        full_cmd = f"python -m interfaces.cli --db-path {db_path} {command}"
         result = subprocess.run(
             shlex.split(full_cmd),
             capture_output=True,
             text=True,
-            cwd=Path(__file__).parent.parent,
+            cwd=Path(__file__).parent.parent.parent,  # Go to root project directory
         )
         return result
 
@@ -49,9 +49,15 @@ class TestDependenciesCLIWorking:
 
     def test_cli_list_operations_work(self, temp_db_path):
         """Test basic list operations work"""
-        # Create list
+        # Create list with dev tag (required for filtering)
         result = self.run_cli_command(
             "list create --list test_list --title 'Test List'", temp_db_path
+        )
+        assert result.returncode == 0
+        
+        # Add dev tag to the list so it's visible with filtering
+        result = self.run_cli_command(
+            "list tag add --list test_list --tag dev", temp_db_path
         )
         assert result.returncode == 0
 
@@ -62,8 +68,9 @@ class TestDependenciesCLIWorking:
 
     def test_cli_item_operations_work(self, temp_db_path):
         """Test basic item operations work"""
-        # Create list first
+        # Create list first with dev tag (required for filtering)
         self.run_cli_command("list create --list test_list --title 'Test List'", temp_db_path)
+        self.run_cli_command("list tag add --list test_list --tag dev", temp_db_path)
 
         # Add item
         result = self.run_cli_command(

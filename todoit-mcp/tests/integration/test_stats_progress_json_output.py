@@ -34,7 +34,7 @@ class TestStatsProgressJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Progress Test List",
@@ -46,7 +46,7 @@ class TestStatsProgressJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "add", "--list", "testlist", "--item", "task1", "--title", "Completed Item",
                 ],
@@ -56,7 +56,7 @@ class TestStatsProgressJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "add", "--list", "testlist", "--item", "task2", "--title", "In Progress Item",
                 ],
@@ -65,13 +65,13 @@ class TestStatsProgressJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task3", "--title", "Pending Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task3", "--title", "Pending Item"],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task4", "--title", "Failed Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task4", "--title", "Failed Item"],
             )
             assert result.exit_code == 0
 
@@ -79,7 +79,7 @@ class TestStatsProgressJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "status", "--list", "testlist", "--item", "task1", "--status",
                     "completed",
@@ -90,7 +90,7 @@ class TestStatsProgressJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "status", "--list", "testlist", "--item", "task2", "--status",
                     "in_progress",
@@ -101,7 +101,7 @@ class TestStatsProgressJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "status", "--list", "testlist", "--item", "task4", "--status",
                     "failed",
@@ -111,7 +111,7 @@ class TestStatsProgressJsonOutput:
 
             # Test JSON output for progress
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "stats", "progress", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "stats", "progress", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -153,7 +153,7 @@ class TestStatsProgressJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "emptylist", "--title",
                     "Empty List",
@@ -163,7 +163,7 @@ class TestStatsProgressJsonOutput:
 
             # Test JSON output for progress of empty list
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "stats", "progress", "--list", "emptylist"]
+                cli, ["--db-path", "test.db", "stats", "progress", "--list", "emptylist"]
             )
             assert result.exit_code == 0
 
@@ -191,7 +191,7 @@ class TestStatsProgressJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Completed List",
@@ -201,19 +201,19 @@ class TestStatsProgressJsonOutput:
 
             # Add tasks and complete them
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Item 1"]
+                cli, ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Item 1"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task2", "--title", "Item 2"]
+                cli, ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task2", "--title", "Item 2"]
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "status", "--list", "testlist", "--item", "task1", "--status",
                     "completed",
@@ -224,7 +224,7 @@ class TestStatsProgressJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "status", "--list", "testlist", "--item", "task2", "--status",
                     "completed",
@@ -234,7 +234,7 @@ class TestStatsProgressJsonOutput:
 
             # Test JSON output for 100% completed list
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "stats", "progress", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "stats", "progress", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -258,7 +258,7 @@ class TestStatsProgressJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -268,14 +268,14 @@ class TestStatsProgressJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "status", "--list", "testlist", "--item", "task1", "--status",
                     "completed",
@@ -285,7 +285,7 @@ class TestStatsProgressJsonOutput:
 
             # Test JSON output with detailed flag
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "stats", "progress", "--list", "testlist", "--detailed"]
+                cli, ["--db-path", "test.db", "stats", "progress", "--list", "testlist", "--detailed"]
             )
             assert result.exit_code == 0
 
@@ -312,7 +312,7 @@ class TestStatsProgressJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -322,13 +322,13 @@ class TestStatsProgressJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test table output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "stats", "progress", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "stats", "progress", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -346,7 +346,7 @@ class TestStatsProgressJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -356,13 +356,13 @@ class TestStatsProgressJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test YAML output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "stats", "progress", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "stats", "progress", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -381,7 +381,7 @@ class TestStatsProgressJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -391,13 +391,13 @@ class TestStatsProgressJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test XML output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "stats", "progress", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "stats", "progress", "--list", "testlist"]
             )
             assert result.exit_code == 0
 

@@ -15,9 +15,17 @@ class TestGetAllItemsPropertiesLimit:
     @pytest.fixture
     def mock_manager(self):
         """Create TodoManager with mocked database."""
-        manager = TodoManager()
-        manager.db = Mock()
-        return manager
+        import tempfile
+        import os
+        fd, db_path = tempfile.mkstemp(suffix=".db")
+        os.close(fd)
+        try:
+            manager = TodoManager(db_path)
+            manager.db = Mock()
+            return manager
+        finally:
+            if os.path.exists(db_path):
+                os.unlink(db_path)
 
     def test_get_all_items_properties_no_limit(self, mock_manager):
         """Test that without limit, all items are processed."""
@@ -28,9 +36,9 @@ class TestGetAllItemsPropertiesLimit:
 
         # Mock 3 items
         mock_items = [
-            Mock(id=1, item_key="task1", status="pending"),
-            Mock(id=2, item_key="task2", status="in_progress"),
-            Mock(id=3, item_key="task3", status="completed"),
+            Mock(id=1, item_key="task1", status="pending", position=1, parent_item_id=None),
+            Mock(id=2, item_key="task2", status="in_progress", position=2, parent_item_id=None),
+            Mock(id=3, item_key="task3", status="completed", position=3, parent_item_id=None),
         ]
         mock_manager.db.get_list_items.return_value = mock_items
 
@@ -56,9 +64,9 @@ class TestGetAllItemsPropertiesLimit:
 
         # Mock 3 items
         mock_items = [
-            Mock(id=1, item_key="task1", status="pending"),
-            Mock(id=2, item_key="task2", status="in_progress"),
-            Mock(id=3, item_key="task3", status="completed"),
+            Mock(id=1, item_key="task1", status="pending", position=1, parent_item_id=None),
+            Mock(id=2, item_key="task2", status="in_progress", position=2, parent_item_id=None),
+            Mock(id=3, item_key="task3", status="completed", position=3, parent_item_id=None),
         ]
         mock_manager.db.get_list_items.return_value = mock_items
 
@@ -104,8 +112,8 @@ class TestGetAllItemsPropertiesLimit:
 
         # Mock 2 pending items (after status filter)
         mock_items = [
-            Mock(id=1, item_key="task1", status="pending"),
-            Mock(id=3, item_key="task3", status="pending"),
+            Mock(id=1, item_key="task1", status="pending", position=1, parent_item_id=None),
+            Mock(id=3, item_key="task3", status="pending", position=3, parent_item_id=None),
         ]
         mock_manager.db.get_items_by_status.return_value = mock_items
 
@@ -132,7 +140,7 @@ class TestGetAllItemsPropertiesLimit:
         mock_manager.db.get_list_by_key.return_value = mock_list
 
         # Mock only 1 item
-        mock_items = [Mock(id=1, item_key="task1", status="pending")]
+        mock_items = [Mock(id=1, item_key="task1", status="pending", position=1, parent_item_id=None)]
         mock_manager.db.get_list_items.return_value = mock_items
 
         # Mock properties
@@ -154,9 +162,9 @@ class TestGetAllItemsPropertiesLimit:
 
         # Mock 3 items
         mock_items = [
-            Mock(id=1, item_key="task1", status="pending"),
-            Mock(id=2, item_key="task2", status="pending"),
-            Mock(id=3, item_key="task3", status="pending"),
+            Mock(id=1, item_key="task1", status="pending", position=1, parent_item_id=None),
+            Mock(id=2, item_key="task2", status="pending", position=2, parent_item_id=None),
+            Mock(id=3, item_key="task3", status="pending", position=3, parent_item_id=None),
         ]
         mock_manager.db.get_list_items.return_value = mock_items
 

@@ -265,9 +265,9 @@ class TestE2EComprehensiveMCP:
         # Test import from markdown
         import_file = f"{temp_db}_import.md"
         with open(import_file, 'w') as f:
-            f.write("# Imported List\\n- [ ] Imported task 1\\n- [x] Imported task 2\\n")
+            f.write("# Imported List\n- [ ] Imported task 1\n- [x] Imported task 2\n")
 
-        result = await todo_import_from_markdown("imported", import_file)
+        result = await todo_import_from_markdown(import_file, "imported")
         assert result["success"] == True
 
         # ============ PHASE 7: ADVANCED OPERATIONS ============
@@ -289,8 +289,8 @@ class TestE2EComprehensiveMCP:
 
         # ============ PHASE 8: ARCHIVE WORKFLOW ============
 
-        # Archive lists
-        result = await todo_archive_list("backend")
+        # Archive lists (force since tasks are incomplete in test)
+        result = await todo_archive_list("backend", force=True)
         assert result["success"] == True
 
         # Test archived list visibility

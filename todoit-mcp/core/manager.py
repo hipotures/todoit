@@ -561,6 +561,7 @@ class TodoManager:
         item_key: str,
         status: Optional[str] = None,
         completion_states: Optional[Dict[str, Any]] = None,
+        parent_item_key: Optional[str] = None,
     ) -> TodoItem:
         """6. Updates task status with multi-state support and automatic parent synchronization"""
         # Get the list
@@ -568,10 +569,22 @@ class TodoManager:
         if not db_list:
             raise ValueError(f"List '{list_key}' does not exist")
 
-        # Get the task
-        db_item = self.db.get_item_by_key(db_list.id, item_key)
-        if not db_item:
-            raise ValueError(f"Item '{item_key}' does not exist in list '{list_key}'")
+        # Get the task (subitem or main item)
+        if parent_item_key:
+            # Get parent item first
+            parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+            if not parent_item:
+                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+            
+            # Get subitem
+            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+            if not db_item:
+                raise ValueError(f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+        else:
+            # Get main item
+            db_item = self.db.get_item_by_key(db_list.id, item_key)
+            if not db_item:
+                raise ValueError(f"Item '{item_key}' does not exist in list '{list_key}'")
 
         # Block manual status changes for tasks with subtasks
         if status and self.db.has_subtasks(db_item.id):
@@ -628,18 +641,31 @@ class TodoManager:
         return self._db_to_model(db_item, TodoItem)
 
     def clear_item_completion_states(
-        self, list_key: str, item_key: str, state_keys: Optional[List[str]] = None
+        self, list_key: str, item_key: str, state_keys: Optional[List[str]] = None,
+        parent_item_key: Optional[str] = None
     ) -> TodoItem:
-        """Clear completion states from item (all states or specific keys)"""
+        """Clear completion states from item or subitem (all states or specific keys)"""
         # Get the list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             raise ValueError(f"List '{list_key}' does not exist")
 
-        # Get the item
-        db_item = self.db.get_item_by_key(db_list.id, item_key)
-        if not db_item:
-            raise ValueError(f"Item '{item_key}' does not exist in list '{list_key}'")
+        # Get the item (subitem or main item)
+        if parent_item_key:
+            # Get parent item first
+            parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+            if not parent_item:
+                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+            
+            # Get subitem
+            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+            if not db_item:
+                raise ValueError(f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+        else:
+            # Get main item
+            db_item = self.db.get_item_by_key(db_list.id, item_key)
+            if not db_item:
+                raise ValueError(f"Item '{item_key}' does not exist in list '{list_key}'")
 
         # Store old states for history
         old_states = db_item.completion_states or {}
@@ -884,13 +910,25 @@ class TodoManager:
     # === Helper functions ===
 
 
-    def get_item(self, list_key: str, item_key: str) -> Optional[TodoItem]:
-        """Gets a specific task"""
+    def get_item(self, list_key: str, item_key: str, parent_item_key: Optional[str] = None) -> Optional[TodoItem]:
+        """Gets a specific task or subitem"""
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             return None
 
-        db_item = self.db.get_item_by_key(db_list.id, item_key)
+        # Get subitem or main item
+        if parent_item_key:
+            # Get parent item first
+            parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+            if not parent_item:
+                return None
+            
+            # Get subitem
+            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+        else:
+            # Get main item
+            db_item = self.db.get_item_by_key(db_list.id, item_key)
+            
         return self._db_to_model(db_item, TodoItem)
 
     def get_list_items(
@@ -2291,13 +2329,25 @@ class TodoManager:
         """
         return {"lists": [], "dependencies": []}
 
-    def delete_item(self, list_key: str, item_key: str) -> bool:
+    def delete_item(self, list_key: str, item_key: str, parent_item_key: Optional[str] = None) -> bool:
         """Deletes an item and all its subtasks and dependencies."""
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             raise ValueError(f"List '{list_key}' not found")
 
-        item_to_delete = self.db.get_item_by_key(db_list.id, item_key)
+        # Get item to delete (subitem or main item)
+        if parent_item_key:
+            # Get parent item first
+            parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+            if not parent_item:
+                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+            
+            # Get subitem
+            item_to_delete = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+        else:
+            # Get main item
+            item_to_delete = self.db.get_item_by_key(db_list.id, item_key)
+            
         if not item_to_delete:
             return False  # Item doesn't exist, so nothing to delete
 
@@ -2340,16 +2390,29 @@ class TodoManager:
         return True
 
     def update_item_content(
-        self, list_key: str, item_key: str, new_content: str
+        self, list_key: str, item_key: str, new_content: str, parent_item_key: Optional[str] = None
     ) -> TodoItem:
-        """Updates the content/description of a TODO item."""
+        """Updates the content/description of a TODO item or subitem."""
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
             raise ValueError(f"List '{list_key}' not found")
 
-        db_item = self.db.get_item_by_key(db_list.id, item_key)
-        if not db_item:
-            raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+        # Get item to update (subitem or main item)
+        if parent_item_key:
+            # Get parent item first
+            parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+            if not parent_item:
+                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+            
+            # Get subitem
+            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+            if not db_item:
+                raise ValueError(f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+        else:
+            # Get main item
+            db_item = self.db.get_item_by_key(db_list.id, item_key)
+            if not db_item:
+                raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
 
         # Store old content for history
         old_content = db_item.content

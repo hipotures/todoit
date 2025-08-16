@@ -34,7 +34,7 @@ class TestDepShowJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -48,13 +48,13 @@ class TestDepShowJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test JSON output for dep show
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "--item", "testlist:task1"]
+                cli, ["--db-path", "test.db", "dep", "show", "--item", "testlist:task1"]
             )
             assert result.exit_code == 0
 
@@ -97,14 +97,14 @@ class TestDepShowJsonOutput:
             # Create two lists
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "list", "create", "--list", "backend", "--title", "Backend"],
+                ["--db-path", "test.db", "list", "create", "--list", "backend", "--title", "Backend"],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -120,7 +120,7 @@ class TestDepShowJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item",
                     "add",
@@ -137,7 +137,7 @@ class TestDepShowJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item",
                     "add",
@@ -155,7 +155,7 @@ class TestDepShowJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "dep",
                     "add",
@@ -170,7 +170,7 @@ class TestDepShowJsonOutput:
 
             # Test JSON output for blocked item
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "--item", "frontend:ui"]
+                cli, ["--db-path", "test.db", "dep", "show", "--item", "frontend:ui"]
             )
             assert result.exit_code == 0
 
@@ -204,14 +204,14 @@ class TestDepShowJsonOutput:
             # Create two lists
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "list", "create", "--list", "backend", "--title", "Backend"],
+                ["--db-path", "test.db", "list", "create", "--list", "backend", "--title", "Backend"],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -227,7 +227,7 @@ class TestDepShowJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item",
                     "add",
@@ -244,7 +244,7 @@ class TestDepShowJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item",
                     "add",
@@ -262,7 +262,7 @@ class TestDepShowJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "dep",
                     "add",
@@ -277,7 +277,7 @@ class TestDepShowJsonOutput:
 
             # Test JSON output for blocking item
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "--item", "backend:api"]
+                cli, ["--db-path", "test.db", "dep", "show", "--item", "backend:api"]
             )
             assert result.exit_code == 0
 
@@ -304,14 +304,14 @@ class TestDepShowJsonOutput:
             # Create two lists
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "list", "create", "--list", "backend", "--title", "Backend"],
+                ["--db-path", "test.db", "list", "create", "--list", "backend", "--title", "Backend"],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -327,7 +327,7 @@ class TestDepShowJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item",
                     "add",
@@ -344,7 +344,7 @@ class TestDepShowJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item",
                     "add",
@@ -362,7 +362,7 @@ class TestDepShowJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "dep",
                     "add",
@@ -379,7 +379,7 @@ class TestDepShowJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item",
                     "status",
@@ -395,7 +395,7 @@ class TestDepShowJsonOutput:
 
             # Test JSON output for previously blocked item
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "--item", "frontend:ui"]
+                cli, ["--db-path", "test.db", "dep", "show", "--item", "frontend:ui"]
             )
             assert result.exit_code == 0
 
@@ -435,7 +435,7 @@ class TestDepShowJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -449,7 +449,7 @@ class TestDepShowJsonOutput:
 
             # Test JSON output for nonexistent item
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "--item", "testlist:nonexistent"]
+                cli, ["--db-path", "test.db", "dep", "show", "--item", "testlist:nonexistent"]
             )
 
             # Should handle error gracefully
@@ -463,7 +463,7 @@ class TestDepShowJsonOutput:
         with self.runner.isolated_filesystem():
             # Test JSON output for malformed reference
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "--item", "malformed_reference"]
+                cli, ["--db-path", "test.db", "dep", "show", "--item", "malformed_reference"]
             )
 
             # Should handle error gracefully
@@ -479,7 +479,7 @@ class TestDepShowJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -493,13 +493,13 @@ class TestDepShowJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test table output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "--item", "testlist:task1"]
+                cli, ["--db-path", "test.db", "dep", "show", "--item", "testlist:task1"]
             )
             assert result.exit_code == 0
 
@@ -517,7 +517,7 @@ class TestDepShowJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -531,13 +531,13 @@ class TestDepShowJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test YAML output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "--item", "testlist:task1"]
+                cli, ["--db-path", "test.db", "dep", "show", "--item", "testlist:task1"]
             )
             assert result.exit_code == 0
 
@@ -556,7 +556,7 @@ class TestDepShowJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -570,13 +570,13 @@ class TestDepShowJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test XML output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "--item", "testlist:task1"]
+                cli, ["--db-path", "test.db", "dep", "show", "--item", "testlist:task1"]
             )
             assert result.exit_code == 0
 
@@ -596,7 +596,7 @@ class TestDepShowJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -610,13 +610,13 @@ class TestDepShowJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test JSON output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "show", "--item", "testlist:task1"]
+                cli, ["--db-path", "test.db", "dep", "show", "--item", "testlist:task1"]
             )
             assert result.exit_code == 0
 

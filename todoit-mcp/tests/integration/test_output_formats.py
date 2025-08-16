@@ -187,7 +187,7 @@ class TestOutputFormatsWithCLI:
 
         runner = CliRunner()
         result = runner.invoke(
-            cli, ["--db", populated_manager.db.db_path, "list", "all"]
+            cli, ["--db-path", populated_manager.db.db_path, "list", "all"]
         )
 
         assert result.exit_code == 0

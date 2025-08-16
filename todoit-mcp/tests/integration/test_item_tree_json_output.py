@@ -34,7 +34,7 @@ class TestItemTreeJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -49,20 +49,20 @@ class TestItemTreeJsonOutput:
             # Add some tasks with different statuses
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "First Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "First Item"],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task2", "--title", "Second Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task2", "--title", "Second Item"],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item",
                     "status",
@@ -79,7 +79,7 @@ class TestItemTreeJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item",
                     "status",
@@ -95,7 +95,7 @@ class TestItemTreeJsonOutput:
 
             # Test JSON output for entire list tree
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "list", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "item", "list", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -133,7 +133,7 @@ class TestItemTreeJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -148,7 +148,7 @@ class TestItemTreeJsonOutput:
             # Add a parent item
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "parent", "--title", "Parent Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "parent", "--title", "Parent Item"],
             )
             assert result.exit_code == 0
 
@@ -156,7 +156,7 @@ class TestItemTreeJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item",
                     "add",
@@ -175,7 +175,7 @@ class TestItemTreeJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item",
                     "add",
@@ -195,7 +195,7 @@ class TestItemTreeJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item",
                     "status",
@@ -211,7 +211,7 @@ class TestItemTreeJsonOutput:
 
             # Test JSON output for specific item hierarchy
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "list", "--list", "testlist", "--item", "parent"]
+                cli, ["--db-path", "test.db", "item", "list", "--list", "testlist", "--item", "parent"]
             )
             assert result.exit_code == 0
 
@@ -256,7 +256,7 @@ class TestItemTreeJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -270,7 +270,7 @@ class TestItemTreeJsonOutput:
 
             # Test JSON output for empty list tree
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "list", "--list", "emptylist"]
+                cli, ["--db-path", "test.db", "item", "list", "--list", "emptylist"]
             )
             assert result.exit_code == 0
 
@@ -291,7 +291,7 @@ class TestItemTreeJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -306,7 +306,7 @@ class TestItemTreeJsonOutput:
             # Add a parent item
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "parent", "--title", "Parent Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "parent", "--title", "Parent Item"],
             )
             assert result.exit_code == 0
 
@@ -314,7 +314,7 @@ class TestItemTreeJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item",
                     "add",
@@ -332,7 +332,7 @@ class TestItemTreeJsonOutput:
 
             # Test JSON output for specific item
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "list", "--list", "testlist", "--item", "parent"]
+                cli, ["--db-path", "test.db", "item", "list", "--list", "testlist", "--item", "parent"]
             )
             assert result.exit_code == 0
 
@@ -370,7 +370,7 @@ class TestItemTreeJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -384,7 +384,7 @@ class TestItemTreeJsonOutput:
 
             # Test JSON output for nonexistent item (should handle gracefully)
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "list", "--list", "testlist", "--item", "nonexistent"]
+                cli, ["--db-path", "test.db", "item", "list", "--list", "testlist", "--item", "nonexistent"]
             )
 
             # Command may fail or return empty - either is acceptable for nonexistent items
@@ -400,7 +400,7 @@ class TestItemTreeJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -414,13 +414,13 @@ class TestItemTreeJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test table output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "list", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "item", "list", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -438,7 +438,7 @@ class TestItemTreeJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -452,13 +452,13 @@ class TestItemTreeJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test YAML output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "list", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "item", "list", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -477,7 +477,7 @@ class TestItemTreeJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -491,13 +491,13 @@ class TestItemTreeJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test XML output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "list", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "item", "list", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -517,7 +517,7 @@ class TestItemTreeJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -531,19 +531,19 @@ class TestItemTreeJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "first", "--title", "First Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "first", "--title", "First Item"],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "second", "--title", "Second Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "second", "--title", "Second Item"],
             )
             assert result.exit_code == 0
 
             # Test JSON output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "list", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "item", "list", "--list", "testlist"]
             )
             assert result.exit_code == 0
 

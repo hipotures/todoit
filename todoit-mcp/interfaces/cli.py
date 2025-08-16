@@ -26,6 +26,10 @@ console = Console()
 
 def get_manager(db_path: Optional[str]) -> TodoManager:
     """Get TodoManager instance"""
+    # If a specific db_path is provided, always use it (for tests and explicit paths)
+    if db_path:
+        return TodoManager(db_path)
+    
     # Detect if running from source vs installed package
     try:
         import importlib.metadata
@@ -40,7 +44,7 @@ def get_manager(db_path: Optional[str]) -> TodoManager:
         dev_db = Path.home() / ".todoit" / "todoit_dev.db"
         return TodoManager(str(dev_db))
 
-    # Production mode: use provided database path
+    # Production mode: use environment variable or default
     return TodoManager(db_path)
 
 

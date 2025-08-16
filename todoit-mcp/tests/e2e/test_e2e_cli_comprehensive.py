@@ -38,7 +38,7 @@ class TestE2EComprehensiveCLI:
         8. Cleanup and deletion
         """
         runner = CliRunner()
-        db_arg = ["--db", temp_db]
+        db_arg = ["--db-path", temp_db]
 
         # ============ PHASE 1: PROJECT SETUP ============
         
@@ -264,7 +264,7 @@ class TestE2EComprehensiveCLI:
     def test_system_robustness(self, temp_db):
         """Test that system handles various operations robustly."""
         runner = CliRunner()
-        db_arg = ["--db", temp_db]
+        db_arg = ["--db-path", temp_db]
 
         # Create a test list
         result = runner.invoke(cli, [*db_arg, "list", "create", "--list", "robust_test", "--title", "Robustness Test"])
@@ -289,7 +289,7 @@ class TestE2EComprehensiveCLI:
     def test_emoji_mapping_in_outputs(self, temp_db):
         """Test that emoji mapping works correctly in different output formats."""
         runner = CliRunner()
-        db_arg = ["--db", temp_db]
+        db_arg = ["--db-path", temp_db]
 
         # Create test data
         runner.invoke(cli, [*db_arg, "list", "create", "--list", "emoji_test", "--title", "Emoji Test"])

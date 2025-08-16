@@ -34,7 +34,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -45,13 +45,13 @@ class TestItemNextJsonOutput:
             # Add a pending item
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Pending Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Pending Item"],
             )
             assert result.exit_code == 0
 
             # Test JSON output for next item
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "next", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "item", "next", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -82,7 +82,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -93,19 +93,19 @@ class TestItemNextJsonOutput:
             # Add multiple pending tasks
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "First Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "First Item"],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task2", "--title", "Second Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task2", "--title", "Second Item"],
             )
             assert result.exit_code == 0
 
             # Test JSON output for next item (should return first)
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "next", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "item", "next", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -129,7 +129,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -141,7 +141,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "add", "--list", "testlist", "--item", "task1", "--title", "Completed Item",
                 ],
@@ -151,7 +151,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "status", "--list", "testlist", "--item", "task1", "--status",
                     "completed",
@@ -161,7 +161,7 @@ class TestItemNextJsonOutput:
 
             # Test JSON output when no pending tasks
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "next", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "item", "next", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -182,7 +182,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -194,7 +194,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "add", "--list", "testlist", "--item", "task1", "--title", "In Progress Item",
                 ],
@@ -203,7 +203,7 @@ class TestItemNextJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task2", "--title", "Pending Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task2", "--title", "Pending Item"],
             )
             assert result.exit_code == 0
 
@@ -211,7 +211,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "status", "--list", "testlist", "--item", "task1", "--status",
                     "in_progress",
@@ -221,7 +221,7 @@ class TestItemNextJsonOutput:
 
             # Test JSON output - should return the pending item, not in_progress
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "next", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "item", "next", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -245,7 +245,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -255,13 +255,13 @@ class TestItemNextJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test table output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "next", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "item", "next", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -279,7 +279,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -289,13 +289,13 @@ class TestItemNextJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test YAML output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "next", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "item", "next", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -315,7 +315,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -325,13 +325,13 @@ class TestItemNextJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test XML output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "next", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "item", "next", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -354,7 +354,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -365,13 +365,13 @@ class TestItemNextJsonOutput:
             # Add a pending item
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Pending Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Pending Item"],
             )
             assert result.exit_code == 0
 
             # Test JSON output for next-smart item
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "next-smart", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "item", "next-smart", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -404,7 +404,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -415,7 +415,7 @@ class TestItemNextJsonOutput:
             # Add a parent item
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "parent", "--title", "Parent Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "parent", "--title", "Parent Item"],
             )
             assert result.exit_code == 0
 
@@ -423,7 +423,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "add", "--list", "testlist", "--item", "parent", "--subitem", "subtask1", "--title", "Subitem 1",
                 ],
@@ -432,7 +432,7 @@ class TestItemNextJsonOutput:
 
             # Test JSON output for next-smart item (should prioritize subitem)
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "next-smart", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "item", "next-smart", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -456,7 +456,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -467,7 +467,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "add", "--list", "testlist", "--item", "task1", "--title", "Completed Item",
                 ],
@@ -477,7 +477,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "status", "--list", "testlist", "--item", "task1", "--status",
                     "completed",
@@ -487,7 +487,7 @@ class TestItemNextJsonOutput:
 
             # Test JSON output when no pending tasks
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "next-smart", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "item", "next-smart", "--list", "testlist"]
             )
             assert result.exit_code == 0
 
@@ -508,7 +508,7 @@ class TestItemNextJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -518,13 +518,13 @@ class TestItemNextJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
             )
             assert result.exit_code == 0
 
             # Test table output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "item", "next-smart", "--list", "testlist"]
+                cli, ["--db-path", "test.db", "item", "next-smart", "--list", "testlist"]
             )
             assert result.exit_code == 0
 

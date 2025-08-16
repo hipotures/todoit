@@ -31,7 +31,7 @@ class TestDepGraphJsonOutput:
 
         with self.runner.isolated_filesystem():
             # Test JSON output without project parameter (should show error)
-            result = self.runner.invoke(cli, ["--db", "test.db", "dep", "graph"])
+            result = self.runner.invoke(cli, ["--db-path", "test.db", "dep", "graph"])
 
             # Command should handle missing project parameter
             assert isinstance(result.output, str)
@@ -44,7 +44,7 @@ class TestDepGraphJsonOutput:
         with self.runner.isolated_filesystem():
             # Test JSON output for nonexistent project
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "graph", "--project", "nonexistent"]
+                cli, ["--db-path", "test.db", "dep", "graph", "--project", "nonexistent"]
             )
             assert result.exit_code == 0
 
@@ -65,7 +65,7 @@ class TestDepGraphJsonOutput:
             # Create a list with project tag
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "list", "create", "--list", "backend", "--title", "Backend"],
+                ["--db-path", "test.db", "list", "create", "--list", "backend", "--title", "Backend"],
             )
             assert result.exit_code == 0
 
@@ -74,7 +74,7 @@ class TestDepGraphJsonOutput:
 
             # Test JSON output for project
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "graph", "--project", "testproject"]
+                cli, ["--db-path", "test.db", "dep", "graph", "--project", "testproject"]
             )
             assert result.exit_code == 0
 
@@ -92,7 +92,7 @@ class TestDepGraphJsonOutput:
         with self.runner.isolated_filesystem():
             # Test with any project name
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "graph", "--project", "testproject"]
+                cli, ["--db-path", "test.db", "dep", "graph", "--project", "testproject"]
             )
             assert result.exit_code == 0
 
@@ -124,7 +124,7 @@ class TestDepGraphJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -139,7 +139,7 @@ class TestDepGraphJsonOutput:
             result = self.runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list",
                     "create",
@@ -154,19 +154,19 @@ class TestDepGraphJsonOutput:
             # Add some tasks
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "frontend", "--item", "ui", "--title", "User Interface"],
+                ["--db-path", "test.db", "item", "add", "--list", "frontend", "--item", "ui", "--title", "User Interface"],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
-                ["--db", "test.db", "item", "add", "--list", "backend", "--item", "api", "--title", "API Development"],
+                ["--db-path", "test.db", "item", "add", "--list", "backend", "--item", "api", "--title", "API Development"],
             )
             assert result.exit_code == 0
 
             # Test JSON output (may be empty if lists aren't properly linked to project)
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "graph", "--project", "webapp"]
+                cli, ["--db-path", "test.db", "dep", "graph", "--project", "webapp"]
             )
             assert result.exit_code == 0
 
@@ -186,7 +186,7 @@ class TestDepGraphJsonOutput:
         with self.runner.isolated_filesystem():
             # Test table output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "graph", "--project", "testproject"]
+                cli, ["--db-path", "test.db", "dep", "graph", "--project", "testproject"]
             )
             assert result.exit_code == 0
 
@@ -201,7 +201,7 @@ class TestDepGraphJsonOutput:
         with self.runner.isolated_filesystem():
             # Test YAML output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "graph", "--project", "testproject"]
+                cli, ["--db-path", "test.db", "dep", "graph", "--project", "testproject"]
             )
             assert result.exit_code == 0
 
@@ -218,7 +218,7 @@ class TestDepGraphJsonOutput:
         with self.runner.isolated_filesystem():
             # Test XML output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "graph", "--project", "testproject"]
+                cli, ["--db-path", "test.db", "dep", "graph", "--project", "testproject"]
             )
             assert result.exit_code == 0
 
@@ -246,7 +246,7 @@ class TestDepGraphJsonOutput:
 
             for project_name in test_cases:
                 result = self.runner.invoke(
-                    cli, ["--db", "test.db", "dep", "graph", "--project", project_name]
+                    cli, ["--db-path", "test.db", "dep", "graph", "--project", project_name]
                 )
 
                 # Should not crash, either success or controlled failure
@@ -270,7 +270,7 @@ class TestDepGraphJsonOutput:
         with self.runner.isolated_filesystem():
             # Test JSON output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "graph", "--project", "typetest"]
+                cli, ["--db-path", "test.db", "dep", "graph", "--project", "typetest"]
             )
             assert result.exit_code == 0
 
@@ -296,7 +296,7 @@ class TestDepGraphJsonOutput:
         with self.runner.isolated_filesystem():
             # Test JSON output
             result = self.runner.invoke(
-                cli, ["--db", "test.db", "dep", "graph", "--project", "counttest"]
+                cli, ["--db-path", "test.db", "dep", "graph", "--project", "counttest"]
             )
             assert result.exit_code == 0
 

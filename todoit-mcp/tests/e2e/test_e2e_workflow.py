@@ -25,7 +25,7 @@ class TestE2EWorkflow:
         6.  Verify that the dependent item is now unblocked.
         """
         runner = CliRunner()
-        db_arg = ["--db", temp_db]
+        db_arg = ["--db-path", temp_db]
 
         # STEP 1: Create project lists
         res_create_backend = runner.invoke(

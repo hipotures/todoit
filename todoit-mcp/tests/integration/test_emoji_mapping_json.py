@@ -29,7 +29,7 @@ class TestEmojiMappingJSON:
             result = runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -38,12 +38,12 @@ class TestEmojiMappingJSON:
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Item 1"]
+                cli, ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Item 1"]
             )
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task2", "--title", "Item 2"]
+                cli, ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task2", "--title", "Item 2"]
             )
             assert result.exit_code == 0
 
@@ -51,7 +51,7 @@ class TestEmojiMappingJSON:
             result = runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "status", "--list", "testlist", "--item", "task1", "--status",
                     "completed",
@@ -62,7 +62,7 @@ class TestEmojiMappingJSON:
             # Test JSON output
             result = runner.invoke(
                 cli,
-                ["--db", "test.db", "list", "all"],
+                ["--db-path", "test.db", "list", "all"],
                 env={"TODOIT_OUTPUT_FORMAT": "json"},
             )
             assert result.exit_code == 0
@@ -106,7 +106,7 @@ class TestEmojiMappingJSON:
             result = runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -115,14 +115,14 @@ class TestEmojiMappingJSON:
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Item 1"]
+                cli, ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Item 1"]
             )
             assert result.exit_code == 0
 
             # Test YAML output
             result = runner.invoke(
                 cli,
-                ["--db", "test.db", "list", "all"],
+                ["--db-path", "test.db", "list", "all"],
                 env={"TODOIT_OUTPUT_FORMAT": "yaml"},
             )
             assert result.exit_code == 0
@@ -151,7 +151,7 @@ class TestEmojiMappingJSON:
             result = runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -160,14 +160,14 @@ class TestEmojiMappingJSON:
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Item 1"]
+                cli, ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Item 1"]
             )
             assert result.exit_code == 0
 
             # Test XML output
             result = runner.invoke(
                 cli,
-                ["--db", "test.db", "list", "all"],
+                ["--db-path", "test.db", "list", "all"],
                 env={"TODOIT_OUTPUT_FORMAT": "xml"},
             )
             assert result.exit_code == 0
@@ -197,7 +197,7 @@ class TestEmojiMappingJSON:
             result = runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "list", "create", "--list", "testlist", "--title",
                     "Test List",
@@ -206,7 +206,7 @@ class TestEmojiMappingJSON:
             assert result.exit_code == 0
 
             # Test table output (default)
-            result = runner.invoke(cli, ["--db", "test.db", "list", "all"])
+            result = runner.invoke(cli, ["--db-path", "test.db", "list", "all"])
             assert result.exit_code == 0
 
             # Table output should still contain emoji for visual appeal
@@ -242,7 +242,7 @@ class TestEmojiMappingJSON:
             # Test with no lists
             result = runner.invoke(
                 cli,
-                ["--db", "test.db", "list", "all"],
+                ["--db-path", "test.db", "list", "all"],
                 env={"TODOIT_OUTPUT_FORMAT": "json"},
             )
             assert result.exit_code == 0
@@ -258,23 +258,23 @@ class TestEmojiMappingJSON:
         with runner.isolated_filesystem():
             # Create multiple lists with different content
             result = runner.invoke(
-                cli, ["--db", "test.db", "list", "create", "--list", "list1", "--title", "List 1"]
+                cli, ["--db-path", "test.db", "list", "create", "--list", "list1", "--title", "List 1"]
             )
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db", "test.db", "list", "create", "--list", "list2", "--title", "List 2"]
+                cli, ["--db-path", "test.db", "list", "create", "--list", "list2", "--title", "List 2"]
             )
             assert result.exit_code == 0
 
             # Add items to first list
             result = runner.invoke(
-                cli, ["--db", "test.db", "item", "add", "--list", "list1", "--item", "task1", "--title", "Item 1"]
+                cli, ["--db-path", "test.db", "item", "add", "--list", "list1", "--item", "task1", "--title", "Item 1"]
             )
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db", "test.db", "item", "add", "--list", "list1", "--item", "task2", "--title", "Item 2"]
+                cli, ["--db-path", "test.db", "item", "add", "--list", "list1", "--item", "task2", "--title", "Item 2"]
             )
             assert result.exit_code == 0
 
@@ -282,7 +282,7 @@ class TestEmojiMappingJSON:
             result = runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "status", "--list", "list1", "--item", "task1", "--status",
                     "completed",
@@ -293,7 +293,7 @@ class TestEmojiMappingJSON:
             result = runner.invoke(
                 cli,
                 [
-                    "--db",
+                    "--db-path",
                     "test.db",
                     "item", "status", "--list", "list1", "--item", "task2", "--status",
                     "failed",
@@ -304,7 +304,7 @@ class TestEmojiMappingJSON:
             # Test JSON output
             result = runner.invoke(
                 cli,
-                ["--db", "test.db", "list", "all"],
+                ["--db-path", "test.db", "list", "all"],
                 env={"TODOIT_OUTPUT_FORMAT": "json"},
             )
             assert result.exit_code == 0
