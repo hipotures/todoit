@@ -4,7 +4,10 @@
 			"type": "stdio",
 			"command": "python",
 			"args": ["-m", "interfaces.mcp_server"],
-			"cwd": "/home/xai/DEV/todoit/todoit-mcp"
+			"cwd": "/home/xai/DEV/todoit/todoit-mcp",
+			"env": {
+				"TODOIT_DB_PATH": "/tmp/test_todoit.db"
+			}
 		}
 	}
 }

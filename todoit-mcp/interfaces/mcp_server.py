@@ -437,23 +437,36 @@ async def todo_add_item(
 async def todo_update_item_status(
     list_key: str,
     item_key: str,
+    subitem_key: Optional[str] = None,
     status: Optional[str] = None,
     completion_states: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    """Update item status with multi-state support.
+    """Update item or subitem status with multi-state support.
 
     Args:
         list_key: Key of the list containing the item (required)
-        item_key: Key of the item to update (required)
+        item_key: Key of the item to update, or parent item key if updating subitem (required)
+        subitem_key: Optional subitem key. If provided, updates the subitem within the parent item.
         status: New status to set. Valid values:
                 - 'pending': Task is waiting to be started
                 - 'in_progress': Task is currently being worked on
                 - 'completed': Task has been finished successfully
                 - 'failed': Task could not be completed
-        completion_states: Optional dictionary of completion state details
+        completion_states: Optional dictionary of completion state details for multi-state tracking
 
     Returns:
         Dictionary with success status and updated item details
+
+    Examples:
+        # Update item status
+        await todo_update_item_status("project", "feature1", status="completed")
+        
+        # Update subitem status
+        await todo_update_item_status("project", "feature1", subitem_key="step1", status="completed")
+        
+        # Update with completion states
+        await todo_update_item_status("project", "feature1", status="in_progress", 
+                                      completion_states={"coded": True, "tested": False})
 
     Note:
         Tasks with subtasks cannot have their status manually changed.
@@ -461,16 +474,28 @@ async def todo_update_item_status(
     """
     try:
         mgr = init_manager()
+        
+        # Determine target and parent keys based on subitem_key parameter
+        if subitem_key:
+            target_key = subitem_key
+            parent_key = item_key
+            target_type = "subitem"
+        else:
+            target_key = item_key
+            parent_key = None
+            target_type = "item"
+        
         item = mgr.update_item_status(
             list_key=list_key,
-            item_key=item_key,
+            item_key=target_key,
             status=status,
             completion_states=completion_states,
+            parent_item_key=parent_key,
         )
         return {
             "success": True,
             "item": item.to_dict(),
-            "message": f"Item '{item_key}' status updated successfully",
+            "message": f"{target_type.capitalize()} '{target_key}' status updated successfully",
         }
     except ValueError as e:
         error_msg = str(e)
@@ -824,54 +849,8 @@ async def todo_quick_add(list_key: str, items: List[str]) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 
-@conditional_tool
-async def todo_mark_completed(list_key: str, item_key: str) -> Dict[str, Any]:
-    """Mark a todo item as completed (convenience shortcut).
-
-    Args:
-        list_key: Key of the list containing the item (required)
-        item_key: Key of the item to mark as completed (required)
-
-    Returns:
-        Dictionary with success status, updated item details, and confirmation message
-    """
-    try:
-        mgr = init_manager()
-        item = mgr.update_item_status(
-            list_key=list_key, item_key=item_key, status="completed"
-        )
-        return {
-            "success": True,
-            "item": item.to_dict(),
-            "message": f"Item '{item_key}' marked as completed",
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
 
 
-@conditional_tool
-async def todo_start_item(list_key: str, item_key: str) -> Dict[str, Any]:
-    """Start working on a todo item (convenience shortcut).
-
-    Args:
-        list_key: Key of the list containing the item (required)
-        item_key: Key of the item to start working on (required)
-
-    Returns:
-        Dictionary with success status, updated item details, and confirmation message
-    """
-    try:
-        mgr = init_manager()
-        item = mgr.update_item_status(
-            list_key=list_key, item_key=item_key, status="in_progress"
-        )
-        return {
-            "success": True,
-            "item": item.to_dict(),
-            "message": f"Started working on '{item_key}'",
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
 
 
 @conditional_tool

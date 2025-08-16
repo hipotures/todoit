@@ -6,7 +6,8 @@ This document lists the available environment variables and command-line options
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `TODOIT_DB_PATH` | Path to the SQLite database file. Required if not specified via `--db-path`. | None (required) |
+| `TODOIT_DB_PATH` | Path to the SQLite database file. Required if not specified via `--db-path`. Used by both CLI and MCP. | None (required) |
+| `TODOIT_FORCE_TAGS` | Comma-separated list of tags for environment isolation. Limits operations to lists with these tags. | None (optional) |
 | `TODOIT_OUTPUT_FORMAT` | Controls CLI output format. Supported values: `table`, `vertical`, `json`, `yaml`, `xml`. | `table` |
 
 ## CLI Options

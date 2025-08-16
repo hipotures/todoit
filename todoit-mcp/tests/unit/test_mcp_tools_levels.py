@@ -206,8 +206,6 @@ class TestMCPToolsLevels:
 
         # Should add convenience operations
         assert "todo_quick_add" in TOOLS_STANDARD
-        assert "todo_mark_completed" in TOOLS_STANDARD
-        assert "todo_start_item" in TOOLS_STANDARD
 
         # Should include unified item/subitem tools (note: unified tools are already in MINIMAL)
         # No separate subitem tools needed - unified tools handle both

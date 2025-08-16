@@ -2,7 +2,7 @@
 
 ## Overview
 
-TODOIT MCP provides 54 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
+TODOIT MCP provides 50 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
 
 ## 🎛️ Tools Level Configuration
 
@@ -14,7 +14,7 @@ TODOIT MCP provides 54 comprehensive tools for Claude Code integration, offering
 |-------|-------------|---------------|----------|
 | **MINIMAL** | 10 tools | 82% savings | Essential operations only, maximum performance |
 | **STANDARD** | 25 tools | 57% savings | Balanced functionality (default) | 
-| **MAX** | 54 tools | 0% savings | Complete feature set |
+| **MAX** | 50 tools | 0% savings | Complete feature set |
 
 ### 🔧 Configuration
 
@@ -27,7 +27,7 @@ export TODOIT_MCP_TOOLS_LEVEL=minimal
 # Standard set (25 tools) - Balanced functionality (DEFAULT)
 export TODOIT_MCP_TOOLS_LEVEL=standard
 
-# Complete set (54 tools) - All features
+# Complete set (50 tools) - All features
 export TODOIT_MCP_TOOLS_LEVEL=max
 ```
 
@@ -37,7 +37,7 @@ export TODOIT_MCP_TOOLS_LEVEL=max
 
 - **MINIMAL**: ~500-1000 tokens context vs 3000+ for MAX
 - **STANDARD**: ~1300-1800 tokens context (24 tools)
-- **MAX**: ~3000+ tokens context (56 tools - full feature set)
+- **MAX**: ~3000+ tokens context (50 tools - full feature set)
 
 ### 🛡️ Security Benefits
 
@@ -65,7 +65,7 @@ Core functionality for list and item management.
 
 #### Item Management  
 - **`todo_add_item`** - 🆕 **UNIFIED** - Add item or subitem to list (smart detection via subitem_key parameter)
-- **`todo_update_item_status`** - Update item status (pending/in_progress/completed/failed)
+- **`todo_update_item_status`** - 🆕 **ENHANCED** - Update item or subitem status (pending/in_progress/completed/failed) with subitem_key support
 - **`todo_update_item_content`** - Update item description/content text
 - **`todo_delete_item`** - Delete item permanently from list
 - **`todo_get_item`** - 🆕 **UNIFIED** - Get item details or subitems (smart detection via subitem_key parameter)
@@ -75,8 +75,6 @@ Core functionality for list and item management.
 - **`todo_get_next_pending`** - Get next available task with dependency consideration
 - **`todo_get_progress`** - Get comprehensive progress statistics
 - **`todo_quick_add`** - Add multiple items at once
-- **`todo_mark_completed`** - Quick completion shortcut
-- **`todo_start_item`** - Quick start shortcut
 
 ### 🏗️ Advanced Operations (16 tools)
 Extended functionality for complex workflows.
@@ -228,9 +226,11 @@ hierarchical = await todo_get_list_items("project", limit=10)
 # Create project and work on tasks
 await todo_create_list("sprint-1", "Sprint 1 Tasks", items=["Feature A", "Feature B", "Bug fixes"])
 
-# Complete some tasks
+# Complete some tasks  
 await todo_update_item_status("sprint-1", "item_1", "completed")
-await todo_update_item_status("sprint-1", "item_2", "completed") 
+await todo_update_item_status("sprint-1", "item_2", "completed")
+# Update subitem status
+await todo_update_item_status("sprint-1", "item_1", "in_progress", subitem_key="subtask_1")
 
 # Try to archive with incomplete tasks (will fail)
 result = await todo_archive_list("sprint-1", force=False)
@@ -650,8 +650,6 @@ await todo_remove_list_tag("project-alpha", "urgent")
 | Tool | Purpose |
 |------|---------|
 | `todo_quick_add` | Add multiple items at once |
-| `todo_mark_completed` | Quick completion shortcut |
-| `todo_start_item` | Quick start shortcut |
 | `todo_add_subtask` | Add subtask to existing task |
 | `todo_get_subtasks` | Get all subtasks for parent |
 | `todo_archive_list` | Archive list (hide from view) |

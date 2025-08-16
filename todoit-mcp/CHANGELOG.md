@@ -5,6 +5,32 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2025-08-16
+
+### 🚀 MAJOR API CLEANUP - Enhanced Subitem Support
+
+#### ✨ **BREAKING CHANGE**: MCP Function Consolidation
+- **REMOVED**: `todo_start_item` - Redundant convenience function eliminated
+- **REMOVED**: `todo_mark_completed` - Redundant convenience function eliminated  
+- **ENHANCED**: `todo_update_item_status` now supports `subitem_key: Optional[str] = None` parameter
+- **UNIFIED**: Single function handles both item and subitem status updates
+
+#### 🎯 **API Improvements**
+- **OLD APPROACH**: Separate functions for convenience (but couldn't handle subitems)
+- **NEW APPROACH**: One universal function with optional subitem support
+- **SUBITEM UPDATES**: `todo_update_item_status(list_key, parent_key, status, subitem_key=subitem)`
+- **ITEM UPDATES**: `todo_update_item_status(list_key, item_key, status)` (unchanged)
+
+#### 📖 **Updated Documentation**
+- **UPDATED**: MCP_TOOLS.md with new subitem_key parameter examples
+- **REDUCED**: Tool count from 54 to 50 (removed redundant functions)
+- **ENHANCED**: Clear examples of item vs subitem status updates
+
+#### ⚠️ **Breaking Change Notice**
+- **IMPACT**: Code using `todo_start_item` or `todo_mark_completed` must migrate to `todo_update_item_status`
+- **MIGRATION**: Replace with `todo_update_item_status(list_key, item_key, "in_progress")` or `todo_update_item_status(list_key, item_key, "completed")`
+- **BENEFIT**: Now supports subitems: `todo_update_item_status(list_key, parent_key, status, subitem_key=subitem)`
+
 ## [2.7.0] - 2025-08-16
 
 ### 🚀 MAJOR ENHANCEMENT - Improved JSON Structure for `todo_find_subitems_by_status`

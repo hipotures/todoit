@@ -194,14 +194,14 @@ class TestE2EComprehensiveMCP:
         # ============ PHASE 4: PROGRESS TRACKING ============
 
         # Work on tasks with status changes (use item without subtasks)
-        result = await todo_start_item("frontend", "ui")
+        result = await todo_update_item_status("frontend", "ui", status="in_progress")
         assert result["success"] == True
 
         result = await todo_update_item_status("frontend", "ui", status="completed")
         assert result["success"] == True
 
         # Note: Some MCP tools may fail due to business logic constraints
-        result = await todo_mark_completed("backend", "item_0001")
+        result = await todo_update_item_status("backend", "item_0001", status="completed")
         # assert result["success"] == True  # May fail if item doesn't exist
 
         # Test progress tracking
