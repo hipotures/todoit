@@ -48,6 +48,9 @@ class TodoManager:
         if db_path is None:
             # Check for TODOIT_DB_PATH environment variable
             db_path = os.getenv('TODOIT_DB_PATH')
+            if db_path:
+                # Expand environment variables like $HOME
+                db_path = os.path.expandvars(db_path)
             if db_path is None:
                 from rich.console import Console
                 console = Console()
@@ -65,7 +68,54 @@ class TodoManager:
                 console.print("[dim]See migration guide: https://github.com/hipotures/todoit/releases/tag/v2.5.0[/]")
                 raise SystemExit(1)
 
-        self.db = Database(db_path)
+        # Validate database path before creating Database instance
+        try:
+            import pathlib
+            db_file = pathlib.Path(db_path)
+            
+            # Ensure parent directory exists
+            db_file.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Check write permissions on parent directory
+            if not os.access(db_file.parent, os.W_OK):
+                from rich.console import Console
+                console = Console()
+                console.print(f"[bold red]❌ Error:[/] No write permission to directory: {db_file.parent}")
+                console.print(f"[yellow]Fix:[/] chmod 755 {db_file.parent}")
+                raise SystemExit(1)
+                
+            self.db = Database(db_path)
+            
+        except (OSError, PermissionError) as e:
+            from rich.console import Console
+            console = Console()
+            console.print(f"[bold red]❌ Database Error:[/] Cannot access database file")
+            console.print(f"[white]Path:[/] {db_path}")
+            console.print(f"[white]Error:[/] {e}")
+            console.print()
+            console.print("[cyan]Possible solutions:[/]")
+            console.print("  [white]• Check if directory exists and is writable[/]")
+            console.print("  [white]• Use absolute path: /tmp/todoit.db[/]") 
+            console.print("  [white]• Check permissions: ls -la $(dirname path)[/]")
+            raise SystemExit(1)
+        except Exception as e:
+            # Catch SQLAlchemy and other database errors
+            from rich.console import Console
+            console = Console()
+            console.print(f"[bold red]❌ Database Connection Error:[/]")
+            console.print(f"[white]Path:[/] {db_path}")
+            console.print(f"[white]Error:[/] {str(e)}")
+            console.print()
+            if "unable to open database file" in str(e):
+                console.print("[cyan]Possible causes:[/]")
+                console.print("  [white]• Invalid database path[/]")
+                console.print("  [white]• Missing directory permissions[/]")
+                console.print("  [white]• Path contains special characters[/]")
+                console.print()
+                console.print("[cyan]Try:[/]")
+                console.print("  [white]export TODOIT_DB_PATH=/tmp/test.db[/]")
+                console.print("  [white]todoit list all[/]")
+            raise SystemExit(1)
 
     def _db_to_model(self, db_obj: Any, model_class: type) -> Any:
         """Convert database object to Pydantic model"""

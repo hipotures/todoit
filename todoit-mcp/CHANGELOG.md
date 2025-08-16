@@ -5,6 +5,29 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.2] - 2025-08-16
+
+### 🔧 BUGFIX - Environment Variable Expansion
+- **FIXED**: `$HOME` and other environment variables not expanded in `TODOIT_DB_PATH`
+- **ADDED**: Automatic expansion of environment variables in database path
+- **ENHANCED**: Better database path validation and error handling
+- **IMPROVED**: SQLite connection error messages with helpful suggestions
+
+#### Technical Details:
+- **File Changed**: `core/manager.py` - added `os.path.expandvars()` for environment variable expansion
+- **Root Cause**: `python-dotenv` doesn't expand variables like `$HOME` automatically
+- **Solution**: Explicit expansion before database initialization
+
+#### Now Works:
+- `TODOIT_DB_PATH=$HOME/.todoit/todoit.db` ✅
+- `TODOIT_DB_PATH=/home/user/.todoit/todoit.db` ✅
+- `TODOIT_DB_PATH=/tmp/todoit.db` ✅
+
+#### Error Handling:
+- Directory creation with permission validation
+- Clear error messages for common SQLite issues
+- Helpful suggestions for path and permission problems
+
 ## [2.5.1] - 2025-08-16
 
 ### 🎨 UX IMPROVEMENT - Better Error Messages
