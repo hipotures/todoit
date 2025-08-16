@@ -49,7 +49,21 @@ class TodoManager:
             # Check for TODOIT_DB_PATH environment variable
             db_path = os.getenv('TODOIT_DB_PATH')
             if db_path is None:
-                raise ValueError("Database path must be provided via --db-path parameter or TODOIT_DB_PATH environment variable")
+                from rich.console import Console
+                console = Console()
+                console.print("[bold red]❌ Error:[/] Database path not specified!", style="red")
+                console.print()
+                console.print("[yellow]TODOIT v2.5.0+ requires explicit database configuration.[/]")
+                console.print()
+                console.print("[cyan]Quick fix:[/]")
+                console.print("  [white]export TODOIT_DB_PATH=/tmp/todoit.db[/]")
+                console.print("  [white]todoit list all[/]")
+                console.print()
+                console.print("[cyan]Or use parameter:[/]")
+                console.print("  [white]todoit --db-path /tmp/todoit.db list all[/]")
+                console.print()
+                console.print("[dim]See migration guide: https://github.com/hipotures/todoit/releases/tag/v2.5.0[/]")
+                raise SystemExit(1)
 
         self.db = Database(db_path)
 

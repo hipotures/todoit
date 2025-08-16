@@ -681,9 +681,7 @@ class TodoManager:
     def __init__(self, db_path: Optional[str] = None):
         """Initialize TodoManager with mediator and repository"""
         if db_path is None:
-            todoit_dir = Path.home() / ".todoit"
-            todoit_dir.mkdir(exist_ok=True)
-            db_path = str(todoit_dir / "todoit.db")
+            db_path = "todoit.db"
         
         self.repository = DatabaseTodoRepository(db_path)
         self.mediator = Mediator(self.repository)

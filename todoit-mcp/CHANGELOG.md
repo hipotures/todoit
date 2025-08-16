@@ -5,6 +5,25 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2025-08-16
+
+### 🎨 UX IMPROVEMENT - Better Error Messages
+- **IMPROVED**: Beautiful, helpful error message when database path is missing
+- **ENHANCED**: Rich formatting with colors and clear instructions
+- **ADDED**: Quick fix examples and migration guide link
+- **REPLACED**: Raw ValueError with user-friendly SystemExit
+
+#### Technical Details:
+- **File Changed**: `core/manager.py` - enhanced error handling in TodoManager.__init__()
+- **User Experience**: Clear guidance instead of cryptic traceback
+- **Migration Help**: Direct links to v2.5.0 migration guide
+
+#### Error Message Includes:
+- ❌ Clear problem description
+- 💡 Quick fix examples (`export TODOIT_DB_PATH=...`)
+- 🔗 Parameter alternative (`--db-path`)
+- 📖 Link to migration documentation
+
 ## [2.5.0] - 2025-08-16
 
 ### 🔥 BREAKING CHANGE - Database Path Management

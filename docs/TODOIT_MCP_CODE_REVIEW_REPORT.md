@@ -849,7 +849,7 @@ This represents **gold standard documentation** for an open source project.
        """Setup structured logging for TODOIT MCP"""
        
        # Create logs directory if it doesn't exist
-       log_dir = os.path.expanduser("~/.todoit/logs")
+       log_dir = "logs"
        os.makedirs(log_dir, exist_ok=True)
        
        # Configure logging format
