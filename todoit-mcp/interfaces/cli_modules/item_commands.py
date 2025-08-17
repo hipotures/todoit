@@ -868,16 +868,25 @@ def item_find_subitems(ctx, list_key, conditions, limit):
             matching_subitems = match["matching_subitems"]
             
             for subitem in matching_subitems:
+                # Handle both object and dict formats for compatibility
+                parent_key = parent.item_key if hasattr(parent, 'item_key') else parent['item_key']
+                parent_content = parent.content if hasattr(parent, 'content') else parent['content']
+                subitem_key = subitem.item_key if hasattr(subitem, 'item_key') else subitem['item_key']
+                subitem_content = subitem.content if hasattr(subitem, 'content') else subitem['content']
+                subitem_status = subitem.status.value if hasattr(subitem, 'status') and hasattr(subitem.status, 'value') else subitem['status']
+                subitem_created = subitem.created_at if hasattr(subitem, 'created_at') else subitem.get('created_at')
+                
                 data.append(
                     {
-                        "Parent": parent.item_key,
-                        "Parent Content": parent.content[:30] + "..." if len(parent.content) > 30 else parent.content,
-                        "Subitem": subitem.item_key,
-                        "Content": subitem.content[:40] + "..." if len(subitem.content) > 40 else subitem.content,
-                        "Status": _get_status_display(subitem.status.value),
+                        "Parent": parent_key,
+                        "Parent Content": parent_content[:30] + "..." if len(parent_content) > 30 else parent_content,
+                        "Subitem": subitem_key,
+                        "Content": subitem_content[:40] + "..." if len(subitem_content) > 40 else subitem_content,
+                        "Status": _get_status_display(subitem_status),
                         "Created": (
-                            subitem.created_at.strftime("%Y-%m-%d %H:%M")
-                            if subitem.created_at
+                            subitem_created.strftime("%Y-%m-%d %H:%M")
+                            if subitem_created and hasattr(subitem_created, 'strftime')
+                            else subitem_created if isinstance(subitem_created, str)
                             else "N/A"
                         ),
                     }

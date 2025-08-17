@@ -250,7 +250,36 @@ todoit item find --list "backend" --property "component" --value "api" --limit 3
 todoit item find --list "frontend" --property "framework" --value "react" --first
 ```
 
-**Example Search Output:**
+#### Advanced Subitem Search
+
+Find subitems based on sibling status conditions - useful for workflow automation:
+
+```bash
+# Find downloads ready to process (where generation is completed)
+todoit item find-subitems --list "images" --conditions '{"generate":"completed","download":"pending"}' --limit 5
+
+# Find test items where design and code are done
+todoit item find-subitems --list "features" --conditions '{"design":"completed","code":"completed","tests":"pending"}'
+
+# Complex workflow condition matching
+todoit item find-subitems --list "ai-generation" --conditions '{"image_gen":"completed","image_dwn":"pending"}' --limit 1
+```
+
+This command finds subitems that match status conditions within their sibling groups. All conditions must be satisfied by the sibling group for subitems to be returned.
+
+**Example Subitem Search Output:**
+```
+🔍 Found 2 matching subitem(s) in 'images' (limit: 5)
+╭───────┬──────────────────┬───────┬────────────────────────────┬────┬─────────╮
+│ Parent│ Parent Content   │ Subitem│ Content                   │ S… │ Created │
+├───────┼──────────────────┼────────┼───────────────────────────┼────┼─────────┤
+│ img1  │ Generate image 1 │ downl… │ Download processed image  │ ⏳ │ 2025-0… │
+│ img2  │ Generate image 2 │ downl… │ Download processed image  │ ⏳ │ 2025-0… │
+╰───────┴──────────────────┴────────┴───────────────────────────┴────┴─────────╯
+Conditions: generate=completed, download=pending
+```
+
+**Example Property Search Output:**
 ```
 🔍 Found 2 item(s) with priority='high' in 'my-project'
 ╭────────────────┬──────────────────────────────┬────────────┬──────────┬─────────────────╮
