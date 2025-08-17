@@ -506,6 +506,24 @@ class Database:
         """Update item content"""
         return self.update_item(item_id, {"content": new_content})
 
+    def rename_item(
+        self, 
+        item_id: int, 
+        new_key: Optional[str] = None, 
+        new_content: Optional[str] = None
+    ) -> Optional[TodoItemDB]:
+        """Update item key and/or content in database"""
+        if new_key is None and new_content is None:
+            raise ValueError("At least one of new_key or new_content must be provided")
+            
+        updates = {}
+        if new_key is not None:
+            updates["item_key"] = new_key
+        if new_content is not None:
+            updates["content"] = new_content
+            
+        return self.update_item(item_id, updates)
+
     def delete_item(self, item_id: int) -> bool:
         """Delete item"""
         with self.get_session() as session:

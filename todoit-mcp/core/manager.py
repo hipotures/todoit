@@ -2467,6 +2467,105 @@ class TodoManager:
 
         return self._db_to_model(updated_item, TodoItem)
 
+    def rename_item(
+        self,
+        list_key: str,
+        item_key: str,
+        new_key: Optional[str] = None,
+        new_title: Optional[str] = None,
+        parent_item_key: Optional[str] = None
+    ) -> TodoItem:
+        """Rename item key and/or title (content).
+        
+        Args:
+            list_key: The key of the list containing the item
+            item_key: Current key of the item to rename
+            new_key: New key for the item (optional)
+            new_title: New title/content for the item (optional)
+            parent_item_key: Parent item key if renaming a subitem (optional)
+            
+        Returns:
+            Updated TodoItem object
+            
+        Raises:
+            ValueError: If list or item not found, or if no changes provided
+        """
+        # Map title to content for internal processing
+        new_content = new_title
+        
+        # Validate at least one change is provided
+        if new_key is None and new_content is None:
+            raise ValueError("At least one of new_key or new_title must be provided")
+            
+        # Get the list
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
+
+        # Get item to update (subitem or main item)
+        if parent_item_key:
+            # Get parent item first
+            parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+            if not parent_item:
+                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+            
+            # Get subitem
+            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+            if not db_item:
+                raise ValueError(f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+        else:
+            # Get main item
+            db_item = self.db.get_item_by_key(db_list.id, item_key)
+            if not db_item:
+                raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+
+        # Validate new key uniqueness if provided
+        if new_key is not None and new_key != item_key:
+            # Check if new key already exists in the same context
+            if parent_item_key:
+                # For subitems: check uniqueness within parent
+                parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+                existing_subitem = self.db.get_item_by_key_and_parent(db_list.id, new_key, parent_item.id)
+                if existing_subitem:
+                    raise ValueError(f"Subitem key '{new_key}' already exists under parent '{parent_item_key}'")
+            else:
+                # For main items: check uniqueness within list
+                existing_item = self.db.get_item_by_key(db_list.id, new_key)
+                if existing_item:
+                    raise ValueError(f"Item key '{new_key}' already exists in list '{list_key}'")
+
+        # Store old values for history
+        old_key = db_item.item_key
+        old_content = db_item.content
+
+        # Update the item in database
+        updated_item = self.db.rename_item(db_item.id, new_key, new_content)
+        if not updated_item:
+            raise ValueError(f"Failed to rename item")
+
+        # Record history
+        changes = {}
+        if new_key is not None:
+            changes["item_key"] = {"old": old_key, "new": new_key}
+        if new_content is not None:
+            changes["content"] = {"old": old_content, "new": new_content}
+            
+        self._record_history(
+            item_id=db_item.id,
+            action="rename_item",
+            old_value={
+                "item_key": old_key,
+                "content": old_content
+            },
+            new_value={
+                "item_key": updated_item.item_key,
+                "content": updated_item.content
+            },
+            user_context=f"rename: {', '.join(changes.keys())}",
+        )
+
+        return self._db_to_model(updated_item, TodoItem)
+
     def _get_all_subtasks_recursive(self, item_id: int) -> List:
         """Get all subtasks of an item recursively"""
         all_subtasks = []

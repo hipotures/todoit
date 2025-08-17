@@ -1130,3 +1130,89 @@ def state_remove(ctx, list_key, item_key, subitem_key, state_keys, force):
 
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command("rename")
+@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--item", "item_key", required=True, help="Current item key")
+@click.option("--new-key", help="New item key (optional)")
+@click.option("--new-title", help="New item title/content (optional)")
+@click.option("--parent", "parent_item_key", help="Parent item key (if renaming subitem)")
+@click.option("--force", is_flag=True, help="Skip confirmation prompt")
+@click.pass_context
+def item_rename(ctx, list_key, item_key, new_key, new_title, parent_item_key, force):
+    """Rename an item's key and/or title
+    
+    At least one of --new-key or --new-title must be provided.
+    
+    Examples:
+      # Change item key only
+      todoit item rename --list "project" --item "task1" --new-key "feature1"
+      
+      # Change item title only
+      todoit item rename --list "project" --item "task1" --new-title "Implement user authentication"
+      
+      # Change both key and title
+      todoit item rename --list "project" --item "task1" --new-key "auth" --new-title "User Authentication Feature"
+      
+      # Rename a subitem
+      todoit item rename --list "project" --item "subtask1" --parent "maintask" --new-key "test_auth" --new-title "Test authentication system"
+    """
+    manager = get_manager(ctx.obj["db_path"])
+
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print(
+            "[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]"
+        )
+        return
+
+    # Validate inputs
+    if not new_key and not new_title:
+        console.print("[red]At least one of --new-key or --new-title must be provided[/]")
+        return
+
+    try:
+        # Get current item to show what will be changed
+        current_item = manager.get_item(list_key, item_key, parent_item_key)
+        if not current_item:
+            item_type = "subitem" if parent_item_key else "item"
+            console.print(f"[red]{item_type.capitalize()} '{item_key}' not found in list '{list_key}'[/]")
+            return
+
+        # Show current state and planned changes
+        item_type = "subitem" if parent_item_key else "item"
+        console.print(f"[yellow]Current {item_type}:[/]")
+        console.print(f"  Key: {current_item.item_key}")
+        console.print(f"  Title: {current_item.content}")
+        if parent_item_key:
+            console.print(f"  Parent: {parent_item_key}")
+
+        console.print(f"\n[yellow]Planned changes:[/]")
+        if new_key:
+            console.print(f"  Key: {current_item.item_key} → {new_key}")
+        if new_title:
+            console.print(f"  Title: {current_item.content} → {new_title}")
+
+        if not force and not Confirm.ask("Proceed with rename?"):
+            return
+
+        # Perform the rename
+        updated_item = manager.rename_item(
+            list_key=list_key,
+            item_key=item_key,
+            new_key=new_key,
+            new_title=new_title,
+            parent_item_key=parent_item_key
+        )
+
+        console.print(f"[green]✅ Successfully renamed {item_type}[/]")
+        
+        # Show final state
+        console.print(f"\n[green]Updated {item_type}:[/]")
+        console.print(f"  Key: {updated_item.item_key}")
+        console.print(f"  Title: {updated_item.content}")
+
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")

@@ -202,7 +202,7 @@ class TestMCPListItemsLimit:
             # Verify item structure is maintained
             for item in result["items"]:
                 assert "item_key" in item
-                assert "content" in item
+                assert "title" in item
                 assert "status" in item
                 assert "list_key" in item
 

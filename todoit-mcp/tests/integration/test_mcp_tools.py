@@ -40,7 +40,7 @@ class TestMCPToolsBasic:
             )
 
         tool_count = int(result.stdout.strip())
-        assert tool_count == 50, f"Expected exactly 50 MCP tools, found {tool_count}"
+        assert tool_count == 52, f"Expected exactly 52 MCP tools, found {tool_count}"
 
     def test_mcp_tool_names(self):
         """Test that all expected tool names are present"""

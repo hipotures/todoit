@@ -5,6 +5,51 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2025-08-17
+
+### 🚀 MAJOR FEATURE: Complete Rename Functionality
+
+#### ✨ **New Rename Operations**
+- **NEW**: `todo_rename_item` MCP tool - Rename item keys and/or titles with subitem support
+- **NEW**: `todo_rename_list` MCP tool - Rename list keys and/or titles  
+- **NEW**: `todoit item rename` CLI command - Complete item renaming functionality
+- **ENHANCED**: Full subitem rename support via `subitem_key` parameter
+
+#### 🔧 **Database & Core Enhancements**
+- **ADDED**: `rename_item()` method in Database layer with key/content updates
+- **ADDED**: `rename_item()` method in TodoManager with validation and history
+- **ENHANCED**: Cross-list uniqueness validation for item keys
+- **ROBUST**: Complete error handling for all rename edge cases
+
+#### 🎯 **MCP API Consistency Improvements**  
+- **STANDARDIZED**: All MCP tools now use `title` parameter instead of `content` for external APIs
+- **MAPPING**: Automatic internal `content` ↔ external `title` field mapping
+- **CONSISTENT**: Unified naming convention across all 52 MCP tools
+- **BACKWARDS**: Maintains internal database `content` field structure
+
+#### 🧪 **Comprehensive Testing**
+- **ADDED**: 29 unit tests for rename functionality (18 item + 11 list)
+- **ADDED**: 11 integration tests for MCP rename tools  
+- **FIXED**: Updated all existing tests for new `title` parameter convention
+- **COVERAGE**: Complete test coverage for all rename scenarios and edge cases
+
+#### 📊 **Updated Tool Counts**
+- **TOTAL**: 52 MCP tools (increased from 50)
+- **MINIMAL**: 12 tools (includes essential rename operations)
+- **STANDARD**: 24 tools (includes both rename tools)  
+- **MAX**: 52 tools (complete feature set)
+
+#### 📚 **Documentation Updates**
+- **UPDATED**: MCP_TOOLS.md with new tool descriptions and counts
+- **ENHANCED**: Tool level configuration tables and performance metrics
+- **DETAILED**: Complete rename functionality documentation
+
+#### 🔒 **Validation & Security**
+- **STRICT**: Key format validation (alphanumeric + underscore/dash)
+- **SAFE**: Circular dependency prevention in rename operations
+- **AUDIT**: Complete history recording for all rename operations
+- **UNIQUE**: Cross-context uniqueness enforcement
+
 ## [2.8.3] - 2025-08-17
 
 ### 🐛 CRITICAL BUG FIX - CLI find-subitems Compatibility

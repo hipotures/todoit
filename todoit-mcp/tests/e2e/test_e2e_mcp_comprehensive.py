@@ -59,7 +59,7 @@ class TestE2EComprehensiveMCP:
         result = await todo_create_list("backend", "Backend Development")
         assert result["success"] == True
         assert result["list"]["title"] == "Backend Development"
-        assert result["list"]["list_type"].value == "sequential"
+        assert result["list"]["list_type"] == "sequential"
 
         result = await todo_create_list("frontend", "Frontend Development") 
         assert result["success"] == True
@@ -116,7 +116,7 @@ class TestE2EComprehensiveMCP:
         # Add main tasks
         result = await todo_add_item("backend", "api", "REST API Development")
         assert result["success"] == True
-        assert result["item"]["content"] == "REST API Development"
+        assert result["item"]["title"] == "REST API Development"
 
         result = await todo_add_item("backend", "database", "Database Design")
         assert result["success"] == True
@@ -130,7 +130,7 @@ class TestE2EComprehensiveMCP:
         # Add subtasks
         result = await todo_add_item("backend", "api", "Authentication", subitem_key="auth")
         assert result["success"] == True
-        assert result["subitem"]["content"] == "Authentication"
+        assert result["subitem"]["title"] == "Authentication"
 
         result = await todo_add_item("backend", "api", "API Endpoints", subitem_key="endpoints")
         assert result["success"] == True
@@ -141,12 +141,12 @@ class TestE2EComprehensiveMCP:
         # Test item retrieval
         result = await todo_get_item("backend", "api")
         assert result["success"] == True
-        assert result["item"]["content"] == "REST API Development"
+        assert result["item"]["title"] == "REST API Development"
 
         # Test subitem retrieval
         result = await todo_get_item("backend", "api", subitem_key="auth")
         assert result["success"] == True
-        assert result["subitem"]["content"] == "Authentication"
+        assert result["subitem"]["title"] == "Authentication"
 
         # Test list items
         result = await todo_get_list_items("backend")

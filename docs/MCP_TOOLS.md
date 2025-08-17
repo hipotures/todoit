@@ -2,7 +2,7 @@
 
 ## Overview
 
-TODOIT MCP provides 50 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
+TODOIT MCP provides 52 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
 
 ## 🎛️ Tools Level Configuration
 
@@ -12,22 +12,22 @@ TODOIT MCP provides 50 comprehensive tools for Claude Code integration, offering
 
 | Level | Tools Count | Token Savings | Use Case |
 |-------|-------------|---------------|----------|
-| **MINIMAL** | 10 tools | 82% savings | Essential operations only, maximum performance |
-| **STANDARD** | 25 tools | 57% savings | Balanced functionality (default) | 
-| **MAX** | 50 tools | 0% savings | Complete feature set |
+| **MINIMAL** | 12 tools | 77% savings | Essential operations only, maximum performance |
+| **STANDARD** | 24 tools | 54% savings | Balanced functionality (default) | 
+| **MAX** | 52 tools | 0% savings | Complete feature set |
 
 ### 🔧 Configuration
 
 Set the environment variable to choose your level:
 
 ```bash
-# Minimal set (10 tools) - Essential operations only
+# Minimal set (12 tools) - Essential operations only
 export TODOIT_MCP_TOOLS_LEVEL=minimal
 
-# Standard set (25 tools) - Balanced functionality (DEFAULT)
+# Standard set (24 tools) - Balanced functionality (DEFAULT)
 export TODOIT_MCP_TOOLS_LEVEL=standard
 
-# Complete set (50 tools) - All features
+# Complete set (52 tools) - All features
 export TODOIT_MCP_TOOLS_LEVEL=max
 ```
 
@@ -35,9 +35,9 @@ export TODOIT_MCP_TOOLS_LEVEL=max
 
 ### ⚡ Performance Impact
 
-- **MINIMAL**: ~500-1000 tokens context vs 3000+ for MAX
+- **MINIMAL**: ~600-1200 tokens context vs 3200+ for MAX
 - **STANDARD**: ~1300-1800 tokens context (24 tools)
-- **MAX**: ~3000+ tokens context (50 tools - full feature set)
+- **MAX**: ~3200+ tokens context (52 tools - full feature set)
 
 ### 🛡️ Security Benefits
 
@@ -52,12 +52,13 @@ Perfect for production environments or when safety is paramount.
 
 ## Tool Categories
 
-### 🔧 Basic Operations (17 tools)
+### 🔧 Basic Operations (19 tools)
 Core functionality for list and item management.
 
 #### List Management
 - **`todo_create_list`** - Create new TODO list with optional initial items
 - **`todo_get_list`** - 🆕 **Enhanced** - Retrieve list details with optional items and properties in single call  
+- **`todo_rename_list`** - 🆕 **NEW** - Rename list key and/or title
 - **`todo_delete_list`** - Delete list with dependency validation
 - **`todo_archive_list`** - Archive list (hide from normal view) with completion validation 
 - **`todo_unarchive_list`** - Unarchive list (restore to normal view)
@@ -67,6 +68,7 @@ Core functionality for list and item management.
 - **`todo_add_item`** - 🆕 **UNIFIED** - Add item or subitem to list (smart detection via subitem_key parameter)
 - **`todo_update_item_status`** - 🆕 **ENHANCED** - Update item or subitem status (pending/in_progress/completed/failed) with subitem_key support
 - **`todo_update_item_content`** - Update item description/content text
+- **`todo_rename_item`** - 🆕 **NEW** - Rename item key and/or title (supports subitems via subitem_key parameter)
 - **`todo_delete_item`** - Delete item permanently from list
 - **`todo_get_item`** - 🆕 **UNIFIED** - Get item details or subitems (smart detection via subitem_key parameter)
 - **`todo_get_list_items`** - Get all items from list with optional status filter and pagination limit
@@ -626,7 +628,7 @@ await todo_remove_list_tag("project-alpha", "urgent")
 
 ## 📋 Detailed Tools by Level
 
-### 🥇 MINIMAL Level (10 tools)
+### 🥇 MINIMAL Level (12 tools)
 **Essential operations only - Maximum performance**
 
 | Tool | Purpose |
@@ -641,8 +643,10 @@ await todo_remove_list_tag("project-alpha", "urgent")
 | `todo_get_next_pending` | Get next available task |
 | `todo_get_progress` | Get progress statistics |
 | `todo_update_item_content` | Update item description |
+| `todo_rename_item` | Rename item key/title |
+| `todo_rename_list` | Rename list key/title |
 
-### 🥈 STANDARD Level (+16 tools)
+### 🥈 STANDARD Level (+12 tools)
 **Includes MINIMAL + useful extensions**
 
 **Additional tools in STANDARD:**

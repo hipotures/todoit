@@ -48,6 +48,13 @@ def mcp_error_handler(func: Callable) -> Callable:
     return wrapper
 
 
+def map_item_content_to_title(item_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Map content field to title in item dictionary for consistent API."""
+    if "content" in item_dict:
+        item_dict["title"] = item_dict.pop("content")
+    return item_dict
+
+
 # === MCP TOOLS LEVEL CONFIGURATION ===
 import os
 
@@ -87,6 +94,9 @@ TOOLS_STANDARD = TOOLS_MINIMAL + [
     # Basic tagging (2)
     "todo_create_tag",
     "todo_add_list_tag",
+    # Rename operations (2)
+    "todo_rename_item",
+    "todo_rename_list",
 ]
 
 # MAX level includes all tools (defined by registration, not exclusion)
@@ -375,7 +385,7 @@ async def todo_list_all(
 async def todo_add_item(
     list_key: str,
     item_key: str,
-    content: str,
+    title: str,
     position: Optional[int] = None,
     metadata: Optional[Dict[str, Any]] = None,
     subitem_key: Optional[str] = None,
@@ -385,7 +395,7 @@ async def todo_add_item(
     Args:
         list_key: Key of the list to add item to (required)
         item_key: Unique key for the new item, or parent key if adding subitem (required)
-        content: Text content of the todo item/subitem (required)
+        title: Text title of the todo item/subitem (required)
         position: Optional position to insert item at
         metadata: Optional dictionary of custom metadata for the item/subitem
         subitem_key: Optional subitem key. If provided, adds subitem to item_key as parent
@@ -411,12 +421,12 @@ async def todo_add_item(
                 list_key=list_key,
                 parent_key=item_key,
                 subitem_key=subitem_key,
-                content=content,
+                content=title,  # Map title to content internally
                 metadata=metadata,
             )
             return {
                 "success": True, 
-                "subitem": subitem.to_dict(),
+                "subitem": map_item_content_to_title(subitem.to_dict()),
                 "message": f"Subitem '{subitem_key}' added to '{item_key}' in list '{list_key}'"
             }
         else:
@@ -424,11 +434,11 @@ async def todo_add_item(
             item = mgr.add_item(
                 list_key=list_key,
                 item_key=item_key,
-                content=content,
+                content=title,  # Map title to content internally
                 position=position,
                 metadata=metadata,
             )
-            return {"success": True, "item": item.to_dict()}
+            return {"success": True, "item": map_item_content_to_title(item.to_dict())}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -486,7 +496,7 @@ async def todo_update_item_status(
         target_type = "Subitem" if subitem_key else "Item"
         return {
             "success": True,
-            "item": item.to_dict(),
+            "item": map_item_content_to_title(item.to_dict()),
             "message": f"{target_type} '{target_name}' status updated successfully",
         }
     except ValueError as e:
@@ -522,7 +532,7 @@ async def todo_get_next_pending(
             list_key=list_key, respect_dependencies=respect_dependencies
         )
         if item:
-            return {"success": True, "item": item.to_dict()}
+            return {"success": True, "item": map_item_content_to_title(item.to_dict())}
         else:
             return {
                 "success": True,
@@ -702,7 +712,7 @@ async def todo_get_item(
                 subitems = mgr.get_subitems(list_key=list_key, parent_key=item_key)
                 return {
                     "success": True,
-                    "subitems": [subitem.to_dict() for subitem in subitems],
+                    "subitems": [map_item_content_to_title(subitem.to_dict()) for subitem in subitems],
                     "count": len(subitems),
                     "parent_key": item_key,
                 }
@@ -710,7 +720,7 @@ async def todo_get_item(
                 # Get specific subitem by key
                 subitem = mgr.get_item(list_key=list_key, item_key=subitem_key)
                 if subitem:
-                    return {"success": True, "subitem": subitem.to_dict()}
+                    return {"success": True, "subitem": map_item_content_to_title(subitem.to_dict())}
                 else:
                     return {
                         "success": False,
@@ -720,7 +730,7 @@ async def todo_get_item(
             # Get regular item
             item = mgr.get_item(list_key=list_key, item_key=item_key)
             if item:
-                return {"success": True, "item": item.to_dict()}
+                return {"success": True, "item": map_item_content_to_title(item.to_dict())}
             else:
                 return {
                     "success": False,
@@ -762,7 +772,7 @@ async def todo_get_list_items(
         # Add list_key to each item's dict
         items_with_list_key = []
         for item in items:
-            item_dict = item.to_dict()
+            item_dict = map_item_content_to_title(item.to_dict())
             item_dict["list_key"] = list_key
             items_with_list_key.append(item_dict)
 
@@ -834,7 +844,7 @@ async def todo_quick_add(list_key: str, items: List[str]) -> Dict[str, Any]:
         for i, content in enumerate(items):
             item_key = f"item_{i+1:04d}"  # Simple sequential numbering
             item = mgr.add_item(list_key=list_key, item_key=item_key, content=content)
-            created_items.append(item.to_dict())
+            created_items.append(map_item_content_to_title(item.to_dict()))
 
         return {"success": True, "items": created_items, "count": len(created_items)}
     except Exception as e:
@@ -1329,7 +1339,7 @@ async def todo_move_to_subitem(
     moved_item = mgr.move_to_subitem(list_key, item_key, new_parent_key)
     return {
         "success": True,
-        "moved_item": moved_item.to_dict(),
+        "moved_item": map_item_content_to_title(moved_item.to_dict()),
         "message": f"Item '{item_key}' moved to be subtask of '{new_parent_key}'",
     }
 
@@ -1349,7 +1359,7 @@ async def todo_get_next_pending_smart(list_key: str, mgr=None) -> Dict[str, Any]
     if item:
         return {
             "success": True,
-            "next_item": item.to_dict(),
+            "next_item": map_item_content_to_title(item.to_dict()),
             "is_subtask": item.parent_item_id is not None,
             "message": f"Next smart task: {item.item_key}",
         }
@@ -1511,7 +1521,7 @@ async def todo_get_items_blocked_by(
 
     return {
         "success": True,
-        "blocked_items": [item.to_dict() for item in blocked_items],
+        "blocked_items": [map_item_content_to_title(item.to_dict()) for item in blocked_items],
         "blocked_count": len(blocked_items),
         "list_key": list_key,
         "item_key": item_key,
@@ -1639,7 +1649,7 @@ async def todo_get_next_pending_enhanced(
 
         return {
             "success": True,
-            "next_item": item.to_dict(),
+            "next_item": map_item_content_to_title(item.to_dict()),
             "is_blocked": is_blocked,
             "is_subtask": is_subtask,
             "context": {
@@ -1738,10 +1748,10 @@ async def todo_get_comprehensive_status(list_key: str, mgr=None) -> Dict[str, An
         "success": True,
         "list_key": list_key,
         "progress": progress.to_dict(),
-        "next_task": next_task.to_dict() if next_task else None,
+        "next_task": map_item_content_to_title(next_task.to_dict()) if next_task else None,
         "blocked_items": blocked_items,
         "available_items": available_items,
-        "items": [item.to_dict() for item in items],
+        "items": [map_item_content_to_title(item.to_dict()) for item in items],
         "dependency_summary": dependency_summary,
         "recommendations": {
             "action": (
@@ -1791,23 +1801,122 @@ async def todo_delete_item(list_key: str, item_key: str, mgr=None) -> Dict[str, 
 @conditional_tool
 @mcp_error_handler
 async def todo_update_item_content(
-    list_key: str, item_key: str, new_content: str, mgr=None
+    list_key: str, item_key: str, new_title: str, mgr=None
 ) -> Dict[str, Any]:
-    """Update the content/description of a todo item.
+    """Update the title/content of a todo item.
 
     Args:
         list_key: Key of the list containing the item (required)
         item_key: Key of the item to update (required)
-        new_content: New content/description for the item (required)
+        new_title: New title/content for the item (required)
 
     Returns:
         Dictionary with success status and updated item details
     """
-    updated_item = mgr.update_item_content(list_key, item_key, new_content)
+    updated_item = mgr.update_item_content(list_key, item_key, new_title)  # Map title to content internally
     return {
         "success": True,
-        "item": updated_item.to_dict(),
-        "message": f"Content updated for item '{item_key}' in list '{list_key}'",
+        "item": map_item_content_to_title(updated_item.to_dict()),
+        "message": f"Title updated for item '{item_key}' in list '{list_key}'",
+    }
+
+
+@conditional_tool
+@mcp_error_handler
+async def todo_rename_item(
+    list_key: str,
+    item_key: str,
+    new_key: Optional[str] = None,
+    new_title: Optional[str] = None,
+    subitem_key: Optional[str] = None,
+    mgr=None
+) -> Dict[str, Any]:
+    """Rename item key and/or title.
+
+    Args:
+        list_key: Key of the list containing the item (required)
+        item_key: Current key of the item, or parent key if renaming subitem (required)
+        new_key: New key for the item/subitem (optional)
+        new_title: New title for the item/subitem (optional)
+        subitem_key: If provided, renames the subitem instead of parent item (optional)
+
+    Returns:
+        Dictionary with success status and updated item details
+
+    Examples:
+        # Rename item key only
+        await todo_rename_item("project", "old_task", new_key="new_task")
+        
+        # Rename item title only  
+        await todo_rename_item("project", "task1", new_title="Updated Title")
+        
+        # Rename both key and title
+        await todo_rename_item("project", "old", new_key="new", new_title="New Title")
+        
+        # Rename subitem
+        await todo_rename_item("project", "parent", new_key="new_sub", subitem_key="old_sub")
+    """
+    # Determine parent_item_key based on subitem_key parameter
+    parent_item_key = item_key if subitem_key else None
+    actual_item_key = subitem_key if subitem_key else item_key
+    
+    updated_item = mgr.rename_item(
+        list_key=list_key,
+        item_key=actual_item_key,
+        new_key=new_key,
+        new_title=new_title,
+        parent_item_key=parent_item_key
+    )
+    
+    # Convert to dict and map content → title for response
+    item_dict = updated_item.to_dict()
+    item_dict["title"] = item_dict.pop("content")  # Map content → title
+    
+    return {
+        "success": True,
+        "item": item_dict,
+        "message": f"Item '{actual_item_key}' renamed in list '{list_key}'",
+    }
+
+
+@conditional_tool
+@mcp_error_handler
+async def todo_rename_list(
+    list_key: str,
+    new_key: Optional[str] = None,
+    new_title: Optional[str] = None,
+    mgr=None
+) -> Dict[str, Any]:
+    """Rename list key and/or title.
+
+    Args:
+        list_key: Current key of the list to rename (required)
+        new_key: New key for the list (optional)
+        new_title: New title for the list (optional)
+
+    Returns:
+        Dictionary with success status and updated list details
+
+    Examples:
+        # Rename list key only
+        await todo_rename_list("old_project", new_key="new_project")
+        
+        # Rename list title only
+        await todo_rename_list("project", new_title="Updated Project Title")
+        
+        # Rename both key and title
+        await todo_rename_list("old", new_key="new", new_title="New Title")
+    """
+    updated_list = mgr.rename_list(
+        current_key=list_key,
+        new_key=new_key,
+        new_title=new_title
+    )
+    
+    return {
+        "success": True,
+        "list": updated_list.to_dict(),
+        "message": f"List '{list_key}' renamed successfully",
     }
 
 

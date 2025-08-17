@@ -218,7 +218,7 @@ class TestItemManagement:
 
         # Verify response contains updated item
         assert "item" in result
-        assert result["item"]["content"] == new_content
+        assert result["item"]["title"] == new_content
 
         # Verify persistence
         updated_item = temp_manager.get_item("test_list", "test_item")
