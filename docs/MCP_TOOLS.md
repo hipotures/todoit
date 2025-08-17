@@ -2,7 +2,7 @@
 
 ## Overview
 
-TODOIT MCP provides 52 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
+TODOIT MCP provides 51 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
 
 ## 🎛️ Tools Level Configuration
 
@@ -12,32 +12,32 @@ TODOIT MCP provides 52 comprehensive tools for Claude Code integration, offering
 
 | Level | Tools Count | Token Savings | Use Case |
 |-------|-------------|---------------|----------|
-| **MINIMAL** | 12 tools | 77% savings | Essential operations only, maximum performance |
-| **STANDARD** | 24 tools | 54% savings | Balanced functionality (default) | 
-| **MAX** | 52 tools | 0% savings | Complete feature set |
+| **MINIMAL** | 9 tools | 82% savings | Essential operations only, maximum performance |
+| **STANDARD** | 23 tools | 55% savings | Balanced functionality (default) | 
+| **MAX** | 51 tools | 0% savings | Complete feature set |
 
 ### 🔧 Configuration
 
 Set the environment variable to choose your level:
 
 ```bash
-# Minimal set (12 tools) - Essential operations only
+# Minimal set (9 tools) - Essential operations only
 export TODOIT_MCP_TOOLS_LEVEL=minimal
 
-# Standard set (24 tools) - Balanced functionality (DEFAULT)
+# Standard set (23 tools) - Balanced functionality (DEFAULT)
 export TODOIT_MCP_TOOLS_LEVEL=standard
 
-# Complete set (52 tools) - All features
+# Complete set (51 tools) - All features
 export TODOIT_MCP_TOOLS_LEVEL=max
 ```
 
-**Default**: `STANDARD` level (24 tools) for optimal balance of functionality vs performance.
+**Default**: `STANDARD` level (23 tools) for optimal balance of functionality vs performance.
 
 ### ⚡ Performance Impact
 
-- **MINIMAL**: ~600-1200 tokens context vs 3200+ for MAX
-- **STANDARD**: ~1300-1800 tokens context (24 tools)
-- **MAX**: ~3200+ tokens context (52 tools - full feature set)
+- **MINIMAL**: ~500-1000 tokens context vs 3000+ for MAX
+- **STANDARD**: ~1200-1700 tokens context (23 tools)
+- **MAX**: ~3000+ tokens context (51 tools - full feature set)
 
 ### 🛡️ Security Benefits
 
@@ -47,6 +47,64 @@ export TODOIT_MCP_TOOLS_LEVEL=max
 - ✅ All read/update operations available
 
 Perfect for production environments or when safety is paramount.
+
+## 🚀 Data Optimization 
+
+**NEW**: All MCP tools now return optimized, minimal datasets for better performance:
+
+### Reduced Item Data
+- ✅ **Essential fields**: `item_key`, `title`, `status`, `position`
+- ✅ **Smart indicators**: `is_subtask: true` for subtasks
+- ❌ **Removed**: `id`, `list_id`, `created_at`, `updated_at`, `started_at`, `completed_at`, `completion_states`, `metadata`, `parent_item_id`
+- 📉 **Result**: 62-67% reduction (13 fields → 5 fields)
+
+### Reduced List Data  
+- ✅ **Essential fields**: `list_key`, `title`, `description`, `list_type`
+- ❌ **Removed**: `id`, `created_at`, `updated_at`, `status`, `metadata`, internal fields
+- 📉 **Result**: ~50% reduction (8+ fields → 4 fields)
+
+### Performance Benefits
+- **Faster responses** - Less data transfer
+- **Lower token usage** - Smaller context in Claude Code
+- **Better readability** - Focus on actionable data only
+
+### Before/After Examples
+
+**Item Response BEFORE (13 fields):**
+```json
+{
+  "success": true,
+  "item": {
+    "id": 3260,
+    "list_id": 125,
+    "item_key": "scene_style",
+    "position": 2,
+    "status": "completed",
+    "completion_states": {},
+    "parent_item_id": 3258,
+    "metadata": {},
+    "started_at": null,
+    "completed_at": "2025-08-17T11:16:26.290684",
+    "created_at": "2025-08-17T11:16:25.460898",
+    "updated_at": "2025-08-17T20:08:30.958173",
+    "title": "Scene styling for scene_0004.yaml"
+  }
+}
+```
+
+**Item Response AFTER (5 fields - 62% reduction):**
+```json
+{
+  "success": true,
+  "item": {
+    "item_key": "scene_style",
+    "status": "completed",
+    "position": 2,
+    "is_subtask": true,
+    "title": "Scene styling for scene_0004.yaml"
+  }
+}
+```
 
 ---
 
@@ -67,7 +125,6 @@ Core functionality for list and item management.
 #### Item Management  
 - **`todo_add_item`** - 🆕 **UNIFIED** - Add item or subitem to list (smart detection via subitem_key parameter)
 - **`todo_update_item_status`** - 🆕 **ENHANCED** - Update item or subitem status (pending/in_progress/completed/failed) with subitem_key support
-- **`todo_update_item_content`** - Update item description/content text
 - **`todo_rename_item`** - 🆕 **NEW** - Rename item key and/or title (supports subitems via subitem_key parameter)
 - **`todo_delete_item`** - Delete item permanently from list
 - **`todo_get_item`** - 🆕 **UNIFIED** - Get item details or subitems (smart detection via subitem_key parameter)
@@ -642,7 +699,6 @@ await todo_remove_list_tag("project-alpha", "urgent")
 | `todo_get_item` | Get specific item details |
 | `todo_get_next_pending` | Get next available task |
 | `todo_get_progress` | Get progress statistics |
-| `todo_update_item_content` | Update item description |
 | `todo_rename_item` | Rename item key/title |
 | `todo_rename_list` | Rename list key/title |
 

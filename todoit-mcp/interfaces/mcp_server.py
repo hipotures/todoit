@@ -87,6 +87,13 @@ def clean_to_dict_result(obj_dict: Dict[str, Any], object_type: str = "item") ->
             "list_type": obj_dict.get("list_type"),
         }
         return {k: v for k, v in essential_fields.items() if v is not None}
+    elif object_type == "property":
+        # Keep only essential property fields
+        essential_fields = {
+            "property_key": obj_dict.get("property_key"),
+            "property_value": obj_dict.get("property_value"),
+        }
+        return {k: v for k, v in essential_fields.items() if v is not None}
     else:
         # For other objects (progress, tags, etc.) keep as-is but remove common timestamp fields
         clean_dict = obj_dict.copy()
@@ -949,7 +956,7 @@ async def todo_set_list_property(
         Dictionary with success status and property details
     """
     property_obj = mgr.set_list_property(list_key, property_key, property_value)
-    return {"success": True, "property": property_obj.to_dict()}
+    return {"success": True, "property": clean_to_dict_result(property_obj.to_dict(), "property")}
 
 
 @conditional_tool
@@ -1051,7 +1058,7 @@ async def todo_set_item_property(
     target = f"subitem '{item_key}' under item '{parent_item_key}'" if parent_item_key else f"item '{item_key}'"
     return {
         "success": True,
-        "property": property_obj.to_dict(),
+        "property": clean_to_dict_result(property_obj.to_dict(), "property"),
         "message": f"Property '{property_key}' set for {target} in list '{list_key}'",
     }
 
@@ -1135,13 +1142,28 @@ async def todo_get_all_items_properties(
     """
     properties = mgr.get_all_items_properties(list_key, status, limit)
 
-    # Group properties by item_key
+    # Group properties by item_key with hierarchy support
     grouped_data = {}
     for prop in properties:
         item_key = prop["item_key"]
-        if item_key not in grouped_data:
-            grouped_data[item_key] = {}
-        grouped_data[item_key][prop["property_key"]] = prop["property_value"]
+        parent_item_key = prop.get("parent_item_key")
+        
+        # Skip placeholder entries (like CLI JSON does)
+        if prop["property_key"] == "—":
+            continue
+            
+        if parent_item_key:
+            # This is a subitem
+            if parent_item_key not in grouped_data:
+                grouped_data[parent_item_key] = {"properties": {}, "subitems": {}}
+            if item_key not in grouped_data[parent_item_key]["subitems"]:
+                grouped_data[parent_item_key]["subitems"][item_key] = {}
+            grouped_data[parent_item_key]["subitems"][item_key][prop["property_key"]] = prop["property_value"]
+        else:
+            # This is a main item
+            if item_key not in grouped_data:
+                grouped_data[item_key] = {"properties": {}, "subitems": {}}
+            grouped_data[item_key]["properties"][prop["property_key"]] = prop["property_value"]
 
     return {"success": True, "properties": grouped_data, "count": len(grouped_data)}
 
