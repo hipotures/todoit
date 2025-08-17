@@ -5,6 +5,40 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.1] - 2025-08-17
+
+### 🐛 CRITICAL BUG FIX - Subitem Disambiguation
+
+#### ❌ **Bug Fixed**: Wrong Subitem Updates
+- **PROBLEM**: `todo_update_item_status` was updating wrong subitem when multiple subitems had same name across different parents
+- **EXAMPLE**: Updating `scene_0007/image_dwn` incorrectly updated `scene_0001/image_dwn` instead
+- **ROOT CAUSE**: Backward compatibility between old `parent_item_key` and new `subitem_key` parameters created confusing routing logic
+
+#### ✅ **Solution Implemented**:
+- **REMOVED**: All backward compatibility - `parent_item_key` completely eliminated from `update_item_status`
+- **UNIFIED**: Parameter naming - now uses `subitem_key` consistently across MCP and Manager layers  
+- **SIMPLIFIED**: MCP routing - direct pass-through of parameters without translation logic
+- **UPDATED**: All test files and documentation converted to new syntax
+
+#### 🔧 **New Required Syntax**:
+```python
+# OLD (now forbidden):
+update_item_status("list", "subitem", "status", parent_item_key="parent")
+
+# NEW (required):
+update_item_status("list", "parent", subitem_key="subitem", status="status")
+```
+
+#### 📖 **Updated Documentation**:
+- **FIXED**: All examples in `docs/MCP_TOOLS.md`, `docs/api.md`, and `CHANGELOG.md`
+- **VERIFIED**: CLI commands now use correct syntax
+- **TESTED**: Both MCP and Manager layers properly target correct subitems
+
+#### ⚠️ **Breaking Change**:
+- **IMPACT**: Code using old `parent_item_key` parameter will now get `TypeError`
+- **BENEFIT**: Zero ambiguity - always updates the correct subitem
+- **MIGRATION**: Replace `parent_item_key="parent"` with proper `item_key="parent", subitem_key="subitem"` syntax
+
 ## [2.8.0] - 2025-08-16
 
 ### 🚀 MAJOR API CLEANUP - Enhanced Subitem Support
@@ -18,8 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### 🎯 **API Improvements**
 - **OLD APPROACH**: Separate functions for convenience (but couldn't handle subitems)
 - **NEW APPROACH**: One universal function with optional subitem support
-- **SUBITEM UPDATES**: `todo_update_item_status(list_key, parent_key, status, subitem_key=subitem)`
-- **ITEM UPDATES**: `todo_update_item_status(list_key, item_key, status)` (unchanged)
+- **SUBITEM UPDATES**: `todo_update_item_status(list_key, parent_key, subitem_key=subitem, status=status)`
+- **ITEM UPDATES**: `todo_update_item_status(list_key, item_key, status=status)` (unchanged)
 
 #### 📖 **Updated Documentation**
 - **UPDATED**: MCP_TOOLS.md with new subitem_key parameter examples
@@ -28,8 +62,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### ⚠️ **Breaking Change Notice**
 - **IMPACT**: Code using `todo_start_item` or `todo_mark_completed` must migrate to `todo_update_item_status`
-- **MIGRATION**: Replace with `todo_update_item_status(list_key, item_key, "in_progress")` or `todo_update_item_status(list_key, item_key, "completed")`
-- **BENEFIT**: Now supports subitems: `todo_update_item_status(list_key, parent_key, status, subitem_key=subitem)`
+- **MIGRATION**: Replace with `todo_update_item_status(list_key, item_key, status="in_progress")` or `todo_update_item_status(list_key, item_key, status="completed")`
+- **BENEFIT**: Now supports subitems: `todo_update_item_status(list_key, parent_key, subitem_key=subitem, status=status)`
 
 ## [2.7.0] - 2025-08-16
 

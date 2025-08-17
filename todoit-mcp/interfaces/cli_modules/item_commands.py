@@ -155,25 +155,27 @@ def item_status(ctx, list_key, item_key, subitem_key, status, state):
             k, v = s.split("=", 1)
             states[k] = v.lower() in ["true", "1", "yes"]
 
-        # Determine target key and parent - if subitem is specified, update the subitem
+        # Use new simplified syntax - no more target_key/parent_key translation
         if subitem_key:
-            target_key = subitem_key
             target_type = "subitem"
-            parent_key = item_key
+            item = manager.update_item_status(
+                list_key=list_key,
+                item_key=item_key,  # This is the parent
+                subitem_key=subitem_key,
+                status=status,
+                completion_states=states if states else None,
+            )
         else:
-            target_key = item_key
             target_type = "item"
-            parent_key = None
+            item = manager.update_item_status(
+                list_key=list_key,
+                item_key=item_key,
+                status=status,
+                completion_states=states if states else None,
+            )
 
-        item = manager.update_item_status(
-            list_key=list_key,
-            item_key=target_key,
-            status=status,
-            completion_states=states if states else None,
-            parent_item_key=parent_key,
-        )
-
-        console.print(f"[green]✅ Updated {target_type} '{target_key}' status to {status}[/]")
+        display_key = subitem_key if subitem_key else item_key
+        console.print(f"[green]✅ Updated {target_type} '{display_key}' status to {status}[/]")
         if states:
             console.print("States:")
             for k, v in states.items():

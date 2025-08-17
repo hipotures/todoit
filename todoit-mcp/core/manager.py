@@ -571,9 +571,9 @@ class TodoManager:
         self,
         list_key: str,
         item_key: str,
+        subitem_key: Optional[str] = None,
         status: Optional[str] = None,
         completion_states: Optional[Dict[str, Any]] = None,
-        parent_item_key: Optional[str] = None,
     ) -> TodoItem:
         """6. Updates task status with multi-state support and automatic parent synchronization"""
         # Get the list
@@ -582,16 +582,16 @@ class TodoManager:
             raise ValueError(f"List '{list_key}' does not exist")
 
         # Get the task (subitem or main item)
-        if parent_item_key:
+        if subitem_key:
             # Get parent item first
-            parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+            parent_item = self.db.get_item_by_key(db_list.id, item_key)
             if not parent_item:
-                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+                raise ValueError(f"Parent item '{item_key}' not found in list '{list_key}'")
             
             # Get subitem
-            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+            db_item = self.db.get_item_by_key_and_parent(db_list.id, subitem_key, parent_item.id)
             if not db_item:
-                raise ValueError(f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+                raise ValueError(f"Subitem '{subitem_key}' not found under parent '{item_key}' in list '{list_key}'")
         else:
             # Get main item
             db_item = self.db.get_item_by_key(db_list.id, item_key)
@@ -600,8 +600,9 @@ class TodoManager:
 
         # Block manual status changes for tasks with subtasks
         if status and self.db.has_subtasks(db_item.id):
+            target_name = subitem_key if subitem_key else item_key
             raise ValueError(
-                f"Cannot manually change status of task '{item_key}' because it has subtasks. Status is automatically synchronized based on subtask statuses."
+                f"Cannot manually change status of task '{target_name}' because it has subtasks. Status is automatically synchronized based on subtask statuses."
             )
 
         # Use transaction to ensure atomicity

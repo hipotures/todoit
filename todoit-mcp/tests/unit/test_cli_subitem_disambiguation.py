@@ -138,8 +138,7 @@ class TestCLISubitemDisambiguation:
         
         # Add some completion states to scene_0001/image_gen
         manager.update_item_status(
-            "test_list", "image_gen", completion_states={"reviewed": True, "approved": False},
-            parent_item_key="scene_0001"
+            "test_list", "scene_0001", subitem_key="image_gen", completion_states={"reviewed": True, "approved": False}
         )
         
         with patch('interfaces.cli_modules.item_commands.get_manager') as mock_get_manager:
@@ -165,12 +164,10 @@ class TestCLISubitemDisambiguation:
         
         # Add completion states to both subitems
         manager.update_item_status(
-            "test_list", "image_gen", completion_states={"reviewed": True},
-            parent_item_key="scene_0001"
+            "test_list", "scene_0001", subitem_key="image_gen", completion_states={"reviewed": True}
         )
         manager.update_item_status(
-            "test_list", "image_gen", completion_states={"tested": True},
-            parent_item_key="scene_0002"
+            "test_list", "scene_0002", subitem_key="image_gen", completion_states={"tested": True}
         )
         
         with patch('interfaces.cli_modules.item_commands.get_manager') as mock_get_manager:
@@ -203,14 +200,12 @@ class TestCLISubitemDisambiguation:
         
         # Add multiple completion states to both subitems
         manager.update_item_status(
-            "test_list", "image_gen", 
-            completion_states={"reviewed": True, "approved": False, "tested": True},
-            parent_item_key="scene_0001"
+            "test_list", "scene_0001", subitem_key="image_gen",
+            completion_states={"reviewed": True, "approved": False, "tested": True}
         )
         manager.update_item_status(
-            "test_list", "image_gen",
-            completion_states={"reviewed": False, "deployed": True},
-            parent_item_key="scene_0002"
+            "test_list", "scene_0002", subitem_key="image_gen",
+            completion_states={"reviewed": False, "deployed": True}
         )
         
         with patch('interfaces.cli_modules.item_commands.get_manager') as mock_get_manager:
@@ -263,7 +258,7 @@ class TestManagerFunctionsWithParentKey:
         
         # Update scene_0001/image_gen to completed
         updated_item = manager.update_item_status(
-            "test_list", "image_gen", "completed", parent_item_key="scene_0001"
+            "test_list", "scene_0001", subitem_key="image_gen", status="completed"
         )
         
         assert updated_item.status == "completed"
@@ -312,12 +307,10 @@ class TestManagerFunctionsWithParentKey:
         
         # Add states to both subitems
         manager.update_item_status(
-            "test_list", "image_gen", completion_states={"state1": True, "state2": False},
-            parent_item_key="scene_0001"
+            "test_list", "scene_0001", subitem_key="image_gen", completion_states={"state1": True, "state2": False}
         )
         manager.update_item_status(
-            "test_list", "image_gen", completion_states={"state3": True},
-            parent_item_key="scene_0002"
+            "test_list", "scene_0002", subitem_key="image_gen", completion_states={"state3": True}
         )
         
         # Clear states from scene_0001/image_gen only

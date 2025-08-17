@@ -41,7 +41,8 @@ Updates the status of an item.
 
 **Parameters:**
 - `list_key: str`: The key of the list containing the item.
-- `item_key: str`: The key of the item to update.
+- `item_key: str`: The key of the item (or parent item if updating subitem).
+- `subitem_key: Optional[str]`: The key of the subitem to update (if updating subitem).
 - `status: Optional[str]`: The new status (e.g., `"pending"`, `"in_progress"`, `"completed"`, `"failed"`).
 - `completion_states: Optional[Dict[str, Any]]`: Custom key-value pairs for completion metadata.
 
@@ -147,11 +148,11 @@ manager.add_subitem("project", "feature", "code", "Write code")
 manager.add_subitem("project", "feature", "test", "Write tests")
 
 # Update subitem status - parent automatically updates
-manager.update_item_status("project", "design", status="completed")
+manager.update_item_status("project", "feature", subitem_key="design", status="completed")
 # Parent "feature" is now 'in_progress' (mixed statuses)
 
-manager.update_item_status("project", "code", status="completed")  
-manager.update_item_status("project", "test", status="completed")
+manager.update_item_status("project", "feature", subitem_key="code", status="completed")  
+manager.update_item_status("project", "feature", subitem_key="test", status="completed")
 # Parent "feature" is now 'completed' (all children completed)
 
 # This will raise ValueError - manual status change blocked

@@ -227,17 +227,17 @@ hierarchical = await todo_get_list_items("project", limit=10)
 await todo_create_list("sprint-1", "Sprint 1 Tasks", items=["Feature A", "Feature B", "Bug fixes"])
 
 # Complete some tasks  
-await todo_update_item_status("sprint-1", "item_1", "completed")
-await todo_update_item_status("sprint-1", "item_2", "completed")
+await todo_update_item_status("sprint-1", "item_1", status="completed")
+await todo_update_item_status("sprint-1", "item_2", status="completed")
 # Update subitem status
-await todo_update_item_status("sprint-1", "item_1", "in_progress", subitem_key="subtask_1")
+await todo_update_item_status("sprint-1", "item_1", subitem_key="subtask_1", status="in_progress")
 
 # Try to archive with incomplete tasks (will fail)
 result = await todo_archive_list("sprint-1", force=False)
 # Returns: {"success": False, "error": "Cannot archive list with incomplete tasks. Incomplete: 1/3 tasks. Use force=True to archive anyway."}
 
 # Complete remaining tasks
-await todo_update_item_status("sprint-1", "item_3", "completed")
+await todo_update_item_status("sprint-1", "item_3", status="completed")
 
 # Archive completed list (will succeed)
 result = await todo_archive_list("sprint-1", force=False)

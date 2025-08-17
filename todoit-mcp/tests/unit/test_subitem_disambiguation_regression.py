@@ -247,13 +247,13 @@ class TestMultipleDuplicatesAcrossParents:
             manager.add_subitem("complex_test", parent, "deploy", f"Deployment for {parent}")
         
         # Complete design phase for backend only
-        manager.update_item_status("complex_test", "design", "completed", parent_item_key="backend")
+        manager.update_item_status("complex_test", "backend", subitem_key="design", status="completed")
         
         # Start implementation for frontend only 
-        manager.update_item_status("complex_test", "implement", "in_progress", parent_item_key="frontend")
+        manager.update_item_status("complex_test", "frontend", subitem_key="implement", status="in_progress")
         
         # Fail testing for mobile only
-        manager.update_item_status("complex_test", "test", "failed", parent_item_key="mobile")
+        manager.update_item_status("complex_test", "mobile", subitem_key="test", status="failed")
         
         # Verify each parent has correct status based on their subitems
         frontend = manager.get_item("complex_test", "frontend")
@@ -356,7 +356,7 @@ if __name__ == "__main__":
     manager.add_subitem("test", "p1", "sub", "Sub 1")
     manager.add_subitem("test", "p2", "sub", "Sub 2")
     
-    manager.update_item_status("test", "sub", "failed", parent_item_key="p2")
+    manager.update_item_status("test", "p2", subitem_key="sub", status="failed")
     
     sub1 = manager.get_item("test", "sub", "p1")
     sub2 = manager.get_item("test", "sub", "p2")

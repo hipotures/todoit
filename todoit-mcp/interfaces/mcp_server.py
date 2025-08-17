@@ -475,27 +475,19 @@ async def todo_update_item_status(
     try:
         mgr = init_manager()
         
-        # Determine target and parent keys based on subitem_key parameter
-        if subitem_key:
-            target_key = subitem_key
-            parent_key = item_key
-            target_type = "subitem"
-        else:
-            target_key = item_key
-            parent_key = None
-            target_type = "item"
-        
         item = mgr.update_item_status(
             list_key=list_key,
-            item_key=target_key,
+            item_key=item_key,
+            subitem_key=subitem_key,
             status=status,
             completion_states=completion_states,
-            parent_item_key=parent_key,
         )
+        target_name = subitem_key if subitem_key else item_key
+        target_type = "Subitem" if subitem_key else "Item"
         return {
             "success": True,
             "item": item.to_dict(),
-            "message": f"{target_type.capitalize()} '{target_key}' status updated successfully",
+            "message": f"{target_type} '{target_name}' status updated successfully",
         }
     except ValueError as e:
         error_msg = str(e)

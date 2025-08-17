@@ -59,9 +59,9 @@ def test_demonstrates_original_bug_behavior():
         # Apply the fix (what should happen)
         manager.update_item_status(
             list_key="test_list",
-            item_key="image_gen", 
-            status="failed",
-            parent_item_key="scene_0002"  # This parameter FIXED the bug!
+            item_key="scene_0002", 
+            subitem_key="image_gen",
+            status="failed"  # This parameter FIXED the bug!
         )
         
         # Verify the correct behavior (this would FAIL with old buggy code)
@@ -110,7 +110,7 @@ def test_shows_old_vs_new_behavior_side_by_side():
         # This would update the FIRST "task" found (parent1/task), not the intended one!
         
         # NEW WAY (fixed) - we specify which parent:
-        manager.update_item_status("demo", "task", "completed", parent_item_key="parent2")
+        manager.update_item_status("demo", "parent2", subitem_key="task", status="completed")
         
         # Verify NEW behavior works correctly
         task1 = manager.get_item("demo", "task", "parent1")
@@ -161,8 +161,8 @@ def test_all_fixed_functions_work_correctly():
         assert taskA.content == "Shared task in groupA"
         assert taskB.content == "Shared task in groupB"
         
-        # Test 2: update_item_status() with parent_item_key  
-        manager.update_item_status("all_funcs", "shared_task", "in_progress", parent_item_key="groupA")
+        # Test 2: update_item_status() with subitem_key  
+        manager.update_item_status("all_funcs", "groupA", subitem_key="shared_task", status="in_progress")
         taskA_after = manager.get_item("all_funcs", "shared_task", "groupA")
         taskB_after = manager.get_item("all_funcs", "shared_task", "groupB")
         assert taskA_after.status == "in_progress"
@@ -177,8 +177,8 @@ def test_all_fixed_functions_work_correctly():
         
         # Test 4: clear_item_completion_states() with parent_item_key
         # First add some states
-        manager.update_item_status("all_funcs", "shared_task", completion_states={"test": True}, parent_item_key="groupA")
-        manager.update_item_status("all_funcs", "shared_task", completion_states={"review": True}, parent_item_key="groupB")
+        manager.update_item_status("all_funcs", "groupA", subitem_key="shared_task", completion_states={"test": True})
+        manager.update_item_status("all_funcs", "groupB", subitem_key="shared_task", completion_states={"review": True})
         
         # Clear states from groupA only
         manager.clear_item_completion_states("all_funcs", "shared_task", parent_item_key="groupA")
@@ -197,7 +197,7 @@ def test_all_fixed_functions_work_correctly():
         assert taskA_deleted is None  # Deleted
         assert taskB_exists is not None  # Still exists
         
-        print("✅ All fixed functions work correctly with parent_item_key parameter")
+        print("✅ All fixed functions work correctly with subitem_key parameter")
         
     finally:
         if os.path.exists(db_path):
