@@ -379,7 +379,7 @@ async def todo_list_all(
     # Enhance each list with progress statistics and tag information
     enhanced_lists = []
     for todo_list in lists:
-        list_data = todo_list.to_dict()
+        list_data = clean_to_dict_result(todo_list.to_dict(), "list")
 
         # Add progress statistics
         progress = mgr.get_progress(todo_list.list_key)
@@ -448,7 +448,7 @@ async def todo_add_item(
             )
             return {
                 "success": True, 
-                "subitem": map_item_content_to_title(subitem.to_dict()),
+                "subitem": map_item_content_to_title(clean_to_dict_result(subitem.to_dict(), "item")),
                 "message": f"Subitem '{subitem_key}' added to '{item_key}' in list '{list_key}'"
             }
         else:
@@ -671,7 +671,7 @@ async def todo_import_from_markdown(
         lists = mgr.import_from_markdown(file_path=file_path, base_key=base_key)
         return {
             "success": True,
-            "lists": [todo_list.to_dict() for todo_list in lists],
+            "lists": [clean_to_dict_result(todo_list.to_dict(), "list") for todo_list in lists],
             "count": len(lists),
             "message": f"Imported {len(lists)} list(s) from {file_path}",
         }
@@ -740,7 +740,7 @@ async def todo_get_item(
                 subitems = mgr.get_subitems(list_key=list_key, parent_key=item_key)
                 return {
                     "success": True,
-                    "subitems": [map_item_content_to_title(subitem.to_dict()) for subitem in subitems],
+                    "subitems": [map_item_content_to_title(clean_to_dict_result(subitem.to_dict(), "item")) for subitem in subitems],
                     "count": len(subitems),
                     "parent_key": item_key,
                 }
@@ -748,7 +748,7 @@ async def todo_get_item(
                 # Get specific subitem by key
                 subitem = mgr.get_item(list_key=list_key, item_key=subitem_key)
                 if subitem:
-                    return {"success": True, "subitem": map_item_content_to_title(subitem.to_dict())}
+                    return {"success": True, "subitem": map_item_content_to_title(clean_to_dict_result(subitem.to_dict(), "item"))}
                 else:
                     return {
                         "success": False,
@@ -800,7 +800,7 @@ async def todo_get_list_items(
         # Add list_key to each item's dict
         items_with_list_key = []
         for item in items:
-            item_dict = map_item_content_to_title(item.to_dict())
+            item_dict = map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item"))
             item_dict["list_key"] = list_key
             items_with_list_key.append(item_dict)
 
@@ -869,7 +869,7 @@ async def todo_quick_add(list_key: str, items: List[str]) -> Dict[str, Any]:
         for i, content in enumerate(items):
             item_key = f"item_{i+1:04d}"  # Simple sequential numbering
             item = mgr.add_item(list_key=list_key, item_key=item_key, content=content)
-            created_items.append(map_item_content_to_title(item.to_dict()))
+            created_items.append(map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item")))
 
         return {"success": True, "items": created_items, "count": len(created_items)}
     except Exception as e:
@@ -913,7 +913,7 @@ async def todo_project_overview(project_key: str) -> Dict[str, Any]:
         for todo_list in lists:
             progress = mgr.get_progress(todo_list.list_key)
 
-            list_info = {"list": todo_list.to_dict(), "progress": progress.to_dict()}
+            list_info = {"list": clean_to_dict_result(todo_list.to_dict(), "list"), "progress": progress.to_dict()}
 
             overview["lists"].append(list_info)
             total_items += progress.total
@@ -1350,7 +1350,7 @@ async def todo_move_to_subitem(
     moved_item = mgr.move_to_subitem(list_key, item_key, new_parent_key)
     return {
         "success": True,
-        "moved_item": map_item_content_to_title(moved_item.to_dict()),
+        "moved_item": map_item_content_to_title(clean_to_dict_result(moved_item.to_dict(), "item")),
         "message": f"Item '{item_key}' moved to be subtask of '{new_parent_key}'",
     }
 
@@ -1370,7 +1370,7 @@ async def todo_get_next_pending_smart(list_key: str, mgr=None) -> Dict[str, Any]
     if item:
         return {
             "success": True,
-            "next_item": map_item_content_to_title(item.to_dict()),
+            "next_item": map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item")),
             "is_subtask": item.parent_item_id is not None,
             "message": f"Next smart task: {item.item_key}",
         }
@@ -1532,7 +1532,7 @@ async def todo_get_items_blocked_by(
 
     return {
         "success": True,
-        "blocked_items": [map_item_content_to_title(item.to_dict()) for item in blocked_items],
+        "blocked_items": [map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item")) for item in blocked_items],
         "blocked_count": len(blocked_items),
         "list_key": list_key,
         "item_key": item_key,
@@ -1660,7 +1660,7 @@ async def todo_get_next_pending_enhanced(
 
         return {
             "success": True,
-            "next_item": map_item_content_to_title(item.to_dict()),
+            "next_item": map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item")),
             "is_blocked": is_blocked,
             "is_subtask": is_subtask,
             "context": {
@@ -1759,10 +1759,10 @@ async def todo_get_comprehensive_status(list_key: str, mgr=None) -> Dict[str, An
         "success": True,
         "list_key": list_key,
         "progress": progress.to_dict(),
-        "next_task": map_item_content_to_title(next_task.to_dict()) if next_task else None,
+        "next_task": map_item_content_to_title(clean_to_dict_result(next_task.to_dict(), "item")) if next_task else None,
         "blocked_items": blocked_items,
         "available_items": available_items,
-        "items": [map_item_content_to_title(item.to_dict()) for item in items],
+        "items": [map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item")) for item in items],
         "dependency_summary": dependency_summary,
         "recommendations": {
             "action": (
@@ -1857,9 +1857,10 @@ async def todo_rename_item(
         parent_item_key=parent_item_key
     )
     
-    # Convert to dict and map content → title for response
-    item_dict = updated_item.to_dict()
-    item_dict["title"] = item_dict.pop("content")  # Map content → title
+    # Convert to dict with data cleaning and map content → title for response
+    item_dict = clean_to_dict_result(updated_item.to_dict(), "item")
+    if "content" in item_dict:
+        item_dict["title"] = item_dict.pop("content")  # Map content → title
     
     return {
         "success": True,
@@ -1904,7 +1905,7 @@ async def todo_rename_list(
     
     return {
         "success": True,
-        "list": updated_list.to_dict(),
+        "list": clean_to_dict_result(updated_list.to_dict(), "list"),
         "message": f"List '{list_key}' renamed successfully",
     }
 
@@ -2027,7 +2028,7 @@ async def todo_get_lists_by_tag(tag_names: List[str], mgr=None) -> Dict[str, Any
     # Enhance lists with tag information
     enhanced_lists = []
     for todo_list in lists:
-        list_data = todo_list.to_dict()
+        list_data = clean_to_dict_result(todo_list.to_dict(), "list")
 
         # Get tags for this list
         tags = mgr.get_tags_for_list(todo_list.list_key)
