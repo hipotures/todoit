@@ -109,9 +109,9 @@ class TestOriginalBugScenario:
         # It should update scene_0002/image_gen, NOT scene_0001/image_gen
         manager.update_item_status(
             list_key="0014_jane_eyre_subtask",
-            item_key="image_gen", 
-            status="failed",
-            parent_item_key="scene_0002"  # This parameter was missing before the fix
+            item_key="scene_0002",
+            subitem_key="image_gen", 
+            status="failed"
         )
         
         # Verify correct subitem was updated
@@ -142,9 +142,9 @@ class TestOriginalBugScenario:
         # Update scene_0001/image_gen to completed
         manager.update_item_status(
             list_key="0014_jane_eyre_subtask",
-            item_key="image_gen",
-            status="completed", 
-            parent_item_key="scene_0001"
+            item_key="scene_0001",
+            subitem_key="image_gen",
+            status="completed"
         )
         
         # Verify only scene_0001/image_gen was affected
@@ -216,7 +216,7 @@ class TestMultipleDuplicatesAcrossParents:
         
         # Update middle one to completed
         manager.update_item_status(
-            "test_list", "common_task", "completed", parent_item_key="parent_b"
+            "test_list", "parent_b", subitem_key="common_task", status="completed"
         )
         
         # Verify only parent_b/common_task was updated
@@ -289,8 +289,7 @@ class TestErrorConditionsWithDuplicates:
         # Try to update image_gen under nonexistent parent
         with pytest.raises(ValueError, match="Parent item 'scene_0003' not found"):
             manager.update_item_status(
-                "0014_jane_eyre_subtask", "image_gen", "completed", 
-                parent_item_key="scene_0003"
+                "0014_jane_eyre_subtask", "scene_0003", subitem_key="image_gen", status="completed"
             )
     
     def test_nonexistent_subitem_under_existing_parent(self, manager_with_duplicate_subitems):
@@ -311,15 +310,15 @@ class TestErrorConditionsWithDuplicates:
         
         # Add different completion states to same-named subitems
         manager.update_item_status(
-            "0014_jane_eyre_subtask", "image_gen", 
-            completion_states={"reviewed": True, "approved": False},
-            parent_item_key="scene_0001"
+            "0014_jane_eyre_subtask", "scene_0001", 
+            subitem_key="image_gen",
+            completion_states={"reviewed": True, "approved": False}
         )
         
         manager.update_item_status(
-            "0014_jane_eyre_subtask", "image_gen",
-            completion_states={"tested": True, "deployed": False}, 
-            parent_item_key="scene_0002"
+            "0014_jane_eyre_subtask", "scene_0002",
+            subitem_key="image_gen",
+            completion_states={"tested": True, "deployed": False}
         )
         
         # Verify each subitem has its own states

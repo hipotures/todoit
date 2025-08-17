@@ -58,7 +58,7 @@ class TestDependenciesAPI:
         assert result["can_start"] == False
 
         # Complete dependency
-        manager.update_item_status("backend", "item_1", ItemStatus.COMPLETED)
+        manager.update_item_status("backend", "item_1", status=ItemStatus.COMPLETED)
 
         # Now should be able to start
         result = manager.can_start_item("frontend", "item_1")
@@ -74,7 +74,7 @@ class TestDependenciesAPI:
         assert is_blocked == True
 
         # Complete blocker
-        manager.update_item_status("backend", "item_1", ItemStatus.COMPLETED)
+        manager.update_item_status("backend", "item_1", status=ItemStatus.COMPLETED)
 
         # Should no longer be blocked
         is_blocked = manager.is_item_blocked("frontend", "item_1")
@@ -134,7 +134,7 @@ class TestDependenciesAPI:
         manager.add_item_dependency("frontend", "item_2", "backend", "item_2")
 
         # Complete some backend tasks
-        manager.update_item_status("backend", "item_1", ItemStatus.COMPLETED)
+        manager.update_item_status("backend", "item_1", status=ItemStatus.COMPLETED)
 
         # Get cross-list progress
         progress = manager.get_cross_list_progress("test_project")
@@ -155,7 +155,7 @@ class TestDependenciesAPI:
         assert manager.is_item_blocked("frontend", "item_1") == True
 
         # Complete subitem
-        manager.update_item_status("backend", "sub1", ItemStatus.COMPLETED)
+        manager.update_item_status("backend", "item_1", subitem_key="sub1", status=ItemStatus.COMPLETED)
 
         # Should be unblocked
         assert manager.is_item_blocked("frontend", "item_1") == False

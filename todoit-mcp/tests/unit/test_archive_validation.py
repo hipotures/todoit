@@ -43,8 +43,8 @@ class TestArchiveValidation:
         )
 
         # Complete all tasks
-        manager.update_item_status("completed-test", "item_1", "completed")
-        manager.update_item_status("completed-test", "item_2", "completed")
+        manager.update_item_status("completed-test", "item_1", status="completed")
+        manager.update_item_status("completed-test", "item_2", status="completed")
 
         # Should succeed without force
         archived_list = manager.archive_list("completed-test", force=False)
@@ -58,7 +58,7 @@ class TestArchiveValidation:
         )
 
         # Complete only one item
-        manager.update_item_status("incomplete-test", "item_1", "completed")
+        manager.update_item_status("incomplete-test", "item_1", status="completed")
 
         # Should fail without force
         with pytest.raises(ValueError) as exc_info:
@@ -92,9 +92,9 @@ class TestArchiveValidation:
         )
 
         # Set various statuses
-        manager.update_item_status("mixed-test", "item_1", "completed")
-        manager.update_item_status("mixed-test", "item_2", "in_progress")
-        manager.update_item_status("mixed-test", "item_3", "failed")
+        manager.update_item_status("mixed-test", "item_1", status="completed")
+        manager.update_item_status("mixed-test", "item_2", status="in_progress")
+        manager.update_item_status("mixed-test", "item_3", status="failed")
         # item_4 remains pending
 
         # Should fail without force (3 out of 4 are not completed)
@@ -113,8 +113,8 @@ class TestArchiveValidation:
         )
 
         # Set mixed statuses
-        manager.update_item_status("mixed-force-test", "item_1", "completed")
-        manager.update_item_status("mixed-force-test", "item_2", "failed")
+        manager.update_item_status("mixed-force-test", "item_1", status="completed")
+        manager.update_item_status("mixed-force-test", "item_2", status="failed")
 
         # Should succeed with force=True
         archived_list = manager.archive_list("mixed-force-test", force=True)

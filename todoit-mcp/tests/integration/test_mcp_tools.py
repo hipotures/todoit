@@ -127,11 +127,11 @@ class TestMCPToolsFunctional:
         assert item2.item_key == "task2"
 
         # Update status
-        updated = temp_manager.update_item_status("item_test", "task1", "in_progress")
+        updated = temp_manager.update_item_status("item_test", "task1", status="in_progress")
         assert updated.status == "in_progress"
 
         # Mark completed using status update
-        completed = temp_manager.update_item_status("item_test", "task2", "completed")
+        completed = temp_manager.update_item_status("item_test", "task2", status="completed")
         assert completed.status == "completed"
 
         # Get progress
@@ -263,7 +263,7 @@ class TestMCPToolsFunctional:
         # Add items
         temp_manager.add_item("status_test", "task1", "Item 1")
         temp_manager.add_item("status_test", "task2", "Item 2")
-        temp_manager.update_item_status("status_test", "task1", "completed")
+        temp_manager.update_item_status("status_test", "task1", status="completed")
 
         # Test comprehensive status if method exists
         if hasattr(temp_manager, "get_comprehensive_status"):

@@ -39,10 +39,10 @@ class TestReportCommands:
         # Set various statuses including failed
         if items1:
             manager.update_item_status(
-                "0001_project_alpha", items1[0].item_key, "failed"
+                "0001_project_alpha", items1[0].item_key, status="failed"
             )
             manager.update_item_status(
-                "0001_project_alpha", items1[1].item_key, "completed"
+                "0001_project_alpha", items1[1].item_key, status="completed"
             )
             # Add properties to failed item
             manager.set_item_property(
@@ -53,9 +53,9 @@ class TestReportCommands:
             )
 
         if items2:
-            manager.update_item_status("0023_beta_sprint", items2[0].item_key, "failed")
+            manager.update_item_status("0023_beta_sprint", items2[0].item_key, status="failed")
             manager.update_item_status(
-                "0023_beta_sprint", items2[1].item_key, "in_progress"
+                "0023_beta_sprint", items2[1].item_key, status="in_progress"
             )
             # Add properties to failed item
             manager.set_item_property(
@@ -63,7 +63,7 @@ class TestReportCommands:
             )
 
         if items3:
-            manager.update_item_status("simple_project", items3[0].item_key, "pending")
+            manager.update_item_status("simple_project", items3[0].item_key, status="pending")
 
         return manager
 
@@ -299,7 +299,7 @@ class TestReportCommands:
         items = manager.get_list_items("no_props_list")
 
         if items:
-            manager.update_item_status("no_props_list", items[0].item_key, "failed")
+            manager.update_item_status("no_props_list", items[0].item_key, status="failed")
 
         failed_items = manager.get_all_failed_items()
         assert len(failed_items) == 1

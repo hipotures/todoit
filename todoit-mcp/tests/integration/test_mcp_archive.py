@@ -35,14 +35,14 @@ class TestMCPArchiveTools:
         completed_list = manager.create_list(
             "completed-list", "Completed List", items=["Item 1", "Item 2"]
         )
-        manager.update_item_status("completed-list", "item_1", "completed")
-        manager.update_item_status("completed-list", "item_2", "completed")
+        manager.update_item_status("completed-list", "item_1", status="completed")
+        manager.update_item_status("completed-list", "item_2", status="completed")
 
         incomplete_list = manager.create_list(
             "incomplete-list", "Incomplete List", items=["Item A", "Item B", "Item C"]
         )
         manager.update_item_status(
-            "incomplete-list", "item_1", "completed"
+            "incomplete-list", "item_1", status="completed"
         )  # 1/3 completed
 
         return temp_db_path, manager

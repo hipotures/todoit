@@ -314,10 +314,10 @@ class TestManagerComprehensive:
         temp_manager.add_item("stats_test", "failed1", "Failed 1")
 
         # Update statuses
-        temp_manager.update_item_status("stats_test", "inprog1", "in_progress")
-        temp_manager.update_item_status("stats_test", "completed1", "completed")
-        temp_manager.update_item_status("stats_test", "completed2", "completed")
-        temp_manager.update_item_status("stats_test", "failed1", "failed")
+        temp_manager.update_item_status("stats_test", "inprog1", status="in_progress")
+        temp_manager.update_item_status("stats_test", "completed1", status="completed")
+        temp_manager.update_item_status("stats_test", "completed2", status="completed")
+        temp_manager.update_item_status("stats_test", "failed1", status="failed")
 
         # Get progress
         progress = temp_manager.get_progress("stats_test")
@@ -421,7 +421,7 @@ class TestManagerComprehensive:
 
         # Test status update with valid status
         updated_item = temp_manager.update_item_status(
-            "error_test", "test_item", "in_progress"
+            "error_test", "test_item", status="in_progress"
         )
         assert updated_item.status == "in_progress"
 

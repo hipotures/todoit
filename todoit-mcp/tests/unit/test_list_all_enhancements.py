@@ -33,18 +33,18 @@ class TestListAllEnhancements:
         # Set different statuses for tasks using actual keys
         if len(items_list1) >= 3:
             manager.update_item_status(
-                "test_list_1", items_list1[0].item_key, "completed"
+                "test_list_1", items_list1[0].item_key, status="completed"
             )
             manager.update_item_status(
-                "test_list_1", items_list1[1].item_key, "failed"
+                "test_list_1", items_list1[1].item_key, status="failed"
             )  # Set one item to failed
             manager.update_item_status(
-                "test_list_1", items_list1[2].item_key, "in_progress"
+                "test_list_1", items_list1[2].item_key, status="in_progress"
             )
 
         if len(items_list2) >= 1:
             manager.update_item_status(
-                "test_list_2", items_list2[0].item_key, "failed"
+                "test_list_2", items_list2[0].item_key, status="failed"
             )  # Another failed item
             # items_list2[1] stays as pending
 

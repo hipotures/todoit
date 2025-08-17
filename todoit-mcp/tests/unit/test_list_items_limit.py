@@ -55,7 +55,7 @@ class TestListItemsLimit:
 
         # Complete some items
         for i in [1, 3, 5, 7, 9]:
-            manager.update_item_status("test_list", f"item_{i}", "completed")
+            manager.update_item_status("test_list", f"item_{i}", status="completed")
 
         # Get limited pending items
         pending_items = manager.get_list_items("test_list", status="pending", limit=2)

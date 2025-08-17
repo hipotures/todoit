@@ -103,7 +103,7 @@ class TestMCPListItemsLimit:
             # Complete some items
             for i in [1, 3, 5, 7]:
                 status_result = await todo_update_item_status(
-                    "test_list", f"item_{i}", "completed"
+                    "test_list", f"item_{i}", status="completed"
                 )
                 assert status_result["success"]
 
@@ -295,7 +295,7 @@ class TestMCPListItemsLimit:
             # Complete every third item (4 total completed)
             for i in [2, 5, 8, 11]:
                 status_result = await todo_update_item_status(
-                    "test_list", f"item_{i:02d}", "completed"
+                    "test_list", f"item_{i:02d}", status="completed"
                 )
                 assert status_result["success"]
 

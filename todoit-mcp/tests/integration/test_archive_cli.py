@@ -45,7 +45,7 @@ class TestArchiveCLI:
         runner = CliRunner()
 
         # Complete the item first so we can archive without force
-        manager.update_item_status("archive-me", "item_1", "completed")
+        manager.update_item_status("archive-me", "item_1", status="completed")
 
         # Archive a list
         result = runner.invoke(
@@ -70,7 +70,7 @@ class TestArchiveCLI:
         runner = CliRunner()
 
         # First complete the item and archive a list
-        manager.update_item_status("archive-me", "item_1", "completed")
+        manager.update_item_status("archive-me", "item_1", status="completed")
         manager.archive_list("archive-me")
 
         # Then unarchive it
@@ -97,7 +97,7 @@ class TestArchiveCLI:
         runner = CliRunner()
 
         # Complete the item and archive one list
-        manager.update_item_status("archive-me", "item_1", "completed")
+        manager.update_item_status("archive-me", "item_1", status="completed")
         manager.archive_list("archive-me")
 
         # List all (should not show archived)
@@ -115,7 +115,7 @@ class TestArchiveCLI:
         runner = CliRunner()
 
         # Complete the item and archive one list
-        manager.update_item_status("archive-me", "item_1", "completed")
+        manager.update_item_status("archive-me", "item_1", status="completed")
         manager.archive_list("archive-me")
 
         # List all including archived
@@ -143,9 +143,9 @@ class TestArchiveCLI:
         runner = CliRunner()
 
         # Archive two lists - complete their tasks first
-        manager.update_item_status("archive-me", "item_1", "completed")
-        manager.update_item_status("test-list-1", "item_1", "completed")
-        manager.update_item_status("test-list-1", "item_2", "completed")
+        manager.update_item_status("archive-me", "item_1", status="completed")
+        manager.update_item_status("test-list-1", "item_1", status="completed")
+        manager.update_item_status("test-list-1", "item_2", status="completed")
         manager.archive_list("archive-me")
         manager.archive_list("test-list-1")
 
@@ -182,7 +182,7 @@ class TestArchiveCLI:
         runner = CliRunner()
 
         # Complete the item and archive a list first
-        manager.update_item_status("archive-me", "item_1", "completed")
+        manager.update_item_status("archive-me", "item_1", status="completed")
         manager.archive_list("archive-me")
 
         # Try to archive again
@@ -227,7 +227,7 @@ class TestArchiveCLI:
         assert "📦" not in result.output  # Status column should not appear
 
         # Complete the item and archive one list
-        manager.update_item_status("archive-me", "item_1", "completed")
+        manager.update_item_status("archive-me", "item_1", status="completed")
         manager.archive_list("archive-me")
 
         # With --include-archived, status column should appear
@@ -248,7 +248,7 @@ class TestArchiveCLI:
         runner = CliRunner()
 
         # Complete the item and archive one list
-        manager.update_item_status("archive-me", "item_1", "completed")
+        manager.update_item_status("archive-me", "item_1", status="completed")
         manager.archive_list("archive-me")
 
         # Check status values in output
@@ -281,7 +281,7 @@ class TestArchiveCLI:
         runner = CliRunner()
 
         # Complete the item and archive one list
-        manager.update_item_status("archive-me", "item_1", "completed")
+        manager.update_item_status("archive-me", "item_1", status="completed")
         manager.archive_list("archive-me")
 
         # Test list view with archived included
@@ -376,7 +376,7 @@ class TestArchiveCLI:
         )
 
         # Complete only one item
-        manager.update_item_status("incomplete-tasks", "item_1", "completed")
+        manager.update_item_status("incomplete-tasks", "item_1", status="completed")
 
         # Try to archive without --force (should fail)
         result = runner.invoke(
@@ -428,8 +428,8 @@ class TestArchiveCLI:
         list_completed = manager.create_list(
             "completed-list", "Completed list", items=["Item 1", "Item 2"]
         )
-        manager.update_item_status("completed-list", "item_1", "completed")
-        manager.update_item_status("completed-list", "item_2", "completed")
+        manager.update_item_status("completed-list", "item_1", status="completed")
+        manager.update_item_status("completed-list", "item_2", status="completed")
 
         # Archive without --force (should succeed)
         result = runner.invoke(

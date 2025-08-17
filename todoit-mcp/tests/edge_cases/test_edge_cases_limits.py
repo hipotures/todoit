@@ -149,7 +149,7 @@ class TestLimits:
         # Test completion logic with many subtasks
         # Complete all but one subitem
         for i in range(num_subtasks - 1):
-            manager.update_item_status("wide_list", f"child_{i}", "completed")
+            manager.update_item_status("wide_list", f"child_{i}", status="completed")
 
         # Parent should not auto-complete yet
         parent = manager.get_item("wide_list", "parent")
@@ -157,7 +157,7 @@ class TestLimits:
 
         # Complete last subitem
         manager.update_item_status(
-            "wide_list", f"child_{num_subtasks - 1}", "completed"
+            "wide_list", f"child_{num_subtasks - 1}", status="completed"
         )
 
         # Parent should now auto-complete
@@ -196,7 +196,7 @@ class TestLimits:
 
         # Complete tasks in order and verify unblocking
         for i in range(min(3, num_lists)):  # Test first few
-            manager.update_item_status(lists[i], f"task_{i}", "completed")
+            manager.update_item_status(lists[i], f"task_{i}", status="completed")
 
             # Next item should now be available
             if i < min(2, num_lists - 1):

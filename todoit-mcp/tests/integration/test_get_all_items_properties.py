@@ -29,8 +29,8 @@ class TestGetAllItemsPropertiesIntegration:
         manager.add_item("testlist", "task3", "Third item")
 
         # Update statuses
-        manager.update_item_status("testlist", "task2", "in_progress")
-        manager.update_item_status("testlist", "task3", "completed")
+        manager.update_item_status("testlist", "task2", status="in_progress")
+        manager.update_item_status("testlist", "task3", status="completed")
 
         # Add properties to items
         manager.set_item_property("testlist", "task1", "image_downloaded", "pending")
