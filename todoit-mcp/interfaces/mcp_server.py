@@ -94,8 +94,21 @@ def clean_to_dict_result(obj_dict: Dict[str, Any], object_type: str = "item") ->
             "property_value": obj_dict.get("property_value"),
         }
         return {k: v for k, v in essential_fields.items() if v is not None}
+    elif object_type == "tag":
+        # Keep only essential tag fields
+        essential_fields = {
+            "name": obj_dict.get("name"),
+            "color": obj_dict.get("color"),
+        }
+        return {k: v for k, v in essential_fields.items() if v is not None}
+    elif object_type == "assignment":
+        # Tag assignments don't need any specific data - just remove timestamps
+        clean_dict = obj_dict.copy()
+        for timestamp_field in ["assigned_at", "created_at", "updated_at"]:
+            clean_dict.pop(timestamp_field, None)
+        return clean_dict
     else:
-        # For other objects (progress, tags, etc.) keep as-is but remove common timestamp fields
+        # For other objects (progress, dependencies, etc.) keep as-is but remove common timestamp fields
         clean_dict = obj_dict.copy()
         for timestamp_field in ["created_at", "updated_at", "started_at", "completed_at"]:
             clean_dict.pop(timestamp_field, None)
@@ -394,7 +407,7 @@ async def todo_list_all(
 
         # Add tags information
         tags = mgr.get_tags_for_list(todo_list.list_key)
-        list_data["tags"] = [tag.to_dict() for tag in tags]
+        list_data["tags"] = [clean_to_dict_result(tag.to_dict(), "tag") for tag in tags]
 
         enhanced_lists.append(list_data)
 
@@ -1988,7 +2001,7 @@ async def todo_create_tag(name: str, color: str = "blue", mgr=None) -> Dict[str,
     tag = mgr.create_tag(name, color)
     return {
         "success": True,
-        "tag": tag.to_dict(),
+        "tag": clean_to_dict_result(tag.to_dict(), "tag"),
         "message": f"Tag '{name}' created successfully",
     }
 
@@ -2008,7 +2021,7 @@ async def todo_add_list_tag(list_key: str, tag_name: str, mgr=None) -> Dict[str,
     assignment = mgr.add_tag_to_list(list_key, tag_name)
     return {
         "success": True,
-        "assignment": assignment.to_dict(),
+        "assignment": clean_to_dict_result(assignment.to_dict(), "assignment"),
         "message": f"Tag '{tag_name}' added to list '{list_key}'",
     }
 
@@ -2054,7 +2067,7 @@ async def todo_get_lists_by_tag(tag_names: List[str], mgr=None) -> Dict[str, Any
 
         # Get tags for this list
         tags = mgr.get_tags_for_list(todo_list.list_key)
-        list_data["tags"] = [tag.to_dict() for tag in tags]
+        list_data["tags"] = [clean_to_dict_result(tag.to_dict(), "tag") for tag in tags]
 
         # Get progress stats
         progress = mgr.get_progress(todo_list.list_key)
