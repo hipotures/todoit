@@ -5,6 +5,26 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.2] - 2025-08-17
+
+### 🐛 BUGFIX: Property Commands ID Resolution
+
+#### ✅ **Fixed CLI Property Commands**
+- **FIXED**: Property commands now support numeric list IDs (e.g., `--list 126`)
+- **CONSISTENT**: All property commands now work like `list show` command
+- **RESOLVED**: `todoit item property list --list 126` no longer fails with "List '126' not found"
+- **ADDED**: `resolve_list_key()` helper function for ID-to-key conversion
+
+#### 🔧 **Technical Details**
+- **Added ID resolution logic** to all property commands in `property_commands.py`
+- **Maintains existing validation** that prevents list keys from being only digits
+- **Consistent behavior** with other CLI commands that accept numeric IDs
+- **No breaking changes** - existing functionality preserved
+
+#### 📝 **Documentation Updates**
+- **Updated CLI_GUIDE.md** with examples showing numeric ID usage
+- **Added notes** to property command sections about ID/key support
+
 ## [2.10.1] - 2025-08-17
 
 ### 🎯 PATCH: Complete MCP Data Reduction Implementation

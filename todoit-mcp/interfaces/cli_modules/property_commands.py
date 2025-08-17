@@ -18,6 +18,19 @@ def get_manager(db_path):
     return TodoManager(db_path)
 
 
+def resolve_list_key(manager, list_key):
+    """Resolve list_key if it's an ID, similar to list_commands.py"""
+    if list_key.isdigit():
+        list_id = int(list_key)
+        with manager.db.get_session() as session:
+            from core.database import TodoListDB
+
+            db_list = session.query(TodoListDB).filter(TodoListDB.id == list_id).first()
+            if db_list:
+                return db_list.list_key
+    return list_key
+
+
 # === List property management commands ===
 
 
@@ -35,6 +48,9 @@ def list_property_group():
 def list_property_set(ctx, list_key, property_key, property_value):
     """Set a property for a list"""
     manager = get_manager(ctx.obj["db_path"])
+    
+    # Resolve list_key if it's an ID
+    list_key = resolve_list_key(manager, list_key)
 
     try:
         property_obj = manager.set_list_property(list_key, property_key, property_value)
@@ -52,6 +68,9 @@ def list_property_set(ctx, list_key, property_key, property_value):
 def list_property_get(ctx, list_key, property_key):
     """Get a property value for a list"""
     manager = get_manager(ctx.obj["db_path"])
+    
+    # Resolve list_key if it's an ID
+    list_key = resolve_list_key(manager, list_key)
 
     try:
         value = manager.get_list_property(list_key, property_key)
@@ -71,6 +90,9 @@ def list_property_get(ctx, list_key, property_key):
 def list_property_show(ctx, list_key):
     """Show all properties for a list"""
     manager = get_manager(ctx.obj["db_path"])
+    
+    # Resolve list_key if it's an ID
+    list_key = resolve_list_key(manager, list_key)
 
     try:
         properties = manager.get_list_properties(list_key)
@@ -97,6 +119,9 @@ def list_property_show(ctx, list_key):
 def list_property_delete(ctx, list_key, property_key):
     """Delete a property from a list"""
     manager = get_manager(ctx.obj["db_path"])
+    
+    # Resolve list_key if it's an ID
+    list_key = resolve_list_key(manager, list_key)
 
     try:
         success = manager.delete_list_property(list_key, property_key)
@@ -131,6 +156,9 @@ def item_property_group():
 def item_property_set(ctx, list_key, item_key, subitem_key, property_key, property_value):
     """Set a property for an item or subitem"""
     manager = get_manager(ctx.obj["db_path"])
+    
+    # Resolve list_key if it's an ID
+    list_key = resolve_list_key(manager, list_key)
 
     try:
         if subitem_key:
@@ -162,6 +190,9 @@ def item_property_set(ctx, list_key, item_key, subitem_key, property_key, proper
 def item_property_get(ctx, list_key, item_key, subitem_key, property_key):
     """Get a property value for an item or subitem"""
     manager = get_manager(ctx.obj["db_path"])
+    
+    # Resolve list_key if it's an ID
+    list_key = resolve_list_key(manager, list_key)
 
     try:
         if subitem_key:
@@ -194,6 +225,9 @@ def item_property_get(ctx, list_key, item_key, subitem_key, property_key):
 def item_property_list(ctx, list_key, item_key, subitem_key, tree):
     """List all properties for an item, subitem, or all items if item_key not provided"""
     manager = get_manager(ctx.obj["db_path"])
+    
+    # Resolve list_key if it's an ID
+    list_key = resolve_list_key(manager, list_key)
 
     try:
         if subitem_key:
@@ -300,6 +334,9 @@ def item_property_list(ctx, list_key, item_key, subitem_key, tree):
 def item_property_delete(ctx, list_key, item_key, subitem_key, property_key):
     """Delete a property from an item or subitem"""
     manager = get_manager(ctx.obj["db_path"])
+    
+    # Resolve list_key if it's an ID
+    list_key = resolve_list_key(manager, list_key)
 
     try:
         if subitem_key:
