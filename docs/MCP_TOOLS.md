@@ -550,7 +550,7 @@ Error responses include:
 
 ## Integration with Claude Code
 
-All 56 tools are automatically available in Claude Code through MCP integration:
+All 50 tools are automatically available in Claude Code through MCP integration:
 
 1. **List Management** - Create, organize, and manage task lists
 2. **Task Operations** - Add, update, and track individual tasks
@@ -689,7 +689,7 @@ await todo_remove_list_tag("project-alpha", "urgent")
 
 ## Testing Status
 
-✅ **All 56 MCP tools tested and verified working**
+✅ **All 50 MCP tools tested and verified working**
 - 100% functional coverage
 - Error handling validated  
 - Integration tested with real workflows
@@ -697,4 +697,4 @@ await todo_remove_list_tag("project-alpha", "urgent")
 
 ---
 
-*Last updated: August 16, 2025 - All 56 tools production ready with 3-level configuration system*
+*Last updated: August 17, 2025 - All 50 tools production ready with 3-level configuration system*

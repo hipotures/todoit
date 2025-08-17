@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-TODOIT MCP is an intelligent task management system with MCP integration for Claude Code. The system provides 56+ MCP tools for programmatic task management, featuring hierarchical tasks, cross-list dependencies, smart workflow algorithms, and dynamic tag system with 12-color visual support.
+TODOIT MCP is an intelligent task management system with MCP integration for Claude Code. The system provides 50 MCP tools for programmatic task management, featuring hierarchical tasks, cross-list dependencies, smart workflow algorithms, and dynamic tag system with 12-color visual support.
 
 **Key Architecture**: Clean 3-layer design with `core/` (business logic), `interfaces/` (MCP server + CLI), and SQLite database with comprehensive schema for tasks, dependencies, and relationships.
 
@@ -78,12 +78,12 @@ todoit list create "test" --title "Test List"
 ## Architecture Overview
 
 ### Core Components
-- **`core/manager.py`** (1674 lines) - Main `TodoManager` class containing all business logic
-- **`core/database.py`** - SQLAlchemy ORM layer with 9 tables (lists, items, dependencies, relations, properties, tags, history)
-- **`core/models.py`** - Pydantic models with comprehensive validation (6 enums, 20+ model classes)
+- **`core/manager.py`** (2762 lines) - Main `TodoManager` class containing all business logic
+- **`core/database.py`** (1508 lines) - SQLAlchemy ORM layer with 9 tables (lists, items, dependencies, relations, properties, tags, history)
+- **`core/models.py`** (655 lines) - Pydantic models with comprehensive validation (5 enums, 17 model classes)
 
 ### Interface Layer
-- **`interfaces/mcp_server.py`** (1488 lines) - 56+ MCP tools for Claude Code integration
+- **`interfaces/mcp_server.py`** (1971 lines) - 50 MCP tools for Claude Code integration
 - **`interfaces/cli.py`** - Rich CLI with modular commands in `cli_modules/`
 - **`interfaces/cli_modules/`** - Modular CLI commands (list, item, dependency, property management)
 
@@ -95,6 +95,31 @@ todoit list create "test" --title "Test List"
 - `list_properties`/`item_properties` - Key-value runtime configuration
 - `list_tags`/`list_tag_assignments` - Dynamic tag system with 12-color visual support
 - `todo_history` - Complete audit trail for all operations
+
+### Pydantic Models Architecture
+The `core/models.py` file provides comprehensive data validation and type safety:
+
+**Core Enums (5 types)**:
+- `ListType` - List ordering strategy (`sequential`)
+- `ListStatus` - Active/archived list states
+- `ItemStatus` - Task states (`pending`, `in_progress`, `completed`, `failed`)
+- `HistoryAction` - Audit trail action types
+- `DependencyType` - Cross-list dependency relationships
+
+**Data Models (17 classes)**:
+- **Core Models**: `TodoList`, `TodoItem`, `ListProperty`, `ItemProperty`
+- **Hierarchy Models**: Subitem support with parent-child validation
+- **Dependency Models**: Cross-list blocking relationships with circular detection
+- **Tag Models**: Dynamic 12-color tag system with alphabetical ordering
+- **History Models**: Complete audit trail with action tracking
+- **Response Models**: Consistent API response formats with error handling
+
+**Validation Features**:
+- Automatic timestamp generation and timezone handling
+- Key format validation (alphanumeric + underscore/dash)
+- Business rule enforcement (status transitions, hierarchy constraints)
+- Foreign key relationship validation
+- Data integrity checks for complex operations
 
 ## Key Business Logic Patterns
 
@@ -124,7 +149,7 @@ Database layer includes graph traversal algorithms in `_would_create_circular_de
 - **Dependency management**: Circular detection, cross-list blocking logic
 - **Data integrity**: SQLite foreign key constraints and cascade operations
 - **Tag system**: Dynamic color assignment and self-healing capabilities
-- **MCP interface**: All 56 tools have basic coverage but need edge case expansion
+- **MCP interface**: All 50 tools have basic coverage but need edge case expansion
 
 ## Common Development Patterns
 

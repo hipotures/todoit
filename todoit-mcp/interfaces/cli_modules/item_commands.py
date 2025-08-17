@@ -849,9 +849,9 @@ def item_find_subitems(ctx, list_key, conditions, limit):
             return
 
         # Find subitems
-        items = manager.find_subitems_by_status(list_key, conditions_dict, limit)
+        matches = manager.find_subitems_by_status(list_key, conditions_dict, limit)
 
-        if not items:
+        if not matches:
             # Use unified display for empty result
             _display_records(
                 [],
@@ -861,37 +861,41 @@ def item_find_subitems(ctx, list_key, conditions, limit):
             console.print(f"[dim]No subitems found matching conditions: {conditions_dict}[/]")
             return
 
-        # Prepare data for unified display
+        # Prepare data for unified display - flatten results
         data = []
-        for item in items:
-            data.append(
-                {
-                    "Item Key": item.item_key,
-                    "Content": item.content,
-                    "Status": _get_status_display(item.status.value),
-                    "Position": str(item.position),
-                    "Parent ID": str(item.parent_item_id) if item.parent_item_id else "N/A",
-                    "Created": (
-                        item.created_at.strftime("%Y-%m-%d %H:%M")
-                        if item.created_at
-                        else "N/A"
-                    ),
-                }
-            )
+        for match in matches:
+            parent = match["parent"]
+            matching_subitems = match["matching_subitems"]
+            
+            for subitem in matching_subitems:
+                data.append(
+                    {
+                        "Parent": parent.item_key,
+                        "Parent Content": parent.content[:30] + "..." if len(parent.content) > 30 else parent.content,
+                        "Subitem": subitem.item_key,
+                        "Content": subitem.content[:40] + "..." if len(subitem.content) > 40 else subitem.content,
+                        "Status": _get_status_display(subitem.status.value),
+                        "Created": (
+                            subitem.created_at.strftime("%Y-%m-%d %H:%M")
+                            if subitem.created_at
+                            else "N/A"
+                        ),
+                    }
+                )
 
-        # Define column styling
+        # Define column styling  
         columns = {
-            "Item Key": {"style": "cyan", "width": 15},
-            "Content": {"style": "white"},
-            "Status": {"style": "yellow", "width": 12},
-            "Position": {"style": "blue", "width": 8},
-            "Parent ID": {"style": "magenta", "width": 10},
+            "Parent": {"style": "cyan", "width": 15},
+            "Parent Content": {"style": "dim", "width": 25},
+            "Subitem": {"style": "yellow", "width": 15},
+            "Content": {"style": "white", "width": 35},
+            "Status": {"style": "green", "width": 12},
             "Created": {"style": "dim", "width": 16},
         }
 
         # Create title with search info
-        title = f"🔍 Found {len(items)} subitem(s) in '{list_key}'"
-        if limit and len(items) >= limit:
+        title = f"🔍 Found {len(data)} matching subitem(s) in '{list_key}'"
+        if limit and len(matches) >= limit:
             title += f" (limit: {limit})"
 
         # Use unified display system
