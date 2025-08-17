@@ -206,14 +206,14 @@ class TestItemManagement:
             import asyncio
 
             result = asyncio.run(
-                mcp_server.todo_update_item_content(
-                    "test_list", "test_item", new_content
+                mcp_server.todo_rename_item(
+                    "test_list", "test_item", new_title=new_content
                 )
             )
 
         # Verify MCP response
         assert result["success"] is True
-        assert "updated" in result["message"].lower()
+        assert "renamed" in result["message"].lower()
         assert "test_item" in result["message"]
 
         # Verify response contains updated item
@@ -230,7 +230,7 @@ class TestItemManagement:
             import asyncio
 
             result = asyncio.run(
-                mcp_server.todo_update_item_content("nonexistent", "item", "content")
+                mcp_server.todo_rename_item("nonexistent", "item", new_title="content")
             )
 
         # Should return error

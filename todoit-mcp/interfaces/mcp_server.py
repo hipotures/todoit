@@ -818,8 +818,9 @@ async def todo_get_list_items(
 
 
 @conditional_tool
+@mcp_error_handler
 async def todo_get_item_history(
-    list_key: str, item_key: str, limit: Optional[int] = None
+    list_key: str, item_key: str, limit: Optional[int] = None, mgr=None
 ) -> Dict[str, Any]:
     """Get complete change history for a specific todo item.
 
@@ -831,18 +832,14 @@ async def todo_get_item_history(
     Returns:
         Dictionary with success status, history entries, and count
     """
-    try:
-        mgr = init_manager()
-        history = mgr.get_item_history(
-            list_key=list_key, item_key=item_key, limit=limit
-        )
-        return {
-            "success": True,
-            "history": [entry.to_dict() for entry in history],
-            "count": len(history),
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    history = mgr.get_item_history(
+        list_key=list_key, item_key=item_key, limit=limit
+    )
+    return {
+        "success": True,
+        "history": [entry.to_dict() for entry in history],
+        "count": len(history),
+    }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

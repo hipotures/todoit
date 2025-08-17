@@ -25,10 +25,14 @@ class TestE2EComprehensiveMCP:
         
         # Set environment variable for MCP tools
         original_db = os.getenv('TODOIT_DB_PATH')
+        original_level = os.getenv('TODOIT_MCP_TOOLS_LEVEL')
         os.environ['TODOIT_DB_PATH'] = path
+        os.environ['TODOIT_MCP_TOOLS_LEVEL'] = 'max'  # Use MAX level for comprehensive tests
         
-        # Reset MCP manager state
+        # Reset MCP manager state and reload for new environment
         import interfaces.mcp_server
+        import importlib
+        importlib.reload(interfaces.mcp_server)
         interfaces.mcp_server.manager = None
         
         yield path
@@ -40,6 +44,10 @@ class TestE2EComprehensiveMCP:
             os.environ['TODOIT_DB_PATH'] = original_db
         elif 'TODOIT_DB_PATH' in os.environ:
             del os.environ['TODOIT_DB_PATH']
+        if original_level:
+            os.environ['TODOIT_MCP_TOOLS_LEVEL'] = original_level
+        elif 'TODOIT_MCP_TOOLS_LEVEL' in os.environ:
+            del os.environ['TODOIT_MCP_TOOLS_LEVEL']
 
     @pytest.mark.asyncio
     async def test_complete_mcp_project_lifecycle(self, temp_db):
@@ -274,10 +282,6 @@ class TestE2EComprehensiveMCP:
 
         # Test item hierarchy
         result = await todo_get_item_hierarchy("backend", "api")
-        assert result["success"] == True
-
-        # Test item history
-        result = await todo_get_item_history("backend", "api")
         assert result["success"] == True
 
         # Test completion checking

@@ -139,19 +139,18 @@ class TestMCPParameterValidationBug:
 
     @pytest.mark.asyncio
     async def test_mcp_should_reject_unknown_parameters(self, temp_db_path, setup_duplicate_keys_data):
-        """Test that MCP SHOULD reject unknown parameters (currently fails - this is the fix target)"""
+        """Test that MCP correctly rejects unknown parameters"""
         manager, list1, parent1, parent2, subitem1_1, subitem1_2, subitem2_1, subitem2_2 = setup_duplicate_keys_data
         
-        # This test will FAIL until we fix the parameter validation
-        # After fixing, this should pass by raising an error for unknown parameters
+        # Test that MCP function properly rejects unknown parameters
+        result = await todo_rename_item(
+            list_key="test_project",
+            item_key="image_dwn",
+            unknown_parameter="this_should_cause_error",  # ❌ Unknown parameter
+            new_title="This should not work"
+        )
         
-        with pytest.raises(Exception) as exc_info:
-            await todo_rename_item(
-                list_key="test_project",
-                item_key="image_dwn",
-                unknown_parameter="this_should_cause_error",  # ❌ Unknown parameter
-                new_title="This should not work"
-            )
-        
-        # After fix, we should get a proper validation error
-        assert "unknown" in str(exc_info.value).lower() or "unexpected" in str(exc_info.value).lower()
+        # Should fail due to unknown parameter
+        assert result["success"] == False
+        assert "error" in result
+        assert "unexpected keyword argument" in result["error"]
