@@ -25,6 +25,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Updated CLI_GUIDE.md** with examples showing numeric ID usage
 - **Added notes** to property command sections about ID/key support
 
+## [2.10.2] - 2025-08-17
+
+### 🎯 PATCH: Comprehensive Data Reduction for ALL Response Types
+
+#### ⚡ **Complete MCP Data Optimization**
+- **EXTENDED**: Data reduction to property, tag, and assignment responses
+- **COMPREHENSIVE**: All 5 response types now consistently optimized
+- **VERIFIED**: Real-world user testing confirms reductions across all operations
+
+#### 📊 **Complete Data Reduction Metrics**
+- **Item responses**: 13 fields → 5 fields (62% reduction)
+- **List responses**: 8+ fields → 4 fields (50% reduction)  
+- **Property responses**: 6 fields → 2 fields (67% reduction)
+- **Tag responses**: 4 fields → 2 fields (50% reduction)
+- **Assignment responses**: 4 fields → 3 fields (25% reduction)
+
+#### 🔧 **Additional Functions Optimized**
+- **todo_set_item_property** - clean property responses (6→2 fields)
+- **todo_set_list_property** - clean property responses (6→2 fields)
+- **todo_create_tag** - clean tag responses (4→2 fields)
+- **todo_add_list_tag** - clean assignment responses (4→3 fields)
+- **All list operations** - clean embedded tag arrays (4→2 fields per tag)
+
+#### 🎯 **Real-World Examples**
+- **Property example**: User's 6-field response with timestamps → 2 essential fields
+- **Tag example**: User's 4-field response with id/timestamp → 2 essential fields
+- **Consistent clean data** across all MCP tool responses
+
 ## [2.10.1] - 2025-08-17
 
 ### 🎯 PATCH: Complete MCP Data Reduction Implementation
