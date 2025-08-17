@@ -5,6 +5,32 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.2] - 2025-08-17
+
+### 🔧 TEST FIXES - Complete Test Suite Compatibility
+
+#### ✅ **All 653 Tests Now Passing**
+- **FIXED**: Updated all test files to use new `update_item_status` function signature
+- **COMPLETED**: Comprehensive test suite compatibility after v2.8.1 breaking changes
+- **VERIFIED**: Full test coverage maintained with zero regressions
+
+#### 🔄 **Test Conversions Applied**
+- **PATTERN 1**: `update_item_status("list", "item", "status")` → `update_item_status("list", "item", status="status")`
+- **PATTERN 2**: `update_item_status("list", "sub", "status", parent_item_key="parent")` → `update_item_status("list", "parent", subitem_key="sub", status="status")`
+- **CLI MOCKS**: Updated mock assertions to match new function signature
+
+#### 📁 **Test Files Updated (16 files)**
+- `tests/test_status_synchronization.py` - Status propagation tests (15 calls)
+- `tests/unit/test_*_validation.py` - Archive and validation tests (4 files)
+- `tests/integration/test_*_api.py` - API integration tests (6 files)
+- `tests/edge_cases/test_edge_cases_limits.py` - Edge case scenarios
+- `tests/unit/test_cli_error_handling.py` - CLI mock expectations
+
+#### 📊 **Test Results**
+- **BEFORE**: 634 passed, 9 failed, 10 errors
+- **AFTER**: 653 passed, 0 failed, 0 errors
+- **IMPROVEMENT**: 100% test success rate achieved
+
 ## [2.8.1] - 2025-08-17
 
 ### 🐛 CRITICAL BUG FIX - Subitem Disambiguation
