@@ -55,6 +55,46 @@ def map_item_content_to_title(item_dict: Dict[str, Any]) -> Dict[str, Any]:
     return item_dict
 
 
+def clean_item_data(item_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Remove unnecessary fields from item data for MCP output."""
+    # Essential fields only
+    essential_fields = {
+        "item_key": item_dict.get("item_key"),
+        "content": item_dict.get("content"),
+        "title": item_dict.get("title"),
+        "status": item_dict.get("status"),
+        "position": item_dict.get("position"),
+    }
+    
+    # Add parent info only if it's a subtask
+    if item_dict.get("parent_item_id"):
+        essential_fields["is_subtask"] = True
+    
+    # Remove None values
+    return {k: v for k, v in essential_fields.items() if v is not None}
+
+
+def clean_to_dict_result(obj_dict: Dict[str, Any], object_type: str = "item") -> Dict[str, Any]:
+    """Remove timestamps and unnecessary fields from .to_dict() results."""
+    if object_type == "item":
+        return clean_item_data(obj_dict)
+    elif object_type == "list":
+        # Keep only essential list fields
+        essential_fields = {
+            "list_key": obj_dict.get("list_key"),
+            "title": obj_dict.get("title"),
+            "description": obj_dict.get("description"),
+            "list_type": obj_dict.get("list_type"),
+        }
+        return {k: v for k, v in essential_fields.items() if v is not None}
+    else:
+        # For other objects (progress, tags, etc.) keep as-is but remove common timestamp fields
+        clean_dict = obj_dict.copy()
+        for timestamp_field in ["created_at", "updated_at", "started_at", "completed_at"]:
+            clean_dict.pop(timestamp_field, None)
+        return clean_dict
+
+
 # === MCP TOOLS LEVEL CONFIGURATION ===
 import os
 
@@ -72,10 +112,9 @@ TOOLS_MINIMAL = [
     "todo_update_item_status",
     "todo_get_list_items",
     "todo_get_item",
-    # Essential workflow (3)
+    # Essential workflow (2)
     "todo_get_next_pending",
     "todo_get_progress",
-    "todo_update_item_content",
 ]
 
 TOOLS_STANDARD = TOOLS_MINIMAL + [
@@ -171,7 +210,7 @@ async def todo_create_list(
             list_type=list_type,
             metadata=metadata,
         )
-        return {"success": True, "list": todo_list.to_dict()}
+        return {"success": True, "list": clean_to_dict_result(todo_list.to_dict(), "list")}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -201,7 +240,7 @@ async def todo_get_list(
     # Base response with list info
     response = {
         "success": True,
-        "list": todo_list.to_dict()
+        "list": clean_to_dict_result(todo_list.to_dict(), "list")
     }
 
     # Add items if requested
@@ -210,20 +249,13 @@ async def todo_get_list(
         items_data = []
         for item in items:
             item_dict = {
-                "id": item.id,
                 "item_key": item.item_key,
                 "content": item.content,
                 "status": item.status.value,
                 "position": item.position,
                 "parent_item_id": item.parent_item_id,
-                "created_at": item.created_at.isoformat() if item.created_at else None,
-                "updated_at": item.updated_at.isoformat() if item.updated_at else None,
-                "started_at": item.started_at.isoformat() if item.started_at else None,
-                "completed_at": item.completed_at.isoformat() if item.completed_at else None,
-                "completion_states": item.completion_states,
-                "metadata": item.metadata,
             }
-            items_data.append(item_dict)
+            items_data.append(clean_item_data(item_dict))
         
         response["items"] = {
             "count": len(items_data),
@@ -286,11 +318,6 @@ async def todo_archive_list(list_key: str, force: bool = False) -> Dict[str, Any
                 "list_key": archived_list.list_key,
                 "title": archived_list.title,
                 "status": archived_list.status,
-                "updated_at": (
-                    archived_list.updated_at.isoformat()
-                    if archived_list.updated_at
-                    else None
-                ),
             },
             "message": f"List '{list_key}' archived successfully",
         }
@@ -318,11 +345,6 @@ async def todo_unarchive_list(list_key: str) -> Dict[str, Any]:
                 "list_key": unarchived_list.list_key,
                 "title": unarchived_list.title,
                 "status": unarchived_list.status,
-                "updated_at": (
-                    unarchived_list.updated_at.isoformat()
-                    if unarchived_list.updated_at
-                    else None
-                ),
             },
             "message": f"List '{list_key}' unarchived successfully",
         }
@@ -438,7 +460,7 @@ async def todo_add_item(
                 position=position,
                 metadata=metadata,
             )
-            return {"success": True, "item": map_item_content_to_title(item.to_dict())}
+            return {"success": True, "item": map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item"))}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -496,7 +518,7 @@ async def todo_update_item_status(
         target_type = "Subitem" if subitem_key else "Item"
         return {
             "success": True,
-            "item": map_item_content_to_title(item.to_dict()),
+            "item": map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item")),
             "message": f"{target_type} '{target_name}' status updated successfully",
         }
     except ValueError as e:
@@ -532,7 +554,7 @@ async def todo_get_next_pending(
             list_key=list_key, respect_dependencies=respect_dependencies
         )
         if item:
-            return {"success": True, "item": map_item_content_to_title(item.to_dict())}
+            return {"success": True, "item": map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item"))}
         else:
             return {
                 "success": True,
@@ -595,12 +617,18 @@ async def todo_report_errors(
         except re.error:
             lists_matched = 0
 
-    # Convert datetime objects to strings for JSON serialization
+    # Clean up failed items data - remove timestamps and unnecessary fields
+    cleaned_failed_items = []
     for item in failed_items:
-        if item.get("updated_at"):
-            item["updated_at"] = item["updated_at"].isoformat()
-        if item.get("created_at"):
-            item["created_at"] = item["created_at"].isoformat()
+        clean_item = {
+            "item_key": item.get("item_key"),
+            "content": item.get("content"), 
+            "status": item.get("status"),
+            "position": item.get("position"),
+        }
+        if item.get("parent_item_id"):
+            clean_item["is_subtask"] = True
+        cleaned_failed_items.append({k: v for k, v in clean_item.items() if v is not None})
 
     metadata = {
         "lists_scanned": len(all_active_lists),
@@ -619,7 +647,7 @@ async def todo_report_errors(
 
     return {
         "success": True,
-        "failed_tasks": failed_items,
+        "failed_tasks": cleaned_failed_items,
         "count": len(failed_items),
         "metadata": metadata,
     }
@@ -730,7 +758,7 @@ async def todo_get_item(
             # Get regular item
             item = mgr.get_item(list_key=list_key, item_key=item_key)
             if item:
-                return {"success": True, "item": map_item_content_to_title(item.to_dict())}
+                return {"success": True, "item": map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item"))}
             else:
                 return {
                     "success": False,
@@ -1182,17 +1210,9 @@ async def todo_find_items_by_property(
             "content": item.content,
             "status": item.status.value,
             "position": item.position,
-            "created_at": item.created_at.isoformat() if item.created_at else None,
-            "updated_at": item.updated_at.isoformat() if item.updated_at else None,
+            "parent_item_id": item.parent_item_id,
         }
-
-        # Add optional fields if present
-        if hasattr(item, "metadata") and item.metadata:
-            item_dict["metadata"] = item.metadata
-        if hasattr(item, "completion_states") and item.completion_states:
-            item_dict["completion_states"] = item.completion_states
-        if hasattr(item, "parent_item_id") and item.parent_item_id:
-            item_dict["parent_item_id"] = item.parent_item_id
+        item_dict = clean_item_data(item_dict)
 
         items_data.append(item_dict)
 
@@ -1251,20 +1271,14 @@ async def todo_find_subitems_by_status(
 
     def _convert_item_to_dict(item):
         """Helper to convert TodoItem to dictionary"""
-        return {
-            "id": item.id,
-            "list_id": item.list_id,
+        item_dict = {
             "item_key": item.item_key,
             "content": item.content,
             "status": item.status.value,
             "position": item.position,
             "parent_item_id": item.parent_item_id,
-            "created_at": item.created_at.isoformat() if item.created_at else None,
-            "updated_at": item.updated_at.isoformat() if item.updated_at else None,
-            "started_at": item.started_at.isoformat() if item.started_at else None,
-            "completed_at": item.completed_at.isoformat() if item.completed_at else None,
-            "metadata": item.metadata,
         }
+        return clean_item_data(item_dict)
 
     # Convert matches to dictionaries
     matches_data = []
@@ -1797,28 +1811,6 @@ async def todo_delete_item(list_key: str, item_key: str, mgr=None) -> Dict[str, 
             "error": f"Item '{item_key}' not found in list '{list_key}'",
         }
 
-
-@conditional_tool
-@mcp_error_handler
-async def todo_update_item_content(
-    list_key: str, item_key: str, new_title: str, mgr=None
-) -> Dict[str, Any]:
-    """Update the title/content of a todo item.
-
-    Args:
-        list_key: Key of the list containing the item (required)
-        item_key: Key of the item to update (required)
-        new_title: New title/content for the item (required)
-
-    Returns:
-        Dictionary with success status and updated item details
-    """
-    updated_item = mgr.update_item_content(list_key, item_key, new_title)  # Map title to content internally
-    return {
-        "success": True,
-        "item": map_item_content_to_title(updated_item.to_dict()),
-        "message": f"Title updated for item '{item_key}' in list '{list_key}'",
-    }
 
 
 @conditional_tool

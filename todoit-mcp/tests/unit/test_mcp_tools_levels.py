@@ -35,8 +35,8 @@ class TestMCPToolsLevels:
             assert should_register_tool("todo_add_item_dependency") == False
             assert should_register_tool("todo_delete_list") == False
 
-            # Verify MINIMAL has exactly 10 tools
-            assert len(TOOLS_MINIMAL) == 10
+            # Verify MINIMAL has exactly 9 tools (removed todo_update_item_content)
+            assert len(TOOLS_MINIMAL) == 9
 
     def test_tools_standard_level(self):
         """Test that STANDARD level registers correct tools"""
@@ -68,9 +68,9 @@ class TestMCPToolsLevels:
             assert should_register_tool("todo_archive_list") == False
             assert should_register_tool("todo_unarchive_list") == False
 
-            # Verify STANDARD has 24 tools (10 MINIMAL + 14 additional)
-            # Note: Increased from 22 to 24 after adding todo_rename_item and todo_rename_list
-            assert len(TOOLS_STANDARD) == 24
+            # Verify STANDARD has 23 tools (9 MINIMAL + 14 additional)
+            # Note: Reduced from 24 to 23 after removing todo_update_item_content
+            assert len(TOOLS_STANDARD) == 23
             assert len(TOOLS_STANDARD) - len(TOOLS_MINIMAL) == 14
 
     def test_tools_max_level(self):
@@ -192,7 +192,6 @@ class TestMCPToolsLevels:
         # Essential workflow
         assert "todo_get_next_pending" in TOOLS_MINIMAL
         assert "todo_get_progress" in TOOLS_MINIMAL
-        assert "todo_update_item_content" in TOOLS_MINIMAL
 
     def test_tools_standard_adds_useful_extensions(self):
         """Test that STANDARD level adds useful extensions to MINIMAL"""

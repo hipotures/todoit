@@ -41,7 +41,7 @@ def get_manager(db_path: Optional[str]) -> TodoManager:
 
     # Development mode: use dev database
     if not is_production:
-        dev_db = Path.home() / ".todoit" / "todoit_dev.db"
+        dev_db = Path.home() / "todoit_dev.db"
         return TodoManager(str(dev_db))
 
     # Production mode: use environment variable or default

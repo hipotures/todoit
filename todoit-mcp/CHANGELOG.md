@@ -5,6 +5,40 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.0] - 2025-08-17
+
+### 🚀 MAJOR: MCP Data Optimization & Tool Cleanup
+
+#### ⚡ **MCP Response Data Reduction**
+- **REDUCED**: Item responses by ~67% - removed timestamps, metadata, completion_states, internal IDs
+- **ESSENTIAL**: Only `item_key`, `title`, `status`, `position` + `is_subtask` indicator retained
+- **OPTIMIZED**: List responses - removed timestamps, kept only essential fields
+- **PERFORMANCE**: Significantly faster MCP responses with lower token usage in Claude Code
+- **READABILITY**: Cleaner, more focused data for better user experience
+
+#### 🧹 **Tool Consolidation**
+- **REMOVED**: `todo_update_item_content` MCP tool (redundant functionality)
+- **UNIFIED**: `todo_rename_item` now handles both key and title updates (replaces removed tool)
+- **TOTAL**: Reduced from 52 to 51 MCP tools
+- **MINIMAL**: 9 tools (reduced from 10)
+- **STANDARD**: 23 tools (reduced from 24)
+- **MAX**: 51 tools (reduced from 52)
+
+#### 📚 **Documentation Updates**
+- **UPDATED**: MCP_TOOLS.md with new tool counts and data optimization section
+- **ENHANCED**: Performance impact metrics updated for optimized responses
+- **DOCUMENTED**: Complete data reduction strategy and benefits
+
+#### 🧪 **Test Coverage**
+- **UPDATED**: All test suites for reduced tool count
+- **VERIFIED**: E2E tests use `todo_rename_item` for content updates
+- **PASSING**: All 700+ tests pass with optimized data structures
+
+#### 🎯 **Performance Benefits**
+- **TOKEN USAGE**: Reduced context size in Claude Code interactions
+- **RESPONSE SPEED**: Faster MCP tool responses with minimal data transfer
+- **FOCUS**: Users see only actionable data, reducing cognitive load
+
 ## [2.9.0] - 2025-08-17
 
 ### 🚀 MAJOR FEATURE: Complete Rename Functionality

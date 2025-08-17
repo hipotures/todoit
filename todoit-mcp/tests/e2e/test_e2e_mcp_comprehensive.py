@@ -158,8 +158,8 @@ class TestE2EComprehensiveMCP:
         assert result["success"] == True
         assert result["count"] == 2
 
-        # Update item content
-        result = await todo_update_item_content("backend", "api", "Enhanced REST API Development")
+        # Update item content using rename (replaces todo_update_item_content)
+        result = await todo_rename_item("backend", "api", new_title="Enhanced REST API Development")
         assert result["success"] == True
 
         # ============ PHASE 3: DEPENDENCIES AND WORKFLOW ============
