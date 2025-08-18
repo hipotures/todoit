@@ -530,9 +530,14 @@ todoit io import --file "/path/to/tasks.md" --key "imported"
 ### 🔧 Property Management
 
 #### List Properties (`list property`)
+
+**Note:** All property commands support numeric list IDs as well as list keys (e.g., `126` or `"my-project"`).
+
 ```bash
 # Set list property
 todoit list property set "my-project" "priority" "high"
+# Or using numeric ID:
+todoit list property set 126 "priority" "high"
 
 # Get list property
 todoit list property get "my-project" "priority"
@@ -545,9 +550,14 @@ todoit list property delete "my-project" "old-property"
 ```
 
 #### Item Properties (`item property`)
+
+**Note:** All property commands support numeric list IDs as well as list keys (e.g., `--list 126` or `--list "my-project"`).
+
 ```bash
 # Set item property for runtime tracking
 todoit item property set --list "my-project" --item "feature1" --key "priority" --value "high"
+# Or using numeric ID:
+todoit item property set --list 126 --item "feature1" --key "priority" --value "high"
 todoit item property set --list "my-project" --item "feature1" --key "estimated_hours" --value "8"
 todoit item property set --list "my-project" --item "feature1" --key "assignee" --value "john_doe"
 

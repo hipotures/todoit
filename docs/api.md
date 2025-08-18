@@ -4,6 +4,15 @@ The `TodoManager` class in `core/manager.py` provides the core programmatic API 
 
 This document serves as a reference for the main methods available in the `TodoManager` class.
 
+## ✨ Natural Sorting (v2.11.0)
+
+TODOIT now uses **natural sorting** for all lists and items, making numeric sequences sort intuitively:
+
+- **Lists**: `0014_project` comes before `0037_project` (not after)
+- **Items**: `scene_0020` comes before `scene_0021`, `test_2` before `test_10`
+- **Automatic**: No configuration needed - all MCP tools and CLI commands benefit
+- **Backward Compatible**: Existing `position` fields remain but are no longer primary sort criterion
+
 ## Core Object Management
 
 ### `create_list`
@@ -27,7 +36,7 @@ Adds a new item to a list.
 - `list_key: str`: The key of the target list.
 - `item_key: str`: A unique key for the item within the list.
 - `content: str`: The item's description.
-- `position: Optional[int]`: The insertion position. If omitted, it's added to the end.
+- `position: Optional[int]`: ⚠️ **DEPRECATED**: Position parameter still exists for compatibility but is no longer the primary sort criterion. Items are now sorted naturally by `item_key`.
 - `metadata: Optional[Dict]`: A dictionary for custom metadata.
 
 **Returns:** `TodoItem` – The created item object.
@@ -172,7 +181,7 @@ except ValueError as e:
 
 Automatic status synchronization works identically across:
 - **CLI Interface** - All `todoit item` commands respect sync rules
-- **MCP Interface** - All 55+ MCP tools handle sync blocking gracefully
+- **MCP Interface** - All 51 MCP tools handle sync blocking gracefully
 - **Programmatic API** - Direct `TodoManager` method calls
 
 ---
@@ -338,7 +347,7 @@ Find subitems based on sibling status conditions within their parent groups.
 - `conditions: Dict[str, str]`: Dictionary of {subitem_key: expected_status} conditions.
 - `limit: int`: Maximum number of results to return (default: 10).
 
-**Returns:** `List[TodoItem]` – Subitems matching the conditions, ordered by position.
+**Returns:** `List[TodoItem]` – Subitems matching the conditions, ordered naturally by `item_key`.
 
 **Raises:** `ValueError` if the specified list is not found or conditions are empty.
 

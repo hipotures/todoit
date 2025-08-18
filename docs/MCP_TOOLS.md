@@ -4,6 +4,11 @@
 
 TODOIT MCP provides 51 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
 
+## ✨ Natural Sorting (v2.11.0)
+All MCP tools now return naturally sorted results:
+- **Lists** sorted by `list_key`: `0014_project` before `0037_project`
+- **Items** sorted by `item_key`: `scene_0020` before `scene_0021`, `test_2` before `test_10`
+
 ## 🎛️ Tools Level Configuration
 
 **NEW**: MCP tools can now be configured at 3 different levels to optimize token usage and system complexity:
@@ -63,6 +68,21 @@ Perfect for production environments or when safety is paramount.
 - ❌ **Removed**: `id`, `created_at`, `updated_at`, `status`, `metadata`, internal fields
 - 📉 **Result**: ~50% reduction (8+ fields → 4 fields)
 
+### Reduced Property Data
+- ✅ **Essential fields**: `property_key`, `property_value`
+- ❌ **Removed**: `id`, `item_id`, `created_at`, `updated_at`
+- 📉 **Result**: 67% reduction (6 fields → 2 fields)
+
+### Reduced Tag Data
+- ✅ **Essential fields**: `name`, `color`
+- ❌ **Removed**: `id`, `created_at`
+- 📉 **Result**: 50% reduction (4 fields → 2 fields)
+
+### Reduced Assignment Data
+- ✅ **Essential fields**: `id`, `list_id`, `tag_id` (relational IDs)
+- ❌ **Removed**: `assigned_at`
+- 📉 **Result**: 25% reduction (4 fields → 3 fields)
+
 ### Performance Benefits
 - **Faster responses** - Less data transfer
 - **Lower token usage** - Smaller context in Claude Code
@@ -103,6 +123,58 @@ Perfect for production environments or when safety is paramount.
     "is_subtask": true,
     "title": "Scene styling for scene_0004.yaml"
   }
+}
+```
+
+**Property Response BEFORE (6 fields):**
+```json
+{
+  "success": true,
+  "property": {
+    "id": 3799,
+    "item_id": 3434,
+    "property_key": "scene_style_pathfile",
+    "property_value": "books/0010_great_gatsby/prompts/genimage/scene_0013.yaml",
+    "created_at": "2025-08-17T11:20:48.072303",
+    "updated_at": "2025-08-17T20:50:57.859394"
+  }
+}
+```
+
+**Property Response AFTER (2 fields - 67% reduction):**
+```json
+{
+  "success": true,
+  "property": {
+    "property_key": "scene_style_pathfile",
+    "property_value": "books/0010_great_gatsby/prompts/genimage/scene_0013.yaml"
+  }
+}
+```
+
+**Tag Response BEFORE (4 fields):**
+```json
+{
+  "tags": [
+    {
+      "id": 8,
+      "name": "37d_old",
+      "color": "green",
+      "created_at": "2025-08-17T12:52:59.357420"
+    }
+  ]
+}
+```
+
+**Tag Response AFTER (2 fields - 50% reduction):**
+```json
+{
+  "tags": [
+    {
+      "name": "37d_old",
+      "color": "green"
+    }
+  ]
 }
 ```
 
@@ -609,7 +681,7 @@ Error responses include:
 
 ## Integration with Claude Code
 
-All 50 tools are automatically available in Claude Code through MCP integration:
+All 51 tools are automatically available in Claude Code through MCP integration:
 
 1. **List Management** - Create, organize, and manage task lists
 2. **Task Operations** - Add, update, and track individual tasks
@@ -749,7 +821,7 @@ await todo_remove_list_tag("project-alpha", "urgent")
 
 ## Testing Status
 
-✅ **All 50 MCP tools tested and verified working**
+✅ **All 51 MCP tools tested and verified working**
 - 100% functional coverage
 - Error handling validated  
 - Integration tested with real workflows
@@ -757,4 +829,4 @@ await todo_remove_list_tag("project-alpha", "urgent")
 
 ---
 
-*Last updated: August 17, 2025 - All 50 tools production ready with 3-level configuration system*
+*Last updated: August 18, 2025 - All 51 tools production ready with 3-level configuration system*
