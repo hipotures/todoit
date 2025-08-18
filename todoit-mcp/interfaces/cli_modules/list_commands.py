@@ -751,8 +751,8 @@ def _create_live_items_table(items, has_changed):
         table.add_row("", "[dim]No items found[/]", "", "")
         return table
 
-    # Sort items by position
-    sorted_items = sorted(items, key=lambda x: x.position)
+    # Items are already naturally sorted by manager - preserve that order
+    sorted_items = items
 
     for item in sorted_items:
         # Status formatting

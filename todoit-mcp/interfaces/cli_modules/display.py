@@ -316,10 +316,8 @@ def _organize_items_by_hierarchy(items: List) -> Dict[str, Any]:
                 items_by_parent[parent_id] = []
             items_by_parent[parent_id].append(item)
 
-    # Sort each group by position
-    root_items.sort(key=lambda x: x.position)
-    for parent_id in items_by_parent:
-        items_by_parent[parent_id].sort(key=lambda x: x.position)
+    # Items are already naturally sorted by the manager - preserve that order!
+    # Note: Previously sorted by position, but now we use natural sorting from database layer
 
     return {"roots": root_items, "children": items_by_parent}
 
@@ -442,15 +440,15 @@ def _render_table_view(
     # Prepare data for unified display
     data = []
 
-    def add_item_to_table(item, parent_numbers=None, depth=0, sibling_index=None):
+    def add_item_to_table(item, parent_numbers=None, depth=0, sibling_index=None, index_number=None):
         """Recursively add item and its children to table"""
         if parent_numbers is None:
             parent_numbers = []
 
         # Generate hierarchical numbering
-        # For root items, use position; for subitems, use sibling_index (1-based)
+        # For root items, use natural sort order index; for subitems, use sibling_index (1-based)
         if depth == 0:
-            position_number = item.position
+            position_number = index_number if index_number is not None else item.position
         else:
             position_number = sibling_index if sibling_index is not None else 1
             
@@ -535,9 +533,9 @@ def _render_table_view(
         for child_index, child in enumerate(children, 1):
             add_item_to_table(child, current_numbers, depth + 1, child_index)
 
-    # Add all root items and their subtrees
-    for root_item in hierarchy["roots"]:
-        add_item_to_table(root_item)
+    # Add all root items and their subtrees (using natural sort order index)
+    for index, root_item in enumerate(hierarchy["roots"], 1):
+        add_item_to_table(root_item, index_number=index)
 
     # Define column styling for table format
     columns = {
