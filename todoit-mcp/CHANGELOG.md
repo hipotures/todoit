@@ -5,6 +5,29 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.1] - 2025-08-18
+
+### 🐛 HOTFIX: CLI Display Natural Sorting
+
+#### ✅ **Fixed**
+- **CLI Display**: Fixed CLI re-sorting items by `position` after natural sorting
+- **Hierarchical Numbering**: Updated table numbering to reflect natural sort order  
+- **Live Display**: Fixed live mode to preserve natural sorting from manager
+- **Visual Consistency**: CLI now correctly shows `scene_0020` before `scene_0021`
+
+#### 🔧 **Technical Details**
+- **Removed re-sorting** in `_organize_items_by_hierarchy()` function
+- **Removed re-sorting** in `_create_live_items_table()` function  
+- **Updated hierarchical numbering** to use natural sort order index instead of position
+- **Preserved natural sorting** from database layer throughout display pipeline
+
+#### 📊 **Impact**
+- CLI now fully respects natural sorting implemented in v2.11.0
+- Consistent behavior between MCP tools and CLI commands
+- Eliminates user confusion from mixed sorting approaches
+
+---
+
 ## [2.11.0] - 2025-08-18
 
 ### 🚀 MAJOR: Natural Sorting Implementation
