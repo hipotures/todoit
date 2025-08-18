@@ -7,6 +7,12 @@ import os
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime, timezone
 
+from .manager_base import ManagerBase
+from .manager_helpers import HelpersMixin
+from .manager_lists import ListsMixin
+from .manager_tags import TagsMixin
+from .manager_properties import PropertiesMixin
+from .manager_io import IOMixin
 from .database import (
     Database,
     TodoListDB,
@@ -40,132 +46,12 @@ from .models import (
 )
 
 
-class TodoManager:
+class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMixin, IOMixin):
     """Programmatic API for TODO management - core business logic"""
 
     def __init__(self, db_path: Optional[str] = None):
         """Initialize TodoManager with database connection"""
-        if db_path is None:
-            # Check for TODOIT_DB_PATH environment variable
-            db_path = os.getenv('TODOIT_DB_PATH')
-            if db_path:
-                # Expand environment variables like $HOME
-                db_path = os.path.expandvars(db_path)
-            if db_path is None:
-                from rich.console import Console
-                console = Console()
-                console.print("[bold red]❌ Error:[/] Database path not specified!", style="red")
-                console.print()
-                console.print("[yellow]TODOIT requires explicit database configuration.[/]")
-                console.print()
-                console.print("[cyan]Quick fix:[/]")
-                console.print("  [white]export TODOIT_DB_PATH=/path/to/your/todoit.db[/]")
-                console.print("  [white]todoit list all[/]")
-                console.print()
-                console.print("[cyan]Or use parameter:[/]")
-                console.print("  [white]todoit --db-path /path/to/your/todoit.db list all[/]")
-                console.print()
-                console.print("[dim]Database path must be explicitly configured[/]")
-                raise SystemExit(1)
-
-        # Initialize environment variables
-        self.force_tags = self._get_force_tags()
-
-        # Validate database path before creating Database instance
-        try:
-            import pathlib
-            db_file = pathlib.Path(db_path)
-            
-            # Ensure parent directory exists
-            db_file.parent.mkdir(parents=True, exist_ok=True)
-            
-            # Check write permissions on parent directory
-            if not os.access(db_file.parent, os.W_OK):
-                from rich.console import Console
-                console = Console()
-                console.print(f"[bold red]❌ Error:[/] No write permission to directory: {db_file.parent}")
-                console.print(f"[yellow]Fix:[/] chmod 755 {db_file.parent}")
-                raise SystemExit(1)
-                
-            self.db = Database(db_path)
-            
-        except (OSError, PermissionError) as e:
-            from rich.console import Console
-            console = Console()
-            console.print(f"[bold red]❌ Database Error:[/] Cannot access database file")
-            console.print(f"[white]Path:[/] {db_path}")
-            console.print(f"[white]Error:[/] {e}")
-            console.print()
-            console.print("[cyan]Possible solutions:[/]")
-            console.print("  [white]• Check if directory exists and is writable[/]")
-            console.print("  [white]• Use absolute path: /path/to/your/todoit.db[/]") 
-            console.print("  [white]• Check permissions: ls -la $(dirname path)[/]")
-            raise SystemExit(1)
-        except Exception as e:
-            # Catch SQLAlchemy and other database errors
-            from rich.console import Console
-            console = Console()
-            console.print(f"[bold red]❌ Database Connection Error:[/]")
-            console.print(f"[white]Path:[/] {db_path}")
-            console.print(f"[white]Error:[/] {str(e)}")
-            console.print()
-            if "unable to open database file" in str(e):
-                console.print("[cyan]Possible causes:[/]")
-                console.print("  [white]• Invalid database path[/]")
-                console.print("  [white]• Missing directory permissions[/]")
-                console.print("  [white]• Path contains special characters[/]")
-                console.print()
-                console.print("[cyan]Try:[/]")
-                console.print("  [white]export TODOIT_DB_PATH=/path/to/your/test.db[/]")
-                console.print("  [white]todoit list all[/]")
-            raise SystemExit(1)
-
-    def _get_force_tags(self) -> List[str]:
-        """Get forced tags from TODOIT_FORCE_TAGS environment variable
-        
-        FORCE_TAGS creates environment isolation - all operations are limited
-        to lists with these tags, and new lists automatically get these tags.
-        """
-        env_tags = os.environ.get("TODOIT_FORCE_TAGS", "").split(",")
-        return [tag.strip().lower() for tag in env_tags if tag.strip()]
-
-    def _db_to_model(self, db_obj: Any, model_class: type) -> Any:
-        """Convert database object to Pydantic model"""
-        if db_obj is None:
-            return None
-
-        # Convert SQLAlchemy object to dict
-        obj_dict = {}
-        for column in db_obj.__table__.columns:
-            # Map database column name to model field name
-            if column.name == "metadata":
-                # meta_data in SQLAlchemy maps to metadata in Pydantic
-                value = getattr(db_obj, "meta_data")
-            else:
-                value = getattr(db_obj, column.name)
-            obj_dict[column.name] = value
-
-        return model_class.model_validate(obj_dict)
-
-    def _record_history(
-        self,
-        item_id: Optional[int] = None,
-        list_id: Optional[int] = None,
-        action: str = "updated",
-        old_value: Optional[Dict] = None,
-        new_value: Optional[Dict] = None,
-        user_context: str = "programmatic_api",
-    ):
-        """Record change in history"""
-        history_data = {
-            "item_id": item_id,
-            "list_id": list_id,
-            "action": action,
-            "old_value": old_value,
-            "new_value": new_value,
-            "user_context": user_context,
-        }
-        self.db.create_history_entry(history_data)
+        super().__init__(db_path)
 
     # === STAGE 1: 10 key functions ===
 
@@ -1788,99 +1674,6 @@ class TodoManager:
 
         return False
 
-    def _sync_parent_status(
-        self, parent_item_id: int, session=None, visited=None
-    ) -> bool:
-        """
-        Synchronize parent status based on children statuses with optimal performance
-
-        Args:
-            parent_item_id: ID of parent item to synchronize
-            session: Optional SQLAlchemy session (creates new if None)
-            visited: Set of visited item IDs to prevent circular dependencies
-
-        Returns:
-            True if status was changed, False otherwise
-        """
-        if visited is None:
-            visited = set()
-
-        if parent_item_id in visited:
-            return False  # Circular dependency detected
-
-        visited.add(parent_item_id)
-
-        # Use provided session or create new one
-        if session:
-            return self._sync_parent_status_with_session(
-                parent_item_id, session, visited
-            )
-        else:
-            with self.db.get_session() as new_session:
-                return self._sync_parent_status_with_session(
-                    parent_item_id, new_session, visited
-                )
-
-    def _sync_parent_status_with_session(
-        self, parent_item_id: int, session, visited: set
-    ) -> bool:
-        """Internal method to sync parent status within existing session"""
-
-        # Get children status summary
-        summary = self.db.get_children_status_summary(parent_item_id, session)
-
-        if not summary:
-            return False  # No children, no sync needed
-
-        # Calculate new parent status based on rules:
-        # 1. Any failed -> failed
-        # 2. All pending -> pending
-        # 3. All completed -> completed
-        # 4. Any other combination -> in_progress
-        if summary["failed"] > 0:
-            new_status = "failed"
-        elif summary["pending"] == summary["total"]:
-            new_status = "pending"
-        elif summary["completed"] == summary["total"]:
-            new_status = "completed"
-        else:
-            new_status = "in_progress"
-
-        # Get current parent status
-        from sqlalchemy import text
-
-        result = session.execute(
-            text("SELECT status, parent_item_id FROM todo_items WHERE id = :id"),
-            {"id": parent_item_id},
-        ).fetchone()
-
-        if not result:
-            return False
-
-        current_status = result[0]
-        grandparent_id = result[1]
-
-        # Only update if status actually changed
-        if current_status != new_status:
-            session.execute(
-                text(
-                    "UPDATE todo_items SET status = :status, updated_at = :updated_at WHERE id = :id"
-                ),
-                {
-                    "status": new_status,
-                    "updated_at": datetime.now(timezone.utc),
-                    "id": parent_item_id,
-                },
-            )
-
-            # Recursively sync grandparent if exists and not visited
-            if grandparent_id and grandparent_id not in visited:
-                self._sync_parent_status_with_session(grandparent_id, session, visited)
-
-            return True
-
-        return False
-
     def move_to_subitem(
         self, list_key: str, item_key: str, new_parent_key: str
     ) -> TodoItem:
@@ -2303,35 +2096,6 @@ class TodoManager:
             ),
         }
 
-    def _get_blocking_reason(
-        self,
-        blocked_by_deps: bool,
-        blocked_by_subtasks: bool,
-        blockers: List,
-        pending_subtasks: List,
-    ) -> str:
-        """Generate human-readable blocking reason"""
-        reasons = []
-
-        if blocked_by_deps:
-            blocker_names = [f"{b.item_key}" for b in blockers[:3]]  # Show first 3
-            if len(blockers) > 3:
-                blocker_names.append(f"and {len(blockers) - 3} more")
-            reasons.append(f"blocked by dependencies: {', '.join(blocker_names)}")
-
-        if blocked_by_subtasks:
-            subtask_names = [
-                f"{s.item_key}" for s in pending_subtasks[:3]
-            ]  # Show first 3
-            if len(pending_subtasks) > 3:
-                subtask_names.append(f"and {len(pending_subtasks) - 3} more")
-            reasons.append(f"has pending subtasks: {', '.join(subtask_names)}")
-
-        if not reasons:
-            return "ready to start"
-
-        return "; ".join(reasons)
-
     def get_cross_list_progress(self, project_key: str) -> Dict[str, Any]:
         """Get aggregated progress - returns empty since list relations were removed.
 
@@ -2566,53 +2330,6 @@ class TodoManager:
 
         return self._db_to_model(updated_item, TodoItem)
 
-    def _get_all_subtasks_recursive(self, item_id: int) -> List:
-        """Get all subtasks of an item recursively"""
-        all_subtasks = []
-        children = self.db.get_item_children(item_id)
-
-        for child in children:
-            all_subtasks.append(child)
-            # Get subtasks of this child recursively
-            all_subtasks.extend(self._get_all_subtasks_recursive(child.id))
-
-        return all_subtasks
-
-    def _get_item_and_subtasks_recursive(self, session, item_id: int) -> List:
-        """Helper method to get item and all its subtasks recursively"""
-        items = []
-
-        # Get the item itself
-        item = session.query(TodoItemDB).filter(TodoItemDB.id == item_id).first()
-        if item:
-            items.append(item)
-
-            # Get all children recursively
-            children = (
-                session.query(TodoItemDB)
-                .filter(TodoItemDB.parent_item_id == item_id)
-                .all()
-            )
-            for child in children:
-                items.extend(self._get_item_and_subtasks_recursive(session, child.id))
-
-        return items
-
-    def _get_item_depth(self, session, item_id: int) -> int:
-        """Helper method to get the depth of an item in the hierarchy"""
-        depth = 0
-        current_id = item_id
-
-        while current_id:
-            item = session.query(TodoItemDB).filter(TodoItemDB.id == current_id).first()
-            if not item or not item.parent_item_id:
-                break
-            current_id = item.parent_item_id
-            depth += 1
-
-        return depth
-
-
     # ===== LIST TAG MANAGEMENT METHODS =====
 
     def create_tag(self, name: str, color: str = None) -> ListTag:
@@ -2649,64 +2366,6 @@ class TodoManager:
 
         # Convert to Pydantic model and return
         return self._db_to_model(db_tag, ListTag)
-
-    def _get_tag_color_by_index(self, tag_name: str) -> str:
-        """Get tag color based on its position in sorted tag list (dynamic assignment)"""
-        available_colors = [
-            "red",
-            "green",
-            "blue",
-            "yellow",
-            "orange",
-            "purple",
-            "cyan",
-            "magenta",
-            "pink",
-            "grey",
-            "bright_green",
-            "bright_red",
-        ]
-
-        # Get all existing tags from database (avoid recursion)
-        db_tags = self.db.get_all_tags()
-        sorted_tag_names = sorted([tag.name for tag in db_tags])
-
-        # Find position of this tag in sorted list
-        try:
-            tag_index = sorted_tag_names.index(tag_name)
-        except ValueError:
-            # Tag not found, return default
-            return available_colors[0]
-
-        # Return color by index (cycle if more than 12 tags)
-        return available_colors[tag_index % len(available_colors)]
-
-    def _get_next_available_color(self) -> str:
-        """Get next available color for new tags (checks 12 tag limit)"""
-        available_colors = [
-            "red",
-            "green",
-            "blue",
-            "yellow",
-            "orange",
-            "purple",
-            "cyan",
-            "magenta",
-            "pink",
-            "grey",
-            "bright_green",
-            "bright_red",
-        ]
-
-        # Check if we exceed the 12 color limit
-        db_tags = self.db.get_all_tags()
-        if len(db_tags) >= len(available_colors):
-            raise ValueError(
-                f"Maximum number of tags reached ({len(available_colors)}). Cannot create more tags with distinct colors."
-            )
-
-        # Return placeholder - actual color will be determined dynamically
-        return available_colors[0]
 
     def get_tag(self, tag_identifier: Union[int, str]) -> Optional[ListTag]:
         """Get a specific tag by its ID or name.
