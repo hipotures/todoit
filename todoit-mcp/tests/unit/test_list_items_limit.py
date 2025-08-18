@@ -148,23 +148,23 @@ class TestListItemsLimit:
         for i, db_item in enumerate(db_items):
             assert db_item.item_key == f"item_{i}"
 
-    def test_limit_with_different_positions(self, manager):
-        """Test limit respects position ordering"""
+    def test_limit_with_different_item_keys(self, manager):
+        """Test limit respects natural sorting by item_key"""
         # Create list
         todo_list = manager.create_list("test_list", "Test List")
 
-        # Add items with specific positions
+        # Add items with different item_keys (position is no longer primary sort criterion)
         manager.add_item("test_list", "item_high", "High Priority", position=100)
         manager.add_item("test_list", "item_low", "Low Priority", position=1)
         manager.add_item("test_list", "item_medium", "Medium Priority", position=50)
 
-        # Get limited items (should respect position order)
+        # Get limited items (should respect natural sort order by item_key)
         items = manager.get_list_items("test_list", limit=2)
         assert len(items) == 2
 
-        # Should get items ordered by position: low (1), medium (50)
-        assert items[0].item_key == "item_low"
-        assert items[1].item_key == "item_medium"
+        # Should get items ordered naturally by item_key: item_high, item_low (alphabetically)
+        assert items[0].item_key == "item_high"
+        assert items[1].item_key == "item_low"
 
     def test_limit_preserves_data_integrity(self, manager):
         """Test that limit doesn't affect item data quality"""

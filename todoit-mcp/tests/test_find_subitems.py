@@ -138,8 +138,8 @@ class TestFindSubitemsByStatus:
         with pytest.raises(ValueError, match="Conditions dictionary cannot be empty"):
             manager.find_subitems_by_status("test_list", {}, limit=10)
 
-    def test_search_ordering_by_position(self, manager_with_test_data):
-        """Test that results are ordered by position"""
+    def test_search_ordering_by_item_key(self, manager_with_test_data):
+        """Test that results are ordered naturally by item_key"""
         manager = manager_with_test_data
 
         # Find multiple subitems
@@ -149,11 +149,13 @@ class TestFindSubitemsByStatus:
             limit=10,
         )
 
-        # Should find one parent group with 3 matching subitems ordered by position
+        # Should find one parent group with 3 matching subitems ordered naturally by item_key
         assert len(matches) == 1
         assert len(matches[0]["matching_subitems"]) == 3
-        positions = [item.position for item in matches[0]["matching_subitems"]]
-        assert positions == sorted(positions)
+        item_keys = [item.item_key for item in matches[0]["matching_subitems"]]
+        # Natural sort order should be maintained (e.g., "download", "generate", "process" alphabetically)
+        expected_keys = sorted(item_keys, key=lambda x: manager.db.natural_sort_key(x))
+        assert item_keys == expected_keys
 
     def test_workflow_scenario_image_processing(self, manager_with_test_data):
         """Test realistic workflow scenario for image processing"""
