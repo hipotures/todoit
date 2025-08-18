@@ -5,6 +5,36 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.0] - 2025-08-18
+
+### 🚀 MAJOR: Natural Sorting Implementation
+
+#### ✨ **New Features**
+- **NATURAL SORTING**: Lists and items now sort naturally by their keys
+  - `scene_0020` comes before `scene_0021` (not after)  
+  - `test_2` comes before `test_10` (not after)
+  - `0014_jane` comes before `0037_wuthering` (correct numeric order)
+- **IMPROVED UX**: Eliminates confusing alphabetic sorting of numeric sequences
+- **AUTOMATIC**: No configuration needed - all sorting is now natural by default
+
+#### 🔧 **Technical Implementation**
+- **Added `natural_sort_key()` function** in `Database` class using regex pattern `([0-9]+)`
+- **Updated all sorting methods** to use natural sorting instead of position-based
+- **Maintained hierarchical structure**: Main items first, then subitems grouped by parent
+- **Performance optimized**: Sorting done in Python after database query
+
+#### 📊 **Impact**
+- **Lists**: `todo_list_all` now returns naturally sorted lists
+- **Items**: `todo_get_list_items` returns naturally sorted items within each list
+- **All database queries** updated to use natural sorting consistently
+- **MCP & CLI**: Both interfaces benefit from improved sorting
+
+#### 🔄 **Breaking Change**
+- **Position field**: No longer primary sort criterion (still exists for compatibility)
+- **New sort order**: Items now sorted by `item_key` with natural number handling
+
+---
+
 ## [2.10.2] - 2025-08-17
 
 ### 🐛 BUGFIX: Property Commands ID Resolution

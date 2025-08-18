@@ -4,6 +4,7 @@ SQLAlchemy models and database operations
 """
 
 import os
+import re
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime, timezone
 from sqlalchemy import (
@@ -280,6 +281,20 @@ class Database:
         # Note: Subtask flexibility migration is available via migrate_subtask_keys.py
         # It's not run automatically to give users full control over schema changes
 
+    @staticmethod
+    def natural_sort_key(text: str) -> List[Union[int, str]]:
+        """Convert a string to a list for natural sorting.
+        
+        Examples:
+            'scene_0020' -> ['scene_', 20]
+            'test_10' -> ['test_', 10]
+            '0014_jane' -> [14, '_jane']
+        """
+        def convert(text_part):
+            return int(text_part) if text_part.isdigit() else text_part.lower()
+        
+        return [convert(c) for c in re.split('([0-9]+)', text)]
+    
     def create_tables(self):
         """Create all database tables"""
         Base.metadata.create_all(bind=self.engine)
@@ -388,12 +403,19 @@ class Database:
             )
 
     def get_all_lists(self, limit: Optional[int] = None) -> List[TodoListDB]:
-        """Get all lists"""
+        """Get all lists with natural sorting"""
         with self.get_session() as session:
-            query = session.query(TodoListDB).order_by(TodoListDB.list_key.asc())
-            if limit:
-                query = query.limit(limit)
-            return query.all()
+            # Get all lists first, then sort naturally in Python
+            lists = session.query(TodoListDB).all()
+            
+            # Sort using natural sort key
+            lists.sort(key=lambda lst: self.natural_sort_key(lst.list_key))
+            
+            # Apply limit after sorting
+            if limit and len(lists) > limit:
+                lists = lists[:limit]
+                
+            return lists
 
     def update_list(
         self, list_id: int, updates: Dict[str, Any]
@@ -457,34 +479,94 @@ class Database:
     def get_list_items(
         self, list_id: int, status: Optional[str] = None, limit: Optional[int] = None
     ) -> List[TodoItemDB]:
-        """Get all items for a list with optional limit"""
+        """Get all items for a list with natural sorting by item_key"""
         with self.get_session() as session:
             query = session.query(TodoItemDB).filter(TodoItemDB.list_id == list_id)
             if status:
                 query = query.filter(TodoItemDB.status == status)
-            # Hierarchical ordering: main tasks first (by position), then subtasks grouped by parent
-            query = query.order_by(
-                TodoItemDB.parent_item_id.is_(None).desc(),  # Main tasks first (NULL parent_id)
-                TodoItemDB.parent_item_id,  # Group subtasks by parent
-                TodoItemDB.position  # Then by position within group
-            )
+            
+            # Get all items first, then sort naturally in Python
+            items = query.all()
+            
+            # Separate main items and subitems
+            main_items = [item for item in items if item.parent_item_id is None]
+            subitems = [item for item in items if item.parent_item_id is not None]
+            
+            # Sort main items naturally by item_key
+            main_items.sort(key=lambda item: self.natural_sort_key(item.item_key))
+            
+            # Group subitems by parent and sort each group naturally
+            subitems_by_parent = {}
+            for subitem in subitems:
+                parent_id = subitem.parent_item_id
+                if parent_id not in subitems_by_parent:
+                    subitems_by_parent[parent_id] = []
+                subitems_by_parent[parent_id].append(subitem)
+            
+            # Sort each subitem group naturally
+            for parent_id in subitems_by_parent:
+                subitems_by_parent[parent_id].sort(key=lambda item: self.natural_sort_key(item.item_key))
+            
+            # Combine: main items first, then subitems grouped by parent
+            result = []
+            for main_item in main_items:
+                result.append(main_item)
+                # Add subitems for this parent
+                if main_item.id in subitems_by_parent:
+                    result.extend(subitems_by_parent[main_item.id])
+            
+            # Add any orphaned subitems at the end
+            for parent_id, orphaned_subitems in subitems_by_parent.items():
+                # Check if this parent was already processed
+                if not any(item.id == parent_id for item in main_items):
+                    result.extend(orphaned_subitems)
+            
+            # Apply limit after sorting
             if limit is not None and limit >= 0:
-                query = query.limit(limit)
-            return query.all()
+                result = result[:limit]
+                
+            return result
 
     def get_items_by_status(self, list_id: int, status: str) -> List[TodoItemDB]:
-        """Get items by status"""
+        """Get items by status with natural sorting"""
         with self.get_session() as session:
-            return (
+            items = (
                 session.query(TodoItemDB)
                 .filter(TodoItemDB.list_id == list_id, TodoItemDB.status == status)
-                .order_by(
-                    TodoItemDB.parent_item_id.is_(None).desc(),  # Main tasks first
-                    TodoItemDB.parent_item_id,  # Group subtasks by parent
-                    TodoItemDB.position  # Then by position within group
-                )
                 .all()
             )
+            
+            # Use same natural sorting logic as get_list_items
+            main_items = [item for item in items if item.parent_item_id is None]
+            subitems = [item for item in items if item.parent_item_id is not None]
+            
+            # Sort main items naturally by item_key
+            main_items.sort(key=lambda item: self.natural_sort_key(item.item_key))
+            
+            # Group and sort subitems
+            subitems_by_parent = {}
+            for subitem in subitems:
+                parent_id = subitem.parent_item_id
+                if parent_id not in subitems_by_parent:
+                    subitems_by_parent[parent_id] = []
+                subitems_by_parent[parent_id].append(subitem)
+            
+            for parent_id in subitems_by_parent:
+                subitems_by_parent[parent_id].sort(key=lambda item: self.natural_sort_key(item.item_key))
+            
+            # Combine results
+            result = []
+            for main_item in main_items:
+                result.append(main_item)
+                if main_item.id in subitems_by_parent:
+                    result.extend(subitems_by_parent[main_item.id])
+            
+            # Add orphaned subitems
+            for parent_id, orphaned_subitems in subitems_by_parent.items():
+                if not any(item.id == parent_id for item in main_items):
+                    result.extend(orphaned_subitems)
+            
+            return result
 
     def update_item(
         self, item_id: int, updates: Dict[str, Any]
@@ -854,19 +936,23 @@ class Database:
             List of TodoItemDB objects matching the criteria
         """
         with self.get_session() as session:
-            query = (
+            items = (
                 session.query(TodoItemDB)
                 .join(ItemPropertyDB, TodoItemDB.id == ItemPropertyDB.item_id)
                 .filter(TodoItemDB.list_id == list_id)
                 .filter(ItemPropertyDB.property_key == property_key)
                 .filter(ItemPropertyDB.property_value == property_value)
-                .order_by(TodoItemDB.position)
+                .all()
             )
 
-            if limit is not None:
-                query = query.limit(limit)
+            # Sort naturally by item_key
+            items.sort(key=lambda item: self.natural_sort_key(item.item_key))
 
-            return query.all()
+            # Apply limit after sorting
+            if limit is not None:
+                items = items[:limit]
+
+            return items
 
     def find_subitems_by_status(
         self,
@@ -914,9 +1000,10 @@ class Database:
                 siblings = (
                     session.query(TodoItemDB)
                     .filter(TodoItemDB.parent_item_id == parent_id)
-                    .order_by(TodoItemDB.position)
                     .all()
                 )
+                # Sort naturally by item_key
+                siblings.sort(key=lambda item: self.natural_sort_key(item.item_key))
 
                 # Create a dict of sibling statuses
                 sibling_dict = {s.item_key: s.status for s in siblings}
@@ -949,12 +1036,14 @@ class Database:
     def get_item_children(self, item_id: int) -> List[TodoItemDB]:
         """Get all direct children (subtasks) of an item"""
         with self.get_session() as session:
-            return (
+            items = (
                 session.query(TodoItemDB)
                 .filter(TodoItemDB.parent_item_id == item_id)
-                .order_by(TodoItemDB.position)
                 .all()
             )
+            # Sort naturally by item_key
+            items.sort(key=lambda item: self.natural_sort_key(item.item_key))
+            return items
 
     def get_item_with_hierarchy(self, item_id: int) -> Optional[TodoItemDB]:
         """Get item with all its children recursively"""
@@ -968,9 +1057,10 @@ class Database:
                 children = (
                     session.query(TodoItemDB)
                     .filter(TodoItemDB.parent_item_id == parent_item.id)
-                    .order_by(TodoItemDB.position)
                     .all()
                 )
+                # Sort naturally by item_key
+                children.sort(key=lambda item: self.natural_sort_key(item.item_key))
 
                 for child in children:
                     load_children(child)  # Recursive loading
@@ -1046,14 +1136,16 @@ class Database:
     def get_root_items(self, list_id: int) -> List[TodoItemDB]:
         """Get all root items (items without parent) in a list"""
         with self.get_session() as session:
-            return (
+            items = (
                 session.query(TodoItemDB)
                 .filter(
                     TodoItemDB.list_id == list_id, TodoItemDB.parent_item_id.is_(None)
                 )
-                .order_by(TodoItemDB.position)
                 .all()
             )
+            # Sort naturally by item_key
+            items.sort(key=lambda item: self.natural_sort_key(item.item_key))
+            return items
 
     def get_item_depth(self, item_id: int) -> int:
         """Get the depth level of an item in hierarchy (0 = root, 1 = first level, etc.)"""
