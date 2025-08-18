@@ -13,6 +13,7 @@ from .manager_lists import ListsMixin
 from .manager_tags import TagsMixin
 from .manager_properties import PropertiesMixin
 from .manager_io import IOMixin
+from .manager_items import ItemsMixin
 from .database import (
     Database,
     TodoListDB,
@@ -46,7 +47,7 @@ from .models import (
 )
 
 
-class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMixin, IOMixin):
+class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMixin, IOMixin, ItemsMixin):
     """Programmatic API for TODO management - core business logic"""
 
     def __init__(self, db_path: Optional[str] = None):
@@ -406,52 +407,6 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             db_list for db_list in db_lists if db_list.status == "archived"
         ]
         return [self._db_to_model(db_list, TodoList) for db_list in archived_lists]
-
-    def add_item(
-        self,
-        list_key: str,
-        item_key: str,
-        content: str,
-        position: Optional[int] = None,
-        metadata: Optional[Dict] = None,
-    ) -> TodoItem:
-        """5. Adds a task to a list"""
-        # Get the list
-        db_list = self.db.get_list_by_key(list_key)
-        if not db_list:
-            raise ValueError(f"List '{list_key}' does not exist")
-
-        # Check if the task already exists
-        existing_item = self.db.get_item_by_key(db_list.id, item_key)
-        if existing_item:
-            raise ValueError(f"Item '{item_key}' already exists in list '{list_key}'")
-
-        # Set position if not provided (for main tasks, parent_item_id=None)
-        if position is None:
-            position = self.db.get_next_position(db_list.id, parent_item_id=None)
-
-        # Prepare task data
-        item_data = {
-            "list_id": db_list.id,
-            "item_key": item_key,
-            "content": content,
-            "position": position,
-            "meta_data": metadata or {},
-        }
-
-        # Create the task
-        db_item = self.db.create_item(item_data)
-
-        # Save to history
-        self._record_history(
-            item_id=db_item.id,
-            list_id=db_list.id,
-            action="created",
-            new_value={"item_key": item_key, "content": content},
-        )
-
-
-        return self._db_to_model(db_item, TodoItem)
 
     def update_item_status(
         self,
