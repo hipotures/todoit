@@ -15,6 +15,7 @@ from .manager_properties import PropertiesMixin
 from .manager_io import IOMixin
 from .manager_items import ItemsMixin
 from .manager_dependencies import DependenciesMixin
+from .manager_subtasks import SubtasksMixin
 from .database import (
     Database,
     TodoListDB,
@@ -48,7 +49,7 @@ from .models import (
 )
 
 
-class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMixin, IOMixin, ItemsMixin, DependenciesMixin):
+class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMixin, IOMixin, ItemsMixin, DependenciesMixin, SubtasksMixin):
     """Programmatic API for TODO management - core business logic"""
 
     def __init__(self, db_path: Optional[str] = None):
