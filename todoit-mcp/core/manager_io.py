@@ -4,23 +4,38 @@ Collection of I/O methods for TodoManager
 """
 
 import os
-from typing import Dict, List
+from typing import Dict, List, Optional, Set
 
 from .models import TodoList
+from .security import SecureFileHandler, SecurityError
 
 
 class IOMixin:
     """Mixin containing import/export methods for TodoManager"""
 
-    def import_from_markdown(self, file_path: str, list_key: str, title: str = None) -> TodoList:
-        """Create a new list by importing items from a Markdown file"""
-        # Basic security check
-        if not os.path.exists(file_path):
-            raise ValueError(f"File '{file_path}' does not exist")
-
-        # Read the file
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
+    def import_from_markdown(self, file_path: str, list_key: str, title: str = None, 
+                           allowed_base_dirs: Optional[Set[str]] = None) -> TodoList:
+        """
+        Create a new list by importing items from a Markdown file
+        
+        Args:
+            file_path: Path to markdown file to import
+            list_key: Key for the new list
+            title: Title for the new list (optional)
+            allowed_base_dirs: Set of allowed base directories for security (optional)
+            
+        Returns:
+            Created TodoList object
+            
+        Raises:
+            SecurityError: If file path is malicious or violates security constraints
+            ValueError: If list_key already exists or other validation errors
+        """
+        try:
+            # Secure file reading with full validation
+            content = SecureFileHandler.secure_file_read(file_path, allowed_base_dirs)
+        except SecurityError as e:
+            raise ValueError(f"Security error reading file: {e}") from e
 
         # Parse markdown content to extract items
         items = []
@@ -42,8 +57,20 @@ class IOMixin:
         # Create the list with parsed items
         return self.create_list(list_key, title, items)
 
-    def export_to_markdown(self, list_key: str, file_path: str) -> None:
-        """Export list items to a Markdown file"""
+    def export_to_markdown(self, list_key: str, file_path: str, 
+                         allowed_base_dirs: Optional[Set[str]] = None) -> None:
+        """
+        Export list items to a Markdown file
+        
+        Args:
+            list_key: Key of the list to export
+            file_path: Path where to write the markdown file
+            allowed_base_dirs: Set of allowed base directories for security (optional)
+            
+        Raises:
+            SecurityError: If file path is malicious or violates security constraints
+            ValueError: If list doesn't exist or other validation errors
+        """
         # Get the list
         todo_list = self.get_list(list_key)
         if not todo_list:
@@ -78,11 +105,11 @@ class IOMixin:
             indent = "  " * (getattr(item, 'depth', 0) if hasattr(item, 'depth') else 0)
             markdown_lines.append(f"{indent}- {status_marker}{item.content}")
 
-        # Write to file
+        # Write to file securely
         markdown_content = "\n".join(markdown_lines)
         
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(markdown_content)
+        try:
+            # Use secure file writing with validation
+            SecureFileHandler.secure_file_write(file_path, markdown_content, allowed_base_dirs)
+        except SecurityError as e:
+            raise ValueError(f"Security error writing file: {e}") from e

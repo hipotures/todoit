@@ -4,7 +4,7 @@ Programmatic API for TODO list management - core business logic
 """
 
 import os
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional, Dict, Any, Union, Set
 from datetime import datetime, timezone
 
 from .manager_base import ManagerBase
@@ -13,6 +13,7 @@ from .manager_lists import ListsMixin
 from .manager_tags import TagsMixin
 from .manager_properties import PropertiesMixin
 from .manager_io import IOMixin
+from .security import SecureFileHandler, SecurityError
 from .manager_items import ItemsMixin
 from .manager_dependencies import DependenciesMixin
 from .manager_subtasks import SubtasksMixin
@@ -445,50 +446,69 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
         )
 
     def import_from_markdown(
-        self, file_path: str, base_key: Optional[str] = None
+        self, file_path: str, base_key: Optional[str] = None,
+        allowed_base_dirs: Optional[Set[str]] = None
     ) -> List[TodoList]:
-        """9. Imports lists from a markdown file (supports multi-column)"""
-        if not os.path.exists(file_path):
-            raise ValueError(f"File '{file_path}' does not exist")
+        """
+        9. Imports lists from a markdown file (supports multi-column)
+        
+        Args:
+            file_path: Path to markdown file to import
+            base_key: Base key prefix for imported lists (optional)
+            allowed_base_dirs: Set of allowed base directories for security (optional)
+            
+        Returns:
+            List of created TodoList objects
+            
+        Raises:
+            SecurityError: If file path is malicious or violates security constraints
+            ValueError: If file format is invalid or other validation errors
+        """
+        try:
+            # Secure file reading with full validation
+            content = SecureFileHandler.secure_file_read(file_path, allowed_base_dirs)
+        except SecurityError as e:
+            raise ValueError(f"Security error reading file: {e}") from e
 
         lists_data = {}
 
-        with open(file_path, "r", encoding="utf-8") as f:
-            for line_num, line in enumerate(f, 1):
-                line = line.strip()
+        # Process file content line by line
+        lines = content.split('\n')
+        for line_num, line in enumerate(lines, 1):
+            line = line.strip()
 
-                # Handle both formats: "[x]" and "- [x]"
-                original_line = line
-                if line.startswith("- ["):
-                    line = line[2:].strip()  # Remove "- " prefix
+            # Handle both formats: "[x]" and "- [x]"
+            original_line = line
+            if line.startswith("- ["):
+                line = line[2:].strip()  # Remove "- " prefix
 
-                if line.startswith("["):
-                    # Parse all columns [ ] or [x]
-                    columns = []
-                    content = line
+            if line.startswith("["):
+                # Parse all columns [ ] or [x]
+                columns = []
+                content = line
 
-                    # Extract all states
-                    while content.startswith("["):
-                        if len(content) < 3:
-                            break
-                        state = content[1] == "x" or content[1] == "X"
-                        columns.append(state)
-                        content = content[4:].strip()  # Skip [x] or [ ]
+                # Extract all states
+                while content.startswith("["):
+                    if len(content) < 3:
+                        break
+                    state = content[1] == "x" or content[1] == "X"
+                    columns.append(state)
+                    content = content[4:].strip()  # Skip [x] or [ ]
 
-                    if not content:
-                        continue
+                if not content:
+                    continue
 
-                    # For each column, we create a separate list
-                    for i, state in enumerate(columns):
-                        if i not in lists_data:
-                            lists_data[i] = []
-                        lists_data[i].append(
-                            {
-                                "content": content,
-                                "completed": state,
-                                "position": len(lists_data[i]) + 1,
-                            }
-                        )
+                # For each column, we create a separate list
+                for i, state in enumerate(columns):
+                    if i not in lists_data:
+                        lists_data[i] = []
+                    lists_data[i].append(
+                        {
+                            "content": content,
+                            "completed": state,
+                            "position": len(lists_data[i]) + 1,
+                        }
+                    )
 
         if not lists_data:
             raise ValueError("No tasks found in markdown format in the file")
@@ -533,8 +553,20 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
 
         return created_lists
 
-    def export_to_markdown(self, list_key: str, file_path: str) -> None:
-        """10. Exports a list to markdown format [x] text"""
+    def export_to_markdown(self, list_key: str, file_path: str, 
+                         allowed_base_dirs: Optional[Set[str]] = None) -> None:
+        """
+        10. Exports a list to markdown format [x] text
+        
+        Args:
+            list_key: Key of the list to export
+            file_path: Path where to write the markdown file
+            allowed_base_dirs: Set of allowed base directories for security (optional)
+            
+        Raises:
+            SecurityError: If file path is malicious or violates security constraints
+            ValueError: If list doesn't exist or other validation errors
+        """
         # Get the list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
@@ -543,17 +575,23 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
         # Get tasks
         items = self.db.get_list_items(db_list.id)
 
-        # Export to file
-        with open(file_path, "w", encoding="utf-8") as f:
-            # Header
-            f.write(f"# {db_list.title}\n\n")
-            if db_list.description:
-                f.write(f"{db_list.description}\n\n")
+        # Build content
+        content_lines = [f"# {db_list.title}", ""]
+        if db_list.description:
+            content_lines.extend([db_list.description, ""])
 
-            # Items
-            for item in sorted(items, key=lambda x: x.position):
-                status_mark = "[x]" if item.status == "completed" else "[ ]"
-                f.write(f"{status_mark} {item.content}\n")
+        # Items
+        for item in sorted(items, key=lambda x: x.position):
+            status_mark = "[x]" if item.status == "completed" else "[ ]"
+            content_lines.append(f"{status_mark} {item.content}")
+
+        content = "\n".join(content_lines)
+
+        # Secure export to file
+        try:
+            SecureFileHandler.secure_file_write(file_path, content, allowed_base_dirs)
+        except SecurityError as e:
+            raise ValueError(f"Security error writing file: {e}") from e
 
         # Save to history
         self._record_history(
