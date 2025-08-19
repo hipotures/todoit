@@ -75,7 +75,7 @@ TODOIT_OUTPUT_FORMAT=json todoit list all
 ```bash
 export TODOIT_OUTPUT_FORMAT=json
 todoit list all          # This will output JSON
-todoit list show project1  # This will also output JSON
+todoit list show --list project1  # This will also output JSON
 ```
 
 ## Command Structure
@@ -141,7 +141,7 @@ todoit list all --archived
 todoit list all --include-archived
 
 # Example workflow with archive validation
-todoit list create --list "sprint-1" --title "Sprint 1" --items "Feature A" "Bug fix" "Testing"
+todoit list create --list "sprint-1" --title "Sprint 1" --items "Feature A" --items "Bug fix" --items "Testing"
 todoit item status --list "sprint-1" --item "item_1" --status completed  # Complete some items
 todoit list archive --list "sprint-1"  # Will fail - shows incomplete items count
 todoit item status --list "sprint-1" --item "item_2" --status completed  # Complete more
@@ -535,18 +535,18 @@ todoit io import --file "/path/to/tasks.md" --key "imported"
 
 ```bash
 # Set list property
-todoit list property set "my-project" "priority" "high"
+todoit list property set --list "my-project" --key "priority" --value "high"
 # Or using numeric ID:
-todoit list property set 126 "priority" "high"
+todoit list property set --list 126 --key "priority" --value "high"
 
 # Get list property
-todoit list property get "my-project" "priority"
+todoit list property get --list "my-project" --key "priority"
 
 # List all list properties
-todoit list property show "my-project"
+todoit list property show --list "my-project"
 
 # Delete list property
-todoit list property delete "my-project" "old-property"
+todoit list property delete --list "my-project" --key "old-property"
 ```
 
 #### Item Properties (`item property`)
@@ -715,8 +715,8 @@ todoit item add --list "feature-dev" --item "implement" --title "Implement core 
 todoit item add --list "feature-dev" --item "review" --title "Code review and cleanup"
 
 # Add properties to development list
-todoit list property set "feature-dev" "project_id" "proj-123"
-todoit list property set "feature-dev" "team" "backend"
+todoit list property set --list "feature-dev" --key "project_id" --value "proj-123"
+todoit list property set --list "feature-dev" --key "team" --value "backend"
 
 # Link to create testing list with 1:1 task mapping
 todoit list link --source "feature-dev" --target "feature-test" --title "Feature Testing"
