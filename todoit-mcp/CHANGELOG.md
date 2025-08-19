@@ -5,6 +5,43 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.0] - 2025-08-19
+
+### 🧹 MAJOR: Technical Debt Cleanup - Legacy CLI Removal
+
+#### ✨ **Removed**
+- **Legacy CLI Files**: Removed 2,309 lines of duplicate legacy code
+  - Deleted `interfaces/cli_original.py` (2,238 lines) - Legacy monolithic CLI
+  - Deleted `interfaces/cli_modular.py` (71 lines) - Transitional implementation
+- **Code Duplication**: Eliminated maintenance burden of keeping multiple CLI implementations synchronized
+
+#### ✅ **Enhanced**
+- **CLI Architecture**: Single source of truth - only modular `interfaces/cli.py` remains
+- **Feature Completeness**: All legacy functionality preserved in modular structure
+  - `add-subtask` → `add --subitem` (unified command approach)
+  - `subtasks` → `list` with item filtering (more flexible)
+  - `move-to-subtask` → `move-to-subitem` (updated naming)
+- **Additional Features**: Modular CLI includes new commands not in legacy version
+  - `archive`/`unarchive` list management
+  - `rename` for lists and items  
+  - `find-subitems` advanced search
+  - `reports` and analytics
+  - Enhanced `tag` management
+
+#### 🔧 **Technical Benefits**
+- **Reduced Complexity**: Eliminated duplicate code maintenance
+- **Better Organization**: Functionality properly separated into focused modules
+- **Package Size**: Cleaner distribution without legacy files
+- **Maintainability**: Future changes only need to be made in one place
+
+#### 📊 **Impact**
+- **Codebase Size**: Reduced by 2,309 lines of duplicate code
+- **Architecture**: Clean 3-layer design preserved with no functional loss
+- **Development**: Simplified workflow with single CLI implementation
+- **Production**: No impact - package already used modular CLI
+
+---
+
 ## [2.11.1] - 2025-08-18
 
 ### 🐛 HOTFIX: CLI Display Natural Sorting
