@@ -5,6 +5,35 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.1] - 2025-08-19
+
+### ✨ **Added**
+- **List Creation with Tags**: New `--tag` option for `todoit list create` command
+  - Support for multiple tags: `--tag frontend --tag project`
+  - Tags must be created first - prevents accidental tag creation through typos
+  - CLI validates all tags exist before creating the list
+  - Enhanced success message shows applied tags
+
+### 🔧 **Enhanced** 
+- **MCP todo_create_list**: Added optional `tags` parameter
+  - `await todo_create_list("project", "Title", tags=["tag1", "tag2"])`
+  - Atomic validation - list creation fails if any tag doesn't exist
+  - Maintains backward compatibility - tags parameter is optional
+- **Core Manager**: Enhanced `create_list()` method with tags support
+  - Pre-validates all tags exist before creating list
+  - Applies tags atomically after successful list creation
+
+### 🧪 **Testing**
+- Added comprehensive unit tests (14 tests) for core functionality
+- Added MCP integration tests (12 tests) for async functionality  
+- Added CLI integration tests (13 tests) for command-line interface
+- All tests cover error handling, edge cases, and backward compatibility
+
+### 📚 **Documentation**
+- Updated MCP_TOOLS.md with detailed `todo_create_list` reference
+- Updated CLI_GUIDE.md with `--tag` option examples and usage
+- Added complete parameter documentation and error handling examples
+
 ## [2.12.0] - 2025-08-19
 
 ### 🧹 MAJOR: Technical Debt Cleanup - Legacy CLI Removal

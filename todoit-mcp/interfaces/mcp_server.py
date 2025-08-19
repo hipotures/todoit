@@ -204,6 +204,7 @@ async def todo_create_list(
     items: Optional[List[str]] = None,
     list_type: str = "sequential",
     metadata: Optional[Dict[str, Any]] = None,
+    tags: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Create a new TODO list with optional initial items.
 
@@ -213,6 +214,7 @@ async def todo_create_list(
         items: Optional list of initial todo items to add
         list_type: List organization type, defaults to "sequential"
         metadata: Optional dictionary of custom metadata for the list
+        tags: Optional list of tag names to assign to the list (tags must already exist)
 
     Returns:
         Dictionary with success status and created list details
@@ -227,6 +229,7 @@ async def todo_create_list(
             items=items,
             list_type=list_type,
             metadata=metadata,
+            tags=tags,
         )
         return {"success": True, "list": clean_to_dict_result(todo_list.to_dict(), "list")}
     except Exception as e:

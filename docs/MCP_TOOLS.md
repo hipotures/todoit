@@ -186,7 +186,7 @@ Perfect for production environments or when safety is paramount.
 Core functionality for list and item management.
 
 #### List Management
-- **`todo_create_list`** - Create new TODO list with optional initial items
+- **`todo_create_list`** - Create new TODO list with optional initial items and tags (tags must exist)
 - **`todo_get_list`** - 🆕 **Enhanced** - Retrieve list details with optional items and properties in single call  
 - **`todo_rename_list`** - 🆕 **NEW** - Rename list key and/or title
 - **`todo_delete_list`** - Delete list with dependency validation
@@ -292,6 +292,9 @@ subitem_data = await todo_get_item("project", "task1", subitem_key="backend")
 ```python
 # Create list and add items
 await todo_create_list("project", "My Project", items=["Task 1", "Task 2"])
+
+# Create list with tags (tags must exist first)
+await todo_create_list("webapp", "Web Application", items=["Setup", "Development", "Testing"], tags=["frontend", "project"])
 
 # Add subitems using NEW unified command
 await todo_add_item("project", "task1", "Backend implementation", subitem_key="subtask1")
@@ -809,6 +812,49 @@ await todo_remove_list_tag("project-alpha", "urgent")
 - **System metadata** (1 tool): `todo_get_schema_info`
 - **Destructive operations** (2 tools): `todo_delete_list`, `todo_delete_item`
 - **Other specialized tools** (1 tool): `todo_get_item_history`
+
+## Detailed Function Reference
+
+### todo_create_list
+Create a new TODO list with optional initial items and tags.
+
+**Parameters:**
+- `list_key` (str, required): Unique identifier for the list
+- `title` (str, required): Display title for the list
+- `items` (list[str], optional): Initial todo items to add to the list
+- `list_type` (str, optional): List organization type, defaults to "sequential"
+- `metadata` (dict, optional): Custom metadata for the list
+- `tags` (list[str], optional): Tag names to assign to the list (tags must already exist)
+
+**Returns:**
+- `success` (bool): Operation success status
+- `list` (dict): Created list details with essential fields
+- `error` (str): Error message if operation failed
+
+**Examples:**
+```python
+# Basic list creation
+await todo_create_list("project-alpha", "Alpha Project")
+
+# List with initial items
+await todo_create_list("tasks", "My Tasks", items=["Setup", "Development", "Testing"])
+
+# List with tags (tags must exist first)
+await todo_create_list("webapp", "Web App", tags=["frontend", "urgent"])
+
+# Complete example with all parameters
+await todo_create_list(
+    "complex-project", 
+    "Complex Project",
+    items=["Analysis", "Implementation", "Review"],
+    metadata={"priority": "high", "deadline": "2024-12-31"},
+    tags=["project", "development"]
+)
+```
+
+**Error Handling:**
+- Returns `{"success": false, "error": "Tag 'tagname' does not exist. Create it first using create_tag."}` if any specified tag doesn't exist
+- List creation is atomic - if any tag validation fails, the list is not created
 
 ## Performance Considerations
 

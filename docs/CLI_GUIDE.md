@@ -108,7 +108,22 @@ todoit list create --list "docs" --title "Documentation" --from-folder ./docs --
 
 # With metadata
 todoit list create --list "project" --title "Project" -m '{"priority": "high", "team": "backend"}'
+
+# With tags (tags must exist first)
+todoit list create --list "webapp" --title "Web Application" --tag frontend --tag project
+
+# Multiple tags
+todoit list create --list "mobile-app" --title "Mobile App" --tag frontend --tag mobile --tag urgent
 ```
+
+**List Creation Options:**
+- `--list`: List key (required, unique identifier)
+- `--title`: Display title (optional, defaults to formatted list key)
+- `--items`, `-i`: Add initial items (can be used multiple times)
+- `--metadata`, `-m`: JSON metadata for the list
+- `--tag`: Assign tags to the list (can be used multiple times, tags must exist first)
+- `--from-folder`: Create items from folder contents
+- `--filter-ext`: Filter files by extension when using --from-folder
 
 #### List Operations
 ```bash

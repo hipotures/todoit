@@ -67,6 +67,7 @@ def list_group():
     "--item-prefix", default="Process", help="Item name prefix (default: Process)"
 )
 @click.option("--metadata", "-m", help="Metadata JSON")
+@click.option("--tag", "tags", multiple=True, help="Tags to assign (must already exist)")
 @click.pass_context
 def list_create(
     ctx,
@@ -77,6 +78,7 @@ def list_create(
     filter_ext,
     item_prefix,
     metadata,
+    tags,
 ):
     """Create a new TODO list"""
     manager = get_manager(ctx.obj["db_path"])
@@ -87,6 +89,15 @@ def list_create(
             title = list_key.replace("_", " ").replace("-", " ").title()
 
         meta = json.loads(metadata) if metadata else {}
+
+        # Validate that all provided tags exist
+        if tags:
+            for tag_name in tags:
+                tag_name = tag_name.lower()
+                if not manager.db.get_tag_by_name(tag_name):
+                    console.print(f"[red]❌ Error: Tag '{tag_name}' does not exist. Create it first using:[/]")
+                    console.print(f"[cyan]todoit tag create {tag_name}[/]")
+                    return
 
         # Handle folder option
         final_items = list(items) if items else []
@@ -126,6 +137,7 @@ def list_create(
                 items=final_items if final_items else None,
                 list_type="sequential",
                 metadata=meta,
+                tags=list(tags) if tags else None,
             )
 
             # Auto-tag with TODOIT_FORCE_TAGS if set (environment isolation)
@@ -143,11 +155,19 @@ def list_create(
                 console.print(f"[dim]Auto-tagged with: {', '.join(force_tags)}[/dim]")
 
         # Display created list
-        panel = Panel(
-            f"[bold cyan]ID:[/] {todo_list.id}\n"
-            f"[bold cyan]Key:[/] {todo_list.list_key}\n"
-            f"[bold cyan]Title:[/] {todo_list.title}\n"
+        info_lines = [
+            f"[bold cyan]ID:[/] {todo_list.id}",
+            f"[bold cyan]Key:[/] {todo_list.list_key}",
+            f"[bold cyan]Title:[/] {todo_list.title}",
             f"[bold cyan]Items:[/] {len(final_items)}",
+        ]
+        
+        # Add tags info if any were provided
+        if tags:
+            info_lines.append(f"[bold cyan]Tags:[/] {', '.join(tags)}")
+        
+        panel = Panel(
+            "\n".join(info_lines),
             title="✅ List Created",
             border_style="green",
         )

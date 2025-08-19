@@ -19,8 +19,18 @@ class ListsMixin:
         items: Optional[List[str]] = None,
         list_type: str = "sequential",
         metadata: Optional[Dict] = None,
+        tags: Optional[List[str]] = None,
     ) -> TodoList:
-        """1. Creates a new TODO list with optional tasks"""
+        """1. Creates a new TODO list with optional tasks and tags
+        
+        Args:
+            list_key: Unique identifier for the list
+            title: Display title for the list 
+            items: Optional list of initial todo items to add
+            list_type: List organization type, defaults to "sequential"
+            metadata: Optional dictionary of custom metadata for the list
+            tags: Optional list of tag names to assign to the list (tags must already exist)
+        """
         # Validate list key - must contain at least one letter a-z to distinguish from IDs
         if not re.search(r"[a-zA-Z]", list_key):
             raise ValueError(
@@ -31,6 +41,13 @@ class ListsMixin:
         existing = self.db.get_list_by_key(list_key)
         if existing:
             raise ValueError(f"List '{list_key}' already exists")
+
+        # Validate that all provided tags exist
+        if tags:
+            for tag_name in tags:
+                tag_name = tag_name.lower()
+                if not self.db.get_tag_by_name(tag_name):
+                    raise ValueError(f"Tag '{tag_name}' does not exist. Create it first using create_tag.")
 
         # Prepare list data
         list_data = {
@@ -59,6 +76,15 @@ class ListsMixin:
             
             # Bulk create all items in single transaction
             self.db.create_items_bulk(items_data)
+
+        # Apply tags if provided
+        if tags:
+            for tag_name in tags:
+                tag_name = tag_name.lower()
+                # Get the tag (we already validated it exists)
+                db_tag = self.db.get_tag_by_name(tag_name)
+                # Create tag assignment
+                self.db.add_tag_to_list(db_list.id, db_tag.id)
 
         # Save to history
         self._record_history(
