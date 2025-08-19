@@ -445,6 +445,58 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             dependency_count=len(dependencies),
         )
 
+    def get_progress_bulk_minimal(self, list_keys: List[str]) -> Dict[str, ProgressStats]:
+        """Get progress stats for multiple lists efficiently (minimal version for list display).
+        
+        Args:
+            list_keys: List of list keys to get progress for
+            
+        Returns:
+            Dict mapping list_key to ProgressStats with basic fields only
+        """
+        if not list_keys:
+            return {}
+            
+        # Get list objects and map key to id
+        key_to_id = {}
+        id_to_key = {}
+        for list_key in list_keys:
+            db_list = self.db.get_list_by_key(list_key)
+            if db_list:
+                key_to_id[list_key] = db_list.id
+                id_to_key[db_list.id] = list_key
+        
+        if not key_to_id:
+            return {}
+            
+        # Get status counts for all lists in one query
+        list_ids = list(key_to_id.values())
+        status_counts = self.db.get_status_counts_for_lists(list_ids)
+        
+        # Build result dict
+        result = {}
+        for list_key, list_id in key_to_id.items():
+            counts = status_counts.get(list_id, {'pending': 0, 'in_progress': 0, 'completed': 0, 'failed': 0})
+            total = sum(counts.values())
+            completion_percentage = (counts['completed'] / total * 100) if total > 0 else 0.0
+            
+            result[list_key] = ProgressStats(
+                total=total,
+                completed=counts['completed'],
+                in_progress=counts['in_progress'],
+                pending=counts['pending'],
+                failed=counts['failed'],
+                completion_percentage=completion_percentage,
+                blocked=0,  # Not calculated in minimal version for performance
+                available=0,  # Not calculated in minimal version for performance
+                root_items=0,  # Not calculated in minimal version for performance
+                subtasks=0,  # Not calculated in minimal version for performance
+                hierarchy_depth=0,  # Not calculated in minimal version for performance
+                dependency_count=0,  # Not calculated in minimal version for performance
+            )
+            
+        return result
+
     def import_from_markdown(
         self, file_path: str, base_key: Optional[str] = None,
         allowed_base_dirs: Optional[Set[str]] = None
@@ -1974,6 +2026,53 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             tag_model.color = self._get_tag_color_by_index(tag_model.name)
             tags.append(tag_model)
         return sorted(tags, key=lambda t: t.name)
+
+    def get_tags_for_lists_bulk(self, list_keys: List[str]) -> Dict[str, List[ListTag]]:
+        """Get tags for multiple lists efficiently.
+        
+        Args:
+            list_keys: List of list keys to get tags for
+            
+        Returns:
+            Dict mapping list_key to list of ListTag objects with dynamic colors
+        """
+        if not list_keys:
+            return {}
+            
+        # Get list objects and map key to id
+        key_to_id = {}
+        id_to_key = {}
+        for list_key in list_keys:
+            db_list = self.db.get_list_by_key(list_key)
+            if db_list:
+                key_to_id[list_key] = db_list.id
+                id_to_key[db_list.id] = list_key
+        
+        if not key_to_id:
+            return {}
+            
+        # Get tags for all lists in one query
+        list_ids = list(key_to_id.values())
+        tags_by_list_id = self.db.get_tags_for_lists(list_ids)
+        
+        # Build result dict with dynamic colors
+        result = {}
+        for list_key in list_keys:
+            result[list_key] = []
+            
+        for list_id, db_tags in tags_by_list_id.items():
+            list_key = id_to_key.get(list_id)
+            if list_key:
+                tags = []
+                for tag in db_tags:
+                    # Convert to model
+                    tag_model = self._db_to_model(tag, ListTag)
+                    # Override with dynamic color
+                    tag_model.color = self._get_tag_color_by_index(tag_model.name)
+                    tags.append(tag_model)
+                result[list_key] = sorted(tags, key=lambda t: t.name)
+                
+        return result
 
     def get_lists_by_tags(self, tag_names: List[str]) -> List[TodoList]:
         """Get all lists that are associated with any of the specified tags.

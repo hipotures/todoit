@@ -1677,6 +1677,80 @@ class Database:
             session.commit()
             return deleted_count > 0
 
+    def get_status_counts_for_lists(self, list_ids: List[int]) -> Dict[int, Dict[str, int]]:
+        """Get status counts for multiple lists in one query.
+        
+        Args:
+            list_ids: List of list IDs to get status counts for
+            
+        Returns:
+            Dict mapping list_id to dict of status counts: {list_id: {'pending': 5, 'completed': 10, ...}}
+        """
+        if not list_ids:
+            return {}
+            
+        with self.get_session() as session:
+            # Get status counts grouped by list_id and status
+            result = (
+                session.query(
+                    TodoItemDB.list_id,
+                    TodoItemDB.status,
+                    func.count(TodoItemDB.id).label('count')
+                )
+                .filter(TodoItemDB.list_id.in_(list_ids))
+                .group_by(TodoItemDB.list_id, TodoItemDB.status)
+                .all()
+            )
+            
+            # Initialize result dict with empty counts for all lists
+            status_counts = {}
+            for list_id in list_ids:
+                status_counts[list_id] = {
+                    'pending': 0,
+                    'in_progress': 0,
+                    'completed': 0,
+                    'failed': 0
+                }
+            
+            # Fill in actual counts
+            for list_id, status, count in result:
+                if list_id in status_counts and status in status_counts[list_id]:
+                    status_counts[list_id][status] = count
+                    
+            return status_counts
+
+    def get_tags_for_lists(self, list_ids: List[int]) -> Dict[int, List[ListTagDB]]:
+        """Get tags for multiple lists in one query.
+        
+        Args:
+            list_ids: List of list IDs to get tags for
+            
+        Returns:
+            Dict mapping list_id to list of tags: {list_id: [ListTagDB, ...]}
+        """
+        if not list_ids:
+            return {}
+            
+        with self.get_session() as session:
+            # Get all tag assignments for the specified lists
+            result = (
+                session.query(ListTagDB, ListTagAssignmentDB.list_id)
+                .join(ListTagAssignmentDB, ListTagDB.id == ListTagAssignmentDB.tag_id)
+                .filter(ListTagAssignmentDB.list_id.in_(list_ids))
+                .order_by(ListTagAssignmentDB.list_id, ListTagDB.name)
+                .all()
+            )
+            
+            # Group by list_id
+            tags_by_list = {}
+            for list_id in list_ids:
+                tags_by_list[list_id] = []
+                
+            for tag, list_id in result:
+                tags_by_list[list_id].append(tag)
+                
+            return tags_by_list
+
     def get_tags_for_list(self, list_id: int) -> List[ListTagDB]:
         """Get all tags for a specific list"""
         with self.get_session() as session:

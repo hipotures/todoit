@@ -295,20 +295,30 @@ def list_all(ctx, limit, details, archived, include_archived, filter_tags):
         # Prepare data for unified display
         data = []
 
+        # Get all list keys for bulk operations
+        list_keys = [todo_list.list_key for todo_list in lists]
+        
+        # Bulk fetch progress and tags for all lists (replaces N+1 queries)
+        progress_by_key = manager.get_progress_bulk_minimal(list_keys)
+        tags_by_key = manager.get_tags_for_lists_bulk(list_keys)
+
         # Calculate optimal tags column width based on maximum tags per list
         max_tags_per_list = 0
-        for todo_list in lists:
-            list_tags = manager.get_tags_for_list(todo_list.list_key)
+        for list_key in list_keys:
+            list_tags = tags_by_key.get(list_key, [])
             max_tags_per_list = max(max_tags_per_list, len(list_tags))
 
         # Dynamic width: minimum 3, each tag needs ~2 chars (● + space), max 12
         tags_column_width = max(3, min(12, max_tags_per_list * 2))
 
         for todo_list in lists:
-            progress = manager.get_progress(todo_list.list_key)
-
-            # Get tags for this list and format as colored dots
-            list_tags = manager.get_tags_for_list(todo_list.list_key)
+            # Get cached progress and tags (no additional queries)
+            progress = progress_by_key.get(todo_list.list_key)
+            if not progress:
+                # Fallback if not found (shouldn't happen)
+                continue
+                
+            list_tags = tags_by_key.get(todo_list.list_key, [])
             tags_display = (
                 " ".join([f"[{tag.color}]●[/{tag.color}]" for tag in list_tags])
                 if list_tags
@@ -384,8 +394,9 @@ def list_all(ctx, limit, details, archived, include_archived, filter_tags):
 
         if _get_output_format() in ["table", "vertical"]:
             all_tags = {}  # Use dict to store unique tags by name
-            for todo_list in lists:
-                list_tags = manager.get_tags_for_list(todo_list.list_key)
+            # Use already fetched tags_by_key instead of additional queries
+            for list_key in list_keys:
+                list_tags = tags_by_key.get(list_key, [])
                 for tag in list_tags:
                     all_tags[tag.name] = tag  # Store by name as key
 

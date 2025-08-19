@@ -441,3 +441,179 @@ class TestMemoryPerformance:
         
         assert next_task is not None
         assert traversal_time < 2.0  # Should traverse efficiently
+
+
+class TestListAllPerformanceRegression:
+    """Specific tests for list_all command performance regression detection"""
+    
+    @pytest.fixture
+    def temp_manager(self):
+        """Create temporary manager for list_all performance tests"""
+        with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp:
+            db_path = tmp.name
+        
+        try:
+            manager = TodoManager(db_path)
+            yield manager
+        finally:
+            if os.path.exists(db_path):
+                os.unlink(db_path)
+    
+    def test_list_all_bulk_optimization(self, temp_manager):
+        """Test that list_all uses bulk operations and is fast"""
+        # Create 50 lists with items and tags (realistic but testable size)
+        for i in range(50):
+            list_key = f"list_{i:03d}"
+            temp_manager.create_list(list_key, f"Test List {i}")
+            
+            # Add items with various statuses
+            for j in range(10):
+                item_key = f"item_{j:02d}"
+                temp_manager.add_item(list_key, item_key, f"Task {j} in list {i}")
+                
+                # Set different statuses
+                if j < 3:
+                    temp_manager.update_item_status(list_key, item_key, ItemStatus.COMPLETED)
+                elif j < 5:
+                    temp_manager.update_item_status(list_key, item_key, ItemStatus.IN_PROGRESS)
+                elif j < 6:
+                    temp_manager.update_item_status(list_key, item_key, ItemStatus.FAILED)
+                # Rest remain pending
+            
+            # Add tags to create N+1 scenario
+            if i % 10 == 0:
+                temp_manager.add_tag_to_list(list_key, "important")
+            if i % 20 == 0:
+                temp_manager.add_tag_to_list(list_key, "urgent")
+        
+        # Test bulk operations directly
+        lists = temp_manager.list_all()
+        list_keys = [lst.list_key for lst in lists]
+        
+        # Test bulk progress (should use get_progress_bulk_minimal)
+        start_time = time.time()
+        progress_bulk = temp_manager.get_progress_bulk_minimal(list_keys)
+        bulk_progress_time = time.time() - start_time
+        
+        # Test bulk tags (should use get_tags_for_lists_bulk)
+        start_time = time.time()
+        tags_bulk = temp_manager.get_tags_for_lists_bulk(list_keys)
+        bulk_tags_time = time.time() - start_time
+        
+        # Both operations should be very fast
+        assert bulk_progress_time < 0.5, f"Bulk progress took {bulk_progress_time:.3f}s, should be under 0.5s"
+        assert bulk_tags_time < 0.3, f"Bulk tags took {bulk_tags_time:.3f}s, should be under 0.3s"
+        
+        # Verify we got data for all lists
+        assert len(progress_bulk) == len(lists)
+        assert len(tags_bulk) == len(lists)
+        
+        print(f"Bulk progress time for {len(lists)} lists: {bulk_progress_time:.3f}s")
+        print(f"Bulk tags time for {len(lists)} lists: {bulk_tags_time:.3f}s")
+    
+    def test_list_all_no_n_plus_one(self, temp_manager):
+        """Test that list_all doesn't have N+1 query problems"""
+        # Create test data
+        for i in range(30):
+            list_key = f"test_list_{i}"
+            temp_manager.create_list(list_key, f"Test List {i}")
+            
+            # Add items and tags to trigger potential N+1
+            for j in range(5):
+                temp_manager.add_item(list_key, f"item_{j}", f"Item {j}")
+            
+            temp_manager.add_tag_to_list(list_key, f"tag_{i % 5}")  # Shared tags
+        
+        # Simulate what CLI does (this is where N+1 would show up)
+        start_time = time.time()
+        
+        # Get lists
+        lists = temp_manager.list_all()
+        list_keys = [lst.list_key for lst in lists]
+        
+        # Get progress and tags in bulk (optimized way)
+        progress_by_key = temp_manager.get_progress_bulk_minimal(list_keys)
+        tags_by_key = temp_manager.get_tags_for_lists_bulk(list_keys)
+        
+        # Simulate building display data
+        display_data = []
+        for todo_list in lists:
+            progress = progress_by_key.get(todo_list.list_key)
+            list_tags = tags_by_key.get(todo_list.list_key, [])
+            
+            record = {
+                "key": todo_list.list_key,
+                "title": todo_list.title,
+                "pending": progress.pending if progress else 0,
+                "completed": progress.completed if progress else 0,
+                "tags": len(list_tags)
+            }
+            display_data.append(record)
+        
+        total_time = time.time() - start_time
+        
+        # Total operation should be very fast
+        assert total_time < 1.0, f"list_all simulation took {total_time:.3f}s, should be under 1.0s"
+        assert len(display_data) == len(lists)
+        
+        print(f"list_all simulation for {len(lists)} lists: {total_time:.3f}s")
+    
+    def test_individual_vs_bulk_performance(self, temp_manager):
+        """Compare individual vs bulk operations to detect regressions"""
+        # Create test data
+        for i in range(20):
+            list_key = f"perf_list_{i}"
+            temp_manager.create_list(list_key, f"Performance List {i}")
+            
+            for j in range(8):
+                temp_manager.add_item(list_key, f"item_{j}", f"Item {j}")
+                if j < 2:
+                    temp_manager.update_item_status(list_key, f"item_{j}", ItemStatus.COMPLETED)
+            
+            if i % 5 == 0:
+                temp_manager.add_tag_to_list(list_key, "performance")
+        
+        lists = temp_manager.list_all()
+        list_keys = [lst.list_key for lst in lists]
+        
+        # Test individual approach (old way that was slow)
+        start_time = time.time()
+        individual_progress = {}
+        individual_tags = {}
+        for list_key in list_keys[:10]:  # Only test subset to avoid timeout
+            individual_progress[list_key] = temp_manager.get_progress(list_key)
+            individual_tags[list_key] = temp_manager.get_tags_for_list(list_key)
+        individual_time = time.time() - start_time
+        
+        # Test bulk approach (new optimized way)
+        start_time = time.time()
+        bulk_progress = temp_manager.get_progress_bulk_minimal(list_keys)
+        bulk_tags = temp_manager.get_tags_for_lists_bulk(list_keys)
+        bulk_time = time.time() - start_time
+        
+        # Bulk should be much faster
+        estimated_individual_time = individual_time * len(list_keys) / 10
+        improvement_ratio = estimated_individual_time / bulk_time if bulk_time > 0 else float('inf')
+        
+        print(f"Individual time for 10 lists: {individual_time:.3f}s")
+        print(f"Estimated individual time for {len(list_keys)} lists: {estimated_individual_time:.3f}s")
+        print(f"Bulk time for {len(list_keys)} lists: {bulk_time:.3f}s")
+        print(f"Performance improvement: {improvement_ratio:.1f}x faster")
+        
+        # Bulk should be at least 5x faster (realistic threshold)
+        assert improvement_ratio >= 5, f"Bulk operations only {improvement_ratio:.1f}x faster, should be 5x+"
+        
+        # Verify results are equivalent for the subset we tested
+        for list_key in list_keys[:10]:
+            # Compare basic progress fields
+            individual_prog = individual_progress[list_key]
+            bulk_prog = bulk_progress[list_key]
+            
+            assert individual_prog.total == bulk_prog.total
+            assert individual_prog.completed == bulk_prog.completed
+            assert individual_prog.pending == bulk_prog.pending
+            
+            # Compare tags
+            individual_tag_names = {tag.name for tag in individual_tags[list_key]}
+            bulk_tag_names = {tag.name for tag in bulk_tags[list_key]}
+            assert individual_tag_names == bulk_tag_names
