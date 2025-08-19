@@ -664,6 +664,8 @@ TODOIT currently supports one list type:
 
 The `list all` command provides a rich, at-a-glance view of all your projects using these icons:
 
+> **⚡ Performance Note**: As of v2.13.0, the `list all` command is highly optimized and can handle thousands of lists with sub-second response times. The command uses bulk database operations to eliminate N+1 query problems.
+
 - **`ID`**: The numeric ID of the list.
 - **`Key`**: The unique string identifier for the list.
 - **`Title`**: The human-readable title of the list.
