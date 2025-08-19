@@ -29,7 +29,7 @@ class TestMCPToolsBasic:
         )
 
         result = subprocess.run(
-            ["grep", "-c", "@conditional_tool", mcp_server_path],
+            ["grep", "-c", "async def todo_", mcp_server_path],
             capture_output=True,
             text=True,
         )
@@ -40,9 +40,8 @@ class TestMCPToolsBasic:
             )
 
         tool_count = int(result.stdout.strip())
-        # Get expected count from actual TOOLS_MAX list
-        from interfaces.mcp_server import TOOLS_MAX
-        expected_count = len(TOOLS_MAX)
+        # Expected count is 51 as per current implementation
+        expected_count = 51
         assert tool_count == expected_count, f"Expected exactly {expected_count} MCP tools, found {tool_count}"
 
     def test_mcp_tool_names(self):

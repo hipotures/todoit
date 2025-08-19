@@ -68,10 +68,9 @@ class TestMCPToolsLevels:
             assert should_register_tool("todo_archive_list") == False
             assert should_register_tool("todo_unarchive_list") == False
 
-            # Verify STANDARD has 23 tools (9 MINIMAL + 14 additional)
-            # Note: Reduced from 24 to 23 after removing todo_update_item_content
-            assert len(TOOLS_STANDARD) == 23
-            assert len(TOOLS_STANDARD) - len(TOOLS_MINIMAL) == 14
+            # Verify STANDARD has 21 tools (9 MINIMAL + 12 additional)
+            assert len(TOOLS_STANDARD) == 21
+            assert len(TOOLS_STANDARD) - len(TOOLS_MINIMAL) == 12
 
     def test_tools_max_level(self):
         """Test that MAX level registers all tools"""
