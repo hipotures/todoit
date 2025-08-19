@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.12.0] - 2025-08-19
+## [2.12.1] - 2025-08-19
 
 ### 🚀 Documentation Excellence & Codebase Consistency
 
@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Enterprise-ready**: Production procedures with security and performance tuning
 - **Open source friendly**: Clear contribution paths and onboarding workflows
 - **Role-based organization**: Users, developers, admins, and project managers
-- **Current version**: All docs updated for TODOIT MCP v2.12.0
+- **Current version**: All docs updated for TODOIT MCP v2.12.1
 
 #### 🛠️ Major Codebase Consistency Fixes
 
@@ -71,7 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Documentation Architecture**
 - **Modular structure**: 17+ specialized documentation files with clear separation
 - **Cross-references**: Smart linking between related documentation sections  
-- **Version alignment**: All examples and references current for v2.12.0
+- **Version alignment**: All examples and references current for v2.12.1
 - **Format consistency**: Standardized structure and presentation across all docs
 
 **Quality Assurance**
@@ -82,7 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-**📦 Package**: Available as `todoit-mcp v2.12.0`
+**📦 Package**: Available as `todoit-mcp v2.12.1`
 **📚 Documentation**: Complete professional suite with enterprise-grade coverage  
 **🎯 Impact**: Transforms TODOIT into professionally documented system ready for enterprise adoption and open source contributions
 
