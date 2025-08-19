@@ -43,8 +43,9 @@ class ListsMixin:
         # Create the list
         db_list = self.db.create_list(list_data)
 
-        # Add tasks if provided
+        # Add tasks if provided (OPTIMIZED: bulk insert in single transaction)
         if items:
+            items_data = []
             for position, content in enumerate(items):
                 item_key = f"item_{position + 1}"
                 item_data = {
@@ -54,7 +55,10 @@ class ListsMixin:
                     "position": position + 1,
                     "meta_data": {},
                 }
-                self.db.create_item(item_data)
+                items_data.append(item_data)
+            
+            # Bulk create all items in single transaction
+            self.db.create_items_bulk(items_data)
 
         # Save to history
         self._record_history(

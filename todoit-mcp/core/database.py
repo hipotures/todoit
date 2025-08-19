@@ -5,7 +5,7 @@ SQLAlchemy models and database operations
 
 import os
 import re
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional, Dict, Any, Union, Set
 from datetime import datetime, timezone
 from sqlalchemy import (
     create_engine,
@@ -23,6 +23,7 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
 from sqlalchemy.sql import func
 from sqlalchemy.engine import Engine
+from contextlib import contextmanager
 
 from .models import (
     TodoList as TodoListModel,
@@ -110,6 +111,8 @@ class TodoItemDB(Base):
         Index("idx_todo_items_parent", "parent_item_id"),
         Index("idx_todo_items_unique_key", "list_id", "parent_item_id", "item_key", unique=True),
         Index("idx_todo_items_parent_status", "parent_item_id", "status"),
+        Index("idx_todo_items_list_status", "list_id", "status"),  # For bulk status queries
+        Index("idx_todo_items_list_parent_null", "list_id", "parent_item_id"),  # For root items query
     )
 
 
@@ -302,6 +305,19 @@ class Database:
     def get_session(self) -> Session:
         """Get database session"""
         return self.SessionLocal()
+
+    @contextmanager
+    def transaction_scope(self):
+        """Provide a transactional scope around a series of operations"""
+        session = self.SessionLocal()
+        try:
+            yield session
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
     def execute_migration(self, sql_file_path: str):
         """Execute SQL migration file"""
@@ -1161,6 +1177,23 @@ class Database:
             items.sort(key=lambda item: self.natural_sort_key(item.item_key))
             return items
 
+    def get_root_items_with_children_optimized(self, list_id: int) -> List[TodoItemDB]:
+        """Get all root items with their children preloaded (optimized for N+1 prevention)"""
+        from sqlalchemy.orm import selectinload
+        
+        with self.get_session() as session:
+            items = (
+                session.query(TodoItemDB)
+                .options(selectinload(TodoItemDB.children))
+                .filter(
+                    TodoItemDB.list_id == list_id, TodoItemDB.parent_item_id.is_(None)
+                )
+                .all()
+            )
+            # Sort naturally by item_key
+            items.sort(key=lambda item: self.natural_sort_key(item.item_key))
+            return items
+
     def get_item_depth(self, item_id: int) -> int:
         """Get the depth level of an item in hierarchy (0 = root, 1 = first level, etc.)"""
         with self.get_session() as session:
@@ -1357,6 +1390,59 @@ class Database:
         """Check if item is blocked by uncompleted dependencies"""
         blockers = self.get_item_blockers(item_id)
         return len(blockers) > 0
+
+    def get_blocked_items_bulk(self, item_ids: List[int]) -> Set[int]:
+        """Get set of blocked item IDs from a list of IDs (optimized for bulk checking)"""
+        if not item_ids:
+            return set()
+            
+        with self.get_session() as session:
+            # Get all dependencies for these items in a single query
+            blocked_dependencies = (
+                session.query(ItemDependencyDB.dependent_item_id)
+                .join(TodoItemDB, ItemDependencyDB.required_item_id == TodoItemDB.id)
+                .filter(
+                    ItemDependencyDB.dependent_item_id.in_(item_ids),
+                    TodoItemDB.status.notin_(["completed"])
+                )
+                .distinct()
+                .all()
+            )
+            
+            return {dep[0] for dep in blocked_dependencies}
+
+    def get_list_items_with_parents_optimized(self, list_id: int, status: str = None) -> List[TodoItemDB]:
+        """Get list items with parent information preloaded (optimized for bulk operations)"""
+        from sqlalchemy.orm import selectinload
+        
+        with self.get_session() as session:
+            query = (
+                session.query(TodoItemDB)
+                .options(selectinload(TodoItemDB.parent))
+                .filter(TodoItemDB.list_id == list_id)
+            )
+            
+            if status:
+                query = query.filter(TodoItemDB.status == status)
+                
+            return query.all()
+
+    def create_items_bulk(self, items_data: List[Dict[str, Any]]) -> List[TodoItemDB]:
+        """Create multiple items in a single transaction (optimized for bulk operations)"""
+        if not items_data:
+            return []
+            
+        with self.transaction_scope() as session:
+            db_items = []
+            for item_data in items_data:
+                db_item = TodoItemDB(**item_data)
+                session.add(db_item)
+                db_items.append(db_item)
+            
+            # Bulk insert with single commit
+            session.flush()  # Assign IDs without committing
+            
+            return db_items
 
     def get_all_dependencies_for_list(self, list_id: int) -> List[ItemDependencyDB]:
         """Get all dependencies involving items from a specific list"""
