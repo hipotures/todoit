@@ -86,7 +86,7 @@ def cli(ctx, db_path):
         is_production = False
 
     if not is_production:
-        dev_db = Path.home() / ".todoit" / "todoit_dev.db"
+        dev_db = Path.home() / "todoit_dev.db"
         console.print(f"[yellow]🔧 DEV MODE - Using database: {dev_db}[/yellow]")
 
     # Show help if no command provided

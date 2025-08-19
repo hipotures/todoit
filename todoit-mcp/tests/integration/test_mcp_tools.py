@@ -40,7 +40,10 @@ class TestMCPToolsBasic:
             )
 
         tool_count = int(result.stdout.strip())
-        assert tool_count == 51, f"Expected exactly 51 MCP tools, found {tool_count}"
+        # Get expected count from actual TOOLS_MAX list
+        from interfaces.mcp_server import TOOLS_MAX
+        expected_count = len(TOOLS_MAX)
+        assert tool_count == expected_count, f"Expected exactly {expected_count} MCP tools, found {tool_count}"
 
     def test_mcp_tool_names(self):
         """Test that all expected tool names are present"""

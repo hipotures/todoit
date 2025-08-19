@@ -25,7 +25,7 @@ Welcome to the official documentation for TODOIT MCP, an intelligent TODO list m
 ## 🚀 Quick Start
 
 ### Using with Claude Code (MCP)
-All 51 MCP tools are automatically available - no additional setup required!
+All MCP tools are automatically available - no additional setup required!
 
 ### Command Line Interface
 ```bash
@@ -43,7 +43,7 @@ todoit item next-smart --list "project"
 
 ## 🎯 Key Features
 
-- **51 MCP Tools** - Complete Claude Code integration
+- **MCP Tools** - Complete Claude Code integration
   
 - **Cross-List Dependencies** - Coordinate work across multiple lists
 - **Smart Algorithms** - Intelligent next task selection
@@ -54,7 +54,7 @@ todoit item next-smart --list "project"
 
 ✅ **Production Ready**
 - 136/136 tests passing (100%)
-- All 51 MCP tools tested and verified
+- All MCP tools tested and verified
 - CLI fully functional with --force flags
 - Markdown import/export working with all formats
 - Complete documentation coverage

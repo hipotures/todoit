@@ -12,7 +12,8 @@ The CLI is implemented in `interfaces/cli.py` using the `click` library and offe
 - `tags`: Quick tag overview (alias for `tag list`).
 - `stats`: View statistics and reports.
 - `io`: Import and export data.
-- `property`: Manage list properties.
+- `list property`: Manage properties on lists (subcommand)
+- `item property`: Manage properties on items (subcommand)
 - `dep`: Manage cross-list dependencies.
 - `interactive`: Enter interactive mode.
 
@@ -27,7 +28,7 @@ For detailed installation instructions, please see the [**Comprehensive Installa
 todoit --help
 
 # Use a custom database for a specific command
-todoit --db /path/to/custom.db list all
+todoit --db-path /path/to/custom.db list all
 ```
 
 ## Global CLI Features
@@ -642,9 +643,9 @@ todoit interactive
 
 ### List Types & Table Icons
 
-TODOIT supports several list types, each with a corresponding icon in the `list all` table view.
+TODOIT currently supports one list type:
 
-- **S (Sequential)**: Tasks must be completed in their defined order.
+- **Sequential**: Tasks are ordered by position and can be completed in any order.
 
 The `list all` command provides a rich, at-a-glance view of all your projects using these icons:
 
@@ -652,7 +653,7 @@ The `list all` command provides a rich, at-a-glance view of all your projects us
 - **`Key`**: The unique string identifier for the list.
 - **`Title`**: The human-readable title of the list.
 - **`🏷️`**: Tags associated with the list, displayed as colored dots.
-- **`🔀`**: The **List Type** (S, P, H, or L).
+- **`🔀`**: The **List Type** (S for Sequential).
 - **`📋`**: The number of **pending** tasks.
 - **`🔄`**: The number of **in-progress** tasks.
 - **`❌`**: The number of **failed** tasks.

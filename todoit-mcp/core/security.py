@@ -178,7 +178,7 @@ class SecureFileHandler:
         # Use user's home directory or temp directory as safe base
         home_dir = os.path.expanduser("~")
         if os.path.exists(home_dir) and os.access(home_dir, os.R_OK | os.W_OK):
-            safe_dir = os.path.join(home_dir, ".todoit", "imports")
+            safe_dir = os.path.join(home_dir, "todoit_imports")
         else:
             import tempfile
             safe_dir = os.path.join(tempfile.gettempdir(), "todoit_imports")

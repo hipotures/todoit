@@ -18,7 +18,7 @@ All MCP tools now return naturally sorted results:
 | Level | Tools Count | Token Savings | Use Case |
 |-------|-------------|---------------|----------|
 | **MINIMAL** | 9 tools | 82% savings | Essential operations only, maximum performance |
-| **STANDARD** | 23 tools | 55% savings | Balanced functionality (default) | 
+| **STANDARD** | 21 tools | 59% savings | Balanced functionality (default) | 
 | **MAX** | 51 tools | 0% savings | Complete feature set |
 
 ### 🔧 Configuration
@@ -29,19 +29,19 @@ Set the environment variable to choose your level:
 # Minimal set (9 tools) - Essential operations only
 export TODOIT_MCP_TOOLS_LEVEL=minimal
 
-# Standard set (23 tools) - Balanced functionality (DEFAULT)
+# Standard set (21 tools) - Balanced functionality (DEFAULT)
 export TODOIT_MCP_TOOLS_LEVEL=standard
 
 # Complete set (51 tools) - All features
 export TODOIT_MCP_TOOLS_LEVEL=max
 ```
 
-**Default**: `STANDARD` level (23 tools) for optimal balance of functionality vs performance.
+**Default**: `STANDARD` level (21 tools) for optimal balance of functionality vs performance.
 
 ### ⚡ Performance Impact
 
 - **MINIMAL**: ~500-1000 tokens context vs 3000+ for MAX
-- **STANDARD**: ~1200-1700 tokens context (23 tools)
+- **STANDARD**: ~1200-1700 tokens context (21 tools)
 - **MAX**: ~3000+ tokens context (51 tools - full feature set)
 
 ### 🛡️ Security Benefits
@@ -757,7 +757,7 @@ await todo_remove_list_tag("project-alpha", "urgent")
 
 ## 📋 Detailed Tools by Level
 
-### 🥇 MINIMAL Level (12 tools)
+### 🥇 MINIMAL Level (9 tools)
 **Essential operations only - Maximum performance**
 
 | Tool | Purpose |
@@ -771,11 +771,9 @@ await todo_remove_list_tag("project-alpha", "urgent")
 | `todo_get_item` | Get specific item details |
 | `todo_get_next_pending` | Get next available task |
 | `todo_get_progress` | Get progress statistics |
-| `todo_rename_item` | Rename item key/title |
-| `todo_rename_list` | Rename list key/title |
 
 ### 🥈 STANDARD Level (+12 tools)
-**Includes MINIMAL + useful extensions**
+**Includes MINIMAL + useful extensions (21 tools total)**
 
 **Additional tools in STANDARD:**
 
@@ -801,7 +799,7 @@ await todo_remove_list_tag("project-alpha", "urgent")
 
 **Additional advanced tools (32 more):**
 - **Cross-list dependencies** (6 tools): `todo_add_item_dependency`, `todo_remove_item_dependency`, etc.
-- **Advanced subtask operations** (4 tools): `todo_get_item_hierarchy`, `todo_move_to_subtask`, etc.
+- **Advanced subtask operations** (4 tools): `todo_get_item_hierarchy`, `todo_move_to_subitem`, etc.
 - **Smart algorithms** (5 tools): `todo_get_next_pending_enhanced`, `todo_get_comprehensive_status`, etc.
 - **Import/Export** (2 tools): `todo_import_from_markdown`, `todo_export_to_markdown`
 - **Relations & Projects** (1 tool): `todo_project_overview`

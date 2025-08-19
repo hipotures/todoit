@@ -52,7 +52,7 @@ SQLAlchemy ORM layer providing database abstraction and schema management.
 Pydantic models providing comprehensive data validation and type safety.
 
 **Model Categories:**
-- **5 Enums**: Status types, list types, dependency types, history actions
+- **5 Enums**: Item status types, list types, list status types, dependency types, history actions
 - **17 Pydantic Models**: Core data structures with validation
 - **Business Rules**: Automatic validation of relationships and constraints
 
@@ -61,7 +61,7 @@ Pydantic models providing comprehensive data validation and type safety.
 User-facing interfaces providing multiple ways to interact with the system:
 
 ### `interfaces/mcp_server.py` (2105 lines)
-Model Context Protocol server providing **51 MCP tools** for Claude Code integration.
+Model Context Protocol server providing **MCP tools** for Claude Code integration.
 
 **Tool Categories:**
 - **Basic Operations** (19 tools): Core CRUD functionality

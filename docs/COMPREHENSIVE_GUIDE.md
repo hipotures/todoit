@@ -28,7 +28,7 @@
 1. **Intelligence-First**: Smart algorithms determine what to work on next
 2. **Hierarchy Support**: Break complex tasks into manageable subtasks
 3. **Cross-List Dependencies**: Coordinate work across teams and projects
-4. **Claude Code Integration**: 51 MCP tools for programmatic access
+4. **Claude Code Integration**: MCP tools for programmatic access
 5. **Production Ready**: Comprehensive testing, performance optimization, security
 
 ### 🏆 Core Differentiators
@@ -213,7 +213,7 @@ cd todoit/todoit-mcp
 pip install -e .[dev]
 
 # Initialize database (automatic on first run)
-python -c "from core.manager import TodoManager; TodoManager()"
+export TODOIT_DB_PATH=/tmp/test.db && python -c "from core.manager import TodoManager; TodoManager()"
 
 # Verify installation
 todoit --help

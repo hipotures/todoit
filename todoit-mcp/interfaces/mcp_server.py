@@ -138,10 +138,8 @@ TOOLS_MINIMAL = [
 ]
 
 TOOLS_STANDARD = TOOLS_MINIMAL + [
-    # Convenience operations (3)
+    # Convenience operations (1)
     "todo_quick_add",
-    "todo_mark_completed",
-    "todo_start_item",
     # Basic properties (6)
     "todo_set_list_property",
     "todo_get_list_property",
@@ -192,7 +190,7 @@ def conditional_tool(func: Callable) -> Callable:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ████ MINIMAL LEVEL TOOLS (10 tools) - Core functionality only
+# ████ MINIMAL LEVEL TOOLS (9 tools) - Core functionality only
 # ═══════════════════════════════════════════════════════════════════════════════
 # Essential list operations: create, get, list_all
 # Essential item operations: add, update_status, get_list_items, get_item

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-TODOIT MCP is an intelligent task management system with MCP integration for Claude Code. The system provides 51 MCP tools for programmatic task management, featuring hierarchical tasks, cross-list dependencies, smart workflow algorithms, and dynamic tag system with 12-color visual support.
+TODOIT MCP is an intelligent task management system with MCP integration for Claude Code. The system provides MCP tools for programmatic task management, featuring hierarchical tasks, cross-list dependencies, smart workflow algorithms, and dynamic tag system with 12-color visual support.
 
 **Key Architecture**: Clean 3-layer design with `core/` (business logic), `interfaces/` (MCP server + CLI), and SQLite database with comprehensive schema for tasks, dependencies, and relationships.
 
@@ -83,7 +83,7 @@ todoit list create "test" --title "Test List"
 - **`core/models.py`** (655 lines) - Pydantic models with comprehensive validation (5 enums, 17 model classes)
 
 ### Interface Layer
-- **`interfaces/mcp_server.py`** (2105 lines) - 51 MCP tools for Claude Code integration
+- **`interfaces/mcp_server.py`** (2105 lines) - MCP tools for Claude Code integration
 - **`interfaces/cli.py`** - Rich CLI with modular commands in `cli_modules/`
 - **`interfaces/cli_modules/`** - Modular CLI commands (list, item, dependency, property management)
 
@@ -209,6 +209,6 @@ def _db_to_model(self, db_obj: Any, model_class: type) -> Any:
 
 Extensive documentation in `docs/` directory:
 - `CLI_GUIDE.md` (835 lines) - Complete CLI usage
-- `MCP_TOOLS.md` (832 lines) - All 51 MCP tools documented
+- `MCP_TOOLS.md` (832 lines) - MCP tools documented
 - `api.md` (416 lines) - TodoManager API reference with examples
 - `architecture.md` - System design overview

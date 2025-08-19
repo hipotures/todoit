@@ -181,7 +181,7 @@ except ValueError as e:
 
 Automatic status synchronization works identically across:
 - **CLI Interface** - All `todoit item` commands respect sync rules
-- **MCP Interface** - All 51 MCP tools handle sync blocking gracefully
+- **MCP Interface** - All MCP tools handle sync blocking gracefully
 - **Programmatic API** - Direct `TodoManager` method calls
 
 ---

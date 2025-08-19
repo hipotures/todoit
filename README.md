@@ -25,7 +25,7 @@ TODOIT (Todo It) is a comprehensive task management platform that scales from si
 - **Professional Display** - Colored dots (●) with interactive legends
 
 ### 🔗 **Integration Capabilities**
-- **55 MCP Tools** - Complete API for Claude Code integration with 3 configuration levels
+- **MCP Tools** - Complete API for Claude Code integration with 3 configuration levels
 - **Rich CLI Interface** - Icon-based columns (⏳ ✅ 📊 📋) with blocked status indicators (🚫)
 - **SQLite Database** - Robust schema with foreign key relationships
 - **Import/Export** - Markdown format with checkbox support
@@ -36,7 +36,7 @@ TODOIT (Todo It) is a comprehensive task management platform that scales from si
 Claude Code <--MCP--> TodoMCPServer <--API--> TodoManager <--ORM--> SQLite
                             |                         ^                  |
                             |                         |                  |
-                       55 MCP Tools           Smart Algorithm      Enhanced Schema
+                       MCP Tools              Smart Algorithm      Enhanced Schema
                                                     |                     |
                                                Rich CLI              Dependencies
                                             (📊 status display)        & Relations
@@ -70,7 +70,7 @@ todoit-mcp/
 │   ├── database.py        # Database layer (SQLAlchemy)
 │   └── validators.py      # Business rules
 ├── interfaces/            # User Interfaces  
-│   ├── mcp_server.py     # MCP Server (56 tools)
+│   ├── mcp_server.py     # MCP Server
 │   └── cli.py            # Command-line interface
 ├── migrations/           # Database migrations
 ├── docs/                 # Documentation & examples
@@ -97,7 +97,7 @@ todoit-mcp/
 - **Concurrent Support**: Thread-safe operations with session management
 
 ### Quality Assurance
-- **428 Tests Passing** - Comprehensive test coverage
+- **Comprehensive test coverage** - Extensive testing across all components
 - **Unit Tests**: Core business logic with mocked dependencies
 - **Integration Tests**: Full database workflows and API testing
 - **Edge Cases**: Robustness testing for error conditions
@@ -129,7 +129,7 @@ todoit-mcp/
 - `get_cross_list_progress` - Multi-list project tracking
 - Enhanced progress with blocked/available item counts
 
-### **MCP Integration (44 Tools)**
+### **MCP Integration**
 All functionality available via MCP for Claude Code:
 - List management (create, update, delete, relations)
 - Item operations (add, update status, move, convert to subitem)  
@@ -185,7 +185,7 @@ todoit list show --list "my-project"
 ```
 
 ### Using with Claude Code (MCP)
-After MCP setup, all 56 tools are available directly in Claude Code:
+After MCP setup, all tools are available directly in Claude Code:
 
 **Example conversation with Claude Code:**
 ```
@@ -277,7 +277,7 @@ python -m interfaces.mcp_server
 Complete documentation available in the [docs/](docs/) directory:
 
 - **[CLI User Guide](docs/CLI_GUIDE.md)** - Comprehensive command-line interface guide
-- **[MCP Tools Reference](docs/MCP_TOOLS.md)** - All 56 MCP tools for Claude Code
+- **[MCP Tools Reference](docs/MCP_TOOLS.md)** - MCP tools for Claude Code
 - **[Architecture](docs/architecture.md)** - System design and patterns
 - **[API Reference](docs/api.md)** - TodoManager class documentation
 - **[CHANGELOG](CHANGELOG.md)** - Version history and release notes

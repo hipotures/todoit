@@ -676,8 +676,8 @@ todoit list delete --list "old-project" --force
 - **Solution**: Explicit expansion before database initialization
 
 #### Now Works:
-- `TODOIT_DB_PATH=$HOME/.todoit/todoit.db` ✅
-- `TODOIT_DB_PATH=/home/user/.todoit/todoit.db` ✅
+- `TODOIT_DB_PATH=$HOME/todoit.db` ✅
+- `TODOIT_DB_PATH=/home/user/todoit.db` ✅
 - `TODOIT_DB_PATH=/tmp/todoit.db` ✅
 
 #### Error Handling:
@@ -707,7 +707,7 @@ todoit list delete --list "old-project" --force
 ## [2.5.0] - 2025-08-16
 
 ### 🔥 BREAKING CHANGE - Database Path Management
-- **REMOVED**: Default database location `~/.todoit/todoit.db`
+- **REMOVED**: Default database location `~/todoit.db`
 - **ADDED**: Required database path specification via `--db-path` or `TODOIT_DB_PATH`
 - **RENAMED**: Environment variable from `TODOIT_DATABASE` to `TODOIT_DB_PATH`
 - **RENAMED**: CLI parameter from `--db` to `--db-path`
@@ -715,7 +715,7 @@ todoit list delete --list "old-project" --force
 - **IMPROVED**: Clear priority: `--db-path` > `TODOIT_DB_PATH` > error
 
 #### Migration Guide:
-- **Before**: `todoit list all` (used `~/.todoit/todoit.db`)
+- **Before**: `todoit list all` (used `~/todoit.db`)
 - **After**: `TODOIT_DB_PATH=/path/to/db todoit list all` or `todoit --db-path /path/to/db list all`
 
 #### Technical Details:
@@ -786,7 +786,7 @@ todoit list delete --list "old-project" --force
 
 #### Technical Details:
 - **File Changed**: `interfaces/mcp_server.py` lines 19-28
-- **Root Cause**: MCP server always used default `~/.todoit/todoit.db` regardless of environment
+- **Root Cause**: MCP server always used default `~/todoit.db` regardless of environment
 - **Solution**: Check `TODOIT_DATABASE` environment variable before creating TodoManager instance
 - **Impact**: All 54 MCP tools now work correctly in test environments
 

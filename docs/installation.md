@@ -68,14 +68,14 @@ This method is for developers who want to contribute to the project or modify th
 4.  **Initialize the database:**
     The database is created automatically on the first run. You can also initialize it manually:
     ```bash
-    python -c "from core.manager import TodoManager; TodoManager()"
+    export TODOIT_DB_PATH=/tmp/test.db && python -c "from core.manager import TodoManager; TodoManager()"
     ```
 
 ---
 
 ## 3. MCP Integration with Claude Code
 
-To use TODOIT's 55+ tools within Claude Code, you need to tell Claude Code how to start the MCP server.
+To use TODOIT's tools within Claude Code, you need to tell Claude Code how to start the MCP server.
 
 ### Step 1: Install TODOIT MCP
 First, ensure `todoit-mcp` is installed using one of the methods described above.

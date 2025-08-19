@@ -85,7 +85,9 @@ todoit-mcp/
 # Size: 2861 lines - the largest single file
 
 from core.manager import TodoManager
-manager = TodoManager()  # Auto-creates database if needed
+# Set database path first
+export TODOIT_DB_PATH=/tmp/test_dev.db
+manager = TodoManager()  # Uses TODOIT_DB_PATH environment variable
 ```
 
 #### 2. **Database Layer** - SQLAlchemy ORM

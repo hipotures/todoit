@@ -227,6 +227,7 @@ source /var/lib/todoit/venv/bin/activate
 # Create database with proper permissions
 TODOIT_DB_PATH=/var/lib/todoit/data/production.db python -c "
 from core.manager import TodoManager
+# Database path automatically read from TODOIT_DB_PATH env var
 manager = TodoManager()
 print('Database initialized successfully')
 "
