@@ -346,6 +346,143 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
         ]
         return [self._db_to_model(db_list, TodoList) for db_list in archived_lists]
 
+    def update_item_status(
+        self,
+        list_key: str,
+        item_key: str,
+        subitem_key: Optional[str] = None,
+        status: Optional[str] = None,
+        completion_states: Optional[Dict[str, Any]] = None,
+    ) -> TodoItem:
+        """6. Updates task status with multi-state support and automatic parent synchronization"""
+        # Get the list
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' does not exist")
+
+        # Get the task (subitem or main item)
+        if subitem_key:
+            # Get parent item first
+            parent_item = self.db.get_item_by_key(db_list.id, item_key)
+            if not parent_item:
+                raise ValueError(f"Parent item '{item_key}' not found in list '{list_key}'")
+            
+            # Get subitem
+            db_item = self.db.get_item_by_key_and_parent(db_list.id, subitem_key, parent_item.id)
+            if not db_item:
+                raise ValueError(f"Subitem '{subitem_key}' not found under parent '{item_key}' in list '{list_key}'")
+        else:
+            # Get main item
+            db_item = self.db.get_item_by_key(db_list.id, item_key)
+            if not db_item:
+                raise ValueError(f"Item '{item_key}' does not exist in list '{list_key}'")
+
+        # Block manual status changes for tasks with subtasks
+        if status and self.db.has_subtasks(db_item.id):
+            target_name = subitem_key if subitem_key else item_key
+            raise ValueError(
+                f"Cannot manually change status of task '{target_name}' because it has subtasks. Status is automatically synchronized based on subtask statuses."
+            )
+
+        # Use transaction to ensure atomicity
+        with self.db.get_session() as session:
+            # Prepare data for update
+            old_values = {
+                "status": db_item.status,
+                "completion_states": db_item.completion_states,
+            }
+
+            updates = {}
+            if status:
+                updates["status"] = status
+                if status == "in_progress":
+                    updates["started_at"] = datetime.now(timezone.utc)
+                elif status in ["completed", "failed"]:
+                    updates["completed_at"] = datetime.now(timezone.utc)
+
+            if completion_states:
+                current_states = db_item.completion_states or {}
+                current_states.update(completion_states)
+                updates["completion_states"] = current_states
+
+            # Update the task
+            db_item = self.db.update_item(db_item.id, updates)
+
+            # Save to history (convert datetime to string for JSON)
+            new_value_for_history = {}
+            for key, value in updates.items():
+                if isinstance(value, datetime):
+                    new_value_for_history[key] = value.isoformat()
+                else:
+                    new_value_for_history[key] = value
+
+            self._record_history(
+                item_id=db_item.id,
+                list_id=db_list.id,
+                action="updated",
+                old_value=old_values,
+                new_value=new_value_for_history,
+            )
+
+            # Synchronize parent status if this item has a parent
+            if db_item.parent_item_id:
+                self._sync_parent_status(db_item.parent_item_id, session)
+
+            session.commit()
+
+        return self._db_to_model(db_item, TodoItem)
+
+    def clear_item_completion_states(
+        self, list_key: str, item_key: str, state_keys: Optional[List[str]] = None,
+        parent_item_key: Optional[str] = None
+    ) -> TodoItem:
+        """Clear completion states from item or subitem (all states or specific keys)"""
+        # Get the list
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' does not exist")
+
+        # Get the item (subitem or main item)
+        if parent_item_key:
+            # Get parent item first
+            parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+            if not parent_item:
+                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+            
+            # Get subitem
+            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+            if not db_item:
+                raise ValueError(f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+        else:
+            # Get main item
+            db_item = self.db.get_item_by_key(db_list.id, item_key)
+            if not db_item:
+                raise ValueError(f"Item '{item_key}' does not exist in list '{list_key}'")
+
+        # Store old states for history
+        old_states = db_item.completion_states or {}
+
+        if state_keys is None:
+            # Clear all states
+            new_states = {}
+        else:
+            # Remove specific state keys
+            new_states = {k: v for k, v in old_states.items() if k not in state_keys}
+
+        # Update the item
+        updates = {"completion_states": new_states}
+        db_item = self.db.update_item(db_item.id, updates)
+
+        # Record history
+        self._record_history(
+            item_id=db_item.id,
+            list_id=db_list.id,
+            action="states_cleared",
+            old_value={"completion_states": old_states},
+            new_value={"completion_states": new_states},
+        )
+
+        return self._db_to_model(db_item, TodoItem)
 
     def get_next_pending(
         self,
@@ -565,6 +702,37 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
     # === Helper functions ===
 
 
+    def get_item(self, list_key: str, item_key: str, parent_item_key: Optional[str] = None) -> Optional[TodoItem]:
+        """Gets a specific task or subitem"""
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            return None
+
+        # Get subitem or main item
+        if parent_item_key:
+            # Get parent item first
+            parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+            if not parent_item:
+                return None
+            
+            # Get subitem
+            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+        else:
+            # Get main item
+            db_item = self.db.get_item_by_key(db_list.id, item_key)
+            
+        return self._db_to_model(db_item, TodoItem)
+
+    def get_list_items(
+        self, list_key: str, status: Optional[str] = None, limit: Optional[int] = None
+    ) -> List[TodoItem]:
+        """Gets all tasks from a list with optional limit"""
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            return []
+
+        db_items = self.db.get_list_items(db_list.id, status=status, limit=limit)
+        return [self._db_to_model(db_item, TodoItem) for db_item in db_items]
 
     def get_item_history(
         self, list_key: str, item_key: str, limit: Optional[int] = None
@@ -1092,6 +1260,84 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
 
         return self.db.delete_item_property(db_item.id, property_key)
 
+    # ===== SUBTASK MANAGEMENT METHODS (Phase 1) =====
+
+    def add_subitem(
+        self,
+        list_key: str,
+        parent_key: str,
+        subitem_key: str,
+        content: str,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> TodoItem:
+        """Add a new subitem to an existing parent item.
+
+        Args:
+            list_key: The key of the list containing the parent item.
+            parent_key: The key of the parent item.
+            subitem_key: The unique key for the new subitem.
+            content: The description or content of the subitem.
+            metadata: Optional dictionary for custom metadata.
+
+        Returns:
+            The newly created TodoItem object for the subitem.
+
+        Raises:
+            ValueError: If the list, parent item, or subitem key already exists.
+        """
+        # Get list
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' does not exist")
+
+        # Get parent item
+        parent_item = self.db.get_item_by_key(db_list.id, parent_key)
+        if not parent_item:
+            raise ValueError(
+                f"Parent item '{parent_key}' not found in list '{list_key}'"
+            )
+
+        # Check if subitem_key already exists among siblings of same parent
+        existing_item = self.db.get_item_by_key_and_parent(db_list.id, subitem_key, parent_item.id)
+        if existing_item:
+            raise ValueError(
+                f"Subitem key '{subitem_key}' already exists for parent '{parent_key}'"
+            )
+
+        # Get next position for subitem among siblings of same parent
+        position = self.db.get_next_position(db_list.id, parent_item_id=parent_item.id)
+
+        # Create subitem
+        item_data = {
+            "list_id": db_list.id,
+            "item_key": subitem_key,
+            "content": content,
+            "position": position,
+            "status": "pending",
+            "parent_item_id": parent_item.id,
+            "meta_data": metadata or {},
+        }
+
+        # Use transaction to ensure atomicity
+        with self.db.get_session() as session:
+            db_item = self.db.create_item(item_data)
+
+            # Record history
+            self._record_history(
+                item_id=db_item.id,
+                list_id=db_list.id,
+                action=HistoryAction.CREATED,
+                new_value={"content": content, "parent": parent_key},
+            )
+
+            # Synchronize parent status (adding first subitem changes parent status)
+            self._sync_parent_status(parent_item.id, session)
+
+            session.commit()
+
+        return self._db_to_model(db_item, TodoItem)
+
+    def get_subitems(self, list_key: str, parent_key: str) -> List[TodoItem]:
         """Get all direct subitems for a given parent item.
 
         Args:
@@ -1421,6 +1667,115 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
 
     # ===== CROSS-LIST DEPENDENCIES METHODS (Phase 2) =====
 
+    def add_item_dependency(
+        self,
+        dependent_list: str,
+        dependent_item: str,
+        required_list: str,
+        required_item: str,
+        dependency_type: str = "blocks",
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> "ItemDependency":
+        """Add a dependency between two items, potentially across different lists.
+
+        This indicates that the 'dependent' item cannot be completed until the 'required' item is complete.
+
+        Args:
+            dependent_list: The list key of the item that will be blocked.
+            dependent_item: The item key of the item that will be blocked.
+            required_list: The list key of the item that must be completed first.
+            required_item: The item key of the item that must be completed first.
+            dependency_type: The type of dependency (e.g., 'blocks', 'related').
+            metadata: Optional dictionary for custom metadata.
+
+        Returns:
+            The created ItemDependency object.
+
+        Raises:
+            ValueError: If any list or item is not found, or if the dependency would create a circular loop.
+        """
+        from .models import ItemDependency, DependencyType
+
+        # Get dependent item
+        dependent_db_list = self.db.get_list_by_key(dependent_list)
+        if not dependent_db_list:
+            raise ValueError(f"Dependent list '{dependent_list}' not found")
+
+        dependent_db_item = self.db.get_item_by_key(
+            dependent_db_list.id, dependent_item
+        )
+        if not dependent_db_item:
+            raise ValueError(
+                f"Dependent item '{dependent_item}' not found in list '{dependent_list}'"
+            )
+
+        # Get required item
+        required_db_list = self.db.get_list_by_key(required_list)
+        if not required_db_list:
+            raise ValueError(f"Required list '{required_list}' not found")
+
+        required_db_item = self.db.get_item_by_key(required_db_list.id, required_item)
+        if not required_db_item:
+            raise ValueError(
+                f"Required item '{required_item}' not found in list '{required_list}'"
+            )
+
+        # Validate dependency type
+        try:
+            dep_type = DependencyType(dependency_type)
+        except ValueError:
+            raise ValueError(f"Invalid dependency type: {dependency_type}")
+
+        # Check for circular dependencies
+        all_deps = self.db.get_all_item_dependencies()
+        graph = {}
+        for dep in all_deps:
+            if dep.dependent_item_id not in graph:
+                graph[dep.dependent_item_id] = []
+            graph[dep.dependent_item_id].append(dep.required_item_id)
+
+        path = [required_db_item.id]
+        visited = {required_db_item.id}
+        while path:
+            current_node = path.pop(0)
+            if current_node == dependent_db_item.id:
+                raise ValueError("Circular dependency detected")
+            for neighbor in graph.get(current_node, []):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    path.append(neighbor)
+
+        # Create dependency
+        dependency_data = {
+            "dependent_item_id": dependent_db_item.id,
+            "required_item_id": required_db_item.id,
+            "dependency_type": dep_type.value,
+            "meta_data": metadata or {},
+        }
+
+        db_dependency = self.db.create_item_dependency(dependency_data)
+
+        # Record history for both items
+        self._record_history(
+            item_id=dependent_db_item.id,
+            list_id=dependent_db_list.id,
+            action=HistoryAction.UPDATED,
+            new_value={
+                "dependency_added": f"now depends on {required_list}:{required_item}",
+                "dependency_type": dep_type.value,
+            },
+        )
+
+        self._record_history(
+            item_id=required_db_item.id,
+            list_id=required_db_list.id,
+            action=HistoryAction.UPDATED,
+            new_value={
+                "dependency_added": f"now blocks {dependent_list}:{dependent_item}",
+                "dependency_type": dep_type.value,
+            },
+        )
+
         return self._db_to_model(db_dependency, ItemDependency)
 
     def remove_item_dependency(
@@ -1665,9 +2020,245 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
         """
         return {"lists": [], "dependencies": []}
 
+    def delete_item(self, list_key: str, item_key: str, parent_item_key: Optional[str] = None) -> bool:
+        """Deletes an item and all its subtasks and dependencies."""
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
 
+        # Get item to delete (subitem or main item)
+        if parent_item_key:
+            # Get parent item first
+            parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+            if not parent_item:
+                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+            
+            # Get subitem
+            item_to_delete = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+        else:
+            # Get main item
+            item_to_delete = self.db.get_item_by_key(db_list.id, item_key)
+            
+        if not item_to_delete:
+            return False  # Item doesn't exist, so nothing to delete
+
+        parent_id = item_to_delete.parent_item_id  # Store for parent sync
+
+        # Use transaction to ensure atomicity
+        with self.db.get_session() as session:
+            # Get all subtasks recursively
+            all_subtasks = self._get_all_subtasks_recursive(item_to_delete.id)
+
+            # Delete all subtasks first (reverse order to avoid FK issues)
+            for subtask in reversed(all_subtasks):
+                # Delete dependencies for this subtask
+                self.db.delete_all_dependencies_for_item(subtask.id)
+                # Delete properties for this subtask
+                self.db.delete_all_item_properties(subtask.id)
+                # Delete history for this subtask
+                self.db.delete_item_history(subtask.id)
+                # Delete the subtask
+                self.db.delete_item(subtask.id)
+
+            # Delete dependencies for the main item
+            self.db.delete_all_dependencies_for_item(item_to_delete.id)
+
+            # Delete properties for the main item
+            self.db.delete_all_item_properties(item_to_delete.id)
+
+            # Delete history for the main item
+            self.db.delete_item_history(item_to_delete.id)
+
+            # Delete the main item
+            self.db.delete_item(item_to_delete.id)
+
+            # Synchronize parent status if item had a parent
+            if parent_id:
+                self._sync_parent_status(parent_id, session)
+
+            session.commit()
+
+        return True
+
+    def update_item_content(
+        self, list_key: str, item_key: str, new_content: str, parent_item_key: Optional[str] = None
+    ) -> TodoItem:
+        """Updates the content/description of a TODO item or subitem."""
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
+
+        # Get item to update (subitem or main item)
+        if parent_item_key:
+            # Get parent item first
+            parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+            if not parent_item:
+                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+            
+            # Get subitem
+            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+            if not db_item:
+                raise ValueError(f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+        else:
+            # Get main item
+            db_item = self.db.get_item_by_key(db_list.id, item_key)
+            if not db_item:
+                raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+
+        # Store old content for history
+        old_content = db_item.content
+
+        # Update the database
+        updated_item = self.db.update_item_content(db_item.id, new_content)
+        if not updated_item:
+            raise ValueError(f"Failed to update item content")
+
+        # Record history
+        self._record_history(
+            item_id=db_item.id,
+            action=HistoryAction.UPDATED,
+            old_value={"content": old_content},
+            new_value={"content": new_content},
+            user_context="content_update",
+        )
+
+        return self._db_to_model(updated_item, TodoItem)
+
+    def rename_item(
+        self,
+        list_key: str,
+        item_key: str,
+        new_key: Optional[str] = None,
+        new_title: Optional[str] = None,
+        parent_item_key: Optional[str] = None
+    ) -> TodoItem:
+        """Rename item key and/or title (content).
+        
+        Args:
+            list_key: The key of the list containing the item
+            item_key: Current key of the item to rename
+            new_key: New key for the item (optional)
+            new_title: New title/content for the item (optional)
+            parent_item_key: Parent item key if renaming a subitem (optional)
+            
+        Returns:
+            Updated TodoItem object
+            
+        Raises:
+            ValueError: If list or item not found, or if no changes provided
+        """
+        # Map title to content for internal processing
+        new_content = new_title
+        
+        # Validate at least one change is provided
+        if new_key is None and new_content is None:
+            raise ValueError("At least one of new_key or new_title must be provided")
+            
+        # Get the list
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
+            raise ValueError(f"List '{list_key}' not found")
+
+        # Get item to update (subitem or main item)
+        if parent_item_key:
+            # Get parent item first
+            parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+            if not parent_item:
+                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+            
+            # Get subitem
+            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+            if not db_item:
+                raise ValueError(f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+        else:
+            # Get main item
+            db_item = self.db.get_item_by_key(db_list.id, item_key)
+            if not db_item:
+                raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+
+        # Validate new key uniqueness if provided
+        if new_key is not None and new_key != item_key:
+            # Check if new key already exists in the same context
+            if parent_item_key:
+                # For subitems: check uniqueness within parent
+                parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
+                existing_subitem = self.db.get_item_by_key_and_parent(db_list.id, new_key, parent_item.id)
+                if existing_subitem:
+                    raise ValueError(f"Subitem key '{new_key}' already exists under parent '{parent_item_key}'")
+            else:
+                # For main items: check uniqueness within list
+                existing_item = self.db.get_item_by_key(db_list.id, new_key)
+                if existing_item:
+                    raise ValueError(f"Item key '{new_key}' already exists in list '{list_key}'")
+
+        # Store old values for history
+        old_key = db_item.item_key
+        old_content = db_item.content
+
+        # Update the item in database
+        updated_item = self.db.rename_item(db_item.id, new_key, new_content)
+        if not updated_item:
+            raise ValueError(f"Failed to rename item")
+
+        # Record history
+        changes = {}
+        if new_key is not None:
+            changes["item_key"] = {"old": old_key, "new": new_key}
+        if new_content is not None:
+            changes["content"] = {"old": old_content, "new": new_content}
+            
+        self._record_history(
+            item_id=db_item.id,
+            action="rename_item",
+            old_value={
+                "item_key": old_key,
+                "content": old_content
+            },
+            new_value={
+                "item_key": updated_item.item_key,
+                "content": updated_item.content
+            },
+            user_context=f"rename: {', '.join(changes.keys())}",
+        )
+
+        return self._db_to_model(updated_item, TodoItem)
 
     # ===== LIST TAG MANAGEMENT METHODS =====
+
+    def create_tag(self, name: str, color: str = None) -> ListTag:
+        """Create a new global tag.
+
+        Tag colors are assigned dynamically based on the alphabetical order of all tags.
+        A maximum of 12 tags is supported due to the fixed color palette.
+
+        Args:
+            name: The name for the new tag (will be converted to lowercase).
+            color: A specific color to assign. If None, a color will be assigned automatically.
+                   This is not recommended as dynamic colors will override it.
+
+        Returns:
+            The created ListTag object.
+
+        Raises:
+            ValueError: If the tag name already exists or if the maximum number of tags (12) has been reached.
+        """
+        # Check if tag already exists
+        existing_tag = self.db.get_tag_by_name(name)
+        if existing_tag:
+            raise ValueError(f"Tag '{name}' already exists")
+
+        # Auto-assign color if not provided
+        if color is None:
+            color = self._get_next_available_color()
+
+        # Create tag data
+        tag_data = {"name": name.lower(), "color": color.lower()}
+
+        # Create tag in database
+        db_tag = self.db.create_tag(tag_data)
+
+        # Convert to Pydantic model and return
+        return self._db_to_model(db_tag, ListTag)
 
     def get_tag(self, tag_identifier: Union[int, str]) -> Optional[ListTag]:
         """Get a specific tag by its ID or name.

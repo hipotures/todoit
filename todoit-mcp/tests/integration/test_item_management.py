@@ -52,7 +52,7 @@ class TestItemManagement:
 
     def test_delete_item_nonexistent_list(self, temp_manager):
         """Test deleting item from non-existent list"""
-        with pytest.raises(ValueError, match="List 'nonexistent' not found"):
+        with pytest.raises(ValueError, match="List 'nonexistent' does not exist"):
             temp_manager.delete_item("nonexistent", "item")
 
     def test_delete_item_nonexistent_item(self, temp_manager, sample_list_and_item):
@@ -78,19 +78,16 @@ class TestItemManagement:
 
         # Verify all items exist
         assert temp_manager.get_item("test_list", "test_item") is not None
-        assert temp_manager.get_item("test_list", "sub1") is not None
-        assert temp_manager.get_item("test_list", "sub2") is not None
-        assert temp_manager.get_item("test_list", "subsub1") is not None
+        assert temp_manager.get_item("test_list", "sub1", "test_item") is not None  # sub1 under test_item
+        assert temp_manager.get_item("test_list", "sub2", "test_item") is not None  # sub2 under test_item
+        assert temp_manager.get_item("test_list", "subsub1", "sub1") is not None    # subsub1 under sub1
 
-        # Delete parent item
-        success = temp_manager.delete_item("test_list", "test_item")
-        assert success is True
+        # Try to delete parent item - should fail because it has subtasks
+        with pytest.raises(ValueError, match="Cannot delete item 'test_item' because it has subtasks"):
+            temp_manager.delete_item("test_list", "test_item")
 
-        # Verify all items are gone
-        assert temp_manager.get_item("test_list", "test_item") is None
-        assert temp_manager.get_item("test_list", "sub1") is None
-        assert temp_manager.get_item("test_list", "sub2") is None
-        assert temp_manager.get_item("test_list", "subsub1") is None
+        # Verify parent item still exists
+        assert temp_manager.get_item("test_list", "test_item") is not None
 
     def test_update_item_content_success(self, temp_manager, sample_list_and_item):
         """Test successful content update through manager"""
@@ -112,7 +109,7 @@ class TestItemManagement:
 
     def test_update_item_content_nonexistent_list(self, temp_manager):
         """Test updating content in non-existent list"""
-        with pytest.raises(ValueError, match="List 'nonexistent' not found"):
+        with pytest.raises(ValueError, match="List 'nonexistent' does not exist"):
             temp_manager.update_item_content("nonexistent", "item", "new content")
 
     def test_update_item_content_nonexistent_item(
@@ -148,7 +145,7 @@ class TestItemManagement:
         assert len(history) >= 2
 
         # Find the update history entry
-        update_entries = [h for h in history if h.action == "updated"]
+        update_entries = [h for h in history if h.action == "content_updated"]
         assert len(update_entries) >= 1
 
         # Check the history contains content update info

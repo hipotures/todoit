@@ -237,7 +237,7 @@ class TestTodoManagerUnit:
             "_db_to_model",
             side_effect=lambda db_obj, model_class: db_obj,
         ):
-            with pytest.raises(ValueError, match="Circular dependency detected"):
+            with pytest.raises(ValueError, match="circular dependency"):
                 manager_with_mock.add_item_dependency(
                     dependent_list="test",
                     dependent_item="item_b",
@@ -321,13 +321,19 @@ class TestTodoManagerUnit:
                 required_item="nonexistent_item",
             )
 
-    def test_delete_item_cascades_to_subtasks(self, manager_with_mock, mock_db):
-        """Test that deleting a parent item also deletes its subtasks."""
+    def test_delete_item_prevents_deletion_with_subtasks(self, manager_with_mock, mock_db):
+        """Test that deleting a parent item with subtasks raises an error."""
         parent = MagicMock(id=1, item_key="parent_key", parent_item_id=None)
         subtask1 = MagicMock(id=2, item_key="subtask1", parent_item_id=1)
         subtask2 = MagicMock(id=3, item_key="subtask2", parent_item_id=1)
 
         mock_db.get_item_by_key.side_effect = lambda list_id, key: {
+            "parent_key": parent,
+            "subtask1": subtask1,
+            "subtask2": subtask2,
+        }.get(key)
+
+        mock_db.get_item_by_key_and_parent.side_effect = lambda list_id, key, parent_id: {
             "parent_key": parent,
             "subtask1": subtask1,
             "subtask2": subtask2,
@@ -339,36 +345,23 @@ class TestTodoManagerUnit:
             subtask2.id: [],
         }.get(item_id, [])
 
-        # Mock the status synchronization methods to avoid calling them
-        mock_db.get_children_status_summary.return_value = {
-            'total': 0, 'failed': 0, 'pending': 0, 'completed': 0, 'in_progress': 0
-        }
-        mock_db.get_item_by_id.return_value = None  # No parent to sync
+        # Should raise error when trying to delete item with children
+        with pytest.raises(ValueError, match="has subtasks"):
+            manager_with_mock.delete_item("test", "parent_key")
 
-        manager_with_mock.delete_item("test", "parent_key")
+        # Should not have deleted anything
+        mock_db.delete_item.assert_not_called()
 
-        assert mock_db.delete_item.call_count == 3
-        mock_db.delete_item.assert_any_call(parent.id)
-        mock_db.delete_item.assert_any_call(subtask1.id)
-        mock_db.delete_item.assert_any_call(subtask2.id)
-
-    def test_delete_item_removes_dependencies(self, manager_with_mock, mock_db):
-        """Test that deleting an item also removes its dependencies."""
+    def test_delete_item_calls_database_delete(self, manager_with_mock, mock_db):
+        """Test that deleting an item calls the database delete method."""
         item_to_delete = MagicMock(id=1, parent_item_id=None)
         mock_db.get_item_by_key.return_value = item_to_delete
+        mock_db.get_item_by_key_and_parent.return_value = item_to_delete
         mock_db.get_item_children.return_value = []
-
-        # Mock the status synchronization methods
-        mock_db.get_children_status_summary.return_value = {
-            'total': 0, 'failed': 0, 'pending': 0, 'completed': 0, 'in_progress': 0
-        }
-        mock_db.get_item_by_id.return_value = None  # No parent to sync
 
         manager_with_mock.delete_item("test", "some_key")
 
-        mock_db.delete_all_dependencies_for_item.assert_called_once_with(
-            item_to_delete.id
-        )
+        # Should call database delete_item method (which handles dependencies internally)
         mock_db.delete_item.assert_called_once_with(item_to_delete.id)
 
     def test_archive_list_basic_flow(self, manager_with_mock, mock_db):

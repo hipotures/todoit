@@ -138,7 +138,7 @@ class TestCLISubitemDisambiguation:
         
         # Add some completion states to scene_0001/image_gen
         manager.update_item_status(
-            "test_list", "scene_0001", subitem_key="image_gen", completion_states={"reviewed": True, "approved": False}
+            "test_list", "scene_0001", subitem_key="image_gen", status="in_progress", completion_states={"reviewed": True, "approved": False}
         )
         
         with patch('interfaces.cli_modules.item_commands.get_manager') as mock_get_manager:
@@ -164,10 +164,10 @@ class TestCLISubitemDisambiguation:
         
         # Add completion states to both subitems
         manager.update_item_status(
-            "test_list", "scene_0001", subitem_key="image_gen", completion_states={"reviewed": True}
+            "test_list", "scene_0001", subitem_key="image_gen", status="in_progress", completion_states={"reviewed": True}
         )
         manager.update_item_status(
-            "test_list", "scene_0002", subitem_key="image_gen", completion_states={"tested": True}
+            "test_list", "scene_0002", subitem_key="image_gen", status="in_progress", completion_states={"tested": True}
         )
         
         with patch('interfaces.cli_modules.item_commands.get_manager') as mock_get_manager:
@@ -200,11 +200,11 @@ class TestCLISubitemDisambiguation:
         
         # Add multiple completion states to both subitems
         manager.update_item_status(
-            "test_list", "scene_0001", subitem_key="image_gen",
+            "test_list", "scene_0001", subitem_key="image_gen", status="in_progress",
             completion_states={"reviewed": True, "approved": False, "tested": True}
         )
         manager.update_item_status(
-            "test_list", "scene_0002", subitem_key="image_gen",
+            "test_list", "scene_0002", subitem_key="image_gen", status="in_progress",
             completion_states={"reviewed": False, "deployed": True}
         )
         
@@ -307,10 +307,10 @@ class TestManagerFunctionsWithParentKey:
         
         # Add states to both subitems
         manager.update_item_status(
-            "test_list", "scene_0001", subitem_key="image_gen", completion_states={"state1": True, "state2": False}
+            "test_list", "scene_0001", subitem_key="image_gen", status="in_progress", completion_states={"state1": True, "state2": False}
         )
         manager.update_item_status(
-            "test_list", "scene_0002", subitem_key="image_gen", completion_states={"state3": True}
+            "test_list", "scene_0002", subitem_key="image_gen", status="in_progress", completion_states={"state3": True}
         )
         
         # Clear states from scene_0001/image_gen only

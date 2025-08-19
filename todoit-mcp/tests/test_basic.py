@@ -72,6 +72,7 @@ def test_todoit():
         multi_state_item = manager.update_item_status(
             list_key="project_alpha",
             item_key="item_2",
+            status="in_progress",
             completion_states={"tested": True, "reviewed": False, "deployed": False},
         )
         console.print(

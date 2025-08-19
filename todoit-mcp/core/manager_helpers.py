@@ -42,9 +42,11 @@ class HelpersMixin:
             )
         else:
             with self.db.get_session() as new_session:
-                return self._sync_parent_status_with_session(
+                result = self._sync_parent_status_with_session(
                     parent_item_id, new_session, visited
                 )
+                new_session.commit()
+                return result
 
     def _sync_parent_status_with_session(
         self, parent_item_id: int, session, visited: set

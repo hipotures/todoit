@@ -382,7 +382,7 @@ class TestE2EComprehensiveMCP:
         assert "subtasks" in result["error"]
 
         # Complete the child, which should auto-complete parent
-        result = await todo_update_item_status("consistency_test", "child", status="completed")
+        result = await todo_update_item_status("consistency_test", "parent", subitem_key="child", status="completed")
         assert result["success"] == True
 
         # Verify parent is now completed

@@ -160,8 +160,8 @@ def item_status(ctx, list_key, item_key, subitem_key, status, state):
             target_type = "subitem"
             item = manager.update_item_status(
                 list_key=list_key,
-                item_key=item_key,  # This is the parent
-                subitem_key=subitem_key,
+                item_key=subitem_key,  # The subitem to update
+                parent_item_key=item_key,  # Parent item key
                 status=status,
                 completion_states=states if states else None,
             )
@@ -1122,7 +1122,7 @@ def state_remove(ctx, list_key, item_key, subitem_key, state_keys, force):
 
         # Remove specific states
         updated_item = manager.clear_item_completion_states(
-            list_key, target_key, existing_keys, parent_item_key=parent_key
+            list_key, target_key, parent_item_key=parent_key, state_keys=existing_keys
         )
         console.print(
             f"[green]✅ Removed {len(existing_keys)} completion state(s) from {target_type} '{target_key}'[/]"
@@ -1203,7 +1203,7 @@ def item_rename(ctx, list_key, item_key, new_key, new_title, parent_item_key, fo
             list_key=list_key,
             item_key=item_key,
             new_key=new_key,
-            new_title=new_title,
+            new_content=new_title,  # Map new_title to new_content for internal API
             parent_item_key=parent_item_key
         )
 

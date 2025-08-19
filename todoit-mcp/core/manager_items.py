@@ -63,8 +63,17 @@ class ItemsMixin:
         status: str,
         parent_item_key: Optional[str] = None,
         completion_states: Optional[Dict[str, bool]] = None,
+        subitem_key: Optional[str] = None,
     ) -> TodoItem:
         """6. Updates the status of a task"""
+        # Handle subitem_key parameter for backward compatibility
+        if subitem_key:
+            # When subitem_key is provided, item_key is the parent and subitem_key is the actual item
+            actual_item_key = subitem_key
+            parent_item_key = item_key
+        else:
+            actual_item_key = item_key
+        
         # Get the list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
@@ -79,17 +88,17 @@ class ItemsMixin:
             parent_item_id = parent_item.id
 
         # Get the item
-        db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item_id)
+        db_item = self.db.get_item_by_key_and_parent(db_list.id, actual_item_key, parent_item_id)
         if not db_item:
             if parent_item_key:
-                raise ValueError(f"Item '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+                raise ValueError(f"Item '{actual_item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
             else:
-                raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+                raise ValueError(f"Item '{actual_item_key}' not found in list '{list_key}'")
 
         # Check if item has subtasks - items with subtasks cannot have their status manually changed
         children = self.db.get_item_children(db_item.id)
         if children:
-            raise ValueError(f"Cannot manually change status of item '{item_key}' because it has subtasks. Status is automatically synchronized based on subtask statuses.")
+            raise ValueError(f"Cannot manually change status of item '{actual_item_key}' because it has subtasks. Status is automatically synchronized based on subtask statuses.")
 
         # Store old status for history
         old_status = db_item.status
@@ -97,7 +106,20 @@ class ItemsMixin:
         # Prepare updates
         updates = {"status": status}
         if completion_states is not None:
-            updates["completion_states"] = completion_states
+            # Merge with existing completion states
+            existing_states = db_item.completion_states or {}
+            merged_states = {**existing_states, **completion_states}
+            updates["completion_states"] = merged_states
+        
+        # Set timestamps based on status changes
+        if status == "in_progress" and db_item.started_at is None:
+            # Set started_at when first moving to in_progress
+            from .database import utc_now
+            updates["started_at"] = utc_now()
+        elif status == "completed":
+            # Set completed_at when moving to completed
+            from .database import utc_now
+            updates["completed_at"] = utc_now()
 
         # Update the item
         with self.db.get_session() as session:
@@ -121,7 +143,7 @@ class ItemsMixin:
         return self._db_to_model(db_item, TodoItem)
 
     def clear_item_completion_states(
-        self, list_key: str, item_key: str, parent_item_key: Optional[str] = None
+        self, list_key: str, item_key: str, parent_item_key: Optional[str] = None, state_keys: Optional[List[str]] = None
     ) -> TodoItem:
         """Clear completion states for an item"""
         # Get the list
@@ -143,11 +165,34 @@ class ItemsMixin:
             if parent_item_key:
                 raise ValueError(f"Item '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
             else:
-                raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
+                raise ValueError(f"Item '{item_key}' does not exist")
 
-        # Clear completion states
-        updates = {"completion_states": {}}
+        # Store old states for history
+        old_states = db_item.completion_states or {}
+        
+        # Clear completion states - either specific keys or all
+        if state_keys is not None:
+            if state_keys:  # Non-empty list
+                # Clear only specific keys
+                new_states = {k: v for k, v in old_states.items() if k not in state_keys}
+            else:  # Empty list
+                # Don't clear anything
+                new_states = old_states.copy()
+        else:
+            # Clear all states (None was passed)
+            new_states = {}
+            
+        updates = {"completion_states": new_states}
         db_item = self.db.update_item(db_item.id, updates)
+
+        # Record in history
+        self._record_history(
+            item_id=db_item.id,
+            list_id=db_list.id,
+            action="states_cleared",
+            old_value={"completion_states": old_states},
+            new_value={"completion_states": new_states},
+        )
 
         return self._db_to_model(db_item, TodoItem)
 

@@ -160,7 +160,7 @@ class TestMCPRename:
         
         assert result["success"] == False
         assert "error" in result
-        assert "At least one of new_key or new_title must be provided" in result["error"]
+        assert "Either new_key or new_content must be provided" in result["error"]
         
         # Test item not found
         result = await todo_rename_item(

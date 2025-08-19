@@ -149,7 +149,7 @@ class TestLimits:
         # Test completion logic with many subtasks
         # Complete all but one subitem
         for i in range(num_subtasks - 1):
-            manager.update_item_status("wide_list", f"child_{i}", status="completed")
+            manager.update_item_status("wide_list", f"child_{i}", status="completed", parent_item_key="parent")
 
         # Parent should not auto-complete yet
         parent = manager.get_item("wide_list", "parent")
@@ -157,7 +157,7 @@ class TestLimits:
 
         # Complete last subitem
         manager.update_item_status(
-            "wide_list", f"child_{num_subtasks - 1}", status="completed"
+            "wide_list", f"child_{num_subtasks - 1}", status="completed", parent_item_key="parent"
         )
 
         # Parent should now auto-complete

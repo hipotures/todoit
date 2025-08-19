@@ -31,13 +31,13 @@ def manager_with_test_data(tmp_path):
     manager.add_subitem("test_list", "parent_task2", "test", "Write tests")
 
     # Set some initial statuses
-    manager.update_item_status("test_list", "generate", status="completed")
-    manager.update_item_status("test_list", "download", status="pending")
-    manager.update_item_status("test_list", "process", status="pending")
+    manager.update_item_status("test_list", "generate", status="completed", parent_item_key="parent_task")
+    manager.update_item_status("test_list", "download", status="pending", parent_item_key="parent_task")
+    manager.update_item_status("test_list", "process", status="pending", parent_item_key="parent_task")
 
-    manager.update_item_status("test_list", "design", status="completed")
-    manager.update_item_status("test_list", "code", status="completed")
-    manager.update_item_status("test_list", "test", status="pending")
+    manager.update_item_status("test_list", "design", status="completed", parent_item_key="parent_task2")
+    manager.update_item_status("test_list", "code", status="completed", parent_item_key="parent_task2")
+    manager.update_item_status("test_list", "test", status="pending", parent_item_key="parent_task2")
 
     return manager
 
@@ -203,8 +203,8 @@ class TestFindSubitemsByStatus:
         manager.add_subitem("test_list", "parent_task3", "download_v3", "Download v3")
 
         # Set statuses for third parent
-        manager.update_item_status("test_list", "generate_v3", status="in_progress")
-        manager.update_item_status("test_list", "download_v3", status="pending")
+        manager.update_item_status("test_list", "generate_v3", status="in_progress", parent_item_key="parent_task3")
+        manager.update_item_status("test_list", "download_v3", status="pending", parent_item_key="parent_task3")
 
         # Search for original conditions should still work
         matches = manager.find_subitems_by_status(
@@ -236,7 +236,7 @@ class TestFindSubitemsByStatusIntegration:
         # Parent should have status in_progress due to mixed children
 
         # Complete download - this should trigger parent sync
-        manager.update_item_status("test_list", "download", status="completed")
+        manager.update_item_status("test_list", "download", status="completed", parent_item_key="parent_task")
 
         # Now search for completed downloads with completed generation
         matches = manager.find_subitems_by_status(
@@ -271,9 +271,9 @@ class TestFindSubitemsByStatusIntegration:
 
             # Set statuses for some groups
             if i % 3 == 0:
-                manager.update_item_status("perf_test", f"step1_{i}", status="completed")
-                manager.update_item_status("perf_test", f"step2_{i}", status="pending")
-                manager.update_item_status("perf_test", f"step3_{i}", status="pending")
+                manager.update_item_status("perf_test", f"step1_{i}", status="completed", parent_item_key=parent_key)
+                manager.update_item_status("perf_test", f"step2_{i}", status="pending", parent_item_key=parent_key)
+                manager.update_item_status("perf_test", f"step3_{i}", status="pending", parent_item_key=parent_key)
 
         # For this test, we need to search for specific conditions that exist
         # Let's search for one specific group we know exists (parent_0)

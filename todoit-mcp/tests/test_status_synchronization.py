@@ -124,9 +124,9 @@ class TestStatusSynchronization:
         # Change child status -> should propagate up 2 levels
         manager.update_item_status("test_list", "parent", subitem_key="child", status="in_progress")
 
-        # Check propagation
-        child = manager.get_item("test_list", "child")
-        parent = manager.get_item("test_list", "parent")
+        # Check propagation  
+        child = manager.get_item("test_list", "child", parent_item_key="parent")
+        parent = manager.get_item("test_list", "parent", parent_item_key="grandparent")
         grandparent = manager.get_item("test_list", "grandparent")
 
         assert child.status == "in_progress"
@@ -136,8 +136,8 @@ class TestStatusSynchronization:
         # Complete child -> all should be completed
         manager.update_item_status("test_list", "parent", subitem_key="child", status="completed")
 
-        child = manager.get_item("test_list", "child")
-        parent = manager.get_item("test_list", "parent")
+        child = manager.get_item("test_list", "child", parent_item_key="parent")
+        parent = manager.get_item("test_list", "parent", parent_item_key="grandparent")
         grandparent = manager.get_item("test_list", "grandparent")
 
         assert child.status == "completed"
@@ -179,7 +179,7 @@ class TestStatusSynchronization:
         assert parent.status == "in_progress"
 
         # Delete pending subitem
-        manager.delete_item("test_list", "sub2")
+        manager.delete_item("test_list", "sub2", parent_item_key="parent")
 
         # Parent should now be completed (only completed subitem remains)
         parent = manager.get_item("test_list", "parent")
@@ -187,7 +187,7 @@ class TestStatusSynchronization:
 
         # Delete last subitem - parent status should remain completed
         # (no automatic change when all subtasks removed)
-        manager.delete_item("test_list", "sub1")
+        manager.delete_item("test_list", "sub1", parent_item_key="parent")
         parent = manager.get_item("test_list", "parent")
         # Parent should maintain its last synchronized status
         assert parent.status == "completed"
@@ -222,8 +222,8 @@ class TestStatusSynchronization:
         )  # branch2 -> pending
 
         # Check intermediate statuses
-        branch1 = manager.get_item("test_list", "branch1")
-        branch2 = manager.get_item("test_list", "branch2")
+        branch1 = manager.get_item("test_list", "branch1", parent_item_key="root")
+        branch2 = manager.get_item("test_list", "branch2", parent_item_key="root")
         root = manager.get_item("test_list", "root")
 
         assert branch1.status == "completed"  # all children completed
@@ -234,7 +234,7 @@ class TestStatusSynchronization:
         manager.update_item_status("test_list", "branch2", subitem_key="leaf3", status="completed")
 
         # Everything should cascade to completed
-        branch2 = manager.get_item("test_list", "branch2")
+        branch2 = manager.get_item("test_list", "branch2", parent_item_key="root")
         root = manager.get_item("test_list", "root")
 
         assert branch2.status == "completed"
@@ -298,7 +298,7 @@ class TestStatusSynchronization:
         # Normal case - both subitem and parent should update
         manager.update_item_status("test_list", "parent", subitem_key="sub1", status="completed")
 
-        sub1 = manager.get_item("test_list", "sub1")
+        sub1 = manager.get_item("test_list", "sub1", parent_item_key="parent")
         parent = manager.get_item("test_list", "parent")
 
         assert sub1.status == "completed"

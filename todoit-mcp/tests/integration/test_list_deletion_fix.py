@@ -56,14 +56,14 @@ class TestListDeletionFix:
 
         # Create subitem
         temp_manager.add_subitem("complex_list", "parent_item", "subtask1", "Subitem 1")
-        temp_manager.set_item_property("complex_list", "subtask1", "assignee", "alice")
+        temp_manager.set_item_property("complex_list", "subtask1", "assignee", "alice", parent_item_key="parent_item")
 
         # Update subitem status (creates history and auto-syncs parent)
         temp_manager.update_item_status(
-            "complex_list", "subtask1", status="in_progress"
+            "complex_list", "subtask1", status="in_progress", parent_item_key="parent_item"
         )
         temp_manager.update_item_content(
-            "complex_list", "subtask1", "Updated subitem content"
+            "complex_list", "subtask1", "Updated subitem content", parent_item_key="parent_item"
         )
 
         # Add list properties

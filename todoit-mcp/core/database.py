@@ -607,10 +607,24 @@ class Database:
         return self.update_item(item_id, updates)
 
     def delete_item(self, item_id: int) -> bool:
-        """Delete item"""
+        """Delete item (and related records)"""
         with self.get_session() as session:
             db_item = session.query(TodoItemDB).filter(TodoItemDB.id == item_id).first()
             if db_item:
+                # Delete related records first to avoid foreign key constraints
+                # Delete history records
+                session.query(TodoHistoryDB).filter(TodoHistoryDB.item_id == item_id).delete(synchronize_session=False)
+                
+                # Delete item properties
+                session.query(ItemPropertyDB).filter(ItemPropertyDB.item_id == item_id).delete(synchronize_session=False)
+                
+                # Delete dependencies where this item is involved
+                session.query(ItemDependencyDB).filter(
+                    (ItemDependencyDB.dependent_item_id == item_id) | 
+                    (ItemDependencyDB.required_item_id == item_id)
+                ).delete(synchronize_session=False)
+                
+                # Finally delete the item itself
                 session.delete(db_item)
                 session.commit()
                 return True

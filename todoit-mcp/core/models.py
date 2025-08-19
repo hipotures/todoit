@@ -38,10 +38,20 @@ class HistoryAction(str, Enum):
 
     CREATED = "created"
     UPDATED = "updated"
+    STATUS_UPDATED = "status_updated"
+    CONTENT_UPDATED = "content_updated"
     COMPLETED = "completed"
     FAILED = "failed"
     DELETED = "deleted"
     STATES_CLEARED = "states_cleared"
+    RENAME_LIST = "rename_list"
+    EXPORTED = "exported"
+    DEPENDENCY_ADDED = "dependency_added"
+    DEPENDENCY_REMOVED = "dependency_removed"
+    RENAMED = "renamed"
+    SUBITEM_CREATED = "subitem_created"
+    AUTO_COMPLETED = "auto_completed"
+    MOVED_TO_SUBITEM = "moved_to_subitem"
 
 
 class DependencyType(str, Enum):

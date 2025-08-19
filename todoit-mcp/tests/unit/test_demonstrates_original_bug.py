@@ -177,8 +177,8 @@ def test_all_fixed_functions_work_correctly():
         
         # Test 4: clear_item_completion_states() with parent_item_key
         # First add some states
-        manager.update_item_status("all_funcs", "groupA", subitem_key="shared_task", completion_states={"test": True})
-        manager.update_item_status("all_funcs", "groupB", subitem_key="shared_task", completion_states={"review": True})
+        manager.update_item_status("all_funcs", "groupA", status="in_progress", subitem_key="shared_task", completion_states={"test": True})
+        manager.update_item_status("all_funcs", "groupB", status="in_progress", subitem_key="shared_task", completion_states={"review": True})
         
         # Clear states from groupA only
         manager.clear_item_completion_states("all_funcs", "shared_task", parent_item_key="groupA")

@@ -162,7 +162,7 @@ class TestOriginalBugScenario:
         manager.update_item_content(
             list_key="0014_jane_eyre_subtask",
             item_key="scene_gen",
-            new_content="UPDATED: Scene generation for scene_0002.yaml",
+            content="UPDATED: Scene generation for scene_0002.yaml",
             parent_item_key="scene_0002"
         )
         
@@ -311,12 +311,14 @@ class TestErrorConditionsWithDuplicates:
         # Add different completion states to same-named subitems
         manager.update_item_status(
             "0014_jane_eyre_subtask", "scene_0001", 
+            status="in_progress",
             subitem_key="image_gen",
             completion_states={"reviewed": True, "approved": False}
         )
         
         manager.update_item_status(
             "0014_jane_eyre_subtask", "scene_0002",
+            status="in_progress",
             subitem_key="image_gen",
             completion_states={"tested": True, "deployed": False}
         )

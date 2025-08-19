@@ -766,13 +766,13 @@ async def todo_get_item(
                 }
             else:
                 # Get specific subitem by key
-                subitem = mgr.get_item(list_key=list_key, item_key=subitem_key)
+                subitem = mgr.get_item(list_key=list_key, item_key=subitem_key, parent_item_key=item_key)
                 if subitem:
                     return {"success": True, "subitem": map_item_content_to_title(clean_to_dict_result(subitem.to_dict(), "item"))}
                 else:
                     return {
                         "success": False,
-                        "error": f"Subitem '{subitem_key}' not found in list '{list_key}'",
+                        "error": f"Subitem '{subitem_key}' not found under parent '{item_key}' in list '{list_key}'",
                     }
         else:
             # Get regular item
@@ -1888,7 +1888,7 @@ async def todo_rename_item(
         list_key=list_key,
         item_key=actual_item_key,
         new_key=new_key,
-        new_title=new_title,
+        new_content=new_title,  # Map new_title to new_content for internal API
         parent_item_key=parent_item_key
     )
     

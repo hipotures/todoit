@@ -72,7 +72,7 @@ class TestItemRename:
         updated_item = manager.rename_item(
             list_key="project",
             item_key="task1",
-            new_title="Updated Task Title"
+            new_content="Updated Task Title"
         )
         
         assert updated_item.item_key == "task1"  # Key unchanged
@@ -91,7 +91,7 @@ class TestItemRename:
             list_key="project",
             item_key="task2",
             new_key="auth_task",
-            new_title="Authentication Task Implementation"
+            new_content="Authentication Task Implementation"
         )
         
         assert updated_item.item_key == "auth_task"
@@ -115,7 +115,7 @@ class TestItemRename:
             list_key="project",
             item_key="design",
             new_key="ui_design",
-            new_title="UI/UX Design Phase",
+            new_content="UI/UX Design Phase",
             parent_item_key="task1"
         )
         
@@ -137,7 +137,7 @@ class TestItemRename:
         manager, list1, item1, item2, subitem1, subitem2 = setup_test_data
         
         # Test no parameters provided
-        with pytest.raises(ValueError, match="At least one of new_key or new_title must be provided"):
+        with pytest.raises(ValueError, match="Either new_key or new_content must be provided"):
             manager.rename_item("project", "task1")
         
         # Test item not found
@@ -320,7 +320,7 @@ class TestItemRename:
             list_key="project",
             item_key="task2", 
             new_key="renamed_with_props",
-            new_title="Renamed Task"
+            new_content="Renamed Task"
         )
         
         # Verify properties are preserved

@@ -52,7 +52,7 @@ class TestSubtasksAPI:
         result = manager.move_to_subitem("test_list", "item_2", "item_1")
 
         # Verify the move
-        item_2 = manager.get_item("test_list", "item_2")
+        item_2 = manager.get_item("test_list", "item_2", parent_item_key="item_1")
         assert item_2.parent_item_id is not None
 
         # Verify it appears in subtasks

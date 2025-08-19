@@ -247,7 +247,7 @@ class TestLiveMonitoring:
         assert len(all_items) == 3  # parent + 2 subtasks
 
         # Change subitem status
-        temp_manager.update_item_status("hierarchy_test", "sub1", status="completed")
+        temp_manager.update_item_status("hierarchy_test", "sub1", status="completed", parent_item_key="parent")
 
         # Get progress (should include subtasks)
         # Note: parent status is now auto-synchronized to "in_progress" when subtasks are mixed
@@ -263,9 +263,9 @@ class TestLiveMonitoring:
         result = temp_manager.get_list("nonexistent_list")
         assert result is None
 
-        # Try to get items from non-existent list - returns empty list
-        items = temp_manager.get_list_items("nonexistent_list")
-        assert items == []
+        # Try to get items from non-existent list - should raise ValueError
+        with pytest.raises(ValueError, match="does not exist"):
+            temp_manager.get_list_items("nonexistent_list")
 
         # Try to get progress from non-existent list - should raise error
         with pytest.raises(ValueError, match="List 'nonexistent_list' does not exist"):
