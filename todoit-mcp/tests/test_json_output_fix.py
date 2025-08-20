@@ -145,7 +145,7 @@ class TestMCPEnhancedGetList:
         try:
             # Call enhanced function
             result = await todo_get_list(
-                key=list_key,
+                list_key=list_key,
                 include_items=True,
                 include_properties=True,
                 mgr=manager
@@ -196,7 +196,7 @@ class TestMCPEnhancedGetList:
         old_manager = self._setup_mcp_manager(manager)
         try:
             result = await todo_get_list(
-                key=list_key,
+                list_key=list_key,
                 include_items=True,
                 include_properties=False,
                 mgr=manager
@@ -217,7 +217,7 @@ class TestMCPEnhancedGetList:
         old_manager = self._setup_mcp_manager(manager)
         try:
             result = await todo_get_list(
-                key=list_key,
+                list_key=list_key,
                 include_items=False,
                 include_properties=True,
                 mgr=manager
@@ -238,7 +238,7 @@ class TestMCPEnhancedGetList:
         old_manager = self._setup_mcp_manager(manager)
         try:
             result = await todo_get_list(
-                key=list_key,
+                list_key=list_key,
                 include_items=False,
                 include_properties=False,
                 mgr=manager
@@ -259,7 +259,7 @@ class TestMCPEnhancedGetList:
         old_manager = self._setup_mcp_manager(manager)
         try:
             result = await todo_get_list(
-                key="nonexistent",
+                list_key="nonexistent",
                 include_items=True,
                 include_properties=True,
                 mgr=manager
@@ -295,7 +295,7 @@ class TestBackwardCompatibility:
         old_manager = self._setup_mcp_manager(manager)
         try:
             # Call without explicit parameters (should default to include everything)
-            result = await todo_get_list(key=list_key, mgr=manager)
+            result = await todo_get_list(list_key=list_key, mgr=manager)
         finally:
             self._restore_mcp_manager(old_manager)
         
