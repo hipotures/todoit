@@ -5,6 +5,31 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.13.1] - 2025-08-20
+
+### 🔧 API Consistency Fix
+
+#### 🚨 **BREAKING CHANGE**: Parameter Naming Standardization
+- **Fixed**: `todo_get_list` now uses `list_key` parameter (was: `key`)
+- **Fixed**: `todo_delete_list` now uses `list_key` parameter (was: `key`)
+
+This ensures **100% consistent parameter naming** across all 51 MCP tools:
+- `list_key` - identifies lists
+- `item_key` - identifies items  
+- `subitem_key` - identifies subitems
+
+#### 📚 **Documentation Updates**
+- **Updated**: MCP Tools documentation with corrected parameter examples
+- **Added**: Breaking change notice with migration guidance
+- **Updated**: All usage examples to use consistent `list_key="..."` syntax
+
+#### 🎯 **Impact**
+- **MCP Users**: Update calls from `todo_get_list(key="...")` to `todo_get_list(list_key="...")`
+- **Claude Code**: Parameter consistency improves API predictability and developer experience
+- **Future-Proof**: Foundation for consistent API evolution
+
+---
+
 ## [2.13.0] - 2025-08-19
 
 ### 🚀 MAJOR: Performance Optimization - List Display Speedup (2775% faster!)

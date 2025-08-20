@@ -239,7 +239,7 @@ async def todo_create_list(
 @conditional_tool
 @mcp_error_handler
 async def todo_get_list(
-    key: str, 
+    list_key: str, 
     include_items: bool = True, 
     include_properties: bool = True,
     mgr=None
@@ -247,16 +247,16 @@ async def todo_get_list(
     """Get TODO list by key or ID with optional items and properties.
 
     Args:
-        key: List key or ID to retrieve (required)
+        list_key: List key or ID to retrieve (required)
         include_items: Whether to include list items (default: True)
         include_properties: Whether to include list properties (default: True)
 
     Returns:
         Dictionary with success status, list details, and optionally items and properties
     """
-    todo_list = mgr.get_list(key)
+    todo_list = mgr.get_list(list_key)
     if not todo_list:
-        return {"success": False, "error": f"List '{key}' not found"}
+        return {"success": False, "error": f"List '{list_key}' not found"}
 
     # Base response with list info
     response = {
@@ -296,22 +296,22 @@ async def todo_get_list(
 
 
 @conditional_tool
-async def todo_delete_list(key: str) -> Dict[str, Any]:
+async def todo_delete_list(list_key: str) -> Dict[str, Any]:
     """Delete TODO list with dependency validation.
 
     Args:
-        key: List key or ID to delete (required)
+        list_key: List key or ID to delete (required)
 
     Returns:
         Dictionary with success status and deletion confirmation
     """
     try:
         mgr = init_manager()
-        success = mgr.delete_list(key)
+        success = mgr.delete_list(list_key)
         return {
             "success": success,
             "message": (
-                f"List '{key}' deleted successfully" if success else "List not found"
+                f"List '{list_key}' deleted successfully" if success else "List not found"
             ),
         }
     except Exception as e:

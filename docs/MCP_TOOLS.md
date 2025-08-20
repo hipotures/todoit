@@ -4,6 +4,16 @@
 
 TODOIT MCP provides 51 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
 
+## 🔧 API Consistency Fix (v2.13.1)
+**BREAKING CHANGE**: Fixed parameter naming inconsistency for API consistency:
+- **`todo_get_list`** now uses `list_key` parameter (was: `key`)
+- **`todo_delete_list`** now uses `list_key` parameter (was: `key`)
+
+This ensures consistent parameter naming across all MCP tools:
+- `list_key` - identifies lists
+- `item_key` - identifies items  
+- `subitem_key` - identifies subitems
+
 ## ✨ Natural Sorting (v2.11.0)
 All MCP tools now return naturally sorted results:
 - **Lists** sorted by `list_key`: `0014_project` before `0037_project`
@@ -310,7 +320,7 @@ next_task = await todo_get_next_pending_enhanced("project", smart_subtasks=True)
 ### Enhanced List Retrieval (New in v1.21.0)
 ```python
 # Get complete list information in a single call (default - includes everything)
-full_data = await todo_get_list("project")
+full_data = await todo_get_list(list_key="project")
 # Returns: {
 #   "success": True,
 #   "list": {"id": 1, "list_key": "project", "title": "My Project", ...},
@@ -319,15 +329,15 @@ full_data = await todo_get_list("project")
 # }
 
 # Get only list details (no items or properties)
-list_only = await todo_get_list("project", include_items=False, include_properties=False)
+list_only = await todo_get_list(list_key="project", include_items=False, include_properties=False)
 # Returns: {"success": True, "list": {...}}
 
 # Get list with items but no properties
-with_items = await todo_get_list("project", include_items=True, include_properties=False)
+with_items = await todo_get_list(list_key="project", include_items=True, include_properties=False)
 # Returns: {"success": True, "list": {...}, "items": {...}}
 
 # Get list with properties but no items  
-with_props = await todo_get_list("project", include_items=False, include_properties=True)
+with_props = await todo_get_list(list_key="project", include_items=False, include_properties=True)
 # Returns: {"success": True, "list": {...}, "properties": {...}}
 ```
 
@@ -873,4 +883,4 @@ await todo_create_list(
 
 ---
 
-*Last updated: August 18, 2025 - All 51 tools production ready with 3-level configuration system*
+*Last updated: August 20, 2025 - API consistency fix: standardized parameter naming across all tools*
