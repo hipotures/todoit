@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TODOIT - Web Interface</title>
+    
+    <!-- Tabulator CSS (CDN) + local fallback styles in style.css -->
+    <link href="https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator.min.css" rel="stylesheet" onerror="console.warn('Tabulator CSS CDN failed, using local fallback styles')">
+    
+    <!-- Modern Design System -->
+    <link href="{{ url_for('static', path='/css/variables.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', path='/css/modern-styles.css') }}" rel="stylesheet">
+    
+    <!-- Fallback to original styles -->
+    <link href="{{ url_for('static', path='/css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>📋 TODOIT Web</h1>
+                <div class="header-actions">
+                    <button id="theme-toggle" class="btn btn-secondary" title="Przełącz motyw">🌙</button>
+                    <button id="config-btn" class="btn btn-secondary">⚙️ Konfiguracja</button>
+                    <button id="refresh-btn" class="btn btn-primary">🔄 Odśwież</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="breadcrumb" id="breadcrumb">
+            <span class="breadcrumb-item active">📋 Wszystkie listy</span>
+        </nav>
+
+        <!-- Main View Container -->
+        <div id="main-container">
+            <!-- Lists View -->
+            <div id="lists-view" class="view-container">
+                <div class="controls">
+                    <div class="search-container">
+                        <input type="text" id="lists-search" placeholder="🔍 Szukaj w listach..." class="search-input">
+                    </div>
+                    <div class="filter-container">
+                        <select id="lists-tag-filter" class="tag-select">
+                            <option value="">🏷️ Wszystkie tagi</option>
+                        </select>
+                        <button id="lists-favorites-toggle" class="btn btn-outline">⭐ Ulubione</button>
+                        <button id="new-list-btn" class="btn btn-primary">➕ Nowa lista</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <div id="lists-table"></div>
+                </div>
+                <div id="lists-pagination" class="pagination-container"></div>
+            </div>
+
+            <!-- List Details View -->
+            <div id="list-details-view" class="view-container" style="display: none;">
+                <div class="list-header">
+                    <div class="list-info">
+                        <h2 id="list-title"></h2>
+                        <p id="list-description"></p>
+                        <div id="list-properties" class="properties-display"></div>
+                    </div>
+                    <div class="list-actions">
+                        <button id="back-to-lists" class="btn btn-secondary">← Powrót</button>
+                        <button id="edit-properties" class="btn btn-outline">⚙️ Właściwości</button>
+                        <button id="new-item-btn" class="btn btn-primary">➕ Nowy item</button>
+                    </div>
+                </div>
+                <div class="controls">
+                    <div class="search-container">
+                        <input type="text" id="items-search" placeholder="🔍 Szukaj w itemach..." class="search-input">
+                    </div>
+                    <div class="filter-container">
+                        <select id="items-status-filter" class="status-filter">
+                            <option value="">Wszystkie statusy</option>
+                            <option value="pending">Oczekujące</option>
+                            <option value="in_progress">W trakcie</option>
+                            <option value="completed">Ukończone</option>
+                            <option value="failed">Nieudane</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <div id="items-table"></div>
+                </div>
+                <div id="items-pagination" class="pagination-container"></div>
+            </div>
+        </div>
+
+        <!-- Modern Loading Overlay -->
+        <div id="loading" class="loading-overlay">
+            <div class="loading-spinner"></div>
+        </div>
+    </div>
+
+    <!-- Configuration Modal -->
+    <div id="config-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Kolumny</h2>
+                <button class="close-btn">✖️</button>
+            </div>
+            <div class="modal-body">
+                <div class="column-config">
+                    <label><input type="checkbox" id="col-list-title" checked> Nazwa listy</label>
+                    <label><input type="checkbox" id="col-item-key" checked> Klucz itemu</label>
+                    <label><input type="checkbox" id="col-content" checked> Treść</label>
+                    <label><input type="checkbox" id="col-status" checked> Status</label>
+                    <label><input type="checkbox" id="col-favorite" checked> Ulubione</label>
+                    <label><input type="checkbox" id="col-position"> Pozycja</label>
+                    <label><input type="checkbox" id="col-created-at"> Data utworzenia</label>
+                    <label><input type="checkbox" id="col-updated-at"> Data aktualizacji</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-config" class="btn btn-primary">✅ OK</button>
+                <button class="close-btn btn btn-secondary">❌</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Tabulator JavaScript (CDN). If blocked, app falls back to simple list rendering. -->
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@6.3.1/dist/js/tabulator.min.js" onerror="console.warn('Tabulator JS CDN failed; using fallback list rendering')"></script>
+    
+    <!-- Modern Modular Application -->
+    <!-- <script src="{{ url_for('static', path='/js/theme-manager.js') }}"></script> -->
+    <script src="{{ url_for('static', path='/js/modules/api/ApiService.js') }}"></script>
+    <script src="{{ url_for('static', path='/js/modules/ui/Toast.js') }}"></script>
+    <script src="{{ url_for('static', path='/js/modules/ui/Loading.js') }}"></script>
+    <!-- <script src="{{ url_for('static', path='/js/app-modular.js') }}"></script> -->
+    
+    <!-- Full Featured Application (stable version) -->
+    <script src="{{ url_for('static', path='/js/app-new.js') }}"></script>
+</body>
+</html>
