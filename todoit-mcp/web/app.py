@@ -423,10 +423,20 @@ async def update_subitem(list_key: str, item_key: str, subitem_key: str, update:
         if update.status is not None:
             mgr.update_item_status(
                 list_key=list_key,
-                item_key=item_key,
-                subitem_key=subitem_key,
-                status=update.status
+                item_key=subitem_key,
+                status=update.status,
+                parent_item_key=item_key
             )
+            
+            # Explicitly trigger parent status synchronization
+            try:
+                # Get the parent item to sync its status
+                parent_items = mgr.get_list_items(list_key)
+                parent_item = next((item for item in parent_items if getattr(item, 'item_key', None) == item_key), None)
+                if parent_item and hasattr(parent_item, 'id'):
+                    mgr._sync_parent_status(parent_item.id)
+            except Exception as e:
+                print(f"Warning: Could not sync parent status: {e}")
         
         return {"success": True, "message": "Subitem updated successfully"}
     
@@ -718,6 +728,48 @@ async def delete_subitem_property(list_key: str, item_key: str, subitem_key: str
         
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/lists/{list_key}/sync-parent-statuses")
+async def sync_parent_statuses(list_key: str):
+    """Manually sync all parent statuses in a list"""
+    try:
+        mgr = get_manager()
+        
+        # Get all items in the list
+        all_items = mgr.get_list_items(list_key, limit=10000)
+        
+        # Find all parent items (items that have subitems)
+        parent_items = []
+        parent_ids = set()
+        
+        for item in all_items:
+            item_dict = item.to_dict() if hasattr(item, 'to_dict') else (item.__dict__ if hasattr(item, '__dict__') else item)
+            parent_id = item_dict.get('parent_item_id')
+            if parent_id and parent_id not in parent_ids:
+                parent_ids.add(parent_id)
+                # Find the parent item by ID
+                parent_item = next((i for i in all_items if getattr(i, 'id', None) == parent_id), None)
+                if parent_item:
+                    parent_items.append(parent_item)
+        
+        # Sync status for each parent
+        synced_count = 0
+        for parent_item in parent_items:
+            try:
+                if hasattr(parent_item, 'id'):
+                    mgr._sync_parent_status(parent_item.id)
+                    synced_count += 1
+            except Exception as e:
+                print(f"Error syncing parent {getattr(parent_item, 'item_key', 'unknown')}: {e}")
+        
+        return {
+            "success": True,
+            "message": f"Synced {synced_count} parent statuses",
+            "synced_count": synced_count
+        }
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

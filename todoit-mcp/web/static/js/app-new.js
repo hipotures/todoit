@@ -82,6 +82,9 @@ class TodoAppNew {
 
         // Edit properties button
         bind('edit-properties', 'click', () => { if (this.currentListKey) this.showPropertiesModal(this.currentListKey); });
+        
+        // Sync statuses button
+        bind('sync-statuses', 'click', () => { if (this.currentListKey) this.syncParentStatuses(); });
 
         // Items view controls
         bind('items-search', 'input', (e) => { if (this.itemsTable) this.itemsTable.setFilter('content', 'like', e.target.value); });
@@ -864,21 +867,33 @@ class TodoAppNew {
             const updateData = {};
             updateData[field] = value;
 
+            console.log('Updating item:', this.currentListKey, data.item_key, updateData);
+
             const response = await fetch(`/api/items/${this.currentListKey}/${data.item_key}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updateData)
             });
 
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+
             const result = await response.json();
             if (result.success) {
                 this.showToast('Zaktualizowano pomyślnie', 'success');
+                // Reload data if this was a status update to reflect any changes
+                if (field === 'status') {
+                    await this.loadItemsData();
+                }
             } else {
-                this.showToast('Błąd podczas aktualizacji', 'error');
+                this.showToast(`Błąd: ${result.message || 'Unknown error'}`, 'error');
                 cell.restoreOldValue();
             }
         } catch (error) {
-            this.showToast('Błąd połączenia', 'error');
+            console.error('Error updating item:', error);
+            this.showToast(`Błąd połączenia: ${error.message}`, 'error');
             cell.restoreOldValue();
         }
     }
@@ -892,22 +907,64 @@ class TodoAppNew {
             const updateData = {};
             updateData[field] = value;
 
+            console.log('Updating subitem:', this.currentListKey, parentData.item_key, subitemData.item_key, updateData);
+
             const response = await fetch(`/api/subitems/${this.currentListKey}/${parentData.item_key}/${subitemData.item_key}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updateData)
             });
 
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+
             const result = await response.json();
             if (result.success) {
                 this.showToast('Subitem zaktualizowany', 'success');
+                // Reload data to reflect potential parent status changes
+                await this.loadItemsData();
             } else {
-                this.showToast('Błąd podczas aktualizacji subitemu', 'error');
+                this.showToast(`Błąd subitemu: ${result.message || 'Unknown error'}`, 'error');
                 cell.restoreOldValue();
             }
         } catch (error) {
-            this.showToast('Błąd połączenia', 'error');
+            console.error('Error updating subitem:', error);
+            this.showToast(`Błąd połączenia: ${error.message}`, 'error');
             cell.restoreOldValue();
+        }
+    }
+
+    async syncParentStatuses() {
+        if (!this.currentListKey) return;
+        
+        try {
+            this.showLoading();
+            
+            const response = await fetch(`/api/lists/${this.currentListKey}/sync-parent-statuses`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+            
+            const result = await response.json();
+            if (result.success) {
+                this.showToast(`Zsynchronizowano ${result.synced_count} statusów rodzica`, 'success');
+                // Reload data to show updated statuses
+                await this.loadItemsData();
+            } else {
+                this.showToast(`Błąd synchronizacji: ${result.message || 'Unknown error'}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error syncing parent statuses:', error);
+            this.showToast(`Błąd synchronizacji: ${error.message}`, 'error');
+        } finally {
+            this.hideLoading();
         }
     }
 

@@ -950,7 +950,7 @@ class Database:
 
     def find_items_by_property(
         self,
-        list_id: int,
+        list_id: Optional[int],
         property_key: str,
         property_value: str,
         limit: Optional[int] = None,
@@ -958,7 +958,7 @@ class Database:
         """Find items by property value with optional limit
 
         Args:
-            list_id: List ID to search in
+            list_id: List ID to search in (None = search all lists)
             property_key: Property name to match
             property_value: Property value to match
             limit: Maximum number of results (None = all)
@@ -967,14 +967,18 @@ class Database:
             List of TodoItemDB objects matching the criteria
         """
         with self.get_session() as session:
-            items = (
+            query = (
                 session.query(TodoItemDB)
                 .join(ItemPropertyDB, TodoItemDB.id == ItemPropertyDB.item_id)
-                .filter(TodoItemDB.list_id == list_id)
                 .filter(ItemPropertyDB.property_key == property_key)
                 .filter(ItemPropertyDB.property_value == property_value)
-                .all()
             )
+            
+            # Only filter by list_id if provided
+            if list_id is not None:
+                query = query.filter(TodoItemDB.list_id == list_id)
+                
+            items = query.all()
 
             # Sort naturally by item_key
             items.sort(key=lambda item: self.natural_sort_key(item.item_key))

@@ -719,7 +719,7 @@ def item_move_to_subitem(ctx, list_key, item_key, new_parent_key, force):
 
 
 @item.command("find")
-@click.option("--list", "list_key", required=True, help="List key")
+@click.option("--list", "list_key", required=False, help="List key (optional, if not provided searches all lists)")
 @click.option(
     "--property", "property_key", required=True, help="Property name to search for"
 )
@@ -736,11 +736,12 @@ def item_find(ctx, list_key, property_key, property_value, limit, first):
       todoit item find --list "mylist" --property "status" --value "reviewed"
       todoit item find --list "mylist" --property "issue_id" --value "123" --first
       todoit item find --list "mylist" --property "priority" --value "high" --limit 5
+      todoit item find --property "priority" --value "high"  # Search all lists
     """
     manager = get_manager(ctx.obj["db_path"])
 
     # Check if list is accessible based on FORCE_TAGS (environment isolation)
-    if not _check_list_access(manager, list_key):
+    if list_key and not _check_list_access(manager, list_key):
         console.print(f"[red]List '{list_key}' not found or not accessible[/]")
         console.print(
             "[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]"
@@ -762,9 +763,10 @@ def item_find(ctx, list_key, property_key, property_value, limit, first):
 
         if not items:
             # Use unified display for empty result
+            search_scope = list_key if list_key else "all lists"
             _display_records(
                 [],
-                f"🔍 Search Results for {property_key}='{property_value}' in '{list_key}'",
+                f"🔍 Search Results for {property_key}='{property_value}' in '{search_scope}'",
                 {},
             )
             return
@@ -796,7 +798,8 @@ def item_find(ctx, list_key, property_key, property_value, limit, first):
         }
 
         # Create title with search info
-        title = f"🔍 Found {len(items)} item(s) with {property_key}='{property_value}' in '{list_key}'"
+        search_scope = list_key if list_key else "all lists"
+        title = f"🔍 Found {len(items)} item(s) with {property_key}='{property_value}' in '{search_scope}'"
         if actual_limit:
             title += f" (limit: {actual_limit})"
 

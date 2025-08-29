@@ -149,3 +149,104 @@ class TestPropertySearchUnit:
         """Test database query without limit parameter."""
         # Complex database mocking - tested in integration tests instead
         pass
+
+    def test_find_items_by_property_no_list_key(self, manager_with_mock, mock_db):
+        """Test property search across all lists (list_key=None)."""
+        # Mock database objects from multiple lists
+        mock_item1 = MagicMock(
+            id=1,
+            list_id=1,
+            item_key="task1",
+            content="First item",
+            status="pending",
+            position=1,
+            created_at=datetime(2024, 1, 1),
+        )
+        mock_item2 = MagicMock(
+            id=2,
+            list_id=2,
+            item_key="task2",
+            content="Second item",
+            status="pending",
+            position=1,
+            created_at=datetime(2024, 1, 2),
+        )
+
+        mock_db.find_items_by_property.return_value = [mock_item1, mock_item2]
+
+        # Mock the model conversion
+        mock_todo1 = TodoItem(
+            id=1,
+            list_id=1,
+            item_key="task1",
+            content="First item",
+            status=ItemStatus.PENDING,
+            position=1,
+            created_at=datetime(2024, 1, 1),
+            updated_at=datetime(2024, 1, 1),
+        )
+        mock_todo2 = TodoItem(
+            id=2,
+            list_id=2,
+            item_key="task2",
+            content="Second item",
+            status=ItemStatus.PENDING,
+            position=1,
+            created_at=datetime(2024, 1, 2),
+            updated_at=datetime(2024, 1, 2),
+        )
+
+        with patch.object(
+            manager_with_mock, "_db_to_model", side_effect=[mock_todo1, mock_todo2]
+        ):
+            result = manager_with_mock.find_items_by_property(
+                None, "priority", "high"
+            )
+
+        # Assertions
+        assert len(result) == 2
+        assert result[0].item_key == "task1"
+        assert result[0].list_id == 1
+        assert result[1].item_key == "task2"
+        assert result[1].list_id == 2
+        
+        # Should not call get_list_by_key when list_key is None
+        mock_db.get_list_by_key.assert_not_called()
+        
+        # Should call find_items_by_property with list_id=None
+        mock_db.find_items_by_property.assert_called_once_with(
+            None, "priority", "high", None
+        )
+
+    def test_find_items_by_property_no_list_key_with_limit(self, manager_with_mock, mock_db):
+        """Test property search across all lists with limit."""
+        mock_item = MagicMock(
+            id=1, 
+            list_id=1,
+            item_key="task1", 
+            content="First item", 
+            status="pending"
+        )
+        mock_db.find_items_by_property.return_value = [mock_item]
+
+        mock_todo = TodoItem(
+            id=1,
+            list_id=1,
+            item_key="task1",
+            content="First item",
+            status=ItemStatus.PENDING,
+            position=1,
+            created_at=datetime(2024, 1, 1),
+            updated_at=datetime(2024, 1, 1),
+        )
+
+        with patch.object(manager_with_mock, "_db_to_model", return_value=mock_todo):
+            result = manager_with_mock.find_items_by_property(
+                None, "status", "reviewed", limit=1
+            )
+
+        assert len(result) == 1
+        mock_db.get_list_by_key.assert_not_called()
+        mock_db.find_items_by_property.assert_called_once_with(
+            None, "status", "reviewed", 1
+        )

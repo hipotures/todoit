@@ -8,6 +8,14 @@
 			"env": {
 				"TODOIT_DB_PATH": "/tmp/test_todoit.db"
 			}
+		},
+		"playwright-cdp": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"@playwright/mcp@0.0.32",
+				"--cdp-endpoint=http://127.0.0.1:9223"
+			]
 		}
 	}
 }

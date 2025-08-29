@@ -1216,7 +1216,7 @@ async def todo_delete_item_property(
 @conditional_tool
 @mcp_error_handler
 async def todo_find_items_by_property(
-    list_key: str,
+    list_key: Optional[str],
     property_key: str,
     property_value: str,
     limit: Optional[int] = None,
@@ -1225,7 +1225,7 @@ async def todo_find_items_by_property(
     """Find items by property value with optional limit.
 
     Args:
-        list_key: Key of the list to search in (required)
+        list_key: Key of the list to search in (optional, None = search all lists)
         property_key: Name of the property to match (required)
         property_value: Value of the property to match (required)
         limit: Maximum number of results to return (optional, None = all)
@@ -1253,7 +1253,7 @@ async def todo_find_items_by_property(
         "success": True,
         "items": items_data,
         "count": len(items_data),
-        "list_key": list_key,
+        "list_key": list_key if list_key else "all_lists",
         "search_criteria": {
             "property_key": property_key,
             "property_value": property_value,

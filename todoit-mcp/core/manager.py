@@ -1049,7 +1049,7 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
 
     def find_items_by_property(
         self,
-        list_key: str,
+        list_key: Optional[str],
         property_key: str,
         property_value: str,
         limit: Optional[int] = None,
@@ -1057,7 +1057,7 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
         """Find items by property value with optional limit.
 
         Args:
-            list_key: The key of the list to search in.
+            list_key: The key of the list to search in (None = search all lists).
             property_key: The property name to match.
             property_value: The property value to match.
             limit: Maximum number of results to return (None = all).
@@ -1068,13 +1068,16 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
         Raises:
             ValueError: If the specified list is not found.
         """
-        db_list = self.db.get_list_by_key(list_key)
-        if not db_list:
-            raise ValueError(f"List '{list_key}' not found")
+        list_id = None
+        if list_key is not None:
+            db_list = self.db.get_list_by_key(list_key)
+            if not db_list:
+                raise ValueError(f"List '{list_key}' not found")
+            list_id = db_list.id
 
         # Use database layer for efficient search
         db_items = self.db.find_items_by_property(
-            db_list.id, property_key, property_value, limit
+            list_id, property_key, property_value, limit
         )
 
         # Convert to Pydantic models
