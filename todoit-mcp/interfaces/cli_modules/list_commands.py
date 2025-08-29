@@ -145,18 +145,10 @@ def list_create(
                 tags=list(tags) if tags else None,
             )
 
-            # Auto-tag with TODOIT_FORCE_TAGS if set (environment isolation)
+            # Auto-tagging with TODOIT_FORCE_TAGS is now handled automatically by manager.create_list()
             from .tag_commands import _get_force_tags
-
             force_tags = _get_force_tags()
             if force_tags:
-                for tag_name in force_tags:
-                    try:
-                        manager.add_tag_to_list(list_key, tag_name)
-                    except ValueError:
-                        # Tag doesn't exist, create it
-                        manager.create_tag(tag_name, "blue")
-                        manager.add_tag_to_list(list_key, tag_name)
                 console.print(f"[dim]Auto-tagged with: {', '.join(force_tags)}[/dim]")
 
         # Display created list

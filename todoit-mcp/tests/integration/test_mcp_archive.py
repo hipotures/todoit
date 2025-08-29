@@ -118,7 +118,7 @@ class TestMCPArchiveTools:
             result = asyncio.run(todo_archive_list("nonexistent", force=False))
 
             assert result["success"] is False
-            assert "does not exist" in result["error"]
+            assert "not found" in result["error"]
 
     def test_mcp_archive_already_archived_list_fails(self, setup_test_lists):
         """Test MCP archiving already archived list fails"""

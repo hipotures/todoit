@@ -4,6 +4,39 @@
 
 TODOIT MCP provides 51 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
 
+## 🏷️ Environment Isolation with filter_tags (v2.13.3)
+**NEW FEATURE**: All MCP tools now support optional `filter_tags` parameter for environment isolation:
+
+```python
+# Only operate on lists that have 'development' OR 'testing' tags
+await todo_list_all(filter_tags=['development', 'testing'])
+await todo_get_list('my-list', filter_tags=['development'])
+await todo_add_item('my-list', 'task1', 'New task', filter_tags=['development'])
+```
+
+### Key Features:
+- **34+ MCP functions** support `filter_tags: Optional[List[str]] = None`
+- **OR Logic**: Lists need ANY of the specified tags to be accessible
+- **Case-insensitive**: `dev` matches `DEV` or `Dev`
+- **Backward compatible**: Parameter is optional, defaults to no filtering
+- **Multi-list operations**: `todo_find_items_by_property` searches only filtered lists
+- **Cross-list dependencies**: Both lists must match filter when creating dependencies
+- **Auto-tagging**: `todo_import_from_markdown` can auto-tag imported lists
+
+### Environment Isolation Patterns:
+```python
+# Development environment - only see dev-tagged lists
+DEVELOPMENT_TAGS = ['development', 'dev', 'staging']
+
+# Production environment - only see production lists  
+PRODUCTION_TAGS = ['production', 'live', 'stable']
+
+# Team-specific - only see team's lists
+TEAM_TAGS = ['frontend', 'backend', 'qa']
+```
+
+**Note**: This complements `FORCE_TAGS` environment variable which uses AND logic for mandatory access control.
+
 ## 🔧 API Consistency Fix (v2.13.1)
 **BREAKING CHANGE**: Fixed parameter naming inconsistency for API consistency:
 - **`todo_get_list`** now uses `list_key` parameter (was: `key`)

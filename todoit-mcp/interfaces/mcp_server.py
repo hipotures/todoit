@@ -29,6 +29,34 @@ def init_manager(db_path: Optional[str] = None):
     return manager
 
 
+def _check_list_access(mgr, list_key: str, filter_tags: Optional[List[str]]) -> bool:
+    """Check if list is accessible based on filter_tags (OR logic).
+    
+    Args:
+        mgr: TodoManager instance
+        list_key: Key of the list to check
+        filter_tags: Optional list of tag names - list must have ANY of these tags
+        
+    Returns:
+        True if list is accessible (no filter or list has any matching tag), False otherwise
+    """
+    if not filter_tags:
+        return True  # No filtering - all lists accessible
+    
+    try:
+        # Get tags for this list
+        list_tags = mgr.get_tags_for_list(list_key)
+        list_tag_names = [tag.name.lower() for tag in list_tags]
+        
+        # Check if list has ANY of the filter_tags (OR logic)
+        filter_tag_names = [tag.lower() for tag in filter_tags]
+        return any(tag_name in list_tag_names for tag_name in filter_tag_names)
+        
+    except Exception:
+        # If there's any error checking tags, deny access
+        return False
+
+
 def mcp_error_handler(func: Callable) -> Callable:
     """Decorator to handle MCP tool errors consistently."""
 
@@ -250,7 +278,11 @@ async def todo_create_list(
 @conditional_tool
 @mcp_error_handler
 async def todo_get_list(
-    list_key: str, include_items: bool = True, include_properties: bool = True, mgr=None
+    list_key: str, 
+    include_items: bool = True, 
+    include_properties: bool = True,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
 ) -> Dict[str, Any]:
     """Get TODO list by key or ID with optional items and properties.
 
@@ -258,6 +290,7 @@ async def todo_get_list(
         list_key: List key or ID to retrieve (required)
         include_items: Whether to include list items (default: True)
         include_properties: Whether to include list properties (default: True)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status, list details, and optionally items and properties
@@ -265,6 +298,10 @@ async def todo_get_list(
     todo_list = mgr.get_list(list_key)
     if not todo_list:
         return {"success": False, "error": f"List '{list_key}' not found"}
+    
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
 
     # Base response with list info
     response = {
@@ -302,83 +339,114 @@ async def todo_get_list(
 
 
 @conditional_tool
-async def todo_delete_list(list_key: str) -> Dict[str, Any]:
+@mcp_error_handler
+async def todo_delete_list(
+    list_key: str, 
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
+) -> Dict[str, Any]:
     """Delete TODO list with dependency validation.
 
     Args:
         list_key: List key or ID to delete (required)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and deletion confirmation
     """
-    try:
-        mgr = init_manager()
-        success = mgr.delete_list(list_key)
-        return {
-            "success": success,
-            "message": (
-                f"List '{list_key}' deleted successfully"
-                if success
-                else "List not found"
-            ),
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
+    success = mgr.delete_list(list_key)
+    return {
+        "success": success,
+        "message": (
+            f"List '{list_key}' deleted successfully"
+            if success
+            else "List not found"
+        ),
+    }
 
 
 @conditional_tool
-async def todo_archive_list(list_key: str, force: bool = False) -> Dict[str, Any]:
+@mcp_error_handler
+async def todo_archive_list(
+    list_key: str, 
+    force: bool = False,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
+) -> Dict[str, Any]:
     """Archive a TODO list (hide from normal view).
 
     Args:
         list_key: Key of the list to archive (required)
         force: If True, force archiving even with incomplete tasks (default: False)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and archived list details
     """
-    try:
-        mgr = init_manager()
-        archived_list = mgr.archive_list(list_key, force=force)
-        return {
-            "success": True,
-            "list": {
-                "id": archived_list.id,
-                "list_key": archived_list.list_key,
-                "title": archived_list.title,
-                "status": archived_list.status,
-            },
-            "message": f"List '{list_key}' archived successfully",
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
+    archived_list = mgr.archive_list(list_key, force=force)
+    return {
+        "success": True,
+        "list": {
+            "id": archived_list.id,
+            "list_key": archived_list.list_key,
+            "title": archived_list.title,
+            "status": archived_list.status,
+        },
+        "message": f"List '{list_key}' archived successfully",
+    }
 
 
 @conditional_tool
-async def todo_unarchive_list(list_key: str) -> Dict[str, Any]:
+@mcp_error_handler
+async def todo_unarchive_list(
+    list_key: str,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
+) -> Dict[str, Any]:
     """Unarchive a TODO list (restore to normal view).
 
     Args:
         list_key: Key of the list to unarchive (required)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and unarchived list details
     """
-    try:
-        mgr = init_manager()
-        unarchived_list = mgr.unarchive_list(list_key)
-        return {
-            "success": True,
-            "list": {
-                "id": unarchived_list.id,
-                "list_key": unarchived_list.list_key,
-                "title": unarchived_list.title,
-                "status": unarchived_list.status,
-            },
-            "message": f"List '{list_key}' unarchived successfully",
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
+    unarchived_list = mgr.unarchive_list(list_key)
+    return {
+        "success": True,
+        "list": {
+            "id": unarchived_list.id,
+            "list_key": unarchived_list.list_key,
+            "title": unarchived_list.title,
+            "status": unarchived_list.status,
+        },
+        "message": f"List '{list_key}' unarchived successfully",
+    }
 
 
 @conditional_tool
@@ -431,6 +499,7 @@ async def todo_list_all(
 
 
 @conditional_tool
+@mcp_error_handler
 async def todo_add_item(
     list_key: str,
     item_key: str,
@@ -438,6 +507,8 @@ async def todo_add_item(
     position: Optional[int] = None,
     metadata: Optional[Dict[str, Any]] = None,
     subitem_key: Optional[str] = None,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
 ) -> Dict[str, Any]:
     """Add item or subitem to TODO list (unified smart command).
 
@@ -448,6 +519,7 @@ async def todo_add_item(
         position: Optional position to insert item at
         metadata: Optional dictionary of custom metadata for the item/subitem
         subitem_key: Optional subitem key. If provided, adds subitem to item_key as parent
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and created item/subitem details
@@ -459,53 +531,60 @@ async def todo_add_item(
         # Add subitem:
         await todo_add_item("project", "task1", "Sub work", subitem_key="subtask1")
     """
-    try:
-        mgr = init_manager()
-        if metadata is None:
-            metadata = {}
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
+    if metadata is None:
+        metadata = {}
 
-        if subitem_key is not None:
-            # Add subitem: item_key becomes parent_key, subitem_key is the new subitem
-            subitem = mgr.add_subitem(
-                list_key=list_key,
-                parent_key=item_key,
-                subitem_key=subitem_key,
-                content=title,  # Map title to content internally
-                metadata=metadata,
-            )
-            return {
-                "success": True,
-                "subitem": map_item_content_to_title(
-                    clean_to_dict_result(subitem.to_dict(), "item")
-                ),
-                "message": f"Subitem '{subitem_key}' added to '{item_key}' in list '{list_key}'",
-            }
-        else:
-            # Add regular item
-            item = mgr.add_item(
-                list_key=list_key,
-                item_key=item_key,
-                content=title,  # Map title to content internally
-                position=position,
-                metadata=metadata,
-            )
-            return {
-                "success": True,
-                "item": map_item_content_to_title(
-                    clean_to_dict_result(item.to_dict(), "item")
-                ),
-            }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    if subitem_key is not None:
+        # Add subitem: item_key becomes parent_key, subitem_key is the new subitem
+        subitem = mgr.add_subitem(
+            list_key=list_key,
+            parent_key=item_key,
+            subitem_key=subitem_key,
+            content=title,  # Map title to content internally
+            metadata=metadata,
+        )
+        return {
+            "success": True,
+            "subitem": map_item_content_to_title(
+                clean_to_dict_result(subitem.to_dict(), "item")
+            ),
+            "message": f"Subitem '{subitem_key}' added to '{item_key}' in list '{list_key}'",
+        }
+    else:
+        # Add regular item
+        item = mgr.add_item(
+            list_key=list_key,
+            item_key=item_key,
+            content=title,  # Map title to content internally
+            position=position,
+            metadata=metadata,
+        )
+        return {
+            "success": True,
+            "item": map_item_content_to_title(
+                clean_to_dict_result(item.to_dict(), "item")
+            ),
+        }
 
 
 @conditional_tool
+@mcp_error_handler
 async def todo_update_item_status(
     list_key: str,
     item_key: str,
     subitem_key: Optional[str] = None,
     status: Optional[str] = None,
     completion_states: Optional[Dict[str, Any]] = None,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
 ) -> Dict[str, Any]:
     """Update item or subitem status with multi-state support.
 
@@ -519,6 +598,7 @@ async def todo_update_item_status(
                 - 'completed': Task has been finished successfully
                 - 'failed': Task could not be completed
         completion_states: Optional dictionary of completion state details for multi-state tracking
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and updated item details
@@ -538,90 +618,102 @@ async def todo_update_item_status(
         Tasks with subtasks cannot have their status manually changed.
         Their status is automatically synchronized based on subtask statuses.
     """
-    try:
-        mgr = init_manager()
-
-        item = mgr.update_item_status(
-            list_key=list_key,
-            item_key=item_key,
-            subitem_key=subitem_key,
-            status=status,
-            completion_states=completion_states,
-        )
-        target_name = subitem_key if subitem_key else item_key
-        target_type = "Subitem" if subitem_key else "Item"
-        return {
-            "success": True,
-            "item": map_item_content_to_title(
-                clean_to_dict_result(item.to_dict(), "item")
-            ),
-            "message": f"{target_type} '{target_name}' status updated successfully",
-        }
-    except ValueError as e:
-        error_msg = str(e)
-        if "has subtasks" in error_msg:
-            return {
-                "success": False,
-                "error": error_msg,
-                "error_type": "status_sync_blocked",
-                "message": "Tasks with subtasks have their status automatically managed. Change subtask statuses instead.",
-            }
-        return {"success": False, "error": error_msg}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
+    item = mgr.update_item_status(
+        list_key=list_key,
+        item_key=item_key,
+        subitem_key=subitem_key,
+        status=status,
+        completion_states=completion_states,
+    )
+    target_name = subitem_key if subitem_key else item_key
+    target_type = "Subitem" if subitem_key else "Item"
+    return {
+        "success": True,
+        "item": map_item_content_to_title(
+            clean_to_dict_result(item.to_dict(), "item")
+        ),
+        "message": f"{target_type} '{target_name}' status updated successfully",
+    }
 
 
 @conditional_tool
+@mcp_error_handler
 async def todo_get_next_pending(
-    list_key: str, respect_dependencies: bool = True
+    list_key: str, 
+    respect_dependencies: bool = True,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
 ) -> Dict[str, Any]:
     """Get next pending item to work on from a list.
 
     Args:
         list_key: Key of the list to get next item from (required)
         respect_dependencies: Whether to consider item dependencies when selecting next item
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and next available item or null if none
     """
-    try:
-        mgr = init_manager()
-        item = mgr.get_next_pending(
-            list_key=list_key, respect_dependencies=respect_dependencies
-        )
-        if item:
-            return {
-                "success": True,
-                "item": map_item_content_to_title(
-                    clean_to_dict_result(item.to_dict(), "item")
-                ),
-            }
-        else:
-            return {
-                "success": True,
-                "item": None,
-                "message": "No pending items available",
-            }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
+    item = mgr.get_next_pending(
+        list_key=list_key, respect_dependencies=respect_dependencies
+    )
+    if item:
+        return {
+            "success": True,
+            "item": map_item_content_to_title(
+                clean_to_dict_result(item.to_dict(), "item")
+            ),
+        }
+    else:
+        return {
+            "success": True,
+            "item": None,
+            "message": "No pending items available",
+        }
 
 
 @conditional_tool
-async def todo_get_progress(list_key: str) -> Dict[str, Any]:
+@mcp_error_handler
+async def todo_get_progress(
+    list_key: str,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
+) -> Dict[str, Any]:
     """Get progress statistics for a todo list.
 
     Args:
         list_key: Key of the list to get progress for (required)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and progress statistics (total, completed, percentage)
     """
-    try:
-        mgr = init_manager()
-        progress = mgr.get_progress(list_key)
-        return {"success": True, "progress": progress.to_dict()}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
+    progress = mgr.get_progress(list_key)
+    return {"success": True, "progress": progress.to_dict()}
 
 
 @conditional_tool
@@ -697,61 +789,86 @@ async def todo_report_errors(
 
 
 @conditional_tool
+@mcp_error_handler
 async def todo_import_from_markdown(
-    file_path: str, base_key: Optional[str] = None
+    file_path: str, 
+    base_key: Optional[str] = None,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
 ) -> Dict[str, Any]:
     """Import todo lists from markdown file with multi-column support.
 
     Args:
         file_path: Path to the markdown file to import (required)
         base_key: Optional base key prefix for imported lists
+        filter_tags: Optional list of tag names to automatically assign to imported lists
 
     Returns:
         Dictionary with success status, imported lists, count, and confirmation message
     """
-    try:
-        mgr = init_manager()
-        lists = mgr.import_from_markdown(file_path=file_path, base_key=base_key)
-        return {
-            "success": True,
-            "lists": [
-                clean_to_dict_result(todo_list.to_dict(), "list") for todo_list in lists
-            ],
-            "count": len(lists),
-            "message": f"Imported {len(lists)} list(s) from {file_path}",
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    lists = mgr.import_from_markdown(file_path=file_path, base_key=base_key)
+    
+    # Auto-tag imported lists if filter_tags provided
+    if filter_tags:
+        for todo_list in lists:
+            for tag_name in filter_tags:
+                try:
+                    mgr.add_tag_to_list(todo_list.list_key, tag_name)
+                except ValueError:
+                    # Tag doesn't exist or list already has tag, skip silently
+                    pass
+    
+    return {
+        "success": True,
+        "lists": [
+            clean_to_dict_result(todo_list.to_dict(), "list") for todo_list in lists
+        ],
+        "count": len(lists),
+        "message": f"Imported {len(lists)} list(s) from {file_path}" + 
+                  (f" and tagged with: {', '.join(filter_tags)}" if filter_tags else ""),
+    }
 
 
 @conditional_tool
-async def todo_export_to_markdown(list_key: str, file_path: str) -> Dict[str, Any]:
+@mcp_error_handler
+async def todo_export_to_markdown(
+    list_key: str, 
+    file_path: str,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
+) -> Dict[str, Any]:
     """Export todo list to markdown format with [x] checkboxes.
 
     Args:
         list_key: Key of the list to export (required)
         file_path: Path where to save the markdown file (required)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and export confirmation message
     """
-    try:
-        mgr = init_manager()
-        mgr.export_to_markdown(list_key=list_key, file_path=file_path)
-        return {
-            "success": True,
-            "message": f"List '{list_key}' exported to {file_path}",
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
+    mgr.export_to_markdown(list_key=list_key, file_path=file_path)
+    return {
+        "success": True,
+        "message": f"List '{list_key}' exported to {file_path}",
+    }
 
 
 # === Funkcje pomocnicze ===
 
 
 @conditional_tool
+@mcp_error_handler
 async def todo_get_item(
-    list_key: str, item_key: str, subitem_key: Optional[str] = None
+    list_key: str, item_key: str, subitem_key: Optional[str] = None, mgr=None
 ) -> Dict[str, Any]:
     """Get specific todo item or its subitems from a list (unified smart command).
 
@@ -774,63 +891,63 @@ async def todo_get_item(
         # Get all subitems:
         await todo_get_item("project", "task1", subitem_key="all")
     """
-    try:
-        mgr = init_manager()
-
-        if subitem_key is not None:
-            if subitem_key == "all":
-                # Get all subitems of the parent item
-                subitems = mgr.get_subitems(list_key=list_key, parent_key=item_key)
-                return {
-                    "success": True,
-                    "subitems": [
-                        map_item_content_to_title(
-                            clean_to_dict_result(subitem.to_dict(), "item")
-                        )
-                        for subitem in subitems
-                    ],
-                    "count": len(subitems),
-                    "parent_key": item_key,
-                }
-            else:
-                # Get specific subitem by key
-                subitem = mgr.get_item(
-                    list_key=list_key, item_key=subitem_key, parent_item_key=item_key
-                )
-                if subitem:
-                    return {
-                        "success": True,
-                        "subitem": map_item_content_to_title(
-                            clean_to_dict_result(subitem.to_dict(), "item")
-                        ),
-                    }
-                else:
-                    return {
-                        "success": False,
-                        "error": f"Subitem '{subitem_key}' not found under parent '{item_key}' in list '{list_key}'",
-                    }
+    if subitem_key is not None:
+        if subitem_key == "all":
+            # Get all subitems of the parent item
+            subitems = mgr.get_subitems(list_key=list_key, parent_key=item_key)
+            return {
+                "success": True,
+                "subitems": [
+                    map_item_content_to_title(
+                        clean_to_dict_result(subitem.to_dict(), "item")
+                    )
+                    for subitem in subitems
+                ],
+                "count": len(subitems),
+                "parent_key": item_key,
+            }
         else:
-            # Get regular item
-            item = mgr.get_item(list_key=list_key, item_key=item_key)
-            if item:
+            # Get specific subitem by key
+            subitem = mgr.get_item(
+                list_key=list_key, item_key=subitem_key, parent_item_key=item_key
+            )
+            if subitem:
                 return {
                     "success": True,
-                    "item": map_item_content_to_title(
-                        clean_to_dict_result(item.to_dict(), "item")
+                    "subitem": map_item_content_to_title(
+                        clean_to_dict_result(subitem.to_dict(), "item")
                     ),
                 }
             else:
                 return {
                     "success": False,
-                    "error": f"Item '{item_key}' not found in list '{list_key}'",
+                    "error": f"Subitem '{subitem_key}' not found under parent '{item_key}' in list '{list_key}'",
                 }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    else:
+        # Get regular item
+        item = mgr.get_item(list_key=list_key, item_key=item_key)
+        if item:
+            return {
+                "success": True,
+                "item": map_item_content_to_title(
+                    clean_to_dict_result(item.to_dict(), "item")
+                ),
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Item '{item_key}' not found in list '{list_key}'",
+            }
 
 
 @conditional_tool
+@mcp_error_handler
 async def todo_get_list_items(
-    list_key: str, status: Optional[str] = None, limit: Optional[int] = None
+    list_key: str, 
+    status: Optional[str] = None, 
+    limit: Optional[int] = None,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
 ) -> Dict[str, Any]:
     """Get all items from a todo list with optional status filtering and limit.
 
@@ -838,49 +955,53 @@ async def todo_get_list_items(
         list_key: Key of the list to get items from (required)
         status: Optional status filter (pending, completed, in_progress, etc.)
         limit: Optional maximum number of items to return
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status, list of items, count, and whether more items exist
     """
-    try:
-        mgr = init_manager()
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
 
-        # First, check if the list exists
-        if not mgr.get_list(list_key):
-            return {"success": False, "error": f"List '{list_key}' not found"}
+    items = mgr.get_list_items(list_key=list_key, status=status, limit=limit)
 
-        items = mgr.get_list_items(list_key=list_key, status=status, limit=limit)
+    # Get the total count of items matching the filter, regardless of the limit
+    total_count = len(mgr.get_list_items(list_key=list_key, status=status))
 
-        # Get the total count of items matching the filter, regardless of the limit
-        total_count = len(mgr.get_list_items(list_key=list_key, status=status))
+    # Determine if more items are available
+    more_available = total_count > len(items)
 
-        # Determine if more items are available
-        more_available = total_count > len(items)
+    # Add list_key to each item's dict
+    items_with_list_key = []
+    for item in items:
+        item_dict = map_item_content_to_title(
+            clean_to_dict_result(item.to_dict(), "item")
+        )
+        item_dict["list_key"] = list_key
+        items_with_list_key.append(item_dict)
 
-        # Add list_key to each item's dict
-        items_with_list_key = []
-        for item in items:
-            item_dict = map_item_content_to_title(
-                clean_to_dict_result(item.to_dict(), "item")
-            )
-            item_dict["list_key"] = list_key
-            items_with_list_key.append(item_dict)
-
-        return {
-            "success": True,
-            "items": items_with_list_key,
-            "count": len(items),
-            "more_available": more_available,
-            "total_count": total_count,
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    return {
+        "success": True,
+        "items": items_with_list_key,
+        "count": len(items),
+        "more_available": more_available,
+        "total_count": total_count,
+    }
 
 
 @conditional_tool
 @mcp_error_handler
 async def todo_get_item_history(
-    list_key: str, item_key: str, limit: Optional[int] = None, mgr=None
+    list_key: str, 
+    item_key: str, 
+    limit: Optional[int] = None,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
 ) -> Dict[str, Any]:
     """Get complete change history for a specific todo item.
 
@@ -888,10 +1009,19 @@ async def todo_get_item_history(
         list_key: Key of the list containing the item (required)
         item_key: Key of the item to get history for (required)
         limit: Optional maximum number of history entries to return
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status, history entries, and count
     """
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
     history = mgr.get_item_history(list_key=list_key, item_key=item_key, limit=limit)
     return {
         "success": True,
@@ -911,29 +1041,40 @@ async def todo_get_item_history(
 
 
 @conditional_tool
-async def todo_quick_add(list_key: str, items: List[str]) -> Dict[str, Any]:
+@mcp_error_handler
+async def todo_quick_add(
+    list_key: str, 
+    items: List[str],
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
+) -> Dict[str, Any]:
     """Quick add multiple todo items to a list at once.
 
     Args:
         list_key: Key of the list to add items to (required)
         items: List of item contents to add (required)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status, created items, and count
     """
-    try:
-        mgr = init_manager()
-        created_items = []
-        for i, content in enumerate(items):
-            item_key = f"item_{i+1:04d}"  # Simple sequential numbering
-            item = mgr.add_item(list_key=list_key, item_key=item_key, content=content)
-            created_items.append(
-                map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item"))
-            )
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
+    created_items = []
+    for i, content in enumerate(items):
+        item_key = f"item_{i+1:04d}"  # Simple sequential numbering
+        item = mgr.add_item(list_key=list_key, item_key=item_key, content=content)
+        created_items.append(
+            map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item"))
+        )
 
-        return {"success": True, "items": created_items, "count": len(created_items)}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    return {"success": True, "items": created_items, "count": len(created_items)}
 
 
 @conditional_tool
@@ -995,7 +1136,11 @@ async def todo_project_overview(project_key: str) -> Dict[str, Any]:
 @conditional_tool
 @mcp_error_handler
 async def todo_set_list_property(
-    list_key: str, property_key: str, property_value: str, mgr=None
+    list_key: str, 
+    property_key: str, 
+    property_value: str,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
 ) -> Dict[str, Any]:
     """Set a property for a list (create or update).
 
@@ -1003,10 +1148,19 @@ async def todo_set_list_property(
         list_key: Key of the list to set property for (required)
         property_key: Name of the property (required)
         property_value: Value to set (required)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and property details
     """
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
     property_obj = mgr.set_list_property(list_key, property_key, property_value)
     return {
         "success": True,
@@ -1017,17 +1171,29 @@ async def todo_set_list_property(
 @conditional_tool
 @mcp_error_handler
 async def todo_get_list_property(
-    list_key: str, property_key: str, mgr=None
+    list_key: str, 
+    property_key: str,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
 ) -> Dict[str, Any]:
     """Get a property value for a list.
 
     Args:
         list_key: Key of the list to get property from (required)
         property_key: Name of the property (required)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and property value
     """
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
     value = mgr.get_list_property(list_key, property_key)
     if value is not None:
         return {"success": True, "property_key": property_key, "property_value": value}
@@ -1040,15 +1206,28 @@ async def todo_get_list_property(
 
 @conditional_tool
 @mcp_error_handler
-async def todo_get_list_properties(list_key: str, mgr=None) -> Dict[str, Any]:
+async def todo_get_list_properties(
+    list_key: str,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
+) -> Dict[str, Any]:
     """Get all properties for a list.
 
     Args:
         list_key: Key of the list to get properties from (required)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and all properties as key-value pairs
     """
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
     properties = mgr.get_list_properties(list_key)
     return {
         "success": True,
@@ -1061,17 +1240,29 @@ async def todo_get_list_properties(list_key: str, mgr=None) -> Dict[str, Any]:
 @conditional_tool
 @mcp_error_handler
 async def todo_delete_list_property(
-    list_key: str, property_key: str, mgr=None
+    list_key: str, 
+    property_key: str,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
 ) -> Dict[str, Any]:
     """Delete a property from a list.
 
     Args:
         list_key: Key of the list to delete property from (required)
         property_key: Name of the property to delete (required)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and confirmation message
     """
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
     success = mgr.delete_list_property(list_key, property_key)
     if success:
         return {
@@ -1096,6 +1287,7 @@ async def todo_set_item_property(
     property_key: str,
     property_value: str,
     parent_item_key: str = None,
+    filter_tags: Optional[List[str]] = None,
     mgr=None,
 ) -> Dict[str, Any]:
     """Set a property for an item or subitem (create or update).
@@ -1106,10 +1298,19 @@ async def todo_set_item_property(
         property_key: Name of the property (required)
         property_value: Value to set (required)
         parent_item_key: Key of parent item (optional, for subitems)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and property details
     """
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
     property_obj = mgr.set_item_property(
         list_key, item_key, property_key, property_value, parent_item_key
     )
@@ -1133,6 +1334,7 @@ async def todo_get_item_property(
     item_key: str,
     property_key: str,
     parent_item_key: str = None,
+    filter_tags: Optional[List[str]] = None,
     mgr=None,
 ) -> Dict[str, Any]:
     """Get a property value for an item or subitem.
@@ -1142,10 +1344,19 @@ async def todo_get_item_property(
         item_key: Key of the item to get property from (required)
         property_key: Name of the property (required)
         parent_item_key: Key of parent item (optional, for subitems)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and property value
     """
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
     value = mgr.get_item_property(list_key, item_key, property_key, parent_item_key)
     target = (
         f"subitem '{item_key}' under item '{parent_item_key}'"
@@ -1172,7 +1383,11 @@ async def todo_get_item_property(
 @conditional_tool
 @mcp_error_handler
 async def todo_get_item_properties(
-    list_key: str, item_key: str, parent_item_key: str = None, mgr=None
+    list_key: str, 
+    item_key: str, 
+    parent_item_key: str = None,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
 ) -> Dict[str, Any]:
     """Get all properties for an item or subitem.
 
@@ -1180,10 +1395,19 @@ async def todo_get_item_properties(
         list_key: Key of the list containing the item (required)
         item_key: Key of the item to get properties from (required)
         parent_item_key: Key of parent item (optional, for subitems)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status, properties, and count
     """
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
     properties = mgr.get_item_properties(list_key, item_key, parent_item_key)
     return {
         "success": True,
@@ -1198,7 +1422,11 @@ async def todo_get_item_properties(
 @conditional_tool
 @mcp_error_handler
 async def todo_get_all_items_properties(
-    list_key: str, status: Optional[str] = None, limit: Optional[int] = None, mgr=None
+    list_key: str, 
+    status: Optional[str] = None, 
+    limit: Optional[int] = None,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
 ) -> Dict[str, Any]:
     """Get all properties for all items in a list, optionally filtered by status.
 
@@ -1207,10 +1435,19 @@ async def todo_get_all_items_properties(
         status: Optional status filter ('pending', 'in_progress', 'completed', 'failed').
                If not provided, returns properties for all items regardless of status.
         limit: Optional maximum number of items to return properties for
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status, properties grouped by item_key, and metadata
     """
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
     properties = mgr.get_all_items_properties(list_key, status, limit)
 
     # Group properties by item_key with hierarchy support
@@ -1250,6 +1487,7 @@ async def todo_delete_item_property(
     item_key: str,
     property_key: str,
     parent_item_key: str = None,
+    filter_tags: Optional[List[str]] = None,
     mgr=None,
 ) -> Dict[str, Any]:
     """Delete a property from an item or subitem.
@@ -1259,10 +1497,19 @@ async def todo_delete_item_property(
         item_key: Key of the item to delete property from (required)
         property_key: Name of the property to delete (required)
         parent_item_key: Key of parent item (optional, for subitems)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and confirmation message
     """
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
     success = mgr.delete_item_property(
         list_key, item_key, property_key, parent_item_key
     )
@@ -1291,6 +1538,7 @@ async def todo_find_items_by_property(
     property_key: str,
     property_value: str,
     limit: Optional[int] = None,
+    filter_tags: Optional[List[str]] = None,
     mgr=None,
 ) -> Dict[str, Any]:
     """Find items by property value with optional limit.
@@ -1300,11 +1548,47 @@ async def todo_find_items_by_property(
         property_key: Name of the property to match (required)
         property_value: Value of the property to match (required)
         limit: Maximum number of results to return (optional, None = all)
+        filter_tags: Optional list of tag names to filter by (when list_key=None, limits search to lists with ANY of these tags)
 
     Returns:
         Dictionary with success status, found items, and count
     """
-    items = mgr.find_items_by_property(list_key, property_key, property_value, limit)
+    # Handle access control based on list_key parameter
+    if list_key is not None:
+        # Single list search - check access to specific list            
+        if not _check_list_access(mgr, list_key, filter_tags):
+            return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+        
+        # Single list search
+        items = mgr.find_items_by_property(list_key, property_key, property_value, limit)
+    else:
+        # Multi-list search - filter_tags will limit which lists to search
+        if filter_tags:
+            # Get all lists that match filter_tags (OR logic)
+            all_lists = mgr.list_all()
+            accessible_lists = []
+            for list_info in all_lists:
+                if _check_list_access(mgr, list_info['list_key'], filter_tags):
+                    accessible_lists.append(list_info['list_key'])
+            
+            # Search across accessible lists
+            all_items = []
+            for accessible_list_key in accessible_lists:
+                try:
+                    list_items = mgr.find_items_by_property(accessible_list_key, property_key, property_value, None)
+                    all_items.extend(list_items)
+                except ValueError:
+                    # List not found, skip
+                    continue
+            
+            # Apply limit after collecting from all lists
+            if limit and len(all_items) > limit:
+                all_items = all_items[:limit]
+            
+            items = all_items
+        else:
+            # No filter_tags, search all lists
+            items = mgr.find_items_by_property(list_key, property_key, property_value, limit)
 
     # Convert items to dictionaries
     items_data = []
@@ -1339,6 +1623,7 @@ async def todo_find_subitems_by_status(
     list_key: str,
     conditions: Dict[str, str],
     limit: int = 10,
+    filter_tags: Optional[List[str]] = None,
     mgr=None,
 ) -> Dict[str, Any]:
     """Find grouped parent-subitem matches based on sibling status conditions.
@@ -1347,6 +1632,7 @@ async def todo_find_subitems_by_status(
         list_key: Key of the list to search in (required)
         conditions: Dictionary of {subitem_key: expected_status} (required)
         limit: Maximum number of parent matches to return (default: 10)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status, grouped matches, and search details
@@ -1371,6 +1657,14 @@ async def todo_find_subitems_by_status(
             "matches_count": 1
         }
     """
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
     matches = mgr.find_subitems_by_status(list_key, conditions, limit)
 
     def _convert_item_to_dict(item):
@@ -1414,17 +1708,29 @@ async def todo_find_subitems_by_status(
 @conditional_tool
 @mcp_error_handler
 async def todo_get_item_hierarchy(
-    list_key: str, item_key: str, mgr=None
+    list_key: str, 
+    item_key: str,
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
 ) -> Dict[str, Any]:
     """Get full hierarchy for an item (item + all subtasks recursively).
 
     Args:
         list_key: Key of the list containing the item (required)
         item_key: Key of the item to get hierarchy for (required)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and hierarchical structure
     """
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
     hierarchy = mgr.get_item_hierarchy(list_key, item_key)
     return {
         "success": True,
@@ -1529,6 +1835,7 @@ async def todo_add_item_dependency(
     required_item: str,
     dependency_type: str = "blocks",
     metadata: Optional[Dict[str, Any]] = None,
+    filter_tags: Optional[List[str]] = None,
     mgr=None,
 ) -> Dict[str, Any]:
     """Add dependency between tasks from different lists.
@@ -1540,10 +1847,18 @@ async def todo_add_item_dependency(
         required_item: Key of item that is required
         dependency_type: Type of dependency (blocks, requires, related)
         metadata: Optional metadata for the dependency
+        filter_tags: Optional list of tag names to filter lists by
 
     Returns:
         Dictionary with success status and dependency details
     """
+    # Check access to both lists
+    if not _check_list_access(mgr, dependent_list, filter_tags):
+        return {"success": False, "error": f"Dependent list '{dependent_list}' does not match tag filter"}
+    
+    if not _check_list_access(mgr, required_list, filter_tags):
+        return {"success": False, "error": f"Required list '{required_list}' does not match tag filter"}
+    
     dependency = mgr.add_item_dependency(
         dependent_list=dependent_list,
         dependent_item=dependent_item,
@@ -1566,6 +1881,7 @@ async def todo_remove_item_dependency(
     dependent_item: str,
     required_list: str,
     required_item: str,
+    filter_tags: Optional[List[str]] = None,
     mgr=None,
 ) -> Dict[str, Any]:
     """Remove dependency between tasks from different lists.
@@ -1575,10 +1891,18 @@ async def todo_remove_item_dependency(
         dependent_item: Key of dependent item
         required_list: Key of list containing required item
         required_item: Key of required item
+        filter_tags: Optional list of tag names to filter lists by
 
     Returns:
         Dictionary with success status and confirmation
     """
+    # Check access to both lists
+    if not _check_list_access(mgr, dependent_list, filter_tags):
+        return {"success": False, "error": f"Dependent list '{dependent_list}' does not match tag filter"}
+    
+    if not _check_list_access(mgr, required_list, filter_tags):
+        return {"success": False, "error": f"Required list '{required_list}' does not match tag filter"}
+    
     success = mgr.remove_item_dependency(
         dependent_list=dependent_list,
         dependent_item=dependent_item,
@@ -1594,17 +1918,22 @@ async def todo_remove_item_dependency(
 @conditional_tool
 @mcp_error_handler
 async def todo_get_item_blockers(
-    list_key: str, item_key: str, mgr=None
+    list_key: str, item_key: str, filter_tags: Optional[List[str]] = None, mgr=None
 ) -> Dict[str, Any]:
     """Get all items that block this item (uncompleted required items).
 
     Args:
         list_key: Key of list containing the item
         item_key: Key of item to check for blockers
+        filter_tags: Optional list of tag names to filter list by
 
     Returns:
         Dictionary with success status, blockers list, and blocking status
     """
+    # Check list access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
     blockers = mgr.get_item_blockers(list_key, item_key)
     is_blocked = len(blockers) > 0
 
@@ -1621,17 +1950,22 @@ async def todo_get_item_blockers(
 @conditional_tool
 @mcp_error_handler
 async def todo_get_items_blocked_by(
-    list_key: str, item_key: str, mgr=None
+    list_key: str, item_key: str, filter_tags: Optional[List[str]] = None, mgr=None
 ) -> Dict[str, Any]:
     """Get all items blocked by this item.
 
     Args:
         list_key: Key of list containing the item
         item_key: Key of item to check what it blocks
+        filter_tags: Optional list of tag names to filter list by
 
     Returns:
         Dictionary with success status and list of blocked items
     """
+    # Check list access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
     blocked_items = mgr.get_items_blocked_by(list_key, item_key)
 
     return {
@@ -1680,16 +2014,29 @@ async def todo_is_item_blocked(
 
 @conditional_tool
 @mcp_error_handler
-async def todo_can_start_item(list_key: str, item_key: str, mgr=None) -> Dict[str, Any]:
+async def todo_can_start_item(
+    list_key: str, 
+    item_key: str, 
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
+) -> Dict[str, Any]:
     """Check if item can be started (combines Phase 1 + Phase 2 logic).
 
     Args:
         list_key: Key of list containing the item
         item_key: Key of item to check
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with detailed analysis of whether item can be started
     """
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
     analysis = mgr.can_start_item(list_key, item_key)
 
     return {
@@ -1902,16 +2249,29 @@ async def todo_get_comprehensive_status(list_key: str, mgr=None) -> Dict[str, An
 
 @conditional_tool
 @mcp_error_handler
-async def todo_delete_item(list_key: str, item_key: str, mgr=None) -> Dict[str, Any]:
+async def todo_delete_item(
+    list_key: str, 
+    item_key: str, 
+    filter_tags: Optional[List[str]] = None,
+    mgr=None
+) -> Dict[str, Any]:
     """Delete a todo item from a list permanently.
 
     Args:
         list_key: Key of the list containing the item (required)
         item_key: Key of the item to delete (required)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and confirmation message
     """
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
     success = mgr.delete_item(list_key, item_key)
     if success:
         return {
@@ -1933,6 +2293,7 @@ async def todo_rename_item(
     new_key: Optional[str] = None,
     new_title: Optional[str] = None,
     subitem_key: Optional[str] = None,
+    filter_tags: Optional[List[str]] = None,
     mgr=None,
 ) -> Dict[str, Any]:
     """Rename item key and/or title.
@@ -1943,6 +2304,7 @@ async def todo_rename_item(
         new_key: New key for the item/subitem (optional)
         new_title: New title for the item/subitem (optional)
         subitem_key: If provided, renames the subitem instead of parent item (optional)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and updated item details
@@ -1960,6 +2322,14 @@ async def todo_rename_item(
         # Rename subitem
         await todo_rename_item("project", "parent", new_key="new_sub", subitem_key="old_sub")
     """
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
     # Determine parent_item_key based on subitem_key parameter
     parent_item_key = item_key if subitem_key else None
     actual_item_key = subitem_key if subitem_key else item_key
@@ -1990,6 +2360,7 @@ async def todo_rename_list(
     list_key: str,
     new_key: Optional[str] = None,
     new_title: Optional[str] = None,
+    filter_tags: Optional[List[str]] = None,
     mgr=None,
 ) -> Dict[str, Any]:
     """Rename list key and/or title.
@@ -1998,6 +2369,7 @@ async def todo_rename_list(
         list_key: Current key of the list to rename (required)
         new_key: New key for the list (optional)
         new_title: New title for the list (optional)
+        filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
         Dictionary with success status and updated list details
@@ -2012,6 +2384,14 @@ async def todo_rename_list(
         # Rename both key and title
         await todo_rename_list("old", new_key="new", new_title="New Title")
     """
+    # Check if list exists first
+    if not mgr.get_list(list_key):
+        return {"success": False, "error": f"List '{list_key}' not found"}
+        
+    # Check filter_tags access
+    if not _check_list_access(mgr, list_key, filter_tags):
+        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+    
     updated_list = mgr.rename_list(
         current_key=list_key, new_key=new_key, new_title=new_title
     )

@@ -1823,6 +1823,28 @@ class Database:
                 .all()
             )
 
+    def get_lists_by_tags_all(self, tag_names: List[str]) -> List[TodoListDB]:
+        """Get lists that have ALL of the specified tags (AND logic)"""
+        if not tag_names:
+            return []
+
+        with self.get_session() as session:
+            # Normalize tag names to lowercase
+            normalized_names = [name.lower() for name in tag_names]
+            
+            # For AND logic, we need lists that have assignments for ALL specified tags
+            # We use GROUP BY and HAVING COUNT to ensure all tags are present
+            return (
+                session.query(TodoListDB)
+                .join(ListTagAssignmentDB, TodoListDB.id == ListTagAssignmentDB.list_id)
+                .join(ListTagDB, ListTagAssignmentDB.tag_id == ListTagDB.id)
+                .filter(ListTagDB.name.in_(normalized_names))
+                .group_by(TodoListDB.id)
+                .having(func.count(ListTagDB.id.distinct()) == len(normalized_names))
+                .order_by(TodoListDB.list_key.asc())
+                .all()
+            )
+
     def delete_all_tag_assignments_for_list(self, list_id: int) -> int:
         """Delete all tag assignments for a list"""
         with self.get_session() as session:

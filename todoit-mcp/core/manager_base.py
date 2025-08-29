@@ -115,6 +115,26 @@ class ManagerBase:
         env_tags = os.environ.get("TODOIT_FORCE_TAGS", "").split(",")
         return [tag.strip().lower() for tag in env_tags if tag.strip()]
 
+    def _check_force_tags_access(self, list_key: str) -> bool:
+        """Check if list has ALL required force_tags (AND logic)
+        
+        Args:
+            list_key: Key of the list to check
+            
+        Returns:
+            True if access allowed (no force_tags OR list has ALL force_tags), False if denied
+        """
+        if not self.force_tags:
+            return True  # No force_tags, all lists accessible
+        
+        try:
+            # Get lists that have ALL force_tags
+            accessible_lists = self.db.get_lists_by_tags_all(self.force_tags)
+            allowed_list_keys = {l.list_key for l in accessible_lists}
+            return list_key in allowed_list_keys
+        except Exception:
+            return False
+
     def _db_to_model(self, db_obj: Any, model_class: type) -> Any:
         """Convert database object to Pydantic model"""
         if db_obj is None:

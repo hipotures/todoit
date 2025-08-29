@@ -393,14 +393,14 @@ todoit reports errors                       # Only errors from 'dev' lists
 ```
 
 ```bash
-# Test environment - can see dev+test but not prod
+# Test environment - only sees lists with BOTH dev AND test tags
 export TODOIT_FORCE_TAGS=dev,test
 
 # Create lists - automatically get both tags
 todoit list create --list integration --title "Integration Tests"  # Tagged: dev,test
 
-# View all - shows lists with dev OR test tags
-todoit list all                             # Shows dev and test lists
+# View all - shows lists with dev AND test tags (both required)
+todoit list all                             # Shows only lists with both dev and test tags
 ```
 
 #### Environment Variables Comparison

@@ -314,29 +314,31 @@ class TodoManager(
         filter_tags: Optional[List[str]] = None,
     ) -> List[TodoList]:
         """4. Lists all TODO lists with optional tag filtering"""
-        if filter_tags:
-            # Get lists by tags
-            lists = self.get_lists_by_tags(filter_tags)
-
-            # Apply archived filter if needed
-            if not include_archived:
-                lists = [l for l in lists if l.status != "archived"]
-
-            # Apply limit if specified
-            if limit and len(lists) > limit:
-                lists = lists[:limit]
-
-            return lists
+        # Get lists from database based on filtering logic
+        if self.force_tags:
+            # FORCE_TAGS uses AND logic - list must have ALL force_tags
+            db_lists = self.db.get_lists_by_tags_all(self.force_tags)
+        elif filter_tags:
+            # Regular tag filtering uses OR logic - list needs ANY of these tags
+            db_lists = self.db.get_lists_by_tags(filter_tags)
         else:
-            # Use original implementation without tag filtering
+            # No filtering - get all lists
             db_lists = self.db.get_all_lists(limit)
-            lists = [self._db_to_model(db_list, TodoList) for db_list in db_lists]
 
-            # Filter archived if requested
-            if not include_archived:
-                lists = [l for l in lists if l.status != "archived"]
+        # Apply limit if specified and not already applied
+        if limit and len(db_lists) > limit:
+            db_lists = db_lists[:limit]
 
-            return lists
+        # Filter out archived lists if not requested
+        if not include_archived:
+            db_lists = [lst for lst in db_lists if lst.status != "archived"]
+
+        # Convert to Pydantic models
+        lists = []
+        for db_list in db_lists:
+            lists.append(self._db_to_model(db_list, TodoList))
+
+        return lists
 
     def get_archived_lists(self, limit: Optional[int] = None) -> List[TodoList]:
         """Retrieves all lists that have been archived.
@@ -2032,18 +2034,28 @@ class TodoManager(
         Raises:
             ValueError: If the list is not found or if creating a new tag fails (e.g., max tag limit reached).
         """
-        # Get list
-        list_obj = self.get_list(list_key)
-        if not list_obj:
+        # Get list - use low-level database access to bypass force_tags filtering
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
             raise ValueError(f"List '{list_key}' not found")
+
+        # FORCE_TAGS validation - block modification of lists that don't have access
+        if self.force_tags and not self._check_force_tags_access(list_key):
+            raise ValueError(f"Access denied: List '{list_key}' does not have required force tags: {', '.join(self.force_tags)}")
 
         # Get or create tag
         tag = self.get_tag(tag_name)
         if not tag:
             tag = self.create_tag(tag_name)
 
+        # Check if assignment already exists
+        existing_tags = self.db.get_tags_for_list(db_list.id)
+        existing_tag_names = [tag_obj.name for tag_obj in existing_tags]
+        if tag_name.lower() in existing_tag_names:
+            raise ValueError(f"List '{list_key}' already has tag '{tag_name}'")
+
         # Create assignment
-        db_assignment = self.db.add_tag_to_list(list_obj.id, tag.id)
+        db_assignment = self.db.add_tag_to_list(db_list.id, tag.id)
 
         # Convert to Pydantic model and return
         return self._db_to_model(db_assignment, ListTagAssignment)
@@ -2058,10 +2070,17 @@ class TodoManager(
         Returns:
             True if the assignment was removed, False if the list, tag, or assignment did not exist.
         """
-        # Get list
-        list_obj = self.get_list(list_key)
-        if not list_obj:
+        # Get list - use low-level database access to bypass force_tags filtering
+        db_list = self.db.get_list_by_key(list_key)
+        if not db_list:
             return False
+
+        # FORCE_TAGS validation - block removal of force tags or modification of inaccessible lists
+        if self.force_tags:
+            if not self._check_force_tags_access(list_key):
+                raise ValueError(f"Access denied: List '{list_key}' does not have required force tags: {', '.join(self.force_tags)}")
+            if tag_name.lower() in self.force_tags:
+                raise ValueError(f"Cannot remove force tag '{tag_name}' from list '{list_key}' - required by environment isolation")
 
         # Get tag
         tag = self.get_tag(tag_name)
@@ -2069,7 +2088,7 @@ class TodoManager(
             return False
 
         # Remove assignment
-        return self.db.remove_tag_from_list(list_obj.id, tag.id)
+        return self.db.remove_tag_from_list(db_list.id, tag.id)
 
     def get_tags_for_list(self, list_key: str) -> List[ListTag]:
         """Get all tags assigned to a specific list, with their dynamic colors.

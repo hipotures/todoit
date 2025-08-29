@@ -13,6 +13,40 @@ TODOIT now uses **natural sorting** for all lists and items, making numeric sequ
 - **Automatic**: No configuration needed - all MCP tools and CLI commands benefit
 - **Backward Compatible**: Existing `position` fields remain but are no longer primary sort criterion
 
+## 🔐 Environment Isolation (v2.13.2)
+
+TODOIT supports **environment isolation** through the `TODOIT_FORCE_TAGS` environment variable, providing secure multi-environment workflows:
+
+### FORCE_TAGS Configuration
+```bash
+export TODOIT_FORCE_TAGS="dev,staging"  # Requires BOTH dev AND staging tags
+```
+
+### Behavior with FORCE_TAGS Set
+- **List Access**: Only lists with ALL specified force_tags are visible/accessible
+- **Auto-tagging**: New lists automatically tagged with ALL force_tags  
+- **Security**: Cannot remove force_tags from lists or modify restricted lists
+- **AND Logic**: Lists must have ALL force_tags (not just any)
+
+### Key Methods Affected
+- `list_all()`: Returns only lists with ALL force_tags
+- `get_list()`: Returns `None` for lists without proper access
+- `create_list()`: Auto-tags with force_tags
+- `add_tag_to_list()`: Blocks access to restricted lists
+- `remove_tag_from_list()`: Prevents removal of force_tags
+
+**Example:**
+```python
+# Environment isolation active
+manager = TodoManager("/path/to/db")  # TODOIT_FORCE_TAGS="dev,test"
+
+# Only sees lists tagged with BOTH dev AND test
+visible_lists = manager.list_all()  
+
+# New lists auto-tagged with dev,test
+new_list = manager.create_list("feature", "New Feature")
+```
+
 ## Core Object Management
 
 ### `create_list`
@@ -24,8 +58,11 @@ Creates a new TODO list.
 - `items: Optional[List[str]]`: A list of strings to create as initial items.
 - `list_type: str`: The list's ordering and behavior strategy (`"sequential"`).
 - `metadata: Optional[Dict]`: A dictionary for custom metadata.
+- `tags: Optional[List[str]]`: List of tag names to assign to the list (tags must exist).
 
 **Returns:** `TodoList` – The created list object.
+
+**Auto-tagging:** If `TODOIT_FORCE_TAGS` environment variable is set, new lists are automatically tagged with ALL specified force_tags for environment isolation.
 
 [Source](../todoit-mcp/core/manager.py)
 

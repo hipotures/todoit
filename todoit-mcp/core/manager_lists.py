@@ -88,6 +88,19 @@ class ListsMixin:
                 # Create tag assignment
                 self.db.add_tag_to_list(db_list.id, db_tag.id)
 
+        # Auto-tag with FORCE_TAGS if set (environment isolation)
+        if self.force_tags:
+            for tag_name in self.force_tags:
+                # Get or create the tag
+                db_tag = self.db.get_tag_by_name(tag_name)
+                if not db_tag:
+                    # Auto-create tag if it doesn't exist
+                    tag_data = {"name": tag_name, "color": self._get_next_available_color()}
+                    db_tag = self.db.create_tag(tag_data)
+                
+                # Create tag assignment (add_tag_to_list handles duplicates)
+                self.db.add_tag_to_list(db_list.id, db_tag.id)
+
         # Save to history
         self._record_history(
             list_id=db_list.id,
@@ -105,6 +118,9 @@ class ListsMixin:
             db_list = self.db.get_list_by_key(str(key))
 
         if db_list:
+            # Check force_tags access
+            if not self._check_force_tags_access(db_list.list_key):
+                return None  # Access denied
             return self._db_to_model(db_list, TodoList)
         return None
 
@@ -121,16 +137,9 @@ class ListsMixin:
             return False
 
         # FORCE_TAGS validation - if enabled, must be allowed to delete
-        if self.force_tags:
-            # Get all tags for this list
-            list_tags = self.db.get_list_tags(db_list.id)
-            list_tag_names = [assignment.tag.name for assignment in list_tags]
-
-            # Check if the list has any of the required force_tags
-            has_force_tag = any(tag in list_tag_names for tag in self.force_tags)
-            if not has_force_tag:
-                # List is not in force_tags scope - cannot delete
-                return False
+        if not self._check_force_tags_access(db_list.list_key):
+            # List is not in force_tags scope - cannot delete
+            return False
 
         # Record deletion in history before deleting
         self._record_history(
@@ -157,20 +166,24 @@ class ListsMixin:
             include_archived: Whether to include archived lists
             tags: Filter by lists containing ANY of these tags
         """
-        # FORCE_TAGS filtering
+        # Get lists from database based on filtering logic
         if self.force_tags:
-            # Override tags parameter with force_tags
-            tags = self.force_tags
-
-        # Get lists from database
-        if tags:
-            db_lists = self.db.get_lists_by_tags(tags, limit, include_archived)
+            # FORCE_TAGS uses AND logic - list must have ALL force_tags
+            db_lists = self.db.get_lists_by_tags_all(self.force_tags)
+        elif tags:
+            # Regular tag filtering uses OR logic - list needs ANY of these tags
+            db_lists = self.db.get_lists_by_tags(tags)
         else:
+            # No filtering - get all lists
             db_lists = self.db.get_all_lists(limit)
 
-            # Filter out archived lists if not requested
-            if not include_archived:
-                db_lists = [lst for lst in db_lists if lst.status != "archived"]
+        # Apply limit if specified and not already applied
+        if limit and len(db_lists) > limit:
+            db_lists = db_lists[:limit]
+
+        # Filter out archived lists if not requested
+        if not include_archived:
+            db_lists = [lst for lst in db_lists if lst.status != "archived"]
 
         # Convert to Pydantic models
         lists = []
@@ -186,6 +199,10 @@ class ListsMixin:
         if not db_list:
             raise ValueError(f"List '{list_key}' does not exist")
 
+        # FORCE_TAGS validation - block modification of lists that don't have access
+        if self.force_tags and not self._check_force_tags_access(list_key):
+            raise ValueError(f"Access denied: List '{list_key}' does not have required force tags: {', '.join(self.force_tags)}")
+
         # Get or create the tag
         tag_name = tag_name.lower()
         db_tag = self.db.get_tag_by_name(tag_name)
@@ -195,13 +212,13 @@ class ListsMixin:
             db_tag = self.db.create_tag(tag_data)
 
         # Check if assignment already exists
-        existing = self.db.get_list_tag_assignment(db_list.id, db_tag.id)
-        if existing:
+        existing_tags = self.db.get_tags_for_list(db_list.id)
+        existing_tag_names = [tag.name for tag in existing_tags]
+        if tag_name in existing_tag_names:
             raise ValueError(f"List '{list_key}' already has tag '{tag_name}'")
 
         # Create assignment
-        assignment_data = {"list_id": db_list.id, "tag_id": db_tag.id}
-        db_assignment = self.db.create_list_tag_assignment(assignment_data)
+        db_assignment = self.db.add_tag_to_list(db_list.id, db_tag.id)
 
         return self._db_to_model(db_assignment, ListTagAssignment)
 
@@ -212,13 +229,20 @@ class ListsMixin:
         if not db_list:
             raise ValueError(f"List '{list_key}' does not exist")
 
+        # FORCE_TAGS validation - block removal of force tags or modification of inaccessible lists
+        if self.force_tags:
+            if not self._check_force_tags_access(list_key):
+                raise ValueError(f"Access denied: List '{list_key}' does not have required force tags: {', '.join(self.force_tags)}")
+            if tag_name.lower() in self.force_tags:
+                raise ValueError(f"Cannot remove force tag '{tag_name}' from list '{list_key}' - required by environment isolation")
+
         # Get the tag
         db_tag = self.db.get_tag_by_name(tag_name.lower())
         if not db_tag:
             return False  # Tag doesn't exist
 
         # Remove assignment
-        return self.db.delete_list_tag_assignment(db_list.id, db_tag.id)
+        return self.db.remove_tag_from_list(db_list.id, db_tag.id)
 
     def get_tags_for_list(self, list_key: str) -> List[ListTag]:
         """Get all tags for a specific list"""

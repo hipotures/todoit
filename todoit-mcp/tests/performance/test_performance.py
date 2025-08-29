@@ -234,7 +234,15 @@ class TestPerformance:
         for i in range(num_lists):
             for j in range(num_tags):
                 tag_name = f"tag{j % 10}"  # Reuse tags across lists
-                temp_manager.add_tag_to_list(f"list{i}", tag_name)
+                try:
+                    temp_manager.add_tag_to_list(f"list{i}", tag_name)
+                except ValueError as e:
+                    if "already has tag" in str(e):
+                        # Tag already exists (possibly from auto-tagging), skip
+                        continue
+                    else:
+                        # Other error, re-raise
+                        raise
         tag_operations_time = time.time() - start_time
 
         # Tag operations should be reasonable (1000 assignments)
