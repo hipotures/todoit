@@ -145,11 +145,7 @@ def list_create(
                 tags=list(tags) if tags else None,
             )
 
-            # Auto-tagging with TODOIT_FORCE_TAGS is now handled automatically by manager.create_list()
-            from .tag_commands import _get_force_tags
-            force_tags = _get_force_tags()
-            if force_tags:
-                console.print(f"[dim]Auto-tagged with: {', '.join(force_tags)}[/dim]")
+            # Auto-tagging with TODOIT_FORCE_TAGS is handled automatically by manager.create_list()
 
         # Display created list
         info_lines = [
