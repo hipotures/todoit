@@ -93,9 +93,12 @@ def clean_item_data(item_dict: Dict[str, Any]) -> Dict[str, Any]:
         "title": item_dict.get("title"),
         "status": item_dict.get("status"),
         "position": item_dict.get("position"),
+        "list_key": item_dict.get("list_key"),
+        "parent_item_key": item_dict.get("parent_item_key"),
+        "is_subitem": item_dict.get("is_subitem"),
     }
 
-    # Add parent info only if it's a subtask
+    # Add parent info only if it's a subtask (legacy support)
     if item_dict.get("parent_item_id"):
         essential_fields["is_subtask"] = True
 
@@ -1599,6 +1602,9 @@ async def todo_find_items_by_property(
             "status": item.status.value,
             "position": item.position,
             "parent_item_id": item.parent_item_id,
+            "list_key": getattr(item, 'list_key', None),
+            "parent_item_key": getattr(item, 'parent_item_key', None),
+            "is_subitem": item.parent_item_id is not None,
         }
         item_dict = clean_item_data(item_dict)
 

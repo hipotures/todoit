@@ -5,6 +5,40 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.13.2] - 2025-08-29
+
+### 🎯 **Enhanced Search with Hierarchy Context**
+
+#### ✨ **New Features**
+- **Enhanced `find_items_by_property`**: Now returns complete hierarchy context
+  - **NEW**: `list_key` field - user-friendly list identifier  
+  - **NEW**: `parent_item_key` field - parent item key for subitems
+  - **NEW**: `is_subitem` boolean indicator
+- **MCP Enhancement**: `todo_find_items_by_property` automatically includes hierarchy context
+- **CLI Enhancement**: Dynamic columns in `todoit item find`
+  - **List** column appears in multi-list searches (`--list` not specified)
+  - **Parent** column appears for subitems automatically
+  - Smart display adapts to search context for optimal readability
+
+#### 🔧 **Technical Improvements**
+- **TodoItem Model**: Added `list_key` and `parent_item_key` optional fields
+- **Manager Core**: Single-source hierarchy population in `find_items_by_property()`
+- **Backward Compatible**: Existing code continues to work unchanged
+- **Performance**: Efficient database lookups for hierarchy resolution
+
+#### 📚 **Documentation Updates**
+- **MCP_TOOLS.md**: Enhanced examples showing new hierarchy fields
+- **CLI_GUIDE.md**: Updated search examples with dynamic column display
+- **api.md**: Complete TodoItem model documentation and migration notes
+
+#### 🐛 **Bug Fixes**
+- **Test Fix**: Corrected `test_cli_create_list_preserves_force_tags_functionality` - removed assertion for non-existent CLI message
+
+#### 🎯 **Impact**
+- **MCP Users**: Search results now include full context - know exactly where items are located
+- **CLI Users**: Clearer search results with automatic hierarchy display
+- **Developers**: Single API change provides consistency across MCP and CLI interfaces
+
 ## [2.13.1] - 2025-08-20
 
 ### 🔧 API Consistency Fix

@@ -247,7 +247,7 @@ todoit item next --list "my-project"
 todoit item next-smart --list "my-project"
 ```
 
-#### Search Items by Properties
+#### Search Items by Properties WITH HIERARCHY CONTEXT
 ```bash
 # Find all items with specific property value
 todoit item find --list "my-project" --property "priority" --value "high"
@@ -255,6 +255,21 @@ todoit item find --list "my-project" --property "priority" --value "high"
 todoit item find --list "my-project" --property "status" --value "reviewed"
 # Find items by issue ID
 todoit item find --list "my-project" --property "issue_id" --value "123"
+
+# 🆕 Multi-list search (v2.13.2+) - shows List column with hierarchy context
+todoit item find --property "type" --value "bug"  # Search ALL lists
+# ╭─────────────┬─────────────┬────────┬─────────┬─────────────────┬────────────╮
+# │ Item Key    │ Content     │ Status │ Created │ List            │ Parent     │
+# │ auth-bug    │ Fix login   │ ⏳     │ 15:33   │ backend-project │            │
+# │ ui-glitch   │ Button fix  │ ⏳     │ 16:45   │ frontend-tasks  │ redesign   │
+# ╰─────────────┴─────────────┴────────┴─────────┴─────────────────┴────────────╯
+
+# Single-list search - shows Parent column only (List is known)
+todoit item find --list "backend-project" --property "priority" --value "high"
+# ╭─────────────┬─────────────┬────────┬─────────┬────────────╮
+# │ Item Key    │ Content     │ Status │ Created │ Parent     │
+# │ cache-opt   │ Optimize    │ ⏳     │ 12:15   │ epic-perf  │
+# ╰─────────────┴─────────────┴────────┴─────────┴────────────╯
 
 # Limit search results
 todoit item find --list "my-project" --property "priority" --value "high" --limit 5
@@ -265,6 +280,11 @@ todoit item find --list "my-project" --property "assignee" --value "john" --firs
 todoit item find --list "backend" --property "component" --value "api" --limit 3
 todoit item find --list "frontend" --property "framework" --value "react" --first
 ```
+
+**New Display Columns (v2.13.2+):**
+- **List**: Shows when searching across multiple lists (`--list` not specified)
+- **Parent**: Shows parent item key for subitems (when `parent_item_id` exists)
+- Columns appear dynamically based on search context for optimal readability
 
 #### Advanced Subitem Search
 

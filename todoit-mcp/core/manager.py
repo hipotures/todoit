@@ -1129,8 +1129,23 @@ class TodoManager(
             list_id, property_key, property_value, limit
         )
 
-        # Convert to Pydantic models
-        return [self._db_to_model(db_item, TodoItem) for db_item in db_items]
+        # Convert to Pydantic models and enrich with hierarchy context
+        items = []
+        for db_item in db_items:
+            item = self._db_to_model(db_item, TodoItem)
+            
+            # Add list_key
+            list_db = self.db.get_list_by_id(db_item.list_id)
+            item.list_key = list_db.list_key if list_db else None
+            
+            # Add parent_item_key if this is a subitem
+            if db_item.parent_item_id:
+                parent_db = self.db.get_item_by_id(db_item.parent_item_id)
+                item.parent_item_key = parent_db.item_key if parent_db else None
+            
+            items.append(item)
+        
+        return items
 
     def find_subitems_by_status(
         self,

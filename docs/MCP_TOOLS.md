@@ -533,13 +533,33 @@ await todo_delete_item_property("project", "task1", "assignee")
 # 🆕 Remove property from subitem (NEW!)
 await todo_delete_item_property("project", "subtask1", "category", parent_item_key="task1")
 
-# 🆕 SEARCH for items by property values
+# 🆕 SEARCH for items by property values WITH HIERARCHY CONTEXT
 # Find all items with high priority
 high_priority_tasks = await todo_find_items_by_property("project", "priority", "high")
 # Returns: {"success": true, "items": [...], "count": 3, "search_criteria": {...}}
 
+# 🆕 Enhanced Response Format (v2.13.2+)
+# Each item now includes hierarchy context:
+# {
+#   "item_key": "task1", 
+#   "content": "Fix authentication bug",
+#   "status": "pending",
+#   "position": 1,
+#   "list_key": "backend-project",        # 🆕 NEW! List identifier
+#   "parent_item_key": "epic-auth",       # 🆕 NEW! Parent item key (if subitem)
+#   "is_subitem": true                    # 🆕 NEW! Boolean indicator
+# }
+
 # Find items assigned to specific person (with limit)
 johns_tasks = await todo_find_items_by_property("project", "assignee", "john", limit=5)
+
+# 🆕 Multi-list search (list_key=None) - includes list_key in response
+all_bugs = await todo_find_items_by_property(None, "type", "bug", limit=10)
+# Returns items from ALL lists with hierarchy context:
+# {"success": true, "items": [
+#   {"item_key": "auth-fix", "list_key": "backend", "parent_item_key": None, "is_subitem": false, ...},
+#   {"item_key": "ui-issue", "list_key": "frontend", "parent_item_key": "redesign", "is_subitem": true, ...}
+# ], "count": 2}
 
 # Find first item by issue ID (using limit=1)
 tasks = await todo_find_items_by_property("project", "jira_ticket", "PROJ-123", limit=1)

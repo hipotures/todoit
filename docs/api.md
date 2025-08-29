@@ -370,6 +370,45 @@ Gets all properties for an item as a dictionary.
 
 [Source](../todoit-mcp/core/manager.py)
 
+### `find_items_by_property`
+🆕 **v2.13.2**: Enhanced with hierarchy context.
+
+Searches for items by property value with optional limit and full hierarchy information.
+
+**Parameters:**
+- `list_key: Optional[str]`: The key of the list to search in (None = search all lists).
+- `property_key: str`: The property name to match.
+- `property_value: str`: The property value to match.
+- `limit: Optional[int]`: Maximum number of results to return (None = all).
+
+**Returns:** `List[TodoItem]` – List of TodoItem objects matching the criteria, **with hierarchy context**.
+
+**Enhanced TodoItem Response (v2.13.2+):**
+Each returned TodoItem now includes additional hierarchy fields:
+- `list_key: Optional[str]` – User-friendly list identifier
+- `parent_item_key: Optional[str]` – Parent item key if this is a subitem
+
+**Raises:** `ValueError` if the specified list is not found.
+
+**Usage Examples:**
+
+```python
+# Single list search
+items = manager.find_items_by_property("project", "priority", "high", limit=5)
+# Returns TodoItem objects with list_key="project" populated
+
+# Multi-list search with hierarchy context  
+bugs = manager.find_items_by_property(None, "type", "bug", limit=10)
+# Returns TodoItem objects from ALL lists with list_key populated for each
+
+# Each TodoItem includes:
+# - item.list_key: "backend-project" 
+# - item.parent_item_key: "epic-auth" (if subitem)
+# - Standard fields: item_key, content, status, etc.
+```
+
+[Source](../todoit-mcp/core/manager.py)
+
 ---
 
 ## Advanced Search
@@ -451,3 +490,30 @@ Exports a list to a markdown file.
 **Returns:** `None`
 
 [Source](../todoit-mcp/core/manager.py)
+
+---
+
+## Data Model Changes
+
+### TodoItem Model Enhancement (v2.13.2)
+
+The `TodoItem` Pydantic model has been enhanced with additional hierarchy context fields:
+
+**New Fields:**
+- `list_key: Optional[str]` – User-friendly list identifier (populated automatically)
+- `parent_item_key: Optional[str]` – Parent item key if this is a subitem (populated automatically)
+
+**Existing Fields** (unchanged):
+- `id: int` – Database ID
+- `list_id: int` – Database list foreign key
+- `item_key: str` – User-friendly item identifier
+- `content: str` – Item description
+- `status: ItemStatus` – Current status (pending, in_progress, completed, failed)
+- `position: int` – Position within list
+- `parent_item_id: Optional[int]` – Database parent foreign key (if subitem)
+- Plus standard timestamp and metadata fields
+
+**Migration Notes:**
+- **Backward Compatible**: Existing code continues to work unchanged
+- **Auto-Population**: New fields are automatically populated by `find_items_by_property()` and other methods
+- **Optional Fields**: New fields are `Optional[str]` and default to `None` if not populated

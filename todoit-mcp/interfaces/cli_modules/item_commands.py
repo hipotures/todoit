@@ -794,21 +794,30 @@ def item_find(ctx, list_key, property_key, property_value, limit, first):
         # Prepare data for unified display
         data = []
         for item in items:
-            data.append(
-                {
-                    "Item Key": item.item_key,
-                    "Content": item.content,
-                    "Status": _get_status_display(item.status.value),
-                    "Position": str(item.position),
-                    "Created": (
-                        item.created_at.strftime("%Y-%m-%d %H:%M")
-                        if item.created_at
-                        else "N/A"
-                    ),
-                }
-            )
+            # Add hierarchy context when searching across multiple lists
+            item_data = {
+                "Item Key": item.item_key,
+                "Content": item.content,
+                "Status": _get_status_display(item.status.value),
+                "Position": str(item.position),
+                "Created": (
+                    item.created_at.strftime("%Y-%m-%d %H:%M")
+                    if item.created_at
+                    else "N/A"
+                ),
+            }
+            
+            # Add List column when searching all lists (not specific list)
+            if list_key is None and hasattr(item, 'list_key') and item.list_key:
+                item_data["List"] = item.list_key
+            
+            # Add Parent column for subitems
+            if hasattr(item, 'parent_item_key') and item.parent_item_key:
+                item_data["Parent"] = item.parent_item_key
+            
+            data.append(item_data)
 
-        # Define column styling
+        # Define column styling - dynamically based on available columns
         columns = {
             "Item Key": {"style": "cyan", "width": 15},
             "Content": {"style": "white"},
@@ -816,6 +825,12 @@ def item_find(ctx, list_key, property_key, property_value, limit, first):
             "Position": {"style": "blue", "width": 8},
             "Created": {"style": "dim", "width": 16},
         }
+        
+        # Add styling for new columns if they exist in data
+        if data and "List" in data[0]:
+            columns["List"] = {"style": "magenta", "width": 20}
+        if data and "Parent" in data[0]:
+            columns["Parent"] = {"style": "green", "width": 15}
 
         # Create title with search info
         search_scope = list_key if list_key else "all lists"

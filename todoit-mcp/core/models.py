@@ -191,6 +191,8 @@ class TodoItem(TodoItemBase):
 
     id: int
     list_id: int
+    list_key: Optional[str] = None  # User-friendly list identifier
+    parent_item_key: Optional[str] = None  # Parent item key if this is a subitem
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     created_at: datetime
