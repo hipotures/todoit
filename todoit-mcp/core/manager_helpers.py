@@ -3,8 +3,9 @@ TODOIT MCP - Helper Methods Mixin
 Collection of helper methods for TodoManager
 """
 
-from typing import List
 from datetime import datetime, timezone
+from typing import List
+
 from sqlalchemy import text
 
 from .database import TodoItemDB

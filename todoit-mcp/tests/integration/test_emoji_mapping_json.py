@@ -5,12 +5,14 @@ Tests that emoji symbols in table headers are properly mapped to human-readable
 field names in JSON, YAML, and XML output formats for better API usability.
 """
 
-import pytest
 import json
-import yaml
-import tempfile
 import os
+import tempfile
+
+import pytest
+import yaml
 from click.testing import CliRunner
+
 from interfaces.cli import cli
 
 
@@ -31,19 +33,47 @@ class TestEmojiMappingJSON:
                 [
                     "--db-path",
                     "test.db",
-                    "list", "create", "--list", "testlist", "--title",
+                    "list",
+                    "create",
+                    "--list",
+                    "testlist",
+                    "--title",
                     "Test List",
                 ],
             )
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Item 1"]
+                cli,
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "task1",
+                    "--title",
+                    "Item 1",
+                ],
             )
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task2", "--title", "Item 2"]
+                cli,
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "task2",
+                    "--title",
+                    "Item 2",
+                ],
             )
             assert result.exit_code == 0
 
@@ -53,7 +83,13 @@ class TestEmojiMappingJSON:
                 [
                     "--db-path",
                     "test.db",
-                    "item", "status", "--list", "testlist", "--item", "task1", "--status",
+                    "item",
+                    "status",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "task1",
+                    "--status",
                     "completed",
                 ],
             )
@@ -108,14 +144,30 @@ class TestEmojiMappingJSON:
                 [
                     "--db-path",
                     "test.db",
-                    "list", "create", "--list", "testlist", "--title",
+                    "list",
+                    "create",
+                    "--list",
+                    "testlist",
+                    "--title",
                     "Test List",
                 ],
             )
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Item 1"]
+                cli,
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "task1",
+                    "--title",
+                    "Item 1",
+                ],
             )
             assert result.exit_code == 0
 
@@ -153,14 +205,30 @@ class TestEmojiMappingJSON:
                 [
                     "--db-path",
                     "test.db",
-                    "list", "create", "--list", "testlist", "--title",
+                    "list",
+                    "create",
+                    "--list",
+                    "testlist",
+                    "--title",
                     "Test List",
                 ],
             )
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Item 1"]
+                cli,
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "task1",
+                    "--title",
+                    "Item 1",
+                ],
             )
             assert result.exit_code == 0
 
@@ -199,7 +267,11 @@ class TestEmojiMappingJSON:
                 [
                     "--db-path",
                     "test.db",
-                    "list", "create", "--list", "testlist", "--title",
+                    "list",
+                    "create",
+                    "--list",
+                    "testlist",
+                    "--title",
                     "Test List",
                 ],
             )
@@ -258,23 +330,67 @@ class TestEmojiMappingJSON:
         with runner.isolated_filesystem():
             # Create multiple lists with different content
             result = runner.invoke(
-                cli, ["--db-path", "test.db", "list", "create", "--list", "list1", "--title", "List 1"]
+                cli,
+                [
+                    "--db-path",
+                    "test.db",
+                    "list",
+                    "create",
+                    "--list",
+                    "list1",
+                    "--title",
+                    "List 1",
+                ],
             )
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db-path", "test.db", "list", "create", "--list", "list2", "--title", "List 2"]
+                cli,
+                [
+                    "--db-path",
+                    "test.db",
+                    "list",
+                    "create",
+                    "--list",
+                    "list2",
+                    "--title",
+                    "List 2",
+                ],
             )
             assert result.exit_code == 0
 
             # Add items to first list
             result = runner.invoke(
-                cli, ["--db-path", "test.db", "item", "add", "--list", "list1", "--item", "task1", "--title", "Item 1"]
+                cli,
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "list1",
+                    "--item",
+                    "task1",
+                    "--title",
+                    "Item 1",
+                ],
             )
             assert result.exit_code == 0
 
             result = runner.invoke(
-                cli, ["--db-path", "test.db", "item", "add", "--list", "list1", "--item", "task2", "--title", "Item 2"]
+                cli,
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "list1",
+                    "--item",
+                    "task2",
+                    "--title",
+                    "Item 2",
+                ],
             )
             assert result.exit_code == 0
 
@@ -284,7 +400,13 @@ class TestEmojiMappingJSON:
                 [
                     "--db-path",
                     "test.db",
-                    "item", "status", "--list", "list1", "--item", "task1", "--status",
+                    "item",
+                    "status",
+                    "--list",
+                    "list1",
+                    "--item",
+                    "task1",
+                    "--status",
                     "completed",
                 ],
             )
@@ -295,7 +417,13 @@ class TestEmojiMappingJSON:
                 [
                     "--db-path",
                     "test.db",
-                    "item", "status", "--list", "list1", "--item", "task2", "--status",
+                    "item",
+                    "status",
+                    "--list",
+                    "list1",
+                    "--item",
+                    "task2",
+                    "--status",
                     "failed",
                 ],
             )

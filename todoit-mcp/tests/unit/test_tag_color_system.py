@@ -4,6 +4,7 @@ Tests automatic color assignment, limit enforcement, and display functionality
 """
 
 import pytest
+
 from core.manager import TodoManager
 from core.models import ListTag
 

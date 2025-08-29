@@ -5,11 +5,13 @@ Tests the find_items_by_property function
 in isolation with mocked database operations.
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch
-from core.manager import TodoManager
-from core.models import TodoItem, ItemStatus
 from datetime import datetime
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
+
+from core.manager import TodoManager
+from core.models import ItemStatus, TodoItem
 
 
 class TestPropertySearchUnit:
@@ -199,9 +201,7 @@ class TestPropertySearchUnit:
         with patch.object(
             manager_with_mock, "_db_to_model", side_effect=[mock_todo1, mock_todo2]
         ):
-            result = manager_with_mock.find_items_by_property(
-                None, "priority", "high"
-            )
+            result = manager_with_mock.find_items_by_property(None, "priority", "high")
 
         # Assertions
         assert len(result) == 2
@@ -209,23 +209,21 @@ class TestPropertySearchUnit:
         assert result[0].list_id == 1
         assert result[1].item_key == "task2"
         assert result[1].list_id == 2
-        
+
         # Should not call get_list_by_key when list_key is None
         mock_db.get_list_by_key.assert_not_called()
-        
+
         # Should call find_items_by_property with list_id=None
         mock_db.find_items_by_property.assert_called_once_with(
             None, "priority", "high", None
         )
 
-    def test_find_items_by_property_no_list_key_with_limit(self, manager_with_mock, mock_db):
+    def test_find_items_by_property_no_list_key_with_limit(
+        self, manager_with_mock, mock_db
+    ):
         """Test property search across all lists with limit."""
         mock_item = MagicMock(
-            id=1, 
-            list_id=1,
-            item_key="task1", 
-            content="First item", 
-            status="pending"
+            id=1, list_id=1, item_key="task1", content="First item", status="pending"
         )
         mock_db.find_items_by_property.return_value = [mock_item]
 

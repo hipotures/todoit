@@ -3,9 +3,9 @@ TODOIT MCP - Dependencies Management Mixin
 Collection of dependency and blocking logic for TodoManager
 """
 
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
-from .models import ItemDependency, DependencyType, TodoItem
+from .models import DependencyType, ItemDependency, TodoItem
 
 
 class DependenciesMixin:
@@ -303,7 +303,10 @@ class DependenciesMixin:
             "blockers": incomplete_blockers,
             "pending_subtasks": pending_subtasks,
             "reason": self._get_blocking_reason(
-                is_blocked_by_deps, is_blocked_by_subtasks, incomplete_blockers, pending_subtasks
+                is_blocked_by_deps,
+                is_blocked_by_subtasks,
+                incomplete_blockers,
+                pending_subtasks,
             ),
         }
 
@@ -352,7 +355,9 @@ class DependenciesMixin:
             "can_complete": can_complete,
             "blocked_by_subtasks": not can_complete,
             "incomplete_subtasks": incomplete_subtasks,
-            "reason": "has incomplete subtasks" if not can_complete else "ready to complete",
+            "reason": (
+                "has incomplete subtasks" if not can_complete else "ready to complete"
+            ),
         }
 
     def get_dependency_graph(self, project_key: str) -> Dict[str, Any]:

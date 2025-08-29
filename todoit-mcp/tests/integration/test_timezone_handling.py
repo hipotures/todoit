@@ -3,8 +3,10 @@ Integration tests for timezone handling.
 Tests that UTC timestamps are stored correctly and displayed as local time.
 """
 
-import pytest
 from datetime import datetime, timezone
+
+import pytest
+
 from core.manager import TodoManager
 from interfaces.cli_modules.display import _format_date
 

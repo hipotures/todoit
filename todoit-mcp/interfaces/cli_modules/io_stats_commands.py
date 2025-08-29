@@ -7,9 +7,7 @@ import click
 from rich.console import Console
 from rich.panel import Panel
 
-from .display import _display_records
-
-from .display import console
+from .display import _display_records, console
 
 
 def get_manager(db_path):

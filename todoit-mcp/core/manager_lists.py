@@ -4,9 +4,9 @@ Collection of list management methods for TodoManager
 """
 
 import re
-from typing import List, Optional, Dict, Any, Union
+from typing import Any, Dict, List, Optional, Union
 
-from .models import TodoList, ListTag, ListTagAssignment
+from .models import ListTag, ListTagAssignment, TodoList
 
 
 class ListsMixin:
@@ -22,10 +22,10 @@ class ListsMixin:
         tags: Optional[List[str]] = None,
     ) -> TodoList:
         """1. Creates a new TODO list with optional tasks and tags
-        
+
         Args:
             list_key: Unique identifier for the list
-            title: Display title for the list 
+            title: Display title for the list
             items: Optional list of initial todo items to add
             list_type: List organization type, defaults to "sequential"
             metadata: Optional dictionary of custom metadata for the list
@@ -47,7 +47,9 @@ class ListsMixin:
             for tag_name in tags:
                 tag_name = tag_name.lower()
                 if not self.db.get_tag_by_name(tag_name):
-                    raise ValueError(f"Tag '{tag_name}' does not exist. Create it first using create_tag.")
+                    raise ValueError(
+                        f"Tag '{tag_name}' does not exist. Create it first using create_tag."
+                    )
 
         # Prepare list data
         list_data = {
@@ -73,7 +75,7 @@ class ListsMixin:
                     "meta_data": {},
                 }
                 items_data.append(item_data)
-            
+
             # Bulk create all items in single transaction
             self.db.create_items_bulk(items_data)
 
@@ -149,7 +151,7 @@ class ListsMixin:
         tags: Optional[List[str]] = None,
     ) -> List[TodoList]:
         """4. Lists all TODO lists with optional filtering
-        
+
         Args:
             limit: Maximum number of lists to return
             include_archived: Whether to include archived lists
@@ -165,7 +167,7 @@ class ListsMixin:
             db_lists = self.db.get_lists_by_tags(tags, limit, include_archived)
         else:
             db_lists = self.db.get_all_lists(limit)
-            
+
             # Filter out archived lists if not requested
             if not include_archived:
                 db_lists = [lst for lst in db_lists if lst.status != "archived"]
@@ -227,7 +229,7 @@ class ListsMixin:
 
         # Get tag assignments for this list
         assignments = self.db.get_list_tags(db_list.id)
-        
+
         # Extract tags and sort alphabetically
         tags = []
         for assignment in assignments:
@@ -235,7 +237,7 @@ class ListsMixin:
             # Assign dynamic color based on position
             tag.color = self._get_tag_color_by_index(tag.name)
             tags.append(tag)
-            
+
         # Sort by name
         tags.sort(key=lambda t: t.name)
         return tags
@@ -244,13 +246,13 @@ class ListsMixin:
         """Get lists that have ANY of the specified tags"""
         # Convert to lowercase for consistency
         tag_names = [name.lower() for name in tag_names]
-        
+
         # Get lists from database
         db_lists = self.db.get_lists_by_tags(tag_names)
-        
+
         # Convert to Pydantic models
         lists = []
         for db_list in db_lists:
             lists.append(self._db_to_model(db_list, TodoList))
-            
+
         return lists

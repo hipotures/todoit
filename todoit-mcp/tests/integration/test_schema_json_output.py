@@ -3,10 +3,12 @@ Test JSON output format for schema command
 Verifies that TODOIT_OUTPUT_FORMAT=json works correctly for schema command
 """
 
-import os
 import json
+import os
+
 import pytest
 from click.testing import CliRunner
+
 from interfaces.cli import cli
 
 
@@ -167,10 +169,7 @@ class TestSchemaJsonOutput:
                 item
                 for item in output_data["data"]
                 if item["Category"] == "List Types"
-                or (
-                    item["Category"] == ""
-                    and item["Value"] in ["sequential"]
-                )
+                or (item["Category"] == "" and item["Value"] in ["sequential"])
             ]
 
             # Should have only sequential list type

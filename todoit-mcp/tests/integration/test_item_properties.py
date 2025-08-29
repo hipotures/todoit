@@ -7,10 +7,12 @@ This file tests the complete Item Properties system:
 - Error handling and edge cases
 """
 
-import pytest
-import tempfile
 import os
-from unittest.mock import patch, MagicMock
+import tempfile
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 from core.manager import TodoManager
 
 

@@ -5,13 +5,15 @@ Tests the complete property search workflow including database operations,
 MCP tools, and CLI commands with real database interactions.
 """
 
-import pytest
 import json
 import os
+
+import pytest
 from click.testing import CliRunner
+
 from core.manager import TodoManager
-from interfaces.mcp_server import todo_find_items_by_property
 from interfaces.cli_modules.item_commands import item_find
+from interfaces.mcp_server import todo_find_items_by_property
 
 
 class TestPropertySearchIntegration:
@@ -206,7 +208,16 @@ class TestPropertySearchIntegration:
 
         result = runner.invoke(
             item_find,
-            ["--list", "testlist", "--property", "category", "--value", "bug", "--limit", "1"],
+            [
+                "--list",
+                "testlist",
+                "--property",
+                "category",
+                "--value",
+                "bug",
+                "--limit",
+                "1",
+            ],
             obj={"db_path": manager.db.db_path},
         )
 
@@ -223,7 +234,15 @@ class TestPropertySearchIntegration:
 
         result = runner.invoke(
             item_find,
-            ["--list", "testlist", "--property", "category", "--value", "bug", "--first"],
+            [
+                "--list",
+                "testlist",
+                "--property",
+                "category",
+                "--value",
+                "bug",
+                "--first",
+            ],
             obj={"db_path": manager.db.db_path},
         )
 
@@ -344,22 +363,24 @@ class TestPropertySearchIntegration:
         # Set same property on items in different lists
         manager.set_item_property("list1", "item1", "priority", "high")
         manager.set_item_property("list2", "item2", "priority", "high")
-        manager.set_item_property("list3", "item3", "priority", "low")  # Different value
+        manager.set_item_property(
+            "list3", "item3", "priority", "low"
+        )  # Different value
 
         # Search across all lists
         results = manager.find_items_by_property(None, "priority", "high")
 
         # Should find items from list1 and list2, but not list3
         assert len(results) == 2
-        
+
         # Check that results contain items from different lists
         item_keys = [item.item_key for item in results]
         list_ids = [item.list_id for item in results]
-        
+
         assert "item1" in item_keys
         assert "item2" in item_keys
         assert "item3" not in item_keys
-        
+
         # Should be from different lists
         assert len(set(list_ids)) == 2
 
@@ -380,7 +401,7 @@ class TestPropertySearchIntegration:
 
         # Should respect limit
         assert len(results) == 2
-        
+
         # Check that items are from different lists (assuming natural sort)
         item_keys = [item.item_key for item in results]
         assert len(set(item_keys)) == 2
@@ -393,7 +414,7 @@ class TestPropertySearchIntegration:
 
         manager.add_item("list1", "item1", "Item 1")
         manager.add_item("list2", "item2", "Item 2")
-        
+
         manager.set_item_property("list1", "item1", "priority", "low")
         manager.set_item_property("list2", "item2", "priority", "medium")
 
@@ -418,26 +439,25 @@ class TestPropertySearchIntegration:
         db_results = manager.db.find_items_by_property(None, "status", "active")
 
         assert len(db_results) == 2
-        
+
         # Verify results are from different lists
         list_ids = [item.list_id for item in db_results]
         assert len(set(list_ids)) == 2
-
 
     def test_cli_item_find_all_lists_integration(self, manager):
         """Test CLI item find without --list flag (search all lists)."""
         # Create multiple lists with items
         manager.create_list("clitest1", "CLI Test 1")
         manager.create_list("clitest2", "CLI Test 2")
-        
+
         manager.add_item("clitest1", "cliitem1", "CLI Item 1")
         manager.add_item("clitest2", "cliitem2", "CLI Item 2")
-        
+
         manager.set_item_property("clitest1", "cliitem1", "team", "backend")
         manager.set_item_property("clitest2", "cliitem2", "team", "backend")
 
         runner = CliRunner()
-        
+
         # Test CLI without --list flag
         result = runner.invoke(
             item_find,
@@ -461,7 +481,7 @@ class TestPropertySearchIntegration:
             manager.set_item_property(list_key, f"clilimitem{i}", "priority", "medium")
 
         runner = CliRunner()
-        
+
         result = runner.invoke(
             item_find,
             ["--property", "priority", "--value", "medium", "--limit", "2"],
@@ -478,15 +498,15 @@ class TestPropertySearchIntegration:
         # Create test data
         manager.create_list("clifirst1", "CLI First 1")
         manager.create_list("clifirst2", "CLI First 2")
-        
+
         manager.add_item("clifirst1", "clifirstitem1", "CLI First Item 1")
         manager.add_item("clifirst2", "clifirstitem2", "CLI First Item 2")
-        
+
         manager.set_item_property("clifirst1", "clifirstitem1", "stage", "testing")
         manager.set_item_property("clifirst2", "clifirstitem2", "stage", "testing")
 
         runner = CliRunner()
-        
+
         result = runner.invoke(
             item_find,
             ["--property", "stage", "--value", "testing", "--first"],
@@ -506,7 +526,7 @@ class TestPropertySearchIntegration:
         manager.set_item_property("clinores", "clinoresitem", "env", "staging")
 
         runner = CliRunner()
-        
+
         result = runner.invoke(
             item_find,
             ["--property", "env", "--value", "nonexistent"],

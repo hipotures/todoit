@@ -4,6 +4,7 @@ Tests real-time color assignment, deletion shifts, and edge cases
 """
 
 import pytest
+
 from core.manager import TodoManager
 
 

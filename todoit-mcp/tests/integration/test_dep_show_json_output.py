@@ -3,10 +3,12 @@ Test JSON output format for dep show command
 Verifies that TODOIT_OUTPUT_FORMAT=json works correctly for dep show command
 """
 
-import os
 import json
+import os
+
 import pytest
 from click.testing import CliRunner
+
 from interfaces.cli import cli
 
 
@@ -48,7 +50,18 @@ class TestDepShowJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "task1",
+                    "--title",
+                    "Test Item",
+                ],
             )
             assert result.exit_code == 0
 
@@ -97,7 +110,16 @@ class TestDepShowJsonOutput:
             # Create two lists
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "list", "create", "--list", "backend", "--title", "Backend"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "list",
+                    "create",
+                    "--list",
+                    "backend",
+                    "--title",
+                    "Backend",
+                ],
             )
             assert result.exit_code == 0
 
@@ -204,7 +226,16 @@ class TestDepShowJsonOutput:
             # Create two lists
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "list", "create", "--list", "backend", "--title", "Backend"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "list",
+                    "create",
+                    "--list",
+                    "backend",
+                    "--title",
+                    "Backend",
+                ],
             )
             assert result.exit_code == 0
 
@@ -304,7 +335,16 @@ class TestDepShowJsonOutput:
             # Create two lists
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "list", "create", "--list", "backend", "--title", "Backend"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "list",
+                    "create",
+                    "--list",
+                    "backend",
+                    "--title",
+                    "Backend",
+                ],
             )
             assert result.exit_code == 0
 
@@ -449,7 +489,15 @@ class TestDepShowJsonOutput:
 
             # Test JSON output for nonexistent item
             result = self.runner.invoke(
-                cli, ["--db-path", "test.db", "dep", "show", "--item", "testlist:nonexistent"]
+                cli,
+                [
+                    "--db-path",
+                    "test.db",
+                    "dep",
+                    "show",
+                    "--item",
+                    "testlist:nonexistent",
+                ],
             )
 
             # Should handle error gracefully
@@ -463,7 +511,15 @@ class TestDepShowJsonOutput:
         with self.runner.isolated_filesystem():
             # Test JSON output for malformed reference
             result = self.runner.invoke(
-                cli, ["--db-path", "test.db", "dep", "show", "--item", "malformed_reference"]
+                cli,
+                [
+                    "--db-path",
+                    "test.db",
+                    "dep",
+                    "show",
+                    "--item",
+                    "malformed_reference",
+                ],
             )
 
             # Should handle error gracefully
@@ -493,7 +549,18 @@ class TestDepShowJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "task1",
+                    "--title",
+                    "Test Item",
+                ],
             )
             assert result.exit_code == 0
 
@@ -531,7 +598,18 @@ class TestDepShowJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "task1",
+                    "--title",
+                    "Test Item",
+                ],
             )
             assert result.exit_code == 0
 
@@ -570,7 +648,18 @@ class TestDepShowJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "task1",
+                    "--title",
+                    "Test Item",
+                ],
             )
             assert result.exit_code == 0
 
@@ -610,7 +699,18 @@ class TestDepShowJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "task1",
+                    "--title",
+                    "Test Item",
+                ],
             )
             assert result.exit_code == 0
 

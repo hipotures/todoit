@@ -4,11 +4,12 @@ Handles global tag operations (create, list, delete) and tag aliases
 """
 
 import os
-import click
 from typing import List, Optional
+
+import click
+from rich import box
 from rich.console import Console
 from rich.table import Table
-from rich import box
 
 from .display import _display_records, console
 

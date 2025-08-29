@@ -3,9 +3,11 @@ Unit tests for CLI error handling improvements
 Tests the enhanced status command error messages
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from click.testing import CliRunner
+
 from interfaces.cli_modules.item_commands import item_status
 
 
@@ -160,10 +162,20 @@ class TestCLIErrorHandling:
 
             result = runner.invoke(
                 item_status,
-                ["--list", "test_list", "--item", "test_item", "--status", "invalid_status"],
+                [
+                    "--list",
+                    "test_list",
+                    "--item",
+                    "test_item",
+                    "--status",
+                    "invalid_status",
+                ],
                 obj={"db_path": "test.db"},
             )
 
             # Should show Click Choice validation error
-            assert "Invalid value for '--status'" in result.output or "invalid_status" in result.output
+            assert (
+                "Invalid value for '--status'" in result.output
+                or "invalid_status" in result.output
+            )
             assert result.exit_code == 2

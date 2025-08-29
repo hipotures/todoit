@@ -3,12 +3,14 @@ Integration tests for CLI archiving functionality
 Tests the complete archiving workflow through the CLI interface
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
+
+import pytest
 from click.testing import CliRunner
-from interfaces.cli import cli
+
 from core.manager import TodoManager
+from interfaces.cli import cli
 
 
 class TestArchiveCLI:
@@ -75,7 +77,8 @@ class TestArchiveCLI:
 
         # Then unarchive it
         result = runner.invoke(
-            cli, ["--db-path", temp_db_path, "list", "unarchive", "--list", "archive-me"]
+            cli,
+            ["--db-path", temp_db_path, "list", "unarchive", "--list", "archive-me"],
         )
 
         assert result.exit_code == 0
@@ -150,7 +153,9 @@ class TestArchiveCLI:
         manager.archive_list("test-list-1")
 
         # List only archived
-        result = runner.invoke(cli, ["--db-path", temp_db_path, "list", "all", "--archived"])
+        result = runner.invoke(
+            cli, ["--db-path", temp_db_path, "list", "all", "--archived"]
+        )
 
         assert result.exit_code == 0
         # Check for partial matches since table truncates long names
@@ -199,7 +204,8 @@ class TestArchiveCLI:
         runner = CliRunner()
 
         result = runner.invoke(
-            cli, ["--db-path", temp_db_path, "list", "unarchive", "--list", "test-list-1"]
+            cli,
+            ["--db-path", temp_db_path, "list", "unarchive", "--list", "test-list-1"],
         )
 
         assert result.exit_code == 0
@@ -210,7 +216,8 @@ class TestArchiveCLI:
         runner = CliRunner()
 
         result = runner.invoke(
-            cli, ["--db-path", temp_db_path, "list", "unarchive", "--list", "nonexistent"]
+            cli,
+            ["--db-path", temp_db_path, "list", "unarchive", "--list", "nonexistent"],
         )
 
         assert result.exit_code == 0
@@ -238,7 +245,9 @@ class TestArchiveCLI:
         assert "📦" in result.output  # Status column should appear
 
         # With --archived only, status column should appear
-        result = runner.invoke(cli, ["--db-path", temp_db_path, "list", "all", "--archived"])
+        result = runner.invoke(
+            cli, ["--db-path", temp_db_path, "list", "all", "--archived"]
+        )
         assert result.exit_code == 0
         assert "📦" in result.output  # Status column should appear
 
@@ -323,7 +332,8 @@ class TestArchiveCLI:
 
         # Archive it
         result = runner.invoke(
-            cli, ["--db-path", temp_db_path, "list", "archive", "--list", "workflow-test"]
+            cli,
+            ["--db-path", temp_db_path, "list", "archive", "--list", "workflow-test"],
         )
         assert result.exit_code == 0
         assert "has been archived" in result.output
@@ -334,7 +344,9 @@ class TestArchiveCLI:
         assert "workflow-test" not in result.output
 
         # Verify it appears in archived-only list
-        result = runner.invoke(cli, ["--db-path", temp_db_path, "list", "all", "--archived"])
+        result = runner.invoke(
+            cli, ["--db-path", temp_db_path, "list", "all", "--archived"]
+        )
         assert result.exit_code == 0
         # Should show the archived list (table should have content)
         assert "Total lists: 1" in result.output
@@ -346,7 +358,8 @@ class TestArchiveCLI:
 
         # Unarchive it
         result = runner.invoke(
-            cli, ["--db-path", temp_db_path, "list", "unarchive", "--list", "workflow-test"]
+            cli,
+            ["--db-path", temp_db_path, "list", "unarchive", "--list", "workflow-test"],
         )
         assert result.exit_code == 0
         assert "has been restored" in result.output
@@ -359,7 +372,9 @@ class TestArchiveCLI:
         )  # Title parts appear in table
 
         # Verify it doesn't appear in archived-only list
-        result = runner.invoke(cli, ["--db-path", temp_db_path, "list", "all", "--archived"])
+        result = runner.invoke(
+            cli, ["--db-path", temp_db_path, "list", "all", "--archived"]
+        )
         assert result.exit_code == 0
         assert "workflow-test" not in result.output or "Total lists: 0" in result.output
 
@@ -380,7 +395,15 @@ class TestArchiveCLI:
 
         # Try to archive without --force (should fail)
         result = runner.invoke(
-            cli, ["--db-path", temp_db_path, "list", "archive", "--list", "incomplete-tasks"]
+            cli,
+            [
+                "--db-path",
+                temp_db_path,
+                "list",
+                "archive",
+                "--list",
+                "incomplete-tasks",
+            ],
         )
 
         assert result.exit_code == 0
@@ -405,7 +428,16 @@ class TestArchiveCLI:
 
         # Archive with --force (should succeed)
         result = runner.invoke(
-            cli, ["--db-path", temp_db_path, "list", "archive", "--list", "force-archive", "--force"]
+            cli,
+            [
+                "--db-path",
+                temp_db_path,
+                "list",
+                "archive",
+                "--list",
+                "force-archive",
+                "--force",
+            ],
         )
 
         assert result.exit_code == 0
@@ -433,7 +465,8 @@ class TestArchiveCLI:
 
         # Archive without --force (should succeed)
         result = runner.invoke(
-            cli, ["--db-path", temp_db_path, "list", "archive", "--list", "completed-list"]
+            cli,
+            ["--db-path", temp_db_path, "list", "archive", "--list", "completed-list"],
         )
 
         assert result.exit_code == 0

@@ -3,12 +3,13 @@ Test Cross-List Dependencies - Working CLI Tests
 Tests CLI commands that actually exist and work
 """
 
-import pytest
-import tempfile
 import os
-import subprocess
 import shlex
+import subprocess
+import tempfile
 from pathlib import Path
+
+import pytest
 
 
 class TestDependenciesCLIWorking:
@@ -54,7 +55,7 @@ class TestDependenciesCLIWorking:
             "list create --list test_list --title 'Test List'", temp_db_path
         )
         assert result.returncode == 0
-        
+
         # Add dev tag to the list so it's visible with filtering
         result = self.run_cli_command(
             "list tag add --list test_list --tag dev", temp_db_path
@@ -69,32 +70,40 @@ class TestDependenciesCLIWorking:
     def test_cli_item_operations_work(self, temp_db_path):
         """Test basic item operations work"""
         # Create list first with dev tag (required for filtering)
-        self.run_cli_command("list create --list test_list --title 'Test List'", temp_db_path)
+        self.run_cli_command(
+            "list create --list test_list --title 'Test List'", temp_db_path
+        )
         self.run_cli_command("list tag add --list test_list --tag dev", temp_db_path)
 
         # Add item
         result = self.run_cli_command(
-            "item add --list test_list --item test_item --title 'Test Item Content'", temp_db_path
+            "item add --list test_list --item test_item --title 'Test Item Content'",
+            temp_db_path,
         )
         assert result.returncode == 0
 
         # Update status
         result = self.run_cli_command(
-            "item status --list test_list --item test_item --status completed", temp_db_path
+            "item status --list test_list --item test_item --status completed",
+            temp_db_path,
         )
         assert result.returncode == 0
 
     def test_cli_subtask_operations_work(self, temp_db_path):
         """Test subitem operations work"""
         # Create list and parent item
-        self.run_cli_command("list create --list test_list --title 'Test List'", temp_db_path)
         self.run_cli_command(
-            "item add --list test_list --item parent_item --title 'Parent Item'", temp_db_path
+            "list create --list test_list --title 'Test List'", temp_db_path
+        )
+        self.run_cli_command(
+            "item add --list test_list --item parent_item --title 'Parent Item'",
+            temp_db_path,
         )
 
         # Add subitem
         result = self.run_cli_command(
-            "item add --list test_list --item parent_item --subitem sub1 --title 'Subitem 1'", temp_db_path
+            "item add --list test_list --item parent_item --subitem sub1 --title 'Subitem 1'",
+            temp_db_path,
         )
         assert result.returncode == 0
 
@@ -107,9 +116,15 @@ class TestDependenciesCLIWorking:
     def test_cli_next_task_operations_work(self, temp_db_path):
         """Test next item operations work"""
         # Create list with items
-        self.run_cli_command("list create --list test_list --title 'Test List'", temp_db_path)
-        self.run_cli_command("item add --list test_list --item item1 --title 'Item 1'", temp_db_path)
-        self.run_cli_command("item add --list test_list --item item2 --title 'Item 2'", temp_db_path)
+        self.run_cli_command(
+            "list create --list test_list --title 'Test List'", temp_db_path
+        )
+        self.run_cli_command(
+            "item add --list test_list --item item1 --title 'Item 1'", temp_db_path
+        )
+        self.run_cli_command(
+            "item add --list test_list --item item2 --title 'Item 2'", temp_db_path
+        )
 
         # Get next item
         result = self.run_cli_command("item next --list test_list", temp_db_path)
@@ -122,10 +137,18 @@ class TestDependenciesCLIWorking:
     def test_cli_dependency_commands_exist(self, temp_db_path):
         """Test that dependency commands exist and can be called"""
         # Create setup
-        self.run_cli_command("list create --list backend --title 'Backend'", temp_db_path)
-        self.run_cli_command("list create --list frontend --title 'Frontend'", temp_db_path)
-        self.run_cli_command("item add --list backend --item api --title 'API Item'", temp_db_path)
-        self.run_cli_command("item add --list frontend --item ui --title 'UI Item'", temp_db_path)
+        self.run_cli_command(
+            "list create --list backend --title 'Backend'", temp_db_path
+        )
+        self.run_cli_command(
+            "list create --list frontend --title 'Frontend'", temp_db_path
+        )
+        self.run_cli_command(
+            "item add --list backend --item api --title 'API Item'", temp_db_path
+        )
+        self.run_cli_command(
+            "item add --list frontend --item ui --title 'UI Item'", temp_db_path
+        )
 
         # Try dependency add with correct syntax
         result = self.run_cli_command(
@@ -145,9 +168,15 @@ class TestDependenciesCLIWorking:
     def test_cli_stats_operations_work(self, temp_db_path):
         """Test stats operations work"""
         # Create list with items
-        self.run_cli_command("list create --list test_list --title 'Test List'", temp_db_path)
-        self.run_cli_command("item add --list test_list --item item1 --title 'Item 1'", temp_db_path)
-        self.run_cli_command("item add --list test_list --item item2 --title 'Item 2'", temp_db_path)
+        self.run_cli_command(
+            "list create --list test_list --title 'Test List'", temp_db_path
+        )
+        self.run_cli_command(
+            "item add --list test_list --item item1 --title 'Item 1'", temp_db_path
+        )
+        self.run_cli_command(
+            "item add --list test_list --item item2 --title 'Item 2'", temp_db_path
+        )
 
         # Get progress stats
         result = self.run_cli_command("stats progress test_list", temp_db_path)

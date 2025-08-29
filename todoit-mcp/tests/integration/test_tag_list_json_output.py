@@ -3,10 +3,12 @@ Test JSON output format for tag list command
 Verifies that TODOIT_OUTPUT_FORMAT=json works correctly for tag list command
 """
 
-import os
 import json
+import os
+
 import pytest
 from click.testing import CliRunner
+
 from interfaces.cli import cli
 
 
@@ -32,18 +34,47 @@ class TestTagListJsonOutput:
         with self.runner.isolated_filesystem():
             # Create some tags
             result = self.runner.invoke(
-                cli, ["--db-path", "test.db", "tag", "create", "--name", "work", "--color", "blue"]
+                cli,
+                [
+                    "--db-path",
+                    "test.db",
+                    "tag",
+                    "create",
+                    "--name",
+                    "work",
+                    "--color",
+                    "blue",
+                ],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "tag", "create", "--name", "personal", "--color", "green"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "tag",
+                    "create",
+                    "--name",
+                    "personal",
+                    "--color",
+                    "green",
+                ],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db-path", "test.db", "tag", "create", "--name", "urgent", "--color", "red"]
+                cli,
+                [
+                    "--db-path",
+                    "test.db",
+                    "tag",
+                    "create",
+                    "--name",
+                    "urgent",
+                    "--color",
+                    "red",
+                ],
             )
             assert result.exit_code == 0
 
@@ -86,12 +117,32 @@ class TestTagListJsonOutput:
         with self.runner.isolated_filesystem():
             # Create tags with specific colors
             result = self.runner.invoke(
-                cli, ["--db-path", "test.db", "tag", "create", "--name", "blue_tag", "--color", "blue"]
+                cli,
+                [
+                    "--db-path",
+                    "test.db",
+                    "tag",
+                    "create",
+                    "--name",
+                    "blue_tag",
+                    "--color",
+                    "blue",
+                ],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
-                cli, ["--db-path", "test.db", "tag", "create", "--name", "red_tag", "--color", "red"]
+                cli,
+                [
+                    "--db-path",
+                    "test.db",
+                    "tag",
+                    "create",
+                    "--name",
+                    "red_tag",
+                    "--color",
+                    "red",
+                ],
             )
             assert result.exit_code == 0
 

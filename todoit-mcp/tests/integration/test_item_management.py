@@ -3,8 +3,10 @@ Integration tests for item management functionality (delete and edit content).
 Tests both manager and MCP layers for the new CRUD operations.
 """
 
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from core.manager import TodoManager
 from core.models import ItemStatus
 from interfaces import mcp_server
@@ -78,12 +80,20 @@ class TestItemManagement:
 
         # Verify all items exist
         assert temp_manager.get_item("test_list", "test_item") is not None
-        assert temp_manager.get_item("test_list", "sub1", "test_item") is not None  # sub1 under test_item
-        assert temp_manager.get_item("test_list", "sub2", "test_item") is not None  # sub2 under test_item
-        assert temp_manager.get_item("test_list", "subsub1", "sub1") is not None    # subsub1 under sub1
+        assert (
+            temp_manager.get_item("test_list", "sub1", "test_item") is not None
+        )  # sub1 under test_item
+        assert (
+            temp_manager.get_item("test_list", "sub2", "test_item") is not None
+        )  # sub2 under test_item
+        assert (
+            temp_manager.get_item("test_list", "subsub1", "sub1") is not None
+        )  # subsub1 under sub1
 
         # Try to delete parent item - should fail because it has subtasks
-        with pytest.raises(ValueError, match="Cannot delete item 'test_item' because it has subtasks"):
+        with pytest.raises(
+            ValueError, match="Cannot delete item 'test_item' because it has subtasks"
+        ):
             temp_manager.delete_item("test_list", "test_item")
 
         # Verify parent item still exists

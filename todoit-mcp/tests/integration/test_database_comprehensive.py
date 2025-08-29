@@ -3,11 +3,13 @@ Test Database Layer - Comprehensive Coverage
 Tests for core/database.py to improve coverage
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
+
+import pytest
+
 from core.database import Database
-from core.models import TodoList, TodoItem, ItemDependency
+from core.models import ItemDependency, TodoItem, TodoList
 
 
 class TestDatabaseComprehensive:
@@ -136,7 +138,6 @@ class TestDatabaseComprehensive:
         temp_db.delete_item(item_obj.id)
         deleted_item = temp_db.get_item_by_id(item_obj.id)
         assert deleted_item is None
-
 
     def test_item_dependencies_comprehensive(self, temp_db):
         """Test comprehensive item dependencies"""

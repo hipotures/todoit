@@ -3,9 +3,11 @@ Unit tests for completion states management functionality
 Tests clear_item_completion_states method and related operations
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
+
+import pytest
+
 from core.manager import TodoManager
 
 

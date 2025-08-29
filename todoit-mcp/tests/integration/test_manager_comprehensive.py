@@ -3,12 +3,14 @@ Test Manager Layer - Comprehensive Coverage
 Tests for core/manager.py to improve coverage
 """
 
-import pytest
-import tempfile
-import os
-from core.manager import TodoManager
-from core.models import TodoList, TodoItem
 import json
+import os
+import tempfile
+
+import pytest
+
+from core.manager import TodoManager
+from core.models import TodoItem, TodoList
 
 
 class TestManagerComprehensive:
@@ -175,7 +177,6 @@ class TestManagerComprehensive:
         # Verify completions
         completed_items = temp_manager.get_list_items("bulk_test", "completed")
         assert len(completed_items) == 2
-
 
     def test_advanced_item_operations(self, temp_manager):
         """Test advanced item operations using existing methods"""
@@ -433,7 +434,6 @@ class TestManagerComprehensive:
         normal_content = "Normal content"
         normal_item = temp_manager.add_item("error_test", "normal", normal_content)
         assert normal_item.content == normal_content
-
 
     def test_list_key_validation(self, temp_manager):
         """Test that list keys must contain at least one letter to distinguish from IDs."""

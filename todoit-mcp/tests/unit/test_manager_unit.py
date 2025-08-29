@@ -6,10 +6,12 @@ from the database, ensuring that algorithms for item selection, status updates,
 and hierarchy management work as expected.
 """
 
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, MagicMock, patch
+
 from core.manager import TodoManager
-from core.models import TodoList, TodoItem, ItemStatus
+from core.models import ItemStatus, TodoItem, TodoList
 
 
 class TestTodoManagerUnit:
@@ -321,7 +323,9 @@ class TestTodoManagerUnit:
                 required_item="nonexistent_item",
             )
 
-    def test_delete_item_prevents_deletion_with_subtasks(self, manager_with_mock, mock_db):
+    def test_delete_item_prevents_deletion_with_subtasks(
+        self, manager_with_mock, mock_db
+    ):
         """Test that deleting a parent item with subtasks raises an error."""
         parent = MagicMock(id=1, item_key="parent_key", parent_item_id=None)
         subtask1 = MagicMock(id=2, item_key="subtask1", parent_item_id=1)
@@ -333,11 +337,13 @@ class TestTodoManagerUnit:
             "subtask2": subtask2,
         }.get(key)
 
-        mock_db.get_item_by_key_and_parent.side_effect = lambda list_id, key, parent_id: {
-            "parent_key": parent,
-            "subtask1": subtask1,
-            "subtask2": subtask2,
-        }.get(key)
+        mock_db.get_item_by_key_and_parent.side_effect = (
+            lambda list_id, key, parent_id: {
+                "parent_key": parent,
+                "subtask1": subtask1,
+                "subtask2": subtask2,
+            }.get(key)
+        )
 
         mock_db.get_item_children.side_effect = lambda item_id: {
             parent.id: [subtask1, subtask2],

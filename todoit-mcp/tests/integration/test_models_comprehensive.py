@@ -3,31 +3,33 @@ Test Models - Comprehensive Coverage
 Tests for core/models.py to improve coverage
 """
 
-import pytest
 from datetime import datetime, timezone
+
+import pytest
 from pydantic import ValidationError
+
 from core.models import (
-    TodoList,
-    TodoListCreate,
-    TodoListUpdate,
+    BlockedItemsResult,
+    BulkOperationResult,
+    CompletionStates,
+    DependencyGraph,
+    DependencyType,
+    HistoryAction,
+    ItemDependency,
+    ItemDependencyCreate,
+    ItemStatus,
+    ListProperty,
+    ListPropertyCreate,
+    ListType,
+    ProgressStats,
+    TodoHistory,
+    TodoHistoryCreate,
     TodoItem,
     TodoItemCreate,
     TodoItemUpdate,
-    ItemDependency,
-    ItemDependencyCreate,
-    ListProperty,
-    ListPropertyCreate,
-    TodoHistory,
-    TodoHistoryCreate,
-    ProgressStats,
-    CompletionStates,
-    BulkOperationResult,
-    DependencyGraph,
-    BlockedItemsResult,
-    ListType,
-    ItemStatus,
-    HistoryAction,
-    DependencyType,
+    TodoList,
+    TodoListCreate,
+    TodoListUpdate,
 )
 
 
@@ -44,7 +46,6 @@ class TestModelsComprehensive:
         assert ItemStatus.IN_PROGRESS == "in_progress"
         assert ItemStatus.COMPLETED == "completed"
         assert ItemStatus.FAILED == "failed"
-
 
     def test_history_action_enum(self):
         """Test HistoryAction enum"""
@@ -235,7 +236,6 @@ class TestModelsComprehensive:
         update = TodoItemUpdate(**update_data)
         assert update.content == "Updated content"
         assert update.status == ItemStatus.IN_PROGRESS
-
 
     def test_item_dependency_validation(self):
         """Test ItemDependency validation"""

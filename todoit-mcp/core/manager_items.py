@@ -3,9 +3,9 @@ TODOIT MCP - Item Operations Mixin
 Collection of basic item management methods for TodoManager
 """
 
-from typing import List, Optional, Dict, Any, Union
+from typing import Any, Dict, List, Optional, Union
 
-from .models import TodoItem, TodoHistory, ProgressStats
+from .models import ProgressStats, TodoHistory, TodoItem
 
 
 class ItemsMixin:
@@ -73,7 +73,7 @@ class ItemsMixin:
             parent_item_key = item_key
         else:
             actual_item_key = item_key
-        
+
         # Get the list
         db_list = self.db.get_list_by_key(list_key)
         if not db_list:
@@ -84,21 +84,31 @@ class ItemsMixin:
         if parent_item_key:
             parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
             if not parent_item:
-                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+                raise ValueError(
+                    f"Parent item '{parent_item_key}' not found in list '{list_key}'"
+                )
             parent_item_id = parent_item.id
 
         # Get the item
-        db_item = self.db.get_item_by_key_and_parent(db_list.id, actual_item_key, parent_item_id)
+        db_item = self.db.get_item_by_key_and_parent(
+            db_list.id, actual_item_key, parent_item_id
+        )
         if not db_item:
             if parent_item_key:
-                raise ValueError(f"Item '{actual_item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+                raise ValueError(
+                    f"Item '{actual_item_key}' not found under parent '{parent_item_key}' in list '{list_key}'"
+                )
             else:
-                raise ValueError(f"Item '{actual_item_key}' not found in list '{list_key}'")
+                raise ValueError(
+                    f"Item '{actual_item_key}' not found in list '{list_key}'"
+                )
 
         # Check if item has subtasks - items with subtasks cannot have their status manually changed
         children = self.db.get_item_children(db_item.id)
         if children:
-            raise ValueError(f"Cannot manually change status of item '{actual_item_key}' because it has subtasks. Status is automatically synchronized based on subtask statuses.")
+            raise ValueError(
+                f"Cannot manually change status of item '{actual_item_key}' because it has subtasks. Status is automatically synchronized based on subtask statuses."
+            )
 
         # Store old status for history
         old_status = db_item.status
@@ -110,25 +120,27 @@ class ItemsMixin:
             existing_states = db_item.completion_states or {}
             merged_states = {**existing_states, **completion_states}
             updates["completion_states"] = merged_states
-        
+
         # Set timestamps based on status changes
         if status == "in_progress" and db_item.started_at is None:
             # Set started_at when first moving to in_progress
             from .database import utc_now
+
             updates["started_at"] = utc_now()
         elif status == "completed":
             # Set completed_at when moving to completed
             from .database import utc_now
+
             updates["completed_at"] = utc_now()
 
         # Update the item
         with self.db.get_session() as session:
             db_item = self.db.update_item(db_item.id, updates)
-            
+
             # Sync parent status if this item has a parent
             if db_item.parent_item_id:
                 self._sync_parent_status(db_item.parent_item_id, session)
-            
+
             session.commit()
 
         # Save to history
@@ -143,7 +155,11 @@ class ItemsMixin:
         return self._db_to_model(db_item, TodoItem)
 
     def clear_item_completion_states(
-        self, list_key: str, item_key: str, parent_item_key: Optional[str] = None, state_keys: Optional[List[str]] = None
+        self,
+        list_key: str,
+        item_key: str,
+        parent_item_key: Optional[str] = None,
+        state_keys: Optional[List[str]] = None,
     ) -> TodoItem:
         """Clear completion states for an item"""
         # Get the list
@@ -156,32 +172,40 @@ class ItemsMixin:
         if parent_item_key:
             parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
             if not parent_item:
-                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+                raise ValueError(
+                    f"Parent item '{parent_item_key}' not found in list '{list_key}'"
+                )
             parent_item_id = parent_item.id
 
         # Get the item
-        db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item_id)
+        db_item = self.db.get_item_by_key_and_parent(
+            db_list.id, item_key, parent_item_id
+        )
         if not db_item:
             if parent_item_key:
-                raise ValueError(f"Item '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+                raise ValueError(
+                    f"Item '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'"
+                )
             else:
                 raise ValueError(f"Item '{item_key}' does not exist")
 
         # Store old states for history
         old_states = db_item.completion_states or {}
-        
+
         # Clear completion states - either specific keys or all
         if state_keys is not None:
             if state_keys:  # Non-empty list
                 # Clear only specific keys
-                new_states = {k: v for k, v in old_states.items() if k not in state_keys}
+                new_states = {
+                    k: v for k, v in old_states.items() if k not in state_keys
+                }
             else:  # Empty list
                 # Don't clear anything
                 new_states = old_states.copy()
         else:
             # Clear all states (None was passed)
             new_states = {}
-            
+
         updates = {"completion_states": new_states}
         db_item = self.db.update_item(db_item.id, updates)
 
@@ -196,7 +220,9 @@ class ItemsMixin:
 
         return self._db_to_model(db_item, TodoItem)
 
-    def get_item(self, list_key: str, item_key: str, parent_item_key: Optional[str] = None) -> Optional[TodoItem]:
+    def get_item(
+        self, list_key: str, item_key: str, parent_item_key: Optional[str] = None
+    ) -> Optional[TodoItem]:
         """Get a specific item from a list"""
         # Get the list
         db_list = self.db.get_list_by_key(list_key)
@@ -212,7 +238,9 @@ class ItemsMixin:
             parent_item_id = parent_item.id
 
         # Get the item
-        db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item_id)
+        db_item = self.db.get_item_by_key_and_parent(
+            db_list.id, item_key, parent_item_id
+        )
         if db_item:
             return self._db_to_model(db_item, TodoItem)
         return None
@@ -243,7 +271,9 @@ class ItemsMixin:
 
         return items
 
-    def delete_item(self, list_key: str, item_key: str, parent_item_key: Optional[str] = None) -> bool:
+    def delete_item(
+        self, list_key: str, item_key: str, parent_item_key: Optional[str] = None
+    ) -> bool:
         """Delete an item from a list"""
         # Get the list
         db_list = self.db.get_list_by_key(list_key)
@@ -255,18 +285,24 @@ class ItemsMixin:
         if parent_item_key:
             parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
             if not parent_item:
-                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+                raise ValueError(
+                    f"Parent item '{parent_item_key}' not found in list '{list_key}'"
+                )
             parent_item_id = parent_item.id
 
         # Get the item
-        db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item_id)
+        db_item = self.db.get_item_by_key_and_parent(
+            db_list.id, item_key, parent_item_id
+        )
         if not db_item:
             return False
 
         # Check if item has children - cannot delete items with subtasks
         children = self.db.get_item_children(db_item.id)
         if children:
-            raise ValueError(f"Cannot delete item '{item_key}' because it has subtasks. Delete subtasks first.")
+            raise ValueError(
+                f"Cannot delete item '{item_key}' because it has subtasks. Delete subtasks first."
+            )
 
         # Record deletion in history before deleting
         self._record_history(
@@ -286,7 +322,11 @@ class ItemsMixin:
         return success
 
     def update_item_content(
-        self, list_key: str, item_key: str, content: str, parent_item_key: Optional[str] = None
+        self,
+        list_key: str,
+        item_key: str,
+        content: str,
+        parent_item_key: Optional[str] = None,
     ) -> TodoItem:
         """Update the content of an item"""
         # Get the list
@@ -299,14 +339,20 @@ class ItemsMixin:
         if parent_item_key:
             parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
             if not parent_item:
-                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+                raise ValueError(
+                    f"Parent item '{parent_item_key}' not found in list '{list_key}'"
+                )
             parent_item_id = parent_item.id
 
         # Get the item
-        db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item_id)
+        db_item = self.db.get_item_by_key_and_parent(
+            db_list.id, item_key, parent_item_id
+        )
         if not db_item:
             if parent_item_key:
-                raise ValueError(f"Item '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+                raise ValueError(
+                    f"Item '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'"
+                )
             else:
                 raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
 
@@ -350,14 +396,20 @@ class ItemsMixin:
         if parent_item_key:
             parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
             if not parent_item:
-                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+                raise ValueError(
+                    f"Parent item '{parent_item_key}' not found in list '{list_key}'"
+                )
             parent_item_id = parent_item.id
 
         # Get the item
-        db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item_id)
+        db_item = self.db.get_item_by_key_and_parent(
+            db_list.id, item_key, parent_item_id
+        )
         if not db_item:
             if parent_item_key:
-                raise ValueError(f"Item '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+                raise ValueError(
+                    f"Item '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'"
+                )
             else:
                 raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
 
@@ -367,13 +419,19 @@ class ItemsMixin:
 
         if new_key and new_key != item_key:
             # Check if new key already exists
-            existing = self.db.get_item_by_key_and_parent(db_list.id, new_key, parent_item_id)
+            existing = self.db.get_item_by_key_and_parent(
+                db_list.id, new_key, parent_item_id
+            )
             if existing:
                 if parent_item_key:
-                    raise ValueError(f"Item with key '{new_key}' already exists under parent '{parent_item_key}' in list '{list_key}'")
+                    raise ValueError(
+                        f"Item with key '{new_key}' already exists under parent '{parent_item_key}' in list '{list_key}'"
+                    )
                 else:
-                    raise ValueError(f"Item with key '{new_key}' already exists in list '{list_key}'")
-            
+                    raise ValueError(
+                        f"Item with key '{new_key}' already exists in list '{list_key}'"
+                    )
+
             updates["item_key"] = new_key
             changes["item_key"] = {"from": item_key, "to": new_key}
 

@@ -3,9 +3,10 @@ Unit tests for MCP tools level configuration system
 Tests MINIMAL/STANDARD/MAX levels and tool registration
 """
 
-import pytest
 import os
 from unittest.mock import patch
+
+import pytest
 
 
 class TestMCPToolsLevels:
@@ -17,10 +18,11 @@ class TestMCPToolsLevels:
         with patch.dict(os.environ, {"TODOIT_MCP_TOOLS_LEVEL": "minimal"}):
             # Need to reload the module to pick up new env var
             import importlib
+
             import interfaces.mcp_server
 
             importlib.reload(interfaces.mcp_server)
-            from interfaces.mcp_server import should_register_tool, TOOLS_MINIMAL
+            from interfaces.mcp_server import TOOLS_MINIMAL, should_register_tool
 
             # Test that MINIMAL tools should register
             assert should_register_tool("todo_create_list") == True
@@ -43,13 +45,14 @@ class TestMCPToolsLevels:
 
         with patch.dict(os.environ, {"TODOIT_MCP_TOOLS_LEVEL": "standard"}):
             import importlib
+
             import interfaces.mcp_server
 
             importlib.reload(interfaces.mcp_server)
             from interfaces.mcp_server import (
-                should_register_tool,
-                TOOLS_STANDARD,
                 TOOLS_MINIMAL,
+                TOOLS_STANDARD,
+                should_register_tool,
             )
 
             # Test that MINIMAL tools should register
@@ -77,6 +80,7 @@ class TestMCPToolsLevels:
 
         with patch.dict(os.environ, {"TODOIT_MCP_TOOLS_LEVEL": "max"}):
             import importlib
+
             import interfaces.mcp_server
 
             importlib.reload(interfaces.mcp_server)
@@ -99,6 +103,7 @@ class TestMCPToolsLevels:
 
         with patch.dict(os.environ, {}, clear=True):
             import importlib
+
             import interfaces.mcp_server
 
             importlib.reload(interfaces.mcp_server)
@@ -117,6 +122,7 @@ class TestMCPToolsLevels:
 
         with patch.dict(os.environ, {"TODOIT_MCP_TOOLS_LEVEL": "unknown_level"}):
             import importlib
+
             import interfaces.mcp_server
 
             importlib.reload(interfaces.mcp_server)
@@ -133,6 +139,7 @@ class TestMCPToolsLevels:
         # Test uppercase
         with patch.dict(os.environ, {"TODOIT_MCP_TOOLS_LEVEL": "MINIMAL"}):
             import importlib
+
             import interfaces.mcp_server
 
             importlib.reload(interfaces.mcp_server)
@@ -145,6 +152,7 @@ class TestMCPToolsLevels:
 
         with patch.dict(os.environ, {"TODOIT_MCP_TOOLS_LEVEL": "minimal"}):
             import importlib
+
             import interfaces.mcp_server
 
             importlib.reload(interfaces.mcp_server)
@@ -196,7 +204,7 @@ class TestMCPToolsLevels:
         """Test that STANDARD level adds useful extensions to MINIMAL"""
 
         import interfaces.mcp_server
-        from interfaces.mcp_server import TOOLS_STANDARD, TOOLS_MINIMAL
+        from interfaces.mcp_server import TOOLS_MINIMAL, TOOLS_STANDARD
 
         # Should include all MINIMAL tools
         for tool in TOOLS_MINIMAL:

@@ -3,15 +3,16 @@ Unit tests for report commands functionality
 Tests both CLI and MCP implementations for failed item reporting
 """
 
-import pytest
 import asyncio
 import re
-from unittest.mock import patch
 from io import StringIO
+from unittest.mock import patch
+
+import pytest
 
 from core.manager import TodoManager
-from interfaces.mcp_server import todo_report_errors
 from interfaces.cli_modules.display import _display_records
+from interfaces.mcp_server import todo_report_errors
 
 
 class TestReportCommands:
@@ -53,7 +54,9 @@ class TestReportCommands:
             )
 
         if items2:
-            manager.update_item_status("0023_beta_sprint", items2[0].item_key, status="failed")
+            manager.update_item_status(
+                "0023_beta_sprint", items2[0].item_key, status="failed"
+            )
             manager.update_item_status(
                 "0023_beta_sprint", items2[1].item_key, status="in_progress"
             )
@@ -63,7 +66,9 @@ class TestReportCommands:
             )
 
         if items3:
-            manager.update_item_status("simple_project", items3[0].item_key, status="pending")
+            manager.update_item_status(
+                "simple_project", items3[0].item_key, status="pending"
+            )
 
         return manager
 
@@ -299,7 +304,9 @@ class TestReportCommands:
         items = manager.get_list_items("no_props_list")
 
         if items:
-            manager.update_item_status("no_props_list", items[0].item_key, status="failed")
+            manager.update_item_status(
+                "no_props_list", items[0].item_key, status="failed"
+            )
 
         failed_items = manager.get_all_failed_items()
         assert len(failed_items) == 1

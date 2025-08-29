@@ -3,7 +3,7 @@ TODOIT MCP - Subtasks and Hierarchy Management Mixin
 Collection of subtask and hierarchy methods for TodoManager
 """
 
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 from .models import TodoItem
 
@@ -47,7 +47,9 @@ class SubtasksMixin:
             )
 
         # Check if subitem_key already exists among siblings of same parent
-        existing_item = self.db.get_item_by_key_and_parent(db_list.id, subitem_key, parent_item.id)
+        existing_item = self.db.get_item_by_key_and_parent(
+            db_list.id, subitem_key, parent_item.id
+        )
         if existing_item:
             raise ValueError(
                 f"Subitem key '{subitem_key}' already exists for parent '{parent_key}'"
@@ -152,6 +154,7 @@ class SubtasksMixin:
 
             # Get the item
             from sqlalchemy.orm import selectinload
+
             db_item = (
                 session.query(self.db.TodoItemDB)
                 .options(selectinload(self.db.TodoItemDB.children))
@@ -198,7 +201,13 @@ class SubtasksMixin:
 
                 # Add nested stats
                 nested_stats = child_hierarchy.get("stats", {})
-                for stat_key in ["total_subitems", "completed_subitems", "pending_subitems", "in_progress_subitems", "failed_subitems"]:
+                for stat_key in [
+                    "total_subitems",
+                    "completed_subitems",
+                    "pending_subitems",
+                    "in_progress_subitems",
+                    "failed_subitems",
+                ]:
                     hierarchy["stats"][stat_key] += nested_stats.get(stat_key, 0)
 
             return hierarchy
@@ -237,7 +246,7 @@ class SubtasksMixin:
 
         # Check if all subitems are completed
         all_completed = all(subitem.status == "completed" for subitem in subitems)
-        
+
         if all_completed and db_item.status != "completed":
             # Auto-complete the parent
             updates = {"status": "completed"}
@@ -297,7 +306,9 @@ class SubtasksMixin:
             )
 
         # Check if item_key already exists as a subitem of the new parent
-        existing_subitem = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+        existing_subitem = self.db.get_item_by_key_and_parent(
+            db_list.id, item_key, parent_item.id
+        )
         if existing_subitem:
             raise ValueError(
                 f"Item with key '{item_key}' already exists as a subitem of '{new_parent_key}'"
@@ -317,11 +328,11 @@ class SubtasksMixin:
         with self.db.get_session() as session:
             # Sync new parent
             self._sync_parent_status(parent_item.id, session)
-            
+
             # If item had an old parent, sync it too
             if db_item.parent_item_id:
                 self._sync_parent_status(db_item.parent_item_id, session)
-            
+
             session.commit()
 
         # Record in history
@@ -342,7 +353,9 @@ class SubtasksMixin:
 
         return self._db_to_model(updated_item, TodoItem)
 
-    def _would_create_circular_hierarchy(self, item_id: int, potential_parent_id: int) -> bool:
+    def _would_create_circular_hierarchy(
+        self, item_id: int, potential_parent_id: int
+    ) -> bool:
         """Check if making potential_parent_id a parent of item_id would create a circular dependency."""
         # Start from the potential parent and walk up the hierarchy
         current_id = potential_parent_id

@@ -5,13 +5,15 @@ These tests ensure the system handles unexpected situations gracefully
 without crashing or losing data integrity.
 """
 
-import pytest
-import tempfile
 import os
 import sqlite3
+import tempfile
 from pathlib import Path
-from core.manager import TodoManager
+
+import pytest
+
 from core.database import Database
+from core.manager import TodoManager
 
 
 class TestRobustness:
@@ -103,14 +105,15 @@ class TestRobustness:
             manager1.create_list("test", "Test List")
 
             # Properly close the first manager and its database connections
-            if hasattr(manager1, 'close_database_connections'):
+            if hasattr(manager1, "close_database_connections"):
                 manager1.close_database_connections()
-            elif hasattr(manager1, 'db') and hasattr(manager1.db, 'close'):
+            elif hasattr(manager1, "db") and hasattr(manager1.db, "close"):
                 manager1.db.close()
             del manager1
 
             # Wait a bit for connections to be fully released
             import time
+
             time.sleep(0.1)
 
             # Create a new connection to lock the database
@@ -127,7 +130,7 @@ class TestRobustness:
                 error_msg = str(e).lower()
                 # Just verify we get some meaningful error
                 assert len(error_msg) > 0
-                
+
         except Exception:
             # If the test setup itself fails, that's also acceptable
             # This test is checking robustness, not requiring specific behavior

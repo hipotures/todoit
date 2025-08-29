@@ -3,19 +3,21 @@ Integration tests for tag functionality
 Tests CLI and MCP integration with tag system
 """
 
-import pytest
 import asyncio
+import os
+import tempfile
+
+import pytest
+
 from core.manager import TodoManager
 from interfaces.mcp_server import (
-    todo_create_tag,
+    init_manager,
     todo_add_list_tag,
-    todo_remove_list_tag,
+    todo_create_tag,
     todo_get_lists_by_tag,
     todo_list_all,
-    init_manager,
+    todo_remove_list_tag,
 )
-import tempfile
-import os
 
 
 @pytest.fixture

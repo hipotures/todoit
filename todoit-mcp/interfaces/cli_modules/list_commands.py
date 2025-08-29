@@ -3,25 +3,26 @@ List management commands for TODOIT CLI
 Handles create, show, delete, live monitoring operations
 """
 
-import click
+import hashlib
 import json
 import os
 import time
-import hashlib
 from datetime import datetime
+
+import click
+from rich import box
 from rich.console import Console
-from rich.panel import Panel
-from rich.prompt import Confirm
 from rich.layout import Layout
 from rich.live import Live
-from rich.text import Text
+from rich.panel import Panel
+from rich.prompt import Confirm
 from rich.table import Table
-from rich import box
+from rich.text import Text
 
 from .display import (
-    _render_table_view,
     _display_records,
     _format_date,
+    _render_table_view,
     console,
 )
 from .tag_commands import _get_filter_tags
@@ -67,7 +68,9 @@ def list_group():
     "--item-prefix", default="Process", help="Item name prefix (default: Process)"
 )
 @click.option("--metadata", "-m", help="Metadata JSON")
-@click.option("--tag", "tags", multiple=True, help="Tags to assign (must already exist)")
+@click.option(
+    "--tag", "tags", multiple=True, help="Tags to assign (must already exist)"
+)
 @click.pass_context
 def list_create(
     ctx,
@@ -95,7 +98,9 @@ def list_create(
             for tag_name in tags:
                 tag_name = tag_name.lower()
                 if not manager.db.get_tag_by_name(tag_name):
-                    console.print(f"[red]❌ Error: Tag '{tag_name}' does not exist. Create it first using:[/]")
+                    console.print(
+                        f"[red]❌ Error: Tag '{tag_name}' does not exist. Create it first using:[/]"
+                    )
                     console.print(f"[cyan]todoit tag create {tag_name}[/]")
                     return
 
@@ -161,11 +166,11 @@ def list_create(
             f"[bold cyan]Title:[/] {todo_list.title}",
             f"[bold cyan]Items:[/] {len(final_items)}",
         ]
-        
+
         # Add tags info if any were provided
         if tags:
             info_lines.append(f"[bold cyan]Tags:[/] {', '.join(tags)}")
-        
+
         panel = Panel(
             "\n".join(info_lines),
             title="✅ List Created",
@@ -175,8 +180,6 @@ def list_create(
 
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
-
-
 
 
 @list_group.command("show")
@@ -297,7 +300,7 @@ def list_all(ctx, limit, details, archived, include_archived, filter_tags):
 
         # Get all list keys for bulk operations
         list_keys = [todo_list.list_key for todo_list in lists]
-        
+
         # Bulk fetch progress and tags for all lists (replaces N+1 queries)
         progress_by_key = manager.get_progress_bulk_minimal(list_keys)
         tags_by_key = manager.get_tags_for_lists_bulk(list_keys)
@@ -317,14 +320,13 @@ def list_all(ctx, limit, details, archived, include_archived, filter_tags):
             if not progress:
                 # Fallback if not found (shouldn't happen)
                 continue
-                
+
             list_tags = tags_by_key.get(todo_list.list_key, [])
             tags_display = (
                 " ".join([f"[{tag.color}]●[/{tag.color}]" for tag in list_tags])
                 if list_tags
                 else ""
             )
-
 
             # Show short indicator for status
             if hasattr(todo_list, "status") and todo_list.status:
@@ -416,7 +418,12 @@ def list_all(ctx, limit, details, archived, include_archived, filter_tags):
 
 
 @list_group.command("delete")
-@click.option("--list", "list_keys", required=True, help="List key or comma-separated list keys to delete")
+@click.option(
+    "--list",
+    "list_keys",
+    required=True,
+    help="List key or comma-separated list keys to delete",
+)
 @click.option("--force", is_flag=True, help="Force deletion")
 @click.pass_context
 def list_delete(ctx, list_keys, force):
@@ -906,60 +913,58 @@ def list_rename(ctx, current_key, new_key, new_title, yes):
         if not new_key and not new_title:
             console.print("❌ Error: At least one of --key or --title must be provided")
             raise click.ClickException("Missing required options")
-        
+
         manager = get_manager(ctx.obj["db_path"])
-        
+
         # Check access if FORCE_TAGS is enabled
         if not _check_list_access(manager, current_key):
             console.print(
                 f"❌ Access denied to list '{current_key}' based on FORCE_TAGS filter"
             )
             raise click.ClickException("Access denied")
-        
+
         # Get current list to show what will change
         current_list = manager.get_list(current_key)
         if not current_list:
             console.print(f"❌ List '{current_key}' does not exist")
             raise click.ClickException("List not found")
-        
+
         # Show changes that will be made
         changes_table = Table(title="Changes to be made", box=box.ROUNDED)
         changes_table.add_column("Field", style="cyan")
         changes_table.add_column("Current", style="white")
         changes_table.add_column("New", style="green")
-        
+
         if new_key:
             changes_table.add_row("Key", current_list.list_key, new_key)
         if new_title:
             changes_table.add_row("Title", current_list.title, new_title)
-        
+
         console.print(changes_table)
-        
+
         # Confirmation
         if not yes:
             if not Confirm.ask("Continue with rename?", default=False):
                 console.print("❌ Rename cancelled")
                 return
-        
+
         # Perform rename
         renamed_list = manager.rename_list(
-            current_key=current_key,
-            new_key=new_key,
-            new_title=new_title
+            current_key=current_key, new_key=new_key, new_title=new_title
         )
-        
+
         # Show success result
         result_table = Table(title="✅ List renamed successfully!", box=box.ROUNDED)
         result_table.add_column("Field", style="cyan")
         result_table.add_column("Value", style="white")
-        
+
         result_table.add_row("Key", renamed_list.list_key)
         result_table.add_row("Title", renamed_list.title)
         result_table.add_row("Status", renamed_list.status)
         result_table.add_row("Updated", _format_date(renamed_list.updated_at))
-        
+
         console.print(result_table)
-        
+
     except ValueError as e:
         console.print(f"❌ Error: {e}")
         raise click.ClickException(str(e))

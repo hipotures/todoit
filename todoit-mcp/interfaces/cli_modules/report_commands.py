@@ -3,9 +3,10 @@ Report and analytics commands for TODOIT CLI
 Generate various reports for project management and troubleshooting
 """
 
-import click
 import re
 from typing import Optional
+
+import click
 from rich.console import Console
 from rich.panel import Panel
 

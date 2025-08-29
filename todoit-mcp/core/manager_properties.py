@@ -3,15 +3,17 @@ TODOIT MCP - Properties Management Mixin
 Collection of property management methods for TodoManager
 """
 
-from typing import Dict, Optional, List, Any
+from typing import Any, Dict, List, Optional
 
-from .models import ListProperty, ItemProperty
+from .models import ItemProperty, ListProperty
 
 
 class PropertiesMixin:
     """Mixin containing property management methods for TodoManager"""
 
-    def set_list_property(self, list_key: str, property_key: str, property_value: str) -> ListProperty:
+    def set_list_property(
+        self, list_key: str, property_key: str, property_value: str
+    ) -> ListProperty:
         """Set a property for a list"""
         # Get the list
         db_list = self.db.get_list_by_key(list_key)
@@ -29,7 +31,9 @@ class PropertiesMixin:
         existing = self.db.get_list_property(db_list.id, property_key)
         if existing:
             # Update existing property
-            db_property = self.db.update_list_property(existing.id, {"property_value": property_value})
+            db_property = self.db.update_list_property(
+                existing.id, {"property_value": property_value}
+            )
         else:
             # Create new property
             db_property = self.db.create_list_property(property_data)
@@ -56,12 +60,12 @@ class PropertiesMixin:
 
         # Get all properties
         db_properties = self.db.get_list_properties(db_list.id)
-        
+
         # Convert to dictionary
         properties = {}
         for prop in db_properties:
             properties[prop.property_key] = prop.property_value
-            
+
         return properties
 
     def delete_list_property(self, list_key: str, property_key: str) -> bool:
@@ -79,7 +83,14 @@ class PropertiesMixin:
         # Delete property
         return self.db.delete_list_property(db_property.id)
 
-    def set_item_property(self, list_key: str, item_key: str, property_key: str, property_value: str, parent_item_key: Optional[str] = None) -> ItemProperty:
+    def set_item_property(
+        self,
+        list_key: str,
+        item_key: str,
+        property_key: str,
+        property_value: str,
+        parent_item_key: Optional[str] = None,
+    ) -> ItemProperty:
         """Set a property for an item"""
         # Get the list
         db_list = self.db.get_list_by_key(list_key)
@@ -91,14 +102,20 @@ class PropertiesMixin:
         if parent_item_key:
             parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
             if not parent_item:
-                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+                raise ValueError(
+                    f"Parent item '{parent_item_key}' not found in list '{list_key}'"
+                )
             parent_item_id = parent_item.id
 
         # Get the item
-        db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item_id)
+        db_item = self.db.get_item_by_key_and_parent(
+            db_list.id, item_key, parent_item_id
+        )
         if not db_item:
             if parent_item_key:
-                raise ValueError(f"Item '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+                raise ValueError(
+                    f"Item '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'"
+                )
             else:
                 raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
 
@@ -113,14 +130,22 @@ class PropertiesMixin:
         existing = self.db.get_item_property(db_item.id, property_key)
         if existing:
             # Update existing property
-            db_property = self.db.update_item_property(existing.id, {"property_value": property_value})
+            db_property = self.db.update_item_property(
+                existing.id, {"property_value": property_value}
+            )
         else:
             # Create new property
             db_property = self.db.create_item_property(property_data)
 
         return self._db_to_model(db_property, ItemProperty)
 
-    def get_item_property(self, list_key: str, item_key: str, property_key: str, parent_item_key: Optional[str] = None) -> Optional[str]:
+    def get_item_property(
+        self,
+        list_key: str,
+        item_key: str,
+        property_key: str,
+        parent_item_key: Optional[str] = None,
+    ) -> Optional[str]:
         """Get a property value for an item"""
         # Get the list
         db_list = self.db.get_list_by_key(list_key)
@@ -132,14 +157,20 @@ class PropertiesMixin:
         if parent_item_key:
             parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
             if not parent_item:
-                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
+                raise ValueError(
+                    f"Parent item '{parent_item_key}' not found in list '{list_key}'"
+                )
             parent_item_id = parent_item.id
 
         # Get the item
-        db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item_id)
+        db_item = self.db.get_item_by_key_and_parent(
+            db_list.id, item_key, parent_item_id
+        )
         if not db_item:
             if parent_item_key:
-                raise ValueError(f"Item '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+                raise ValueError(
+                    f"Item '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'"
+                )
             else:
                 raise ValueError(f"Item '{item_key}' not found in list '{list_key}'")
 

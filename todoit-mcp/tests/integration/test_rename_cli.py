@@ -3,12 +3,14 @@ Integration tests for CLI rename functionality
 Tests the complete rename workflow through the CLI interface
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
+
+import pytest
 from click.testing import CliRunner
-from interfaces.cli import cli
+
 from core.manager import TodoManager
+from interfaces.cli import cli
 
 
 class TestRenameCLI:
@@ -29,7 +31,9 @@ class TestRenameCLI:
         manager = TodoManager(temp_db_path)
 
         # Create test lists
-        list1 = manager.create_list("test_list_1", "Test List 1", items=["Item 1", "Item 2"])
+        list1 = manager.create_list(
+            "test_list_1", "Test List 1", items=["Item 1", "Item 2"]
+        )
         list2 = manager.create_list("test_list_2", "Test List 2", items=["Item A"])
         list3 = manager.create_list("rename_me", "Original Title", items=["Old Item"])
 
@@ -41,12 +45,20 @@ class TestRenameCLI:
         runner = CliRunner()
 
         # Rename list key
-        result = runner.invoke(cli, [
-            "--db-path", temp_db_path,
-            "list", "rename", "--list", "rename_me",
-            "--key", "renamed_list",
-            "--yes"
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "--db-path",
+                temp_db_path,
+                "list",
+                "rename",
+                "--list",
+                "rename_me",
+                "--key",
+                "renamed_list",
+                "--yes",
+            ],
+        )
 
         assert result.exit_code == 0
         assert "✅ List renamed successfully!" in result.output
@@ -69,12 +81,20 @@ class TestRenameCLI:
         runner = CliRunner()
 
         # Rename list title
-        result = runner.invoke(cli, [
-            "--db-path", temp_db_path,
-            "list", "rename", "--list", "rename_me",
-            "--title", "New Awesome Title",
-            "--yes"
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "--db-path",
+                temp_db_path,
+                "list",
+                "rename",
+                "--list",
+                "rename_me",
+                "--title",
+                "New Awesome Title",
+                "--yes",
+            ],
+        )
 
         assert result.exit_code == 0
         assert "✅ List renamed successfully!" in result.output
@@ -92,13 +112,22 @@ class TestRenameCLI:
         runner = CliRunner()
 
         # Rename both key and title
-        result = runner.invoke(cli, [
-            "--db-path", temp_db_path,
-            "list", "rename", "--list", "rename_me",
-            "--key", "complete_rename",
-            "--title", "Completely New Title",
-            "--yes"
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "--db-path",
+                temp_db_path,
+                "list",
+                "rename",
+                "--list",
+                "rename_me",
+                "--key",
+                "complete_rename",
+                "--title",
+                "Completely New Title",
+                "--yes",
+            ],
+        )
 
         assert result.exit_code == 0
         assert "✅ List renamed successfully!" in result.output
@@ -117,12 +146,22 @@ class TestRenameCLI:
         runner = CliRunner()
 
         # Rename without --yes to see preview
-        result = runner.invoke(cli, [
-            "--db-path", temp_db_path,
-            "list", "rename", "--list", "rename_me",
-            "--key", "preview_test",
-            "--title", "Preview Title"
-        ], input="n\n")  # Say no to confirmation
+        result = runner.invoke(
+            cli,
+            [
+                "--db-path",
+                temp_db_path,
+                "list",
+                "rename",
+                "--list",
+                "rename_me",
+                "--key",
+                "preview_test",
+                "--title",
+                "Preview Title",
+            ],
+            input="n\n",
+        )  # Say no to confirmation
 
         assert result.exit_code == 0
         assert "Changes to be made" in result.output
@@ -139,11 +178,20 @@ class TestRenameCLI:
         runner = CliRunner()
 
         # Rename with confirmation
-        result = runner.invoke(cli, [
-            "--db-path", temp_db_path,
-            "list", "rename", "--list", "rename_me",
-            "--key", "confirmed_rename"
-        ], input="y\n")  # Say yes to confirmation
+        result = runner.invoke(
+            cli,
+            [
+                "--db-path",
+                temp_db_path,
+                "list",
+                "rename",
+                "--list",
+                "rename_me",
+                "--key",
+                "confirmed_rename",
+            ],
+            input="y\n",
+        )  # Say yes to confirmation
 
         assert result.exit_code == 0
         assert "✅ List renamed successfully!" in result.output
@@ -159,10 +207,9 @@ class TestRenameCLI:
         runner = CliRunner()
 
         # Try rename without --key or --title parameters (but with --list)
-        result = runner.invoke(cli, [
-            "--db-path", temp_db_path,
-            "list", "rename", "--list", "rename_me"
-        ])
+        result = runner.invoke(
+            cli, ["--db-path", temp_db_path, "list", "rename", "--list", "rename_me"]
+        )
 
         assert result.exit_code != 0
         assert "At least one of --key or --title must be provided" in result.output
@@ -173,12 +220,20 @@ class TestRenameCLI:
         runner = CliRunner()
 
         # Try to rename non-existent list
-        result = runner.invoke(cli, [
-            "--db-path", temp_db_path,
-            "list", "rename", "--list", "nonexistent",
-            "--key", "new_key",
-            "--yes"
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "--db-path",
+                temp_db_path,
+                "list",
+                "rename",
+                "--list",
+                "nonexistent",
+                "--key",
+                "new_key",
+                "--yes",
+            ],
+        )
 
         assert result.exit_code != 0
         assert "Access denied" in result.output or "does not exist" in result.output
@@ -189,12 +244,20 @@ class TestRenameCLI:
         runner = CliRunner()
 
         # Try to rename to existing key
-        result = runner.invoke(cli, [
-            "--db-path", temp_db_path,
-            "list", "rename", "--list", "rename_me",
-            "--key", "test_list_1",  # This key already exists
-            "--yes"
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "--db-path",
+                temp_db_path,
+                "list",
+                "rename",
+                "--list",
+                "rename_me",
+                "--key",
+                "test_list_1",  # This key already exists
+                "--yes",
+            ],
+        )
 
         assert result.exit_code != 0
         assert "already exists" in result.output
@@ -205,17 +268,27 @@ class TestRenameCLI:
         runner = CliRunner()
 
         # Try to rename to invalid key
-        result = runner.invoke(cli, [
-            "--db-path", temp_db_path,
-            "list", "rename", "--list", "rename_me",
-            "--key", "123",  # Invalid - no letters
-            "--yes"
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "--db-path",
+                temp_db_path,
+                "list",
+                "rename",
+                "--list",
+                "rename_me",
+                "--key",
+                "123",  # Invalid - no letters
+                "--yes",
+            ],
+        )
 
         assert result.exit_code != 0
         assert "must contain at least one letter" in result.output
 
-    def test_rename_preserves_items_and_relationships(self, temp_db_path, setup_test_lists):
+    def test_rename_preserves_items_and_relationships(
+        self, temp_db_path, setup_test_lists
+    ):
         """Test that rename preserves items and other relationships"""
         manager, lists = setup_test_lists
         runner = CliRunner()
@@ -229,12 +302,20 @@ class TestRenameCLI:
         manager.set_list_property("rename_me", "test_prop", "test_value")
 
         # Rename the list
-        result = runner.invoke(cli, [
-            "--db-path", temp_db_path,
-            "list", "rename", "--list", "rename_me",
-            "--key", "preserved_list",
-            "--yes"
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "--db-path",
+                temp_db_path,
+                "list",
+                "rename",
+                "--list",
+                "rename_me",
+                "--key",
+                "preserved_list",
+                "--yes",
+            ],
+        )
 
         assert result.exit_code == 0
 
@@ -253,15 +334,23 @@ class TestRenameCLI:
         runner = CliRunner()
 
         # Rename with standard output
-        result = runner.invoke(cli, [
-            "--db-path", temp_db_path,
-            "list", "rename", "--list", "rename_me",
-            "--key", "format_test",
-            "--yes"
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "--db-path",
+                temp_db_path,
+                "list",
+                "rename",
+                "--list",
+                "rename_me",
+                "--key",
+                "format_test",
+                "--yes",
+            ],
+        )
 
         assert result.exit_code == 0
-        
+
         # Should contain success message and new key
         output = result.output
         assert "✅ List renamed successfully!" in output
@@ -277,12 +366,21 @@ class TestRenameCLI:
 
         # Set TODOIT_FORCE_TAGS environment and try rename
         env = {"TODOIT_FORCE_TAGS": "test_tag"}
-        result = runner.invoke(cli, [
-            "--db-path", temp_db_path,
-            "list", "rename", "--list", "rename_me",
-            "--key", "tagged_rename",
-            "--yes"
-        ], env=env)
+        result = runner.invoke(
+            cli,
+            [
+                "--db-path",
+                temp_db_path,
+                "list",
+                "rename",
+                "--list",
+                "rename_me",
+                "--key",
+                "tagged_rename",
+                "--yes",
+            ],
+            env=env,
+        )
 
         assert result.exit_code == 0
         assert "✅ List renamed successfully!" in result.output
@@ -297,20 +395,37 @@ class TestRenameCLI:
         runner = CliRunner()
 
         # Create a list via CLI (which auto-tags with 'dev')
-        runner.invoke(cli, [
-            "--db-path", temp_db_path,
-            "list", "create", "--list", "tagged_list",
-            "--title", "Tagged List"
-        ])
+        runner.invoke(
+            cli,
+            [
+                "--db-path",
+                temp_db_path,
+                "list",
+                "create",
+                "--list",
+                "tagged_list",
+                "--title",
+                "Tagged List",
+            ],
+        )
 
         # Set TODOIT_FORCE_TAGS to a tag the list doesn't have (not 'dev')
         env = {"TODOIT_FORCE_TAGS": "production"}
-        result = runner.invoke(cli, [
-            "--db-path", temp_db_path,
-            "list", "rename", "--list", "tagged_list",
-            "--key", "blocked_rename",
-            "--yes"
-        ], env=env)
+        result = runner.invoke(
+            cli,
+            [
+                "--db-path",
+                temp_db_path,
+                "list",
+                "rename",
+                "--list",
+                "tagged_list",
+                "--key",
+                "blocked_rename",
+                "--yes",
+            ],
+            env=env,
+        )
 
         assert result.exit_code != 0
         assert "Access denied" in result.output

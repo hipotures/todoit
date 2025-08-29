@@ -48,7 +48,7 @@ def list_property_group():
 def list_property_set(ctx, list_key, property_key, property_value):
     """Set a property for a list"""
     manager = get_manager(ctx.obj["db_path"])
-    
+
     # Resolve list_key if it's an ID
     list_key = resolve_list_key(manager, list_key)
 
@@ -68,7 +68,7 @@ def list_property_set(ctx, list_key, property_key, property_value):
 def list_property_get(ctx, list_key, property_key):
     """Get a property value for a list"""
     manager = get_manager(ctx.obj["db_path"])
-    
+
     # Resolve list_key if it's an ID
     list_key = resolve_list_key(manager, list_key)
 
@@ -90,7 +90,7 @@ def list_property_get(ctx, list_key, property_key):
 def list_property_show(ctx, list_key):
     """Show all properties for a list"""
     manager = get_manager(ctx.obj["db_path"])
-    
+
     # Resolve list_key if it's an ID
     list_key = resolve_list_key(manager, list_key)
 
@@ -119,7 +119,7 @@ def list_property_show(ctx, list_key):
 def list_property_delete(ctx, list_key, property_key):
     """Delete a property from a list"""
     manager = get_manager(ctx.obj["db_path"])
-    
+
     # Resolve list_key if it's an ID
     list_key = resolve_list_key(manager, list_key)
 
@@ -149,14 +149,18 @@ def item_property_group():
 @item_property_group.command("set")
 @click.option("--list", "list_key", required=True, help="List key")
 @click.option("--item", "item_key", required=True, help="Item key")
-@click.option("--subitem", "subitem_key", help="Subitem key (for setting property on subitem)")
+@click.option(
+    "--subitem", "subitem_key", help="Subitem key (for setting property on subitem)"
+)
 @click.option("--key", "property_key", required=True, help="Property key")
 @click.option("--value", "property_value", required=True, help="Property value")
 @click.pass_context
-def item_property_set(ctx, list_key, item_key, subitem_key, property_key, property_value):
+def item_property_set(
+    ctx, list_key, item_key, subitem_key, property_key, property_value
+):
     """Set a property for an item or subitem"""
     manager = get_manager(ctx.obj["db_path"])
-    
+
     # Resolve list_key if it's an ID
     list_key = resolve_list_key(manager, list_key)
 
@@ -164,7 +168,11 @@ def item_property_set(ctx, list_key, item_key, subitem_key, property_key, proper
         if subitem_key:
             # Setting property on subitem
             property_obj = manager.set_item_property(
-                list_key, subitem_key, property_key, property_value, parent_item_key=item_key
+                list_key,
+                subitem_key,
+                property_key,
+                property_value,
+                parent_item_key=item_key,
             )
             console.print(
                 f"[green]✅ Set property '{property_key}' = '{property_value}' for subitem '{subitem_key}' under item '{item_key}' in list '{list_key}'[/]"
@@ -184,26 +192,30 @@ def item_property_set(ctx, list_key, item_key, subitem_key, property_key, proper
 @item_property_group.command("get")
 @click.option("--list", "list_key", required=True, help="List key")
 @click.option("--item", "item_key", required=True, help="Item key")
-@click.option("--subitem", "subitem_key", help="Subitem key (for getting property from subitem)")
+@click.option(
+    "--subitem", "subitem_key", help="Subitem key (for getting property from subitem)"
+)
 @click.option("--key", "property_key", required=True, help="Property key")
 @click.pass_context
 def item_property_get(ctx, list_key, item_key, subitem_key, property_key):
     """Get a property value for an item or subitem"""
     manager = get_manager(ctx.obj["db_path"])
-    
+
     # Resolve list_key if it's an ID
     list_key = resolve_list_key(manager, list_key)
 
     try:
         if subitem_key:
             # Getting property from subitem
-            value = manager.get_item_property(list_key, subitem_key, property_key, parent_item_key=item_key)
+            value = manager.get_item_property(
+                list_key, subitem_key, property_key, parent_item_key=item_key
+            )
             target = f"subitem '{subitem_key}' under item '{item_key}'"
         else:
             # Getting property from main item
             value = manager.get_item_property(list_key, item_key, property_key)
             target = f"item '{item_key}'"
-            
+
         if value is not None:
             console.print(f"[cyan]{property_key}:[/] {value}")
         else:
@@ -216,8 +228,14 @@ def item_property_get(ctx, list_key, item_key, subitem_key, property_key):
 
 @item_property_group.command("list")
 @click.option("--list", "list_key", required=True, help="List key")
-@click.option("--item", "item_key", help="Item key (optional - if not provided, shows all items)")
-@click.option("--subitem", "subitem_key", help="Subitem key (for listing properties of specific subitem)")
+@click.option(
+    "--item", "item_key", help="Item key (optional - if not provided, shows all items)"
+)
+@click.option(
+    "--subitem",
+    "subitem_key",
+    help="Subitem key (for listing properties of specific subitem)",
+)
 @click.option(
     "--tree", is_flag=True, help="Display properties in tree format grouped by item"
 )
@@ -225,7 +243,7 @@ def item_property_get(ctx, list_key, item_key, subitem_key, property_key):
 def item_property_list(ctx, list_key, item_key, subitem_key, tree):
     """List all properties for an item, subitem, or all items if item_key not provided"""
     manager = get_manager(ctx.obj["db_path"])
-    
+
     # Resolve list_key if it's an ID
     list_key = resolve_list_key(manager, list_key)
 
@@ -233,15 +251,19 @@ def item_property_list(ctx, list_key, item_key, subitem_key, tree):
         if subitem_key:
             # Show properties for specific subitem
             if not item_key:
-                console.print("[bold red]❌ Error:[/] --item must be specified when using --subitem")
+                console.print(
+                    "[bold red]❌ Error:[/] --item must be specified when using --subitem"
+                )
                 return
-            
+
             if tree:
                 console.print(
                     "[yellow]⚠️  --tree option ignored when showing single subitem properties[/]"
                 )
 
-            properties = manager.get_item_properties(list_key, subitem_key, parent_item_key=item_key)
+            properties = manager.get_item_properties(
+                list_key, subitem_key, parent_item_key=item_key
+            )
             if properties:
                 # Prepare properties data for unified display
                 data = [{"Key": k, "Value": v} for k, v in properties.items()]
@@ -258,7 +280,9 @@ def item_property_list(ctx, list_key, item_key, subitem_key, tree):
             else:
                 # Use unified display for empty message
                 _display_records(
-                    [], f"Properties for subitem '{subitem_key}' under item '{item_key}' in list '{list_key}'", {}
+                    [],
+                    f"Properties for subitem '{subitem_key}' under item '{item_key}' in list '{list_key}'",
+                    {},
                 )
         elif item_key:
             # Original behavior: show properties for single item
@@ -328,26 +352,30 @@ def item_property_list(ctx, list_key, item_key, subitem_key, tree):
 @item_property_group.command("delete")
 @click.option("--list", "list_key", required=True, help="List key")
 @click.option("--item", "item_key", required=True, help="Item key")
-@click.option("--subitem", "subitem_key", help="Subitem key (for deleting property from subitem)")
+@click.option(
+    "--subitem", "subitem_key", help="Subitem key (for deleting property from subitem)"
+)
 @click.option("--key", "property_key", required=True, help="Property key")
 @click.pass_context
 def item_property_delete(ctx, list_key, item_key, subitem_key, property_key):
     """Delete a property from an item or subitem"""
     manager = get_manager(ctx.obj["db_path"])
-    
+
     # Resolve list_key if it's an ID
     list_key = resolve_list_key(manager, list_key)
 
     try:
         if subitem_key:
             # Deleting property from subitem
-            success = manager.delete_item_property(list_key, subitem_key, property_key, parent_item_key=item_key)
+            success = manager.delete_item_property(
+                list_key, subitem_key, property_key, parent_item_key=item_key
+            )
             target = f"subitem '{subitem_key}' under item '{item_key}'"
         else:
             # Deleting property from main item
             success = manager.delete_item_property(list_key, item_key, property_key)
             target = f"item '{item_key}'"
-            
+
         if success:
             console.print(
                 f"[green]✅ Deleted property '{property_key}' from {target} in list '{list_key}'[/]"
@@ -364,18 +392,18 @@ def _display_item_properties_table(properties_data, list_key):
     """Display item properties in table format using unified display system"""
     # Transform data for unified display with hierarchical indentation
     data = []
-    
+
     for prop in properties_data:
         item_key = prop["item_key"]
         parent_item_key = prop.get("parent_item_key")
-        
+
         if parent_item_key is None:
             # Main item
             display_key = item_key
         else:
             # Subitem - indent with spaces
             display_key = f"  {item_key}"
-        
+
         data.append(
             {
                 "Key": display_key,
@@ -404,11 +432,11 @@ def _display_item_properties_tree(properties_data, list_key):
     # Group properties by item hierarchy
     main_items = {}
     subitems_by_parent = {}
-    
+
     for prop in properties_data:
         item_key = prop["item_key"]
         parent_item_key = prop.get("parent_item_key")
-        
+
         if parent_item_key is None:
             # Main item
             if item_key not in main_items:
@@ -420,30 +448,34 @@ def _display_item_properties_tree(properties_data, list_key):
                 subitems_by_parent[parent_item_key] = {}
             if item_key not in subitems_by_parent[parent_item_key]:
                 subitems_by_parent[parent_item_key][item_key] = []
-            subitems_by_parent[parent_item_key][item_key].append((prop["property_key"], prop["property_value"]))
+            subitems_by_parent[parent_item_key][item_key].append(
+                (prop["property_key"], prop["property_value"])
+            )
 
     # Build hierarchical tree
     for item_key, properties in main_items.items():
         item_branch = tree.add(f"📝 {item_key}")
-        
+
         # Add properties for main item
         for prop_key, prop_value in properties:
             item_branch.add(f"[cyan]{prop_key}[/]: [white]{prop_value}[/]")
-        
+
         # Add subitems under this main item (if any)
         if item_key in subitems_by_parent:
             for subitem_key, subitem_properties in subitems_by_parent[item_key].items():
                 subitem_branch = item_branch.add(f"└─ {subitem_key}")
                 for prop_key, prop_value in subitem_properties:
                     subitem_branch.add(f"[cyan]{prop_key}[/]: [white]{prop_value}[/]")
-    
+
     # Add orphaned subitems (subitems whose parents don't have properties)
     orphaned_parents = set(subitems_by_parent.keys()) - set(main_items.keys())
     if orphaned_parents:
         orphans_branch = tree.add("🔗 Items with Subitems (no main item properties)")
         for parent_key in orphaned_parents:
             parent_branch = orphans_branch.add(f"📝 {parent_key}")
-            for subitem_key, subitem_properties in subitems_by_parent[parent_key].items():
+            for subitem_key, subitem_properties in subitems_by_parent[
+                parent_key
+            ].items():
                 subitem_branch = parent_branch.add(f"└─ {subitem_key}")
                 for prop_key, prop_value in subitem_properties:
                     subitem_branch.add(f"[cyan]{prop_key}[/]: [white]{prop_value}[/]")

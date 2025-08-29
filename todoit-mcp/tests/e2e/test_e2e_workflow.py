@@ -8,6 +8,7 @@ to managing dependencies and checking status, ensuring all components
 
 import pytest
 from click.testing import CliRunner
+
 from interfaces.cli import cli
 
 
@@ -30,38 +31,92 @@ class TestE2EWorkflow:
         # STEP 1: Create project lists
         res_create_backend = runner.invoke(
             cli,
-            [*db_arg, "list", "create", "--list", "backend", "--title", "Backend Development"],
+            [
+                *db_arg,
+                "list",
+                "create",
+                "--list",
+                "backend",
+                "--title",
+                "Backend Development",
+            ],
         )
         assert res_create_backend.exit_code == 0
         assert "List Created" in res_create_backend.output
 
         res_create_frontend = runner.invoke(
             cli,
-            [*db_arg, "list", "create", "--list", "frontend", "--title", "Frontend Development"],
+            [
+                *db_arg,
+                "list",
+                "create",
+                "--list",
+                "frontend",
+                "--title",
+                "Frontend Development",
+            ],
         )
         assert res_create_frontend.exit_code == 0
         assert "List Created" in res_create_frontend.output
 
         # STEP 2: Add tasks and subtasks
-        runner.invoke(cli, [*db_arg, "item", "add", "--list", "backend", "--item", "api", "--title", "REST API"])
         runner.invoke(
             cli,
             [
                 *db_arg,
                 "item",
                 "add",
-                "--list", "backend",
-                "--item", "api",
-                "--subitem", "auth",
-                "--title", "Authentication endpoints",
+                "--list",
+                "backend",
+                "--item",
+                "api",
+                "--title",
+                "REST API",
             ],
         )
-        runner.invoke(cli, [*db_arg, "item", "add", "--list", "frontend", "--item", "ui", "--title", "User Interface"])
+        runner.invoke(
+            cli,
+            [
+                *db_arg,
+                "item",
+                "add",
+                "--list",
+                "backend",
+                "--item",
+                "api",
+                "--subitem",
+                "auth",
+                "--title",
+                "Authentication endpoints",
+            ],
+        )
+        runner.invoke(
+            cli,
+            [
+                *db_arg,
+                "item",
+                "add",
+                "--list",
+                "frontend",
+                "--item",
+                "ui",
+                "--title",
+                "User Interface",
+            ],
+        )
 
         # STEP 3: Create a cross-list dependency
         res_dep_add = runner.invoke(
             cli,
-            [*db_arg, "dep", "add", "--dependent", "frontend:ui", "--required", "backend:api"],
+            [
+                *db_arg,
+                "dep",
+                "add",
+                "--dependent",
+                "frontend:ui",
+                "--required",
+                "backend:api",
+            ],
             input="y\n",
         )
         assert res_dep_add.exit_code == 0
@@ -80,7 +135,20 @@ class TestE2EWorkflow:
         # STEP 5: Complete the backend tasks
         # Complete the subitem first
         res_done_subtask = runner.invoke(
-            cli, [*db_arg, "item", "status", "--list", "backend", "--item", "api", "--subitem", "auth", "--status", "completed"]
+            cli,
+            [
+                *db_arg,
+                "item",
+                "status",
+                "--list",
+                "backend",
+                "--item",
+                "api",
+                "--subitem",
+                "auth",
+                "--status",
+                "completed",
+            ],
         )
         assert res_done_subtask.exit_code == 0
 

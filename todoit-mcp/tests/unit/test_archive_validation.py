@@ -3,9 +3,11 @@ Unit tests for archive validation functionality
 Tests the core archive validation logic in TodoManager
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
+
+import pytest
+
 from core.manager import TodoManager
 
 

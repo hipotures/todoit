@@ -3,17 +3,18 @@ Item management commands for TODOIT CLI
 Handles add, status, edit, delete, list, tree operations with smart item/subitem detection
 """
 
-import click
 import json
+
+import click
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Confirm
 
 from .display import (
-    _get_status_icon,
-    _get_status_display,
-    _render_tree_view,
     _display_records,
+    _get_status_display,
+    _get_status_icon,
+    _render_tree_view,
     console,
 )
 from .tag_commands import _get_filter_tags
@@ -58,11 +59,11 @@ def item():
 @click.pass_context
 def item_add(ctx, list_key, item_key, subitem_key, title, metadata):
     """Add item or subitem to TODO list
-    
+
     Examples:
       # Add regular item
       todoit item add --list "project" --item "feature1" --title "Implement login"
-      
+
       # Add subitem
       todoit item add --list "project" --item "feature1" --subitem "step1" --title "Design UI"
     """
@@ -78,7 +79,7 @@ def item_add(ctx, list_key, item_key, subitem_key, title, metadata):
 
     try:
         meta = json.loads(metadata) if metadata else {}
-        
+
         if subitem_key:
             # Adding a subitem - item_key is the parent
             subitem = manager.add_subitem(
@@ -100,19 +101,21 @@ def item_add(ctx, list_key, item_key, subitem_key, title, metadata):
                 for subitem_info in hierarchy["subitems"]:
                     st = subitem_info["item"]
                     status_icon = _get_status_icon(st["status"])
-                    console.print(f"  └─ {status_icon} {st['item_key']}: {st['content']}")
+                    console.print(
+                        f"  └─ {status_icon} {st['item_key']}: {st['content']}"
+                    )
             except:
                 pass  # Skip hierarchy display if error
         else:
             # Adding a regular item
             item = manager.add_item(
-                list_key=list_key, 
-                item_key=item_key, 
+                list_key=list_key,
+                item_key=item_key,
                 content=title,  # Map title to content field
-                metadata=meta
+                metadata=meta,
             )
             console.print(f"[green]✅ Added item '{item_key}' to list '{list_key}'[/]")
-            
+
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
 
@@ -131,11 +134,11 @@ def item_add(ctx, list_key, item_key, subitem_key, title, metadata):
 @click.pass_context
 def item_status(ctx, list_key, item_key, subitem_key, status, state):
     """Update item or subitem status
-    
+
     Examples:
       # Update item status
       todoit item status --list "project" --item "feature1" --status completed
-      
+
       # Update subitem status
       todoit item status --list "project" --item "feature1" --subitem "step1" --status completed
     """
@@ -175,13 +178,15 @@ def item_status(ctx, list_key, item_key, subitem_key, status, state):
             )
 
         display_key = subitem_key if subitem_key else item_key
-        console.print(f"[green]✅ Updated {target_type} '{display_key}' status to {status}[/]")
+        console.print(
+            f"[green]✅ Updated {target_type} '{display_key}' status to {status}[/]"
+        )
         if states:
             console.print("States:")
             for k, v in states.items():
                 icon = "✅" if v else "❌"
                 console.print(f"  {icon} {k}")
-                
+
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
 
@@ -194,11 +199,11 @@ def item_status(ctx, list_key, item_key, subitem_key, status, state):
 @click.pass_context
 def item_edit(ctx, list_key, item_key, subitem_key, title):
     """Edit item or subitem title/description
-    
+
     Examples:
       # Edit item
       todoit item edit --list "project" --item "feature1" --title "Updated feature description"
-      
+
       # Edit subitem
       todoit item edit --list "project" --item "feature1" --subitem "step1" --title "Updated step"
     """
@@ -226,7 +231,9 @@ def item_edit(ctx, list_key, item_key, subitem_key, title):
         # Get current item/subitem
         current_item = manager.get_item(list_key, target_key, parent_key)
         if not current_item:
-            console.print(f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]")
+            console.print(
+                f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]"
+            )
             return
 
         # Show changes
@@ -234,7 +241,9 @@ def item_edit(ctx, list_key, item_key, subitem_key, title):
         console.print(f"[green]New title:[/] {title}")
 
         # Update the content
-        updated_item = manager.update_item_content(list_key, target_key, title, parent_key)
+        updated_item = manager.update_item_content(
+            list_key, target_key, title, parent_key
+        )
         console.print(
             f"[green]✅ Title updated for {target_type} '{target_key}' in list '{list_key}'[/]"
         )
@@ -251,11 +260,11 @@ def item_edit(ctx, list_key, item_key, subitem_key, title):
 @click.pass_context
 def item_delete(ctx, list_key, item_key, subitem_key, force):
     """Delete item or subitem permanently
-    
+
     Examples:
       # Delete item
       todoit item delete --list "project" --item "feature1" --force
-      
+
       # Delete subitem
       todoit item delete --list "project" --item "feature1" --subitem "step1" --force
     """
@@ -283,7 +292,9 @@ def item_delete(ctx, list_key, item_key, subitem_key, force):
         # Get item details for confirmation
         item = manager.get_item(list_key, target_key, parent_key)
         if not item:
-            console.print(f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]")
+            console.print(
+                f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]"
+            )
             return
 
         # Show what will be deleted
@@ -312,15 +323,17 @@ def item_delete(ctx, list_key, item_key, subitem_key, force):
 
 @item.command("list")
 @click.option("--list", "list_key", required=True, help="List key")
-@click.option("--item", "item_key", help="Item key (if listing subitems of specific item)")
+@click.option(
+    "--item", "item_key", help="Item key (if listing subitems of specific item)"
+)
 @click.pass_context
 def item_list(ctx, list_key, item_key):
     """List items in a list, or subitems of a specific item
-    
+
     Examples:
       # List all items in a list
       todoit item list --list "project"
-      
+
       # List subitems of specific item
       todoit item list --list "project" --item "feature1"
     """
@@ -402,12 +415,14 @@ def item_list(ctx, list_key, item_key):
             # Prepare items data for unified display
             data = []
             for item in items:
-                data.append({
-                    "Position": str(item.position),
-                    "Key": item.item_key,
-                    "Title": item.content,
-                    "Status": _get_status_display(item.status.value),
-                })
+                data.append(
+                    {
+                        "Position": str(item.position),
+                        "Key": item.item_key,
+                        "Title": item.content,
+                        "Status": _get_status_display(item.status.value),
+                    }
+                )
 
             columns = {
                 "Position": {"style": "dim", "width": 8},
@@ -428,7 +443,7 @@ def item_list(ctx, list_key, item_key):
 @click.pass_context
 def item_next(ctx, list_key, start):
     """Get next pending item
-    
+
     Example:
       todoit item next --list "project" --start
     """
@@ -482,7 +497,7 @@ def item_next(ctx, list_key, start):
 @click.pass_context
 def item_next_smart(ctx, list_key, start):
     """Get next pending item with smart subitem logic
-    
+
     Example:
       todoit item next-smart --list "project" --start
     """
@@ -542,11 +557,11 @@ def item_next_smart(ctx, list_key, start):
 @click.pass_context
 def item_tree(ctx, list_key, item_key):
     """Show hierarchy tree for item or entire list
-    
+
     Examples:
       # Show tree for entire list
       todoit item tree --list "project"
-      
+
       # Show tree for specific item
       todoit item tree --list "project" --item "feature1"
     """
@@ -666,7 +681,7 @@ def item_tree(ctx, list_key, item_key):
 @click.pass_context
 def item_move_to_subitem(ctx, list_key, item_key, new_parent_key, force):
     """Convert existing item to be a subitem of another item
-    
+
     Example:
       todoit item move-to-subitem --list "project" --item "feature2" --parent "feature1" --force
     """
@@ -719,7 +734,12 @@ def item_move_to_subitem(ctx, list_key, item_key, new_parent_key, force):
 
 
 @item.command("find")
-@click.option("--list", "list_key", required=False, help="List key (optional, if not provided searches all lists)")
+@click.option(
+    "--list",
+    "list_key",
+    required=False,
+    help="List key (optional, if not provided searches all lists)",
+)
 @click.option(
     "--property", "property_key", required=True, help="Property name to search for"
 )
@@ -861,7 +881,9 @@ def item_find_subitems(ctx, list_key, conditions, limit):
                 f"🔍 Subitem Search Results in '{list_key}'",
                 {},
             )
-            console.print(f"[dim]No subitems found matching conditions: {conditions_dict}[/]")
+            console.print(
+                f"[dim]No subitems found matching conditions: {conditions_dict}[/]"
+            )
             return
 
         # Prepare data for unified display - flatten results
@@ -869,33 +891,66 @@ def item_find_subitems(ctx, list_key, conditions, limit):
         for match in matches:
             parent = match["parent"]
             matching_subitems = match["matching_subitems"]
-            
+
             for subitem in matching_subitems:
                 # Handle both object and dict formats for compatibility
-                parent_key = parent.item_key if hasattr(parent, 'item_key') else parent['item_key']
-                parent_content = parent.content if hasattr(parent, 'content') else parent['content']
-                subitem_key = subitem.item_key if hasattr(subitem, 'item_key') else subitem['item_key']
-                subitem_content = subitem.content if hasattr(subitem, 'content') else subitem['content']
-                subitem_status = subitem.status.value if hasattr(subitem, 'status') and hasattr(subitem.status, 'value') else subitem['status']
-                subitem_created = subitem.created_at if hasattr(subitem, 'created_at') else subitem.get('created_at')
-                
+                parent_key = (
+                    parent.item_key
+                    if hasattr(parent, "item_key")
+                    else parent["item_key"]
+                )
+                parent_content = (
+                    parent.content if hasattr(parent, "content") else parent["content"]
+                )
+                subitem_key = (
+                    subitem.item_key
+                    if hasattr(subitem, "item_key")
+                    else subitem["item_key"]
+                )
+                subitem_content = (
+                    subitem.content
+                    if hasattr(subitem, "content")
+                    else subitem["content"]
+                )
+                subitem_status = (
+                    subitem.status.value
+                    if hasattr(subitem, "status") and hasattr(subitem.status, "value")
+                    else subitem["status"]
+                )
+                subitem_created = (
+                    subitem.created_at
+                    if hasattr(subitem, "created_at")
+                    else subitem.get("created_at")
+                )
+
                 data.append(
                     {
                         "Parent": parent_key,
-                        "Parent Content": parent_content[:30] + "..." if len(parent_content) > 30 else parent_content,
+                        "Parent Content": (
+                            parent_content[:30] + "..."
+                            if len(parent_content) > 30
+                            else parent_content
+                        ),
                         "Subitem": subitem_key,
-                        "Content": subitem_content[:40] + "..." if len(subitem_content) > 40 else subitem_content,
+                        "Content": (
+                            subitem_content[:40] + "..."
+                            if len(subitem_content) > 40
+                            else subitem_content
+                        ),
                         "Status": _get_status_display(subitem_status),
                         "Created": (
                             subitem_created.strftime("%Y-%m-%d %H:%M")
-                            if subitem_created and hasattr(subitem_created, 'strftime')
-                            else subitem_created if isinstance(subitem_created, str)
-                            else "N/A"
+                            if subitem_created and hasattr(subitem_created, "strftime")
+                            else (
+                                subitem_created
+                                if isinstance(subitem_created, str)
+                                else "N/A"
+                            )
                         ),
                     }
                 )
 
-        # Define column styling  
+        # Define column styling
         columns = {
             "Parent": {"style": "cyan", "width": 15},
             "Parent Content": {"style": "dim", "width": 25},
@@ -934,11 +989,11 @@ def item_state():
 @click.pass_context
 def state_list(ctx, list_key, item_key, subitem_key):
     """Show all completion states for an item or subitem
-    
+
     Examples:
       # Show states for item
       todoit item state list --list "project" --item "feature1"
-      
+
       # Show states for subitem
       todoit item state list --list "project" --item "feature1" --subitem "step1"
     """
@@ -965,7 +1020,9 @@ def state_list(ctx, list_key, item_key, subitem_key):
 
         item = manager.get_item(list_key, target_key, parent_key)
         if not item:
-            console.print(f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]")
+            console.print(
+                f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]"
+            )
             return
 
         console.print(f"[bold]Completion states for {target_type} '{target_key}':[/]")
@@ -990,12 +1047,12 @@ def state_list(ctx, list_key, item_key, subitem_key):
 @click.pass_context
 def state_clear(ctx, list_key, item_key, subitem_key, force):
     """Clear all completion states from an item or subitem
-    
+
     Examples:
       # Clear states for item
       todoit item state clear --list "project" --item "feature1" --force
-      
-      # Clear states for subitem  
+
+      # Clear states for subitem
       todoit item state clear --list "project" --item "feature1" --subitem "step1" --force
     """
     manager = get_manager(ctx.obj["db_path"])
@@ -1021,7 +1078,9 @@ def state_clear(ctx, list_key, item_key, subitem_key, force):
 
         item = manager.get_item(list_key, target_key, parent_key)
         if not item:
-            console.print(f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]")
+            console.print(
+                f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]"
+            )
             return
 
         if not item.completion_states:
@@ -1038,8 +1097,12 @@ def state_clear(ctx, list_key, item_key, subitem_key, force):
             return
 
         # Clear all states
-        updated_item = manager.clear_item_completion_states(list_key, target_key, parent_item_key=parent_key)
-        console.print(f"[green]✅ Cleared all completion states from {target_type} '{target_key}'[/]")
+        updated_item = manager.clear_item_completion_states(
+            list_key, target_key, parent_item_key=parent_key
+        )
+        console.print(
+            f"[green]✅ Cleared all completion states from {target_type} '{target_key}'[/]"
+        )
 
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")
@@ -1049,16 +1112,18 @@ def state_clear(ctx, list_key, item_key, subitem_key, force):
 @click.option("--list", "list_key", required=True, help="List key")
 @click.option("--item", "item_key", required=True, help="Item key")
 @click.option("--subitem", "subitem_key", help="Subitem key (if removing from subitem)")
-@click.option("--state-keys", required=True, help="Comma-separated state keys to remove")
+@click.option(
+    "--state-keys", required=True, help="Comma-separated state keys to remove"
+)
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
 def state_remove(ctx, list_key, item_key, subitem_key, state_keys, force):
     """Remove specific completion states from an item or subitem
-    
+
     Examples:
       # Remove states from item
       todoit item state remove --list "project" --item "feature1" --state-keys "quality,tested" --force
-      
+
       # Remove states from subitem
       todoit item state remove --list "project" --item "feature1" --subitem "step1" --state-keys "reviewed" --force
     """
@@ -1075,7 +1140,7 @@ def state_remove(ctx, list_key, item_key, subitem_key, state_keys, force):
     try:
         # Parse state keys
         state_key_list = [key.strip() for key in state_keys.split(",")]
-        
+
         # Determine target key and parent - if subitem is specified, remove from the subitem
         if subitem_key:
             target_key = subitem_key
@@ -1088,7 +1153,9 @@ def state_remove(ctx, list_key, item_key, subitem_key, state_keys, force):
 
         item = manager.get_item(list_key, target_key, parent_key)
         if not item:
-            console.print(f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]")
+            console.print(
+                f"[red]{target_type.capitalize()} '{target_key}' not found in list '{list_key}'[/]"
+            )
             return
 
         if not item.completion_states:
@@ -1140,24 +1207,26 @@ def state_remove(ctx, list_key, item_key, subitem_key, state_keys, force):
 @click.option("--item", "item_key", required=True, help="Current item key")
 @click.option("--new-key", help="New item key (optional)")
 @click.option("--new-title", help="New item title/content (optional)")
-@click.option("--parent", "parent_item_key", help="Parent item key (if renaming subitem)")
+@click.option(
+    "--parent", "parent_item_key", help="Parent item key (if renaming subitem)"
+)
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
 def item_rename(ctx, list_key, item_key, new_key, new_title, parent_item_key, force):
     """Rename an item's key and/or title
-    
+
     At least one of --new-key or --new-title must be provided.
-    
+
     Examples:
       # Change item key only
       todoit item rename --list "project" --item "task1" --new-key "feature1"
-      
+
       # Change item title only
       todoit item rename --list "project" --item "task1" --new-title "Implement user authentication"
-      
+
       # Change both key and title
       todoit item rename --list "project" --item "task1" --new-key "auth" --new-title "User Authentication Feature"
-      
+
       # Rename a subitem
       todoit item rename --list "project" --item "subtask1" --parent "maintask" --new-key "test_auth" --new-title "Test authentication system"
     """
@@ -1173,7 +1242,9 @@ def item_rename(ctx, list_key, item_key, new_key, new_title, parent_item_key, fo
 
     # Validate inputs
     if not new_key and not new_title:
-        console.print("[red]At least one of --new-key or --new-title must be provided[/]")
+        console.print(
+            "[red]At least one of --new-key or --new-title must be provided[/]"
+        )
         return
 
     try:
@@ -1181,7 +1252,9 @@ def item_rename(ctx, list_key, item_key, new_key, new_title, parent_item_key, fo
         current_item = manager.get_item(list_key, item_key, parent_item_key)
         if not current_item:
             item_type = "subitem" if parent_item_key else "item"
-            console.print(f"[red]{item_type.capitalize()} '{item_key}' not found in list '{list_key}'[/]")
+            console.print(
+                f"[red]{item_type.capitalize()} '{item_key}' not found in list '{list_key}'[/]"
+            )
             return
 
         # Show current state and planned changes
@@ -1207,11 +1280,11 @@ def item_rename(ctx, list_key, item_key, new_key, new_title, parent_item_key, fo
             item_key=item_key,
             new_key=new_key,
             new_content=new_title,  # Map new_title to new_content for internal API
-            parent_item_key=parent_item_key
+            parent_item_key=parent_item_key,
         )
 
         console.print(f"[green]✅ Successfully renamed {item_type}[/]")
-        
+
         # Show final state
         console.print(f"\n[green]Updated {item_type}:[/]")
         console.print(f"  Key: {updated_item.item_key}")

@@ -8,11 +8,13 @@ Tests the complete status synchronization system including:
 - Recursive propagation through hierarchy levels
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
+
+import pytest
+
 from core.manager import TodoManager
-from core.models import TodoItem, ItemStatus
+from core.models import ItemStatus, TodoItem
 
 
 class TestStatusSynchronization:
@@ -45,18 +47,26 @@ class TestStatusSynchronization:
         assert parent.status == "pending"
 
         # Change one subitem to in_progress -> parent should be in_progress
-        manager.update_item_status("test_list", "parent", subitem_key="sub1", status="in_progress")
+        manager.update_item_status(
+            "test_list", "parent", subitem_key="sub1", status="in_progress"
+        )
         parent = manager.get_item("test_list", "parent")
         assert parent.status == "in_progress"
 
         # Complete two subtasks -> parent still in_progress (sub3 pending)
-        manager.update_item_status("test_list", "parent", subitem_key="sub1", status="completed")
-        manager.update_item_status("test_list", "parent", subitem_key="sub2", status="completed")
+        manager.update_item_status(
+            "test_list", "parent", subitem_key="sub1", status="completed"
+        )
+        manager.update_item_status(
+            "test_list", "parent", subitem_key="sub2", status="completed"
+        )
         parent = manager.get_item("test_list", "parent")
         assert parent.status == "in_progress"
 
         # Complete last subitem -> parent should be completed
-        manager.update_item_status("test_list", "parent", subitem_key="sub3", status="completed")
+        manager.update_item_status(
+            "test_list", "parent", subitem_key="sub3", status="completed"
+        )
         parent = manager.get_item("test_list", "parent")
         assert parent.status == "completed"
 
@@ -70,21 +80,31 @@ class TestStatusSynchronization:
         manager.add_subitem("test_list", "parent", "sub3", "Subitem 3")
 
         # Set mixed statuses: completed, in_progress, failed
-        manager.update_item_status("test_list", "parent", subitem_key="sub1", status="completed")
-        manager.update_item_status("test_list", "parent", subitem_key="sub2", status="in_progress")
-        manager.update_item_status("test_list", "parent", subitem_key="sub3", status="failed")
+        manager.update_item_status(
+            "test_list", "parent", subitem_key="sub1", status="completed"
+        )
+        manager.update_item_status(
+            "test_list", "parent", subitem_key="sub2", status="in_progress"
+        )
+        manager.update_item_status(
+            "test_list", "parent", subitem_key="sub3", status="failed"
+        )
 
         # Parent should be failed (highest priority)
         parent = manager.get_item("test_list", "parent")
         assert parent.status == "failed"
 
         # Change failed to completed -> parent should be in_progress
-        manager.update_item_status("test_list", "parent", subitem_key="sub3", status="completed")
+        manager.update_item_status(
+            "test_list", "parent", subitem_key="sub3", status="completed"
+        )
         parent = manager.get_item("test_list", "parent")
         assert parent.status == "in_progress"  # sub2 still in_progress
 
         # Complete remaining -> parent should be completed
-        manager.update_item_status("test_list", "parent", subitem_key="sub2", status="completed")
+        manager.update_item_status(
+            "test_list", "parent", subitem_key="sub2", status="completed"
+        )
         parent = manager.get_item("test_list", "parent")
         assert parent.status == "completed"
 
@@ -107,7 +127,9 @@ class TestStatusSynchronization:
             manager.update_item_status("test_list", "parent", status="completed")
 
         # Subitem status change should still work
-        manager.update_item_status("test_list", "parent", subitem_key="sub1", status="completed")
+        manager.update_item_status(
+            "test_list", "parent", subitem_key="sub1", status="completed"
+        )
 
         # Parent should automatically be completed
         parent = manager.get_item("test_list", "parent")
@@ -122,9 +144,11 @@ class TestStatusSynchronization:
         manager.add_subitem("test_list", "parent", "child", "Child")
 
         # Change child status -> should propagate up 2 levels
-        manager.update_item_status("test_list", "parent", subitem_key="child", status="in_progress")
+        manager.update_item_status(
+            "test_list", "parent", subitem_key="child", status="in_progress"
+        )
 
-        # Check propagation  
+        # Check propagation
         child = manager.get_item("test_list", "child", parent_item_key="parent")
         parent = manager.get_item("test_list", "parent", parent_item_key="grandparent")
         grandparent = manager.get_item("test_list", "grandparent")
@@ -134,7 +158,9 @@ class TestStatusSynchronization:
         assert grandparent.status == "in_progress"  # Based on parent
 
         # Complete child -> all should be completed
-        manager.update_item_status("test_list", "parent", subitem_key="child", status="completed")
+        manager.update_item_status(
+            "test_list", "parent", subitem_key="child", status="completed"
+        )
 
         child = manager.get_item("test_list", "child", parent_item_key="parent")
         parent = manager.get_item("test_list", "parent", parent_item_key="grandparent")
@@ -171,8 +197,12 @@ class TestStatusSynchronization:
         manager.add_subitem("test_list", "parent", "sub2", "Subitem 2")
 
         # Set mixed statuses
-        manager.update_item_status("test_list", "parent", subitem_key="sub1", status="completed")
-        manager.update_item_status("test_list", "parent", subitem_key="sub2", status="pending")
+        manager.update_item_status(
+            "test_list", "parent", subitem_key="sub1", status="completed"
+        )
+        manager.update_item_status(
+            "test_list", "parent", subitem_key="sub2", status="pending"
+        )
 
         # Parent should be in_progress (mixed statuses)
         parent = manager.get_item("test_list", "parent")
@@ -213,7 +243,9 @@ class TestStatusSynchronization:
         manager.add_subitem("test_list", "branch2", "leaf3", "Leaf 3")
 
         # Set leaf statuses
-        manager.update_item_status("test_list", "branch1", subitem_key="leaf1", status="completed")
+        manager.update_item_status(
+            "test_list", "branch1", subitem_key="leaf1", status="completed"
+        )
         manager.update_item_status(
             "test_list", "branch1", subitem_key="leaf2", status="completed"
         )  # branch1 -> completed
@@ -231,7 +263,9 @@ class TestStatusSynchronization:
         assert root.status == "in_progress"  # mixed branch statuses
 
         # Complete remaining leaf
-        manager.update_item_status("test_list", "branch2", subitem_key="leaf3", status="completed")
+        manager.update_item_status(
+            "test_list", "branch2", subitem_key="leaf3", status="completed"
+        )
 
         # Everything should cascade to completed
         branch2 = manager.get_item("test_list", "branch2", parent_item_key="root")
@@ -256,7 +290,9 @@ class TestStatusSynchronization:
         start_time = time.time()
 
         for i in range(100):
-            manager.update_item_status("test_list", "parent", subitem_key=f"sub{i:03d}", status="completed")
+            manager.update_item_status(
+                "test_list", "parent", subitem_key=f"sub{i:03d}", status="completed"
+            )
 
         elapsed = time.time() - start_time
 
@@ -276,7 +312,9 @@ class TestStatusSynchronization:
         manager.add_subitem("test_list", "parent", "child", "Child")
 
         # Normal operation should work
-        manager.update_item_status("test_list", "parent", subitem_key="child", status="completed")
+        manager.update_item_status(
+            "test_list", "parent", subitem_key="child", status="completed"
+        )
         parent = manager.get_item("test_list", "parent")
         assert parent.status == "completed"
 
@@ -296,7 +334,9 @@ class TestStatusSynchronization:
         # This is mainly tested by the transaction structure in the code
 
         # Normal case - both subitem and parent should update
-        manager.update_item_status("test_list", "parent", subitem_key="sub1", status="completed")
+        manager.update_item_status(
+            "test_list", "parent", subitem_key="sub1", status="completed"
+        )
 
         sub1 = manager.get_item("test_list", "sub1", parent_item_key="parent")
         parent = manager.get_item("test_list", "parent")

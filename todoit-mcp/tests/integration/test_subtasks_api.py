@@ -4,8 +4,9 @@ Tests all subitem functionality at the manager/database level
 """
 
 import pytest
+
 from core.manager import TodoManager
-from core.models import TodoItem, ItemStatus
+from core.models import ItemStatus, TodoItem
 
 
 class TestSubtasksAPI:
@@ -67,7 +68,9 @@ class TestSubtasksAPI:
         manager.add_subitem("test_list", "item_1", "sub2", "Subitem 2")
 
         # Complete one subitem
-        manager.update_item_status("test_list", "item_1", subitem_key="sub1", status=ItemStatus.COMPLETED)
+        manager.update_item_status(
+            "test_list", "item_1", subitem_key="sub1", status=ItemStatus.COMPLETED
+        )
 
         # Parent should be in_progress (partial completion)
         parent = manager.get_item("test_list", "item_1")
@@ -80,8 +83,12 @@ class TestSubtasksAPI:
         manager.add_subitem("test_list", "item_1", "sub2", "Subitem 2")
 
         # Complete all subtasks
-        manager.update_item_status("test_list", "item_1", subitem_key="sub1", status=ItemStatus.COMPLETED)
-        manager.update_item_status("test_list", "item_1", subitem_key="sub2", status=ItemStatus.COMPLETED)
+        manager.update_item_status(
+            "test_list", "item_1", subitem_key="sub1", status=ItemStatus.COMPLETED
+        )
+        manager.update_item_status(
+            "test_list", "item_1", subitem_key="sub2", status=ItemStatus.COMPLETED
+        )
 
         # Check if parent auto-completes
         result = manager.auto_complete_parent("test_list", "item_1")

@@ -4,8 +4,9 @@ Tests all cross-list dependency functionality at the manager/database level
 """
 
 import pytest
+
 from core.manager import TodoManager
-from core.models import TodoItem, ItemStatus
+from core.models import ItemStatus, TodoItem
 
 
 class TestDependenciesAPI:
@@ -155,7 +156,9 @@ class TestDependenciesAPI:
         assert manager.is_item_blocked("frontend", "item_1") == True
 
         # Complete subitem
-        manager.update_item_status("backend", "item_1", subitem_key="sub1", status=ItemStatus.COMPLETED)
+        manager.update_item_status(
+            "backend", "item_1", subitem_key="sub1", status=ItemStatus.COMPLETED
+        )
 
         # Should be unblocked
         assert manager.is_item_blocked("frontend", "item_1") == False

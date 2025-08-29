@@ -2,9 +2,11 @@
 Unit tests for list deletion with tags to reproduce FOREIGN KEY constraint bug
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
+
+import pytest
+
 from core.manager import TodoManager
 
 

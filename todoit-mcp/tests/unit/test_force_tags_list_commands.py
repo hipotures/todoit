@@ -3,13 +3,15 @@ Unit tests for FORCE_TAGS functionality in list commands
 Tests environment isolation for all list operations
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from click.testing import CliRunner
+
 from interfaces.cli_modules.list_commands import (
-    list_show,
-    list_delete,
     list_archive,
+    list_delete,
+    list_show,
     list_unarchive,
 )
 
@@ -101,7 +103,9 @@ class TestFORCETagsListCommands:
                 mock_get_tags.return_value = ["dev"]
 
                 result = runner.invoke(
-                    list_delete, ["--list", "test_list", "--force"], obj={"db_path": "test.db"}
+                    list_delete,
+                    ["--list", "test_list", "--force"],
+                    obj={"db_path": "test.db"},
                 )
 
                 # Should be blocked
@@ -125,7 +129,9 @@ class TestFORCETagsListCommands:
                 mock_get_tags.return_value = ["dev"]
 
                 result = runner.invoke(
-                    list_archive, ["--list", "test_list", "--force"], obj={"db_path": "test.db"}
+                    list_archive,
+                    ["--list", "test_list", "--force"],
+                    obj={"db_path": "test.db"},
                 )
 
                 # Should be blocked

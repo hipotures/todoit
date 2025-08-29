@@ -6,10 +6,12 @@ ensuring the entire MCP interface works correctly from start to finish.
 Tests the 54 discovered MCP tools across all functional areas.
 """
 
-import pytest
-import tempfile
-import os
 import asyncio
+import os
+import tempfile
+
+import pytest
+
 from interfaces.mcp_server import *
 
 
@@ -22,32 +24,36 @@ class TestE2EComprehensiveMCP:
         fd, path = tempfile.mkstemp(suffix=".db")
         os.close(fd)
         os.unlink(path)  # Remove file so it's created fresh
-        
+
         # Set environment variable for MCP tools
-        original_db = os.getenv('TODOIT_DB_PATH')
-        original_level = os.getenv('TODOIT_MCP_TOOLS_LEVEL')
-        os.environ['TODOIT_DB_PATH'] = path
-        os.environ['TODOIT_MCP_TOOLS_LEVEL'] = 'max'  # Use MAX level for comprehensive tests
-        
+        original_db = os.getenv("TODOIT_DB_PATH")
+        original_level = os.getenv("TODOIT_MCP_TOOLS_LEVEL")
+        os.environ["TODOIT_DB_PATH"] = path
+        os.environ["TODOIT_MCP_TOOLS_LEVEL"] = (
+            "max"  # Use MAX level for comprehensive tests
+        )
+
         # Reset MCP manager state and reload for new environment
-        import interfaces.mcp_server
         import importlib
+
+        import interfaces.mcp_server
+
         importlib.reload(interfaces.mcp_server)
         interfaces.mcp_server.manager = None
-        
+
         yield path
-        
+
         # Cleanup
         if os.path.exists(path):
             os.unlink(path)
         if original_db:
-            os.environ['TODOIT_DB_PATH'] = original_db
-        elif 'TODOIT_DB_PATH' in os.environ:
-            del os.environ['TODOIT_DB_PATH']
+            os.environ["TODOIT_DB_PATH"] = original_db
+        elif "TODOIT_DB_PATH" in os.environ:
+            del os.environ["TODOIT_DB_PATH"]
         if original_level:
-            os.environ['TODOIT_MCP_TOOLS_LEVEL'] = original_level
-        elif 'TODOIT_MCP_TOOLS_LEVEL' in os.environ:
-            del os.environ['TODOIT_MCP_TOOLS_LEVEL']
+            os.environ["TODOIT_MCP_TOOLS_LEVEL"] = original_level
+        elif "TODOIT_MCP_TOOLS_LEVEL" in os.environ:
+            del os.environ["TODOIT_MCP_TOOLS_LEVEL"]
 
     @pytest.mark.asyncio
     async def test_complete_mcp_project_lifecycle(self, temp_db):
@@ -69,7 +75,7 @@ class TestE2EComprehensiveMCP:
         assert result["list"]["title"] == "Backend Development"
         assert result["list"]["list_type"] == "sequential"
 
-        result = await todo_create_list("frontend", "Frontend Development") 
+        result = await todo_create_list("frontend", "Frontend Development")
         assert result["success"] == True
 
         result = await todo_create_list("testing", "Quality Assurance")
@@ -136,14 +142,20 @@ class TestE2EComprehensiveMCP:
         assert result["success"] == True
 
         # Add subtasks
-        result = await todo_add_item("backend", "api", "Authentication", subitem_key="auth")
+        result = await todo_add_item(
+            "backend", "api", "Authentication", subitem_key="auth"
+        )
         assert result["success"] == True
         assert result["subitem"]["title"] == "Authentication"
 
-        result = await todo_add_item("backend", "api", "API Endpoints", subitem_key="endpoints")
+        result = await todo_add_item(
+            "backend", "api", "API Endpoints", subitem_key="endpoints"
+        )
         assert result["success"] == True
 
-        result = await todo_add_item("backend", "database", "Schema Design", subitem_key="schema")
+        result = await todo_add_item(
+            "backend", "database", "Schema Design", subitem_key="schema"
+        )
         assert result["success"] == True
 
         # Test item retrieval
@@ -162,12 +174,16 @@ class TestE2EComprehensiveMCP:
         assert result["count"] >= 2
 
         # Test quick add
-        result = await todo_quick_add("testing", ["Integration Tests", "Performance Tests"])
+        result = await todo_quick_add(
+            "testing", ["Integration Tests", "Performance Tests"]
+        )
         assert result["success"] == True
         assert result["count"] == 2
 
         # Update item content using rename (replaces todo_update_item_content)
-        result = await todo_rename_item("backend", "api", new_title="Enhanced REST API Development")
+        result = await todo_rename_item(
+            "backend", "api", new_title="Enhanced REST API Development"
+        )
         assert result["success"] == True
 
         # ============ PHASE 3: DEPENDENCIES AND WORKFLOW ============
@@ -176,7 +192,9 @@ class TestE2EComprehensiveMCP:
         result = await todo_add_item_dependency("frontend", "ui", "backend", "api")
         assert result["success"] == True
 
-        result = await todo_add_item_dependency("testing", "unit_tests", "backend", "database")
+        result = await todo_add_item_dependency(
+            "testing", "unit_tests", "backend", "database"
+        )
         assert result["success"] == True
 
         # Test dependency queries
@@ -209,7 +227,9 @@ class TestE2EComprehensiveMCP:
         assert result["success"] == True
 
         # Note: Some MCP tools may fail due to business logic constraints
-        result = await todo_update_item_status("backend", "item_0001", status="completed")
+        result = await todo_update_item_status(
+            "backend", "item_0001", status="completed"
+        )
         # assert result["success"] == True  # May fail if item doesn't exist
 
         # Test progress tracking
@@ -272,7 +292,7 @@ class TestE2EComprehensiveMCP:
 
         # Test import from markdown
         import_file = f"{temp_db}_import.md"
-        with open(import_file, 'w') as f:
+        with open(import_file, "w") as f:
             f.write("# Imported List\n- [ ] Imported task 1\n- [x] Imported task 2\n")
 
         result = await todo_import_from_markdown(import_file, "imported")
@@ -300,7 +320,9 @@ class TestE2EComprehensiveMCP:
         # Test archived list visibility
         result = await todo_list_all(include_archived=True)
         assert result["success"] == True
-        archived_found = any(lst["archived"] for lst in result["lists"] if "archived" in lst)
+        archived_found = any(
+            lst["archived"] for lst in result["lists"] if "archived" in lst
+        )
 
         # Unarchive list
         result = await todo_unarchive_list("backend")
@@ -373,16 +395,22 @@ class TestE2EComprehensiveMCP:
         result = await todo_add_item("consistency_test", "parent", "Parent Task")
         assert result["success"] == True
 
-        result = await todo_add_item("consistency_test", "parent", "Child Task", subitem_key="child")
+        result = await todo_add_item(
+            "consistency_test", "parent", "Child Task", subitem_key="child"
+        )
         assert result["success"] == True
 
         # Test that parent status cannot be manually changed when it has subitems
-        result = await todo_update_item_status("consistency_test", "parent", status="completed")
+        result = await todo_update_item_status(
+            "consistency_test", "parent", status="completed"
+        )
         assert result["success"] == False
         assert "subtasks" in result["error"]
 
         # Complete the child, which should auto-complete parent
-        result = await todo_update_item_status("consistency_test", "parent", subitem_key="child", status="completed")
+        result = await todo_update_item_status(
+            "consistency_test", "parent", subitem_key="child", status="completed"
+        )
         assert result["success"] == True
 
         # Verify parent is now completed

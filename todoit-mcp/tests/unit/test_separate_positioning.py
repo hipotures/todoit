@@ -4,6 +4,7 @@ Tests that main tasks and subtasks have independent position numbering
 """
 
 import pytest
+
 from core.manager import TodoManager
 
 
@@ -62,33 +63,48 @@ class TestSeparatePositioning:
 
         # Add scenes (main tasks)
         scene1 = manager.add_item("video_project", "scene_001", "Scene 001")
-        scene2 = manager.add_item("video_project", "scene_002", "Scene 002") 
+        scene2 = manager.add_item("video_project", "scene_002", "Scene 002")
         scene3 = manager.add_item("video_project", "scene_003", "Scene 003")
 
         # Add workflow subtasks to each scene
         workflow_steps = ["scene_gen", "image_gen", "audio_gen", "video_gen"]
-        
+
         # Scene 1 subtasks
         scene1_subs = []
         for step in workflow_steps:
-            sub = manager.add_subitem("video_project", "scene_001", f"scene_001_{step}", f"{step} for scene 001")
+            sub = manager.add_subitem(
+                "video_project",
+                "scene_001",
+                f"scene_001_{step}",
+                f"{step} for scene 001",
+            )
             scene1_subs.append(sub)
 
-        # Scene 2 subtasks  
+        # Scene 2 subtasks
         scene2_subs = []
         for step in workflow_steps:
-            sub = manager.add_subitem("video_project", "scene_002", f"scene_002_{step}", f"{step} for scene 002")
+            sub = manager.add_subitem(
+                "video_project",
+                "scene_002",
+                f"scene_002_{step}",
+                f"{step} for scene 002",
+            )
             scene2_subs.append(sub)
 
         # Scene 3 subtasks
         scene3_subs = []
         for step in workflow_steps:
-            sub = manager.add_subitem("video_project", "scene_003", f"scene_003_{step}", f"{step} for scene 003")
+            sub = manager.add_subitem(
+                "video_project",
+                "scene_003",
+                f"scene_003_{step}",
+                f"{step} for scene 003",
+            )
             scene3_subs.append(sub)
 
         # Verify main tasks have sequential positions
         assert scene1.position == 1
-        assert scene2.position == 2  
+        assert scene2.position == 2
         assert scene3.position == 3
 
         # Verify each scene's subtasks have sequential positions
@@ -112,7 +128,7 @@ class TestSeparatePositioning:
 
         # Add main item
         main1 = manager.add_item("test_list", "main_1", "Main 1")
-        
+
         # Test get_next_position for main tasks again
         next_main_2 = manager.db.get_next_position(todo_list.id, parent_item_id=None)
         assert next_main_2 == 2
@@ -139,10 +155,16 @@ class TestSeparatePositioning:
 
         # Interleave main tasks and subtasks
         main1 = manager.add_item("test_list", "main_1", "Main 1")  # pos 1
-        sub1_1 = manager.add_subitem("test_list", "main_1", "sub_1_1", "Sub 1-1")  # pos 1
-        main2 = manager.add_item("test_list", "main_2", "Main 2")  # pos 2  
-        sub1_2 = manager.add_subitem("test_list", "main_1", "sub_1_2", "Sub 1-2")  # pos 2
-        sub2_1 = manager.add_subitem("test_list", "main_2", "sub_2_1", "Sub 2-1")  # pos 1
+        sub1_1 = manager.add_subitem(
+            "test_list", "main_1", "sub_1_1", "Sub 1-1"
+        )  # pos 1
+        main2 = manager.add_item("test_list", "main_2", "Main 2")  # pos 2
+        sub1_2 = manager.add_subitem(
+            "test_list", "main_1", "sub_1_2", "Sub 1-2"
+        )  # pos 2
+        sub2_1 = manager.add_subitem(
+            "test_list", "main_2", "sub_2_1", "Sub 2-1"
+        )  # pos 1
         main3 = manager.add_item("test_list", "main_3", "Main 3")  # pos 3
 
         # Verify main item positions
@@ -166,15 +188,17 @@ class TestSeparatePositioning:
             # Add main item
             main = manager.add_item("test_list", f"main_{i}", f"Main {i}")
             items.append(main)
-            
+
             # Add multiple subtasks
             for j in range(1, 4):
-                sub = manager.add_subitem("test_list", f"main_{i}", f"sub_{i}_{j}", f"Sub {i}-{j}")
+                sub = manager.add_subitem(
+                    "test_list", f"main_{i}", f"sub_{i}_{j}", f"Sub {i}-{j}"
+                )
                 items.append(sub)
 
         # Get all items from database to verify no conflicts
         all_items = manager.get_list_items("test_list")
-        
+
         # Check main tasks have unique positions among themselves
         main_tasks = [item for item in all_items if item.parent_item_id is None]
         main_positions = [item.position for item in main_tasks]
@@ -183,7 +207,11 @@ class TestSeparatePositioning:
 
         # Check subtasks have unique positions within each parent
         for main_task in main_tasks:
-            subtasks = [item for item in all_items if item.parent_item_id == main_task.id]
+            subtasks = [
+                item for item in all_items if item.parent_item_id == main_task.id
+            ]
             sub_positions = [item.position for item in subtasks]
-            assert len(sub_positions) == len(set(sub_positions))  # All unique within parent
+            assert len(sub_positions) == len(
+                set(sub_positions)
+            )  # All unique within parent
             assert sub_positions == [1, 2, 3]  # Sequential within parent

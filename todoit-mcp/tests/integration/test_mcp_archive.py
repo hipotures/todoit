@@ -3,13 +3,15 @@ MCP Tools Tests for Archive Functionality
 Tests the MCP interface for archiving with validation
 """
 
-import pytest
-import tempfile
-import os
 import asyncio
+import os
+import tempfile
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 from core.manager import TodoManager
-from interfaces.mcp_server import todo_archive_list, todo_unarchive_list, init_manager
-from unittest.mock import patch, MagicMock
+from interfaces.mcp_server import init_manager, todo_archive_list, todo_unarchive_list
 
 
 class TestMCPArchiveTools:

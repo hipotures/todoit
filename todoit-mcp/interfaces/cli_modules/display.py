@@ -4,16 +4,17 @@ Rich formatting, tables, trees, and status rendering
 Supports multiple output formats: table, vertical, json, yaml, xml
 """
 
-import os
 import json
-import yaml
-from typing import Optional, List, Dict, Any
+import os
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+import dicttoxml
+import yaml
+from rich import box
 from rich.console import Console
 from rich.table import Table
 from rich.tree import Tree
-from rich import box
-import dicttoxml
 
 # Mapping emoji keys to human-readable names for JSON/YAML/XML output
 EMOJI_TO_NAME_MAPPING = {
@@ -231,7 +232,6 @@ def _display_lists_tree(lists, manager):
         else:
             list_text = f"[cyan]{todo_list.list_key}[/] - [white]{todo_list.title}[/] "
 
-
         # Add archived indicator
         if is_archived:
             list_text += "[dim]📦[/] "
@@ -440,7 +440,9 @@ def _render_table_view(
     # Prepare data for unified display
     data = []
 
-    def add_item_to_table(item, parent_numbers=None, depth=0, sibling_index=None, index_number=None):
+    def add_item_to_table(
+        item, parent_numbers=None, depth=0, sibling_index=None, index_number=None
+    ):
         """Recursively add item and its children to table"""
         if parent_numbers is None:
             parent_numbers = []
@@ -448,10 +450,12 @@ def _render_table_view(
         # Generate hierarchical numbering
         # For root items, use natural sort order index; for subitems, use sibling_index (1-based)
         if depth == 0:
-            position_number = index_number if index_number is not None else item.position
+            position_number = (
+                index_number if index_number is not None else item.position
+            )
         else:
             position_number = sibling_index if sibling_index is not None else 1
-            
+
         current_numbers = parent_numbers + [position_number]
         hierarchical_num = ".".join(map(str, current_numbers))
 
@@ -511,7 +515,7 @@ def _render_table_view(
         # Format key column: use indentation for subitems
         key_indent = "  " * depth
         key_display = f"{key_indent}{item.item_key}"
-        
+
         record = {
             "#": hierarchical_num,
             "Key": key_display,
@@ -555,7 +559,7 @@ def _render_table_view(
 
     # Check if we're in JSON mode to handle output differently
     output_format = _get_output_format()
-    
+
     if output_format == "json":
         # For JSON output, combine everything into one JSON object
         combined_output = {
@@ -563,25 +567,27 @@ def _render_table_view(
                 "id": todo_list.id,
                 "list_key": todo_list.list_key,
                 "title": todo_list.title,
-                "created_at": todo_list.created_at.isoformat() if todo_list.created_at else None,
-                "metadata": todo_list.metadata
+                "created_at": (
+                    todo_list.created_at.isoformat() if todo_list.created_at else None
+                ),
+                "metadata": todo_list.metadata,
             },
             "items": {
                 "title": f"📋 {todo_list.title} (ID: {todo_list.id})",
                 "count": len(data),
-                "data": _prepare_data_for_serialization(data)
-            }
+                "data": _prepare_data_for_serialization(data),
+            },
         }
-        
+
         # Add properties if they exist
         if properties:
             prop_data = [{"Key": k, "Value": v} for k, v in properties.items()]
             combined_output["properties"] = {
                 "title": "Properties",
                 "count": len(prop_data),
-                "data": _prepare_data_for_serialization(prop_data)
+                "data": _prepare_data_for_serialization(prop_data),
             }
-        
+
         # Print single JSON
         print(json.dumps(combined_output, indent=2, ensure_ascii=False))
     else:

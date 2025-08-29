@@ -3,10 +3,12 @@ Test JSON output format for item tree command
 Verifies that TODOIT_OUTPUT_FORMAT=json works correctly for item tree command
 """
 
-import os
 import json
+import os
+
 import pytest
 from click.testing import CliRunner
+
 from interfaces.cli import cli
 
 
@@ -49,13 +51,35 @@ class TestItemTreeJsonOutput:
             # Add some tasks with different statuses
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "First Item"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "task1",
+                    "--title",
+                    "First Item",
+                ],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task2", "--title", "Second Item"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "task2",
+                    "--title",
+                    "Second Item",
+                ],
             )
             assert result.exit_code == 0
 
@@ -148,7 +172,18 @@ class TestItemTreeJsonOutput:
             # Add a parent item
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "parent", "--title", "Parent Item"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "parent",
+                    "--title",
+                    "Parent Item",
+                ],
             )
             assert result.exit_code == 0
 
@@ -211,16 +246,28 @@ class TestItemTreeJsonOutput:
 
             # Test JSON output for specific item hierarchy
             result = self.runner.invoke(
-                cli, ["--db-path", "test.db", "item", "list", "--list", "testlist", "--item", "parent"]
+                cli,
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "list",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "parent",
+                ],
             )
             assert result.exit_code == 0
 
             # Verify JSON format (extract JSON from mixed output)
             # The output contains header, JSON, and footer - extract the JSON part
             import re
-            
+
             # Find JSON block using regex
-            json_match = re.search(r'\{[\s\S]*?\}(?=\s*\n\s*Progress:|\s*$)', result.output)
+            json_match = re.search(
+                r"\{[\s\S]*?\}(?=\s*\n\s*Progress:|\s*$)", result.output
+            )
             if json_match:
                 json_text = json_match.group(0)
                 output_data = json.loads(json_text)
@@ -234,12 +281,12 @@ class TestItemTreeJsonOutput:
 
             # Check subitems structure (only subitems are shown for specific item)
             assert len(output_data["data"]) == 2
-            
+
             # Verify subitems are present
             subitem_keys = [item["Key"] for item in output_data["data"]]
             assert "sub1" in subitem_keys
             assert "sub2" in subitem_keys
-            
+
             # Verify subitem structure
             for item in output_data["data"]:
                 assert "Key" in item
@@ -306,7 +353,18 @@ class TestItemTreeJsonOutput:
             # Add a parent item
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "parent", "--title", "Parent Item"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "parent",
+                    "--title",
+                    "Parent Item",
+                ],
             )
             assert result.exit_code == 0
 
@@ -332,15 +390,27 @@ class TestItemTreeJsonOutput:
 
             # Test JSON output for specific item
             result = self.runner.invoke(
-                cli, ["--db-path", "test.db", "item", "list", "--list", "testlist", "--item", "parent"]
+                cli,
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "list",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "parent",
+                ],
             )
             assert result.exit_code == 0
 
             # Verify hierarchy visualization in JSON (extract JSON from mixed output)
             import re
-            
+
             # Find JSON block using regex
-            json_match = re.search(r'\{[\s\S]*?\}(?=\s*\n\s*Progress:|\s*$)', result.output)
+            json_match = re.search(
+                r"\{[\s\S]*?\}(?=\s*\n\s*Progress:|\s*$)", result.output
+            )
             if json_match:
                 json_text = json_match.group(0)
                 output_data = json.loads(json_text)
@@ -350,10 +420,10 @@ class TestItemTreeJsonOutput:
 
             # Check that subitems are displayed (for specific item query, only subitems are shown)
             assert "title" in output_data
-            assert "count" in output_data  
+            assert "count" in output_data
             assert "data" in output_data
             assert output_data["count"] == 1  # 1 subitem
-            
+
             # Verify subitem structure
             subitem = output_data["data"][0]
             assert subitem["Key"] == "child"
@@ -384,7 +454,17 @@ class TestItemTreeJsonOutput:
 
             # Test JSON output for nonexistent item (should handle gracefully)
             result = self.runner.invoke(
-                cli, ["--db-path", "test.db", "item", "list", "--list", "testlist", "--item", "nonexistent"]
+                cli,
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "list",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "nonexistent",
+                ],
             )
 
             # Command may fail or return empty - either is acceptable for nonexistent items
@@ -414,7 +494,18 @@ class TestItemTreeJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "task1",
+                    "--title",
+                    "Test Item",
+                ],
             )
             assert result.exit_code == 0
 
@@ -452,7 +543,18 @@ class TestItemTreeJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "task1",
+                    "--title",
+                    "Test Item",
+                ],
             )
             assert result.exit_code == 0
 
@@ -491,7 +593,18 @@ class TestItemTreeJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "task1", "--title", "Test Item"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "task1",
+                    "--title",
+                    "Test Item",
+                ],
             )
             assert result.exit_code == 0
 
@@ -531,13 +644,35 @@ class TestItemTreeJsonOutput:
 
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "first", "--title", "First Item"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "first",
+                    "--title",
+                    "First Item",
+                ],
             )
             assert result.exit_code == 0
 
             result = self.runner.invoke(
                 cli,
-                ["--db-path", "test.db", "item", "add", "--list", "testlist", "--item", "second", "--title", "Second Item"],
+                [
+                    "--db-path",
+                    "test.db",
+                    "item",
+                    "add",
+                    "--list",
+                    "testlist",
+                    "--item",
+                    "second",
+                    "--title",
+                    "Second Item",
+                ],
             )
             assert result.exit_code == 0
 

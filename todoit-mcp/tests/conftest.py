@@ -2,12 +2,14 @@
 Pytest configuration and fixtures for TODOIT MCP tests
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
 from pathlib import Path
-from core.manager import TodoManager
+
+import pytest
+
 from core.database import Database
+from core.manager import TodoManager
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -4,53 +4,63 @@ Programmatic API for TODO list management - core business logic
 """
 
 import os
-from typing import List, Optional, Dict, Any, Union, Set
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Set, Union
 
-from .manager_base import ManagerBase
-from .manager_helpers import HelpersMixin
-from .manager_lists import ListsMixin
-from .manager_tags import TagsMixin
-from .manager_properties import PropertiesMixin
-from .manager_io import IOMixin
-from .security import SecureFileHandler, SecurityError
-from .manager_items import ItemsMixin
-from .manager_dependencies import DependenciesMixin
-from .manager_subtasks import SubtasksMixin
 from .database import (
     Database,
-    TodoListDB,
-    TodoItemDB,
-    TodoHistoryDB,
-    ListPropertyDB,
-    ItemPropertyDB,
     ItemDependencyDB,
-    ListTagDB,
+    ItemPropertyDB,
+    ListPropertyDB,
     ListTagAssignmentDB,
+    ListTagDB,
+    TodoHistoryDB,
+    TodoItemDB,
+    TodoListDB,
     utc_now,
 )
+from .manager_base import ManagerBase
+from .manager_dependencies import DependenciesMixin
+from .manager_helpers import HelpersMixin
+from .manager_io import IOMixin
+from .manager_items import ItemsMixin
+from .manager_lists import ListsMixin
+from .manager_properties import PropertiesMixin
+from .manager_subtasks import SubtasksMixin
+from .manager_tags import TagsMixin
 from .models import (
-    TodoList,
-    TodoItem,
-    TodoHistory,
-    ProgressStats,
-    ListProperty,
-    ItemProperty,
-    TodoListCreate,
-    TodoItemCreate,
-    TodoHistoryCreate,
-    ItemDependency,
     DependencyType,
-    ListTag,
-    ListTagCreate,
-    ListTagAssignment,
-    ItemStatus,
-    ListType,
     HistoryAction,
+    ItemDependency,
+    ItemProperty,
+    ItemStatus,
+    ListProperty,
+    ListTag,
+    ListTagAssignment,
+    ListTagCreate,
+    ListType,
+    ProgressStats,
+    TodoHistory,
+    TodoHistoryCreate,
+    TodoItem,
+    TodoItemCreate,
+    TodoList,
+    TodoListCreate,
 )
+from .security import SecureFileHandler, SecurityError
 
 
-class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMixin, IOMixin, ItemsMixin, DependenciesMixin, SubtasksMixin):
+class TodoManager(
+    ManagerBase,
+    HelpersMixin,
+    ListsMixin,
+    TagsMixin,
+    PropertiesMixin,
+    IOMixin,
+    ItemsMixin,
+    DependenciesMixin,
+    SubtasksMixin,
+):
     """Programmatic API for TODO management - core business logic"""
 
     def __init__(self, db_path: Optional[str] = None):
@@ -69,7 +79,6 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
 
         if not db_list:
             raise ValueError(f"List '{key}' does not exist")
-
 
         with self.db.get_session() as session:
             # Re-fetch the list in the current session to ensure it's attached
@@ -110,7 +119,6 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             session.query(ListPropertyDB).filter(
                 ListPropertyDB.list_id == db_list.id
             ).delete(synchronize_session=False)
-
 
             # Delete list tag assignments
             session.query(ListTagAssignmentDB).filter(
@@ -220,74 +228,72 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             )
 
     def rename_list(
-        self, 
-        current_key: str, 
-        new_key: Optional[str] = None, 
-        new_title: Optional[str] = None
+        self,
+        current_key: str,
+        new_key: Optional[str] = None,
+        new_title: Optional[str] = None,
     ) -> TodoList:
         """Rename list key and/or title"""
         # Validate that at least one parameter is provided
         if new_key is None and new_title is None:
             raise ValueError("At least one of new_key or new_title must be provided")
-        
+
         # Get the current list
         db_list = self.db.get_list_by_key(current_key)
         if not db_list:
             raise ValueError(f"List '{current_key}' does not exist")
-        
+
         # Store old values for history
         old_key = db_list.list_key
         old_title = db_list.title
-        
+
         # Prepare updates dict
         updates = {}
-        
+
         # Validate and set new key if provided
         if new_key is not None:
             # Validate new key - must contain at least one letter
             import re
-            if not re.search(r'[a-zA-Z]', new_key):
+
+            if not re.search(r"[a-zA-Z]", new_key):
                 raise ValueError(
                     f"List key '{new_key}' must contain at least one letter (a-z) to distinguish from numeric IDs"
                 )
-            
+
             # Check if new key already exists (and it's not the same list)
             existing = self.db.get_list_by_key(new_key)
             if existing and existing.id != db_list.id:
                 raise ValueError(f"List key '{new_key}' already exists")
-                
+
             updates["list_key"] = new_key
-        
+
         # Set new title if provided
         if new_title is not None:
             updates["title"] = new_title
-        
+
         # Update the list
         updated_db_list = self.db.update_list(db_list.id, updates)
         if not updated_db_list:
             raise ValueError(f"Failed to update list '{current_key}'")
-        
+
         # Save to history
         changes_desc = []
         if new_key is not None:
             changes_desc.append(f"key: {old_key} → {new_key}")
         if new_title is not None:
             changes_desc.append(f"title: {old_title} → {new_title}")
-        
+
         self._record_history(
             list_id=updated_db_list.id,
             action="rename_list",
-            old_value={
-                "list_key": old_key,
-                "title": old_title
-            },
+            old_value={"list_key": old_key, "title": old_title},
             new_value={
                 "list_key": new_key or old_key,
                 "title": new_title or old_title,
-                "changes": "; ".join(changes_desc)
-            }
+                "changes": "; ".join(changes_desc),
+            },
         )
-        
+
         # Convert to Pydantic model and return
         return TodoList(
             id=updated_db_list.id,
@@ -347,7 +353,6 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
         ]
         return [self._db_to_model(db_list, TodoList) for db_list in archived_lists]
 
-
     def get_next_pending(
         self,
         list_key: str,
@@ -383,7 +388,6 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             # Phase 2: Check cross-list dependencies (item blocked by other items)
             if self.db.is_item_blocked(db_item.id):
                 continue  # Skip blocked items
-
 
             return self._db_to_model(db_item, TodoItem)
 
@@ -445,18 +449,20 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             dependency_count=len(dependencies),
         )
 
-    def get_progress_bulk_minimal(self, list_keys: List[str]) -> Dict[str, ProgressStats]:
+    def get_progress_bulk_minimal(
+        self, list_keys: List[str]
+    ) -> Dict[str, ProgressStats]:
         """Get progress stats for multiple lists efficiently (minimal version for list display).
-        
+
         Args:
             list_keys: List of list keys to get progress for
-            
+
         Returns:
             Dict mapping list_key to ProgressStats with basic fields only
         """
         if not list_keys:
             return {}
-            
+
         # Get list objects and map key to id
         key_to_id = {}
         id_to_key = {}
@@ -465,27 +471,31 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             if db_list:
                 key_to_id[list_key] = db_list.id
                 id_to_key[db_list.id] = list_key
-        
+
         if not key_to_id:
             return {}
-            
+
         # Get status counts for all lists in one query
         list_ids = list(key_to_id.values())
         status_counts = self.db.get_status_counts_for_lists(list_ids)
-        
+
         # Build result dict
         result = {}
         for list_key, list_id in key_to_id.items():
-            counts = status_counts.get(list_id, {'pending': 0, 'in_progress': 0, 'completed': 0, 'failed': 0})
+            counts = status_counts.get(
+                list_id, {"pending": 0, "in_progress": 0, "completed": 0, "failed": 0}
+            )
             total = sum(counts.values())
-            completion_percentage = (counts['completed'] / total * 100) if total > 0 else 0.0
-            
+            completion_percentage = (
+                (counts["completed"] / total * 100) if total > 0 else 0.0
+            )
+
             result[list_key] = ProgressStats(
                 total=total,
-                completed=counts['completed'],
-                in_progress=counts['in_progress'],
-                pending=counts['pending'],
-                failed=counts['failed'],
+                completed=counts["completed"],
+                in_progress=counts["in_progress"],
+                pending=counts["pending"],
+                failed=counts["failed"],
                 completion_percentage=completion_percentage,
                 blocked=0,  # Not calculated in minimal version for performance
                 available=0,  # Not calculated in minimal version for performance
@@ -494,24 +504,26 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
                 hierarchy_depth=0,  # Not calculated in minimal version for performance
                 dependency_count=0,  # Not calculated in minimal version for performance
             )
-            
+
         return result
 
     def import_from_markdown(
-        self, file_path: str, base_key: Optional[str] = None,
-        allowed_base_dirs: Optional[Set[str]] = None
+        self,
+        file_path: str,
+        base_key: Optional[str] = None,
+        allowed_base_dirs: Optional[Set[str]] = None,
     ) -> List[TodoList]:
         """
         9. Imports lists from a markdown file (supports multi-column)
-        
+
         Args:
             file_path: Path to markdown file to import
             base_key: Base key prefix for imported lists (optional)
             allowed_base_dirs: Set of allowed base directories for security (optional)
-            
+
         Returns:
             List of created TodoList objects
-            
+
         Raises:
             SecurityError: If file path is malicious or violates security constraints
             ValueError: If file format is invalid or other validation errors
@@ -525,7 +537,7 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
         lists_data = {}
 
         # Process file content line by line
-        lines = content.split('\n')
+        lines = content.split("\n")
         for line_num, line in enumerate(lines, 1):
             line = line.strip()
 
@@ -602,19 +614,22 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
 
             created_lists.append(todo_list)
 
-
         return created_lists
 
-    def export_to_markdown(self, list_key: str, file_path: str, 
-                         allowed_base_dirs: Optional[Set[str]] = None) -> None:
+    def export_to_markdown(
+        self,
+        list_key: str,
+        file_path: str,
+        allowed_base_dirs: Optional[Set[str]] = None,
+    ) -> None:
         """
         10. Exports a list to markdown format [x] text
-        
+
         Args:
             list_key: Key of the list to export
             file_path: Path where to write the markdown file
             allowed_base_dirs: Set of allowed base directories for security (optional)
-            
+
         Raises:
             SecurityError: If file path is malicious or violates security constraints
             ValueError: If list doesn't exist or other validation errors
@@ -654,8 +669,6 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
 
     # === Helper functions ===
 
-
-
     def get_item_history(
         self, list_key: str, item_key: str, limit: Optional[int] = None
     ) -> List[TodoHistory]:
@@ -680,7 +693,7 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             List of dictionaries containing failed item details with list context and properties
         """
         import re
-        from typing import Dict, Any
+        from typing import Any, Dict
 
         # Get only active lists (not archived) with optional tag filtering
         all_lists = self.list_all(include_archived=False, filter_tags=tag_filter)
@@ -822,8 +835,12 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
     # ===== ITEM PROPERTIES METHODS =====
 
     def set_item_property(
-        self, list_key: str, item_key: str, property_key: str, property_value: str,
-        parent_item_key: Optional[str] = None
+        self,
+        list_key: str,
+        item_key: str,
+        property_key: str,
+        property_value: str,
+        parent_item_key: Optional[str] = None,
     ) -> ItemProperty:
         """Set a key-value property for an item or subitem, creating or updating it.
 
@@ -850,12 +867,18 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             # Get parent item first
             parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
             if not parent_item:
-                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
-            
+                raise ValueError(
+                    f"Parent item '{parent_item_key}' not found in list '{list_key}'"
+                )
+
             # Get subitem
-            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+            db_item = self.db.get_item_by_key_and_parent(
+                db_list.id, item_key, parent_item.id
+            )
             if not db_item:
-                raise ValueError(f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+                raise ValueError(
+                    f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'"
+                )
         else:
             # Get main item
             db_item = self.db.get_item_by_key(db_list.id, item_key)
@@ -869,8 +892,11 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
         return self._db_to_model(db_property, ItemProperty)
 
     def get_item_property(
-        self, list_key: str, item_key: str, property_key: str,
-        parent_item_key: Optional[str] = None
+        self,
+        list_key: str,
+        item_key: str,
+        property_key: str,
+        parent_item_key: Optional[str] = None,
     ) -> Optional[str]:
         """Get the value of a specific property for an item or subitem.
 
@@ -895,12 +921,18 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             # Get parent item first
             parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
             if not parent_item:
-                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
-            
+                raise ValueError(
+                    f"Parent item '{parent_item_key}' not found in list '{list_key}'"
+                )
+
             # Get subitem
-            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+            db_item = self.db.get_item_by_key_and_parent(
+                db_list.id, item_key, parent_item.id
+            )
             if not db_item:
-                raise ValueError(f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+                raise ValueError(
+                    f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'"
+                )
         else:
             # Get main item
             db_item = self.db.get_item_by_key(db_list.id, item_key)
@@ -909,8 +941,9 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
 
         return self.db.get_item_property(db_item.id, property_key)
 
-    def get_item_properties(self, list_key: str, item_key: str, 
-                           parent_item_key: Optional[str] = None) -> Dict[str, str]:
+    def get_item_properties(
+        self, list_key: str, item_key: str, parent_item_key: Optional[str] = None
+    ) -> Dict[str, str]:
         """Get all properties for an item or subitem as a key-value dictionary.
 
         Args:
@@ -933,12 +966,18 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             # Get parent item first
             parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
             if not parent_item:
-                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
-            
+                raise ValueError(
+                    f"Parent item '{parent_item_key}' not found in list '{list_key}'"
+                )
+
             # Get subitem
-            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+            db_item = self.db.get_item_by_key_and_parent(
+                db_list.id, item_key, parent_item.id
+            )
             if not db_item:
-                raise ValueError(f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+                raise ValueError(
+                    f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'"
+                )
         else:
             # Get main item
             db_item = self.db.get_item_by_key(db_list.id, item_key)
@@ -992,7 +1031,9 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
         for item in items:
             if item.parent_item_id is not None:
                 # Find parent item key
-                parent_item = next((i for i in items if i.id == item.parent_item_id), None)
+                parent_item = next(
+                    (i for i in items if i.id == item.parent_item_id), None
+                )
                 if parent_item:
                     parent_id_to_key[item.parent_item_id] = parent_item.item_key
 
@@ -1000,8 +1041,12 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
         for item_order, item in enumerate(items):
             # Get all properties for this item
             properties = self.db.get_item_properties(item.id)
-            parent_item_key = parent_id_to_key.get(item.parent_item_id) if item.parent_item_id else None
-            
+            parent_item_key = (
+                parent_id_to_key.get(item.parent_item_id)
+                if item.parent_item_id
+                else None
+            )
+
             if properties:
                 # Item has properties - add each property
                 for prop_key, prop_value in properties.items():
@@ -1014,7 +1059,7 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
                             "item_order": item_order,
                             "parent_item_id": item.parent_item_id,
                             "parent_item_key": parent_item_key,
-                            "position": item.position
+                            "position": item.position,
                         }
                     )
             else:
@@ -1028,7 +1073,7 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
                         "item_order": item_order,
                         "parent_item_id": item.parent_item_id,
                         "parent_item_key": parent_item_key,
-                        "position": item.position
+                        "position": item.position,
                     }
                 )
 
@@ -1040,10 +1085,12 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             else:
                 # Subitem: find parent's position to group subitems under their parents
                 parent_key = x.get("parent_item_key", "")
-                parent_item = next((item for item in items if item.item_key == parent_key), None)
+                parent_item = next(
+                    (item for item in items if item.item_key == parent_key), None
+                )
                 parent_position = parent_item.position if parent_item else 999
                 return (parent_position, 1, x["position"], x["property_key"])
-        
+
         result.sort(key=sort_key)
         return result
 
@@ -1133,20 +1180,22 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
         for db_match in db_matches:
             parent_model = self._db_to_model(db_match["parent"], TodoItem)
             matching_subitems = [
-                self._db_to_model(db_item, TodoItem) 
+                self._db_to_model(db_item, TodoItem)
                 for db_item in db_match["matching_subitems"]
             ]
-            
-            matches.append({
-                "parent": parent_model,
-                "matching_subitems": matching_subitems
-            })
+
+            matches.append(
+                {"parent": parent_model, "matching_subitems": matching_subitems}
+            )
 
         return matches
 
     def delete_item_property(
-        self, list_key: str, item_key: str, property_key: str,
-        parent_item_key: Optional[str] = None
+        self,
+        list_key: str,
+        item_key: str,
+        property_key: str,
+        parent_item_key: Optional[str] = None,
     ) -> bool:
         """Delete a specific property from an item or subitem.
 
@@ -1171,12 +1220,18 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             # Get parent item first
             parent_item = self.db.get_item_by_key(db_list.id, parent_item_key)
             if not parent_item:
-                raise ValueError(f"Parent item '{parent_item_key}' not found in list '{list_key}'")
-            
+                raise ValueError(
+                    f"Parent item '{parent_item_key}' not found in list '{list_key}'"
+                )
+
             # Get subitem
-            db_item = self.db.get_item_by_key_and_parent(db_list.id, item_key, parent_item.id)
+            db_item = self.db.get_item_by_key_and_parent(
+                db_list.id, item_key, parent_item.id
+            )
             if not db_item:
-                raise ValueError(f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'")
+                raise ValueError(
+                    f"Subitem '{item_key}' not found under parent '{parent_item_key}' in list '{list_key}'"
+                )
         else:
             # Get main item
             db_item = self.db.get_item_by_key(db_list.id, item_key)
@@ -1254,7 +1309,7 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
         """
         Phase 3: Smart next task algorithm combining Phase 1 + Phase 2
         OPTIMIZED VERSION: Eliminates N+1 queries using bulk loading
-        
+
         1. Find all pending tasks (root and subtasks)
         2. Filter out blocked (cross-list dependencies - Phase 2)
         3. For each unblocked pending task:
@@ -1273,11 +1328,11 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
         # OPTIMIZATION: Get all root items with children preloaded in single query
         # Fallback to old method if optimized version not available or in testing
         use_optimized = (
-            hasattr(self.db, 'get_root_items_with_children_optimized') and
-            hasattr(self.db, 'SessionLocal') and
-            not str(type(self.db)).startswith("<class 'unittest.mock")
+            hasattr(self.db, "get_root_items_with_children_optimized")
+            and hasattr(self.db, "SessionLocal")
+            and not str(type(self.db)).startswith("<class 'unittest.mock")
         )
-        
+
         if use_optimized:
             try:
                 root_items = self.db.get_root_items_with_children_optimized(db_list.id)
@@ -1285,23 +1340,25 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
                 root_items = self.db.get_root_items(db_list.id)
         else:
             root_items = self.db.get_root_items(db_list.id)
-        
+
         # OPTIMIZATION: Get all pending items with parents preloaded in single query
         if use_optimized:
             try:
-                all_pending_items = self.db.get_list_items_with_parents_optimized(db_list.id, status="pending")
+                all_pending_items = self.db.get_list_items_with_parents_optimized(
+                    db_list.id, status="pending"
+                )
             except (AttributeError, TypeError):
                 all_pending_items = self.db.get_list_items(db_list.id, status="pending")
         else:
             all_pending_items = self.db.get_list_items(db_list.id, status="pending")
-        
+
         # Collect all item IDs that need dependency checking
         all_candidate_ids = []
         for item in root_items:
             if item.status == "pending":
                 # Only check pending parents for blocking, not in_progress ones
                 all_candidate_ids.append(item.id)
-            
+
             # Add children IDs for bulk checking (for both pending and in_progress parents)
             if item.status in ["pending", "in_progress"]:
                 if use_optimized:
@@ -1321,13 +1378,16 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
                     for child in children:
                         if child.status == "pending":
                             all_candidate_ids.append(child.id)
-        
+
         # Add orphaned subtasks
         for item in all_pending_items:
             if item.parent_item_id:
                 if use_optimized:
                     try:
-                        if item.parent and item.parent.status in ["completed", "failed"]:
+                        if item.parent and item.parent.status in [
+                            "completed",
+                            "failed",
+                        ]:
                             all_candidate_ids.append(item.id)
                     except (AttributeError, TypeError):
                         # Fall back to individual parent lookup
@@ -1339,7 +1399,7 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
                     parent = self.db.get_item_by_id(item.parent_item_id)
                     if parent and parent.status in ["completed", "failed"]:
                         all_candidate_ids.append(item.id)
-        
+
         # OPTIMIZATION: Bulk check for blocked items in single query
         # Fallback to individual checks if bulk method not available (for testing)
         if use_optimized:
@@ -1367,10 +1427,15 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
                     try:
                         # Try to use preloaded children if available (from optimized query)
                         pending_children = [
-                            child for child in item.children if child.status == "pending"
+                            child
+                            for child in item.children
+                            if child.status == "pending"
                         ]
                         # If no children but item should have children, fall back to database query
-                        if not pending_children and item.status in ["in_progress", "pending"]:
+                        if not pending_children and item.status in [
+                            "in_progress",
+                            "pending",
+                        ]:
                             # This might be a mock or unloaded relationship, fall back
                             children = self.db.get_item_children(item.id)
                             pending_children = [
@@ -1410,10 +1475,15 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
                     try:
                         # Try to use preloaded children if available (from optimized query)
                         pending_children = [
-                            child for child in item.children if child.status == "pending"
+                            child
+                            for child in item.children
+                            if child.status == "pending"
                         ]
                         # If no children but item should have children, fall back to database query
-                        if not pending_children and item.status in ["in_progress", "pending"]:
+                        if not pending_children and item.status in [
+                            "in_progress",
+                            "pending",
+                        ]:
                             # This might be a mock or unloaded relationship, fall back
                             children = self.db.get_item_children(item.id)
                             pending_children = [
@@ -1466,7 +1536,7 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
                         parent = self.db.get_item_by_id(item.parent_item_id)
                 else:
                     parent = self.db.get_item_by_id(item.parent_item_id)
-                
+
                 if parent and parent.status in ["completed", "failed"]:
                     # Orphaned subtask - can be worked on independently
                     if item.id not in blocked_items:
@@ -1644,7 +1714,7 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             "total_subtasks": len(children),
         }
 
-    # ===== CROSS-LIST DEPENDENCIES METHODS (Phase 2) =====
+        # ===== CROSS-LIST DEPENDENCIES METHODS (Phase 2) =====
 
         return self._db_to_model(db_dependency, ItemDependency)
 
@@ -1878,7 +1948,6 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             "dependencies": [],
         }
 
-
     def get_dependency_graph(self, project_key: str) -> Dict[str, Any]:
         """Get a dependency graph - returns empty since list relations were removed.
 
@@ -1889,8 +1958,6 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             A dictionary representing empty dependency graph.
         """
         return {"lists": [], "dependencies": []}
-
-
 
     # ===== LIST TAG MANAGEMENT METHODS =====
 
@@ -2032,16 +2099,16 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
 
     def get_tags_for_lists_bulk(self, list_keys: List[str]) -> Dict[str, List[ListTag]]:
         """Get tags for multiple lists efficiently.
-        
+
         Args:
             list_keys: List of list keys to get tags for
-            
+
         Returns:
             Dict mapping list_key to list of ListTag objects with dynamic colors
         """
         if not list_keys:
             return {}
-            
+
         # Get list objects and map key to id
         key_to_id = {}
         id_to_key = {}
@@ -2050,19 +2117,19 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
             if db_list:
                 key_to_id[list_key] = db_list.id
                 id_to_key[db_list.id] = list_key
-        
+
         if not key_to_id:
             return {}
-            
+
         # Get tags for all lists in one query
         list_ids = list(key_to_id.values())
         tags_by_list_id = self.db.get_tags_for_lists(list_ids)
-        
+
         # Build result dict with dynamic colors
         result = {}
         for list_key in list_keys:
             result[list_key] = []
-            
+
         for list_id, db_tags in tags_by_list_id.items():
             list_key = id_to_key.get(list_id)
             if list_key:
@@ -2074,7 +2141,7 @@ class TodoManager(ManagerBase, HelpersMixin, ListsMixin, TagsMixin, PropertiesMi
                     tag_model.color = self._get_tag_color_by_index(tag_model.name)
                     tags.append(tag_model)
                 result[list_key] = sorted(tags, key=lambda t: t.name)
-                
+
         return result
 
     def get_lists_by_tags(self, tag_names: List[str]) -> List[TodoList]:

@@ -6,8 +6,10 @@ Tests the 10 core functions from Stage 1
 
 import os
 import tempfile
-from core.manager import TodoManager
+
 from rich.console import Console
+
+from core.manager import TodoManager
 
 console = Console()
 

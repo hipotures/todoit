@@ -3,10 +3,11 @@ TODOIT MCP - Pydantic Models
 Data models for TODO list management system
 """
 
-from typing import Optional, Dict, Any, List
 from datetime import datetime
-from pydantic import BaseModel, Field, field_validator, ConfigDict
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ListType(str, Enum):
@@ -29,8 +30,6 @@ class ItemStatus(str, Enum):
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     FAILED = "failed"
-
-
 
 
 class HistoryAction(str, Enum):
@@ -139,7 +138,11 @@ class TodoList(TodoListBase):
             "list_key": self.list_key,
             "title": self.title,
             "description": self.description,
-            "list_type": self.list_type.value if hasattr(self.list_type, 'value') else self.list_type,
+            "list_type": (
+                self.list_type.value
+                if hasattr(self.list_type, "value")
+                else self.list_type
+            ),
             "metadata": self.metadata,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
@@ -203,7 +206,9 @@ class TodoItem(TodoItemBase):
             "item_key": self.item_key,
             "content": self.content,
             "position": self.position,
-            "status": self.status.value if hasattr(self.status, 'value') else self.status,
+            "status": (
+                self.status.value if hasattr(self.status, "value") else self.status
+            ),
             "completion_states": self.completion_states,
             "parent_item_id": self.parent_item_id,
             "metadata": self.metadata,
@@ -218,8 +223,6 @@ class TodoItem(TodoItemBase):
     def get_completion_metadata(self) -> Dict[str, Any]:
         """Get completion metadata"""
         return self.completion_states or {}
-
-
 
 
 class ListPropertyBase(BaseModel):

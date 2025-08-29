@@ -3,22 +3,23 @@ Integration tests for multiple output formats (JSON, YAML, XML)
 Tests environment variable control and data serialization
 """
 
-import pytest
-import os
 import json
-import yaml
+import os
+import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from io import StringIO
-import sys
 from unittest.mock import patch
+
+import pytest
+import yaml
 
 from core.manager import TodoManager
 from interfaces.cli_modules.display import (
     _display_records,
     _get_output_format,
-    _serialize_for_output,
     _prepare_data_for_serialization,
+    _serialize_for_output,
 )
 
 
@@ -183,6 +184,7 @@ class TestOutputFormatsWithCLI:
         os.environ["TODOIT_OUTPUT_FORMAT"] = "json"
 
         from click.testing import CliRunner
+
         from interfaces.cli import cli
 
         runner = CliRunner()

@@ -4,7 +4,7 @@ Base class with core initialization and helper methods
 """
 
 import os
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 
 class ManagerBase:
@@ -14,23 +14,32 @@ class ManagerBase:
         """Initialize TodoManager with database connection"""
         if db_path is None:
             # Check for TODOIT_DB_PATH environment variable
-            db_path = os.getenv('TODOIT_DB_PATH')
+            db_path = os.getenv("TODOIT_DB_PATH")
             if db_path:
                 # Expand environment variables like $HOME
                 db_path = os.path.expandvars(db_path)
             if db_path is None:
                 from rich.console import Console
+
                 console = Console()
-                console.print("[bold red]❌ Error:[/] Database path not specified!", style="red")
+                console.print(
+                    "[bold red]❌ Error:[/] Database path not specified!", style="red"
+                )
                 console.print()
-                console.print("[yellow]TODOIT requires explicit database configuration.[/]")
+                console.print(
+                    "[yellow]TODOIT requires explicit database configuration.[/]"
+                )
                 console.print()
                 console.print("[cyan]Quick fix:[/]")
-                console.print("  [white]export TODOIT_DB_PATH=/path/to/your/todoit.db[/]")
+                console.print(
+                    "  [white]export TODOIT_DB_PATH=/path/to/your/todoit.db[/]"
+                )
                 console.print("  [white]todoit list all[/]")
                 console.print()
                 console.print("[cyan]Or use parameter:[/]")
-                console.print("  [white]todoit --db-path /path/to/your/todoit.db list all[/]")
+                console.print(
+                    "  [white]todoit --db-path /path/to/your/todoit.db list all[/]"
+                )
                 console.print()
                 console.print("[dim]Database path must be explicitly configured[/]")
                 raise SystemExit(1)
@@ -41,38 +50,46 @@ class ManagerBase:
         # Validate database path before creating Database instance
         try:
             import pathlib
+
             from .database import Database
-            
+
             db_file = pathlib.Path(db_path)
-            
+
             # Ensure parent directory exists
             db_file.parent.mkdir(parents=True, exist_ok=True)
-            
+
             # Check write permissions on parent directory
             if not os.access(db_file.parent, os.W_OK):
                 from rich.console import Console
+
                 console = Console()
-                console.print(f"[bold red]❌ Error:[/] No write permission to directory: {db_file.parent}")
+                console.print(
+                    f"[bold red]❌ Error:[/] No write permission to directory: {db_file.parent}"
+                )
                 console.print(f"[yellow]Fix:[/] chmod 755 {db_file.parent}")
                 raise SystemExit(1)
-                
+
             self.db = Database(db_path)
-            
+
         except (OSError, PermissionError) as e:
             from rich.console import Console
+
             console = Console()
-            console.print(f"[bold red]❌ Database Error:[/] Cannot access database file")
+            console.print(
+                f"[bold red]❌ Database Error:[/] Cannot access database file"
+            )
             console.print(f"[white]Path:[/] {db_path}")
             console.print(f"[white]Error:[/] {e}")
             console.print()
             console.print("[cyan]Possible solutions:[/]")
             console.print("  [white]• Check if directory exists and is writable[/]")
-            console.print("  [white]• Use absolute path: /path/to/your/todoit.db[/]") 
+            console.print("  [white]• Use absolute path: /path/to/your/todoit.db[/]")
             console.print("  [white]• Check permissions: ls -la $(dirname path)[/]")
             raise SystemExit(1)
         except Exception as e:
             # Catch SQLAlchemy and other database errors
             from rich.console import Console
+
             console = Console()
             console.print(f"[bold red]❌ Database Connection Error:[/]")
             console.print(f"[white]Path:[/] {db_path}")
@@ -91,7 +108,7 @@ class ManagerBase:
 
     def _get_force_tags(self) -> List[str]:
         """Get forced tags from TODOIT_FORCE_TAGS environment variable
-        
+
         FORCE_TAGS creates environment isolation - all operations are limited
         to lists with these tags, and new lists automatically get these tags.
         """

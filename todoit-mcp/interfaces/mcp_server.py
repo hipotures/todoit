@@ -3,8 +3,9 @@ TODOIT MCP Server
 MCP (Model Context Protocol) interface for TodoManager
 """
 
-from typing import Any, Dict, List, Optional, Callable
 from functools import wraps
+from typing import Any, Callable, Dict, List, Optional
+
 from mcp.server.fastmcp import FastMCP
 
 from core.manager import TodoManager
@@ -65,16 +66,18 @@ def clean_item_data(item_dict: Dict[str, Any]) -> Dict[str, Any]:
         "status": item_dict.get("status"),
         "position": item_dict.get("position"),
     }
-    
+
     # Add parent info only if it's a subtask
     if item_dict.get("parent_item_id"):
         essential_fields["is_subtask"] = True
-    
+
     # Remove None values
     return {k: v for k, v in essential_fields.items() if v is not None}
 
 
-def clean_to_dict_result(obj_dict: Dict[str, Any], object_type: str = "item") -> Dict[str, Any]:
+def clean_to_dict_result(
+    obj_dict: Dict[str, Any], object_type: str = "item"
+) -> Dict[str, Any]:
     """Remove timestamps and unnecessary fields from .to_dict() results."""
     if object_type == "item":
         return clean_item_data(obj_dict)
@@ -110,7 +113,12 @@ def clean_to_dict_result(obj_dict: Dict[str, Any], object_type: str = "item") ->
     else:
         # For other objects (progress, dependencies, etc.) keep as-is but remove common timestamp fields
         clean_dict = obj_dict.copy()
-        for timestamp_field in ["created_at", "updated_at", "started_at", "completed_at"]:
+        for timestamp_field in [
+            "created_at",
+            "updated_at",
+            "started_at",
+            "completed_at",
+        ]:
             clean_dict.pop(timestamp_field, None)
         return clean_dict
 
@@ -231,7 +239,10 @@ async def todo_create_list(
             metadata=metadata,
             tags=tags,
         )
-        return {"success": True, "list": clean_to_dict_result(todo_list.to_dict(), "list")}
+        return {
+            "success": True,
+            "list": clean_to_dict_result(todo_list.to_dict(), "list"),
+        }
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -239,10 +250,7 @@ async def todo_create_list(
 @conditional_tool
 @mcp_error_handler
 async def todo_get_list(
-    list_key: str, 
-    include_items: bool = True, 
-    include_properties: bool = True,
-    mgr=None
+    list_key: str, include_items: bool = True, include_properties: bool = True, mgr=None
 ) -> Dict[str, Any]:
     """Get TODO list by key or ID with optional items and properties.
 
@@ -261,7 +269,7 @@ async def todo_get_list(
     # Base response with list info
     response = {
         "success": True,
-        "list": clean_to_dict_result(todo_list.to_dict(), "list")
+        "list": clean_to_dict_result(todo_list.to_dict(), "list"),
     }
 
     # Add items if requested
@@ -277,20 +285,18 @@ async def todo_get_list(
                 "parent_item_id": item.parent_item_id,
             }
             items_data.append(clean_item_data(item_dict))
-        
-        response["items"] = {
-            "count": len(items_data),
-            "data": items_data
-        }
+
+        response["items"] = {"count": len(items_data), "data": items_data}
 
     # Add properties if requested
     if include_properties:
         properties = mgr.get_list_properties(todo_list.list_key)
-        prop_data = [{"key": k, "value": v} for k, v in properties.items()] if properties else []
-        response["properties"] = {
-            "count": len(prop_data),
-            "data": prop_data
-        }
+        prop_data = (
+            [{"key": k, "value": v} for k, v in properties.items()]
+            if properties
+            else []
+        )
+        response["properties"] = {"count": len(prop_data), "data": prop_data}
 
     return response
 
@@ -311,7 +317,9 @@ async def todo_delete_list(list_key: str) -> Dict[str, Any]:
         return {
             "success": success,
             "message": (
-                f"List '{list_key}' deleted successfully" if success else "List not found"
+                f"List '{list_key}' deleted successfully"
+                if success
+                else "List not found"
             ),
         }
     except Exception as e:
@@ -371,8 +379,6 @@ async def todo_unarchive_list(list_key: str) -> Dict[str, Any]:
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
-
-
 
 
 @conditional_tool
@@ -449,7 +455,7 @@ async def todo_add_item(
     Examples:
         # Add item:
         await todo_add_item("project", "task1", "Main task")
-        
+
         # Add subitem:
         await todo_add_item("project", "task1", "Sub work", subitem_key="subtask1")
     """
@@ -457,7 +463,7 @@ async def todo_add_item(
         mgr = init_manager()
         if metadata is None:
             metadata = {}
-            
+
         if subitem_key is not None:
             # Add subitem: item_key becomes parent_key, subitem_key is the new subitem
             subitem = mgr.add_subitem(
@@ -468,9 +474,11 @@ async def todo_add_item(
                 metadata=metadata,
             )
             return {
-                "success": True, 
-                "subitem": map_item_content_to_title(clean_to_dict_result(subitem.to_dict(), "item")),
-                "message": f"Subitem '{subitem_key}' added to '{item_key}' in list '{list_key}'"
+                "success": True,
+                "subitem": map_item_content_to_title(
+                    clean_to_dict_result(subitem.to_dict(), "item")
+                ),
+                "message": f"Subitem '{subitem_key}' added to '{item_key}' in list '{list_key}'",
             }
         else:
             # Add regular item
@@ -481,7 +489,12 @@ async def todo_add_item(
                 position=position,
                 metadata=metadata,
             )
-            return {"success": True, "item": map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item"))}
+            return {
+                "success": True,
+                "item": map_item_content_to_title(
+                    clean_to_dict_result(item.to_dict(), "item")
+                ),
+            }
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -513,12 +526,12 @@ async def todo_update_item_status(
     Examples:
         # Update item status
         await todo_update_item_status("project", "feature1", status="completed")
-        
+
         # Update subitem status
         await todo_update_item_status("project", "feature1", subitem_key="step1", status="completed")
-        
+
         # Update with completion states
-        await todo_update_item_status("project", "feature1", status="in_progress", 
+        await todo_update_item_status("project", "feature1", status="in_progress",
                                       completion_states={"coded": True, "tested": False})
 
     Note:
@@ -527,7 +540,7 @@ async def todo_update_item_status(
     """
     try:
         mgr = init_manager()
-        
+
         item = mgr.update_item_status(
             list_key=list_key,
             item_key=item_key,
@@ -539,7 +552,9 @@ async def todo_update_item_status(
         target_type = "Subitem" if subitem_key else "Item"
         return {
             "success": True,
-            "item": map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item")),
+            "item": map_item_content_to_title(
+                clean_to_dict_result(item.to_dict(), "item")
+            ),
             "message": f"{target_type} '{target_name}' status updated successfully",
         }
     except ValueError as e:
@@ -575,7 +590,12 @@ async def todo_get_next_pending(
             list_key=list_key, respect_dependencies=respect_dependencies
         )
         if item:
-            return {"success": True, "item": map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item"))}
+            return {
+                "success": True,
+                "item": map_item_content_to_title(
+                    clean_to_dict_result(item.to_dict(), "item")
+                ),
+            }
         else:
             return {
                 "success": True,
@@ -643,13 +663,15 @@ async def todo_report_errors(
     for item in failed_items:
         clean_item = {
             "item_key": item.get("item_key"),
-            "content": item.get("content"), 
+            "content": item.get("content"),
             "status": item.get("status"),
             "position": item.get("position"),
         }
         if item.get("parent_item_id"):
             clean_item["is_subtask"] = True
-        cleaned_failed_items.append({k: v for k, v in clean_item.items() if v is not None})
+        cleaned_failed_items.append(
+            {k: v for k, v in clean_item.items() if v is not None}
+        )
 
     metadata = {
         "lists_scanned": len(all_active_lists),
@@ -692,7 +714,9 @@ async def todo_import_from_markdown(
         lists = mgr.import_from_markdown(file_path=file_path, base_key=base_key)
         return {
             "success": True,
-            "lists": [clean_to_dict_result(todo_list.to_dict(), "list") for todo_list in lists],
+            "lists": [
+                clean_to_dict_result(todo_list.to_dict(), "list") for todo_list in lists
+            ],
             "count": len(lists),
             "message": f"Imported {len(lists)} list(s) from {file_path}",
         }
@@ -727,9 +751,7 @@ async def todo_export_to_markdown(list_key: str, file_path: str) -> Dict[str, An
 
 @conditional_tool
 async def todo_get_item(
-    list_key: str, 
-    item_key: str, 
-    subitem_key: Optional[str] = None
+    list_key: str, item_key: str, subitem_key: Optional[str] = None
 ) -> Dict[str, Any]:
     """Get specific todo item or its subitems from a list (unified smart command).
 
@@ -745,31 +767,43 @@ async def todo_get_item(
     Examples:
         # Get item:
         await todo_get_item("project", "task1")
-        
+
         # Get specific subitem:
         await todo_get_item("project", "task1", subitem_key="subtask1")
-        
+
         # Get all subitems:
         await todo_get_item("project", "task1", subitem_key="all")
     """
     try:
         mgr = init_manager()
-        
+
         if subitem_key is not None:
             if subitem_key == "all":
                 # Get all subitems of the parent item
                 subitems = mgr.get_subitems(list_key=list_key, parent_key=item_key)
                 return {
                     "success": True,
-                    "subitems": [map_item_content_to_title(clean_to_dict_result(subitem.to_dict(), "item")) for subitem in subitems],
+                    "subitems": [
+                        map_item_content_to_title(
+                            clean_to_dict_result(subitem.to_dict(), "item")
+                        )
+                        for subitem in subitems
+                    ],
                     "count": len(subitems),
                     "parent_key": item_key,
                 }
             else:
                 # Get specific subitem by key
-                subitem = mgr.get_item(list_key=list_key, item_key=subitem_key, parent_item_key=item_key)
+                subitem = mgr.get_item(
+                    list_key=list_key, item_key=subitem_key, parent_item_key=item_key
+                )
                 if subitem:
-                    return {"success": True, "subitem": map_item_content_to_title(clean_to_dict_result(subitem.to_dict(), "item"))}
+                    return {
+                        "success": True,
+                        "subitem": map_item_content_to_title(
+                            clean_to_dict_result(subitem.to_dict(), "item")
+                        ),
+                    }
                 else:
                     return {
                         "success": False,
@@ -779,7 +813,12 @@ async def todo_get_item(
             # Get regular item
             item = mgr.get_item(list_key=list_key, item_key=item_key)
             if item:
-                return {"success": True, "item": map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item"))}
+                return {
+                    "success": True,
+                    "item": map_item_content_to_title(
+                        clean_to_dict_result(item.to_dict(), "item")
+                    ),
+                }
             else:
                 return {
                     "success": False,
@@ -821,7 +860,9 @@ async def todo_get_list_items(
         # Add list_key to each item's dict
         items_with_list_key = []
         for item in items:
-            item_dict = map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item"))
+            item_dict = map_item_content_to_title(
+                clean_to_dict_result(item.to_dict(), "item")
+            )
             item_dict["list_key"] = list_key
             items_with_list_key.append(item_dict)
 
@@ -834,8 +875,6 @@ async def todo_get_list_items(
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
-
-
 
 
 @conditional_tool
@@ -853,9 +892,7 @@ async def todo_get_item_history(
     Returns:
         Dictionary with success status, history entries, and count
     """
-    history = mgr.get_item_history(
-        list_key=list_key, item_key=item_key, limit=limit
-    )
+    history = mgr.get_item_history(list_key=list_key, item_key=item_key, limit=limit)
     return {
         "success": True,
         "history": [entry.to_dict() for entry in history],
@@ -890,15 +927,13 @@ async def todo_quick_add(list_key: str, items: List[str]) -> Dict[str, Any]:
         for i, content in enumerate(items):
             item_key = f"item_{i+1:04d}"  # Simple sequential numbering
             item = mgr.add_item(list_key=list_key, item_key=item_key, content=content)
-            created_items.append(map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item")))
+            created_items.append(
+                map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item"))
+            )
 
         return {"success": True, "items": created_items, "count": len(created_items)}
     except Exception as e:
         return {"success": False, "error": str(e)}
-
-
-
-
 
 
 @conditional_tool
@@ -934,7 +969,10 @@ async def todo_project_overview(project_key: str) -> Dict[str, Any]:
         for todo_list in lists:
             progress = mgr.get_progress(todo_list.list_key)
 
-            list_info = {"list": clean_to_dict_result(todo_list.to_dict(), "list"), "progress": progress.to_dict()}
+            list_info = {
+                "list": clean_to_dict_result(todo_list.to_dict(), "list"),
+                "progress": progress.to_dict(),
+            }
 
             overview["lists"].append(list_info)
             total_items += progress.total
@@ -970,7 +1008,10 @@ async def todo_set_list_property(
         Dictionary with success status and property details
     """
     property_obj = mgr.set_list_property(list_key, property_key, property_value)
-    return {"success": True, "property": clean_to_dict_result(property_obj.to_dict(), "property")}
+    return {
+        "success": True,
+        "property": clean_to_dict_result(property_obj.to_dict(), "property"),
+    }
 
 
 @conditional_tool
@@ -1050,8 +1091,12 @@ async def todo_delete_list_property(
 @conditional_tool
 @mcp_error_handler
 async def todo_set_item_property(
-    list_key: str, item_key: str, property_key: str, property_value: str, 
-    parent_item_key: str = None, mgr=None
+    list_key: str,
+    item_key: str,
+    property_key: str,
+    property_value: str,
+    parent_item_key: str = None,
+    mgr=None,
 ) -> Dict[str, Any]:
     """Set a property for an item or subitem (create or update).
 
@@ -1068,8 +1113,12 @@ async def todo_set_item_property(
     property_obj = mgr.set_item_property(
         list_key, item_key, property_key, property_value, parent_item_key
     )
-    
-    target = f"subitem '{item_key}' under item '{parent_item_key}'" if parent_item_key else f"item '{item_key}'"
+
+    target = (
+        f"subitem '{item_key}' under item '{parent_item_key}'"
+        if parent_item_key
+        else f"item '{item_key}'"
+    )
     return {
         "success": True,
         "property": clean_to_dict_result(property_obj.to_dict(), "property"),
@@ -1080,7 +1129,11 @@ async def todo_set_item_property(
 @conditional_tool
 @mcp_error_handler
 async def todo_get_item_property(
-    list_key: str, item_key: str, property_key: str, parent_item_key: str = None, mgr=None
+    list_key: str,
+    item_key: str,
+    property_key: str,
+    parent_item_key: str = None,
+    mgr=None,
 ) -> Dict[str, Any]:
     """Get a property value for an item or subitem.
 
@@ -1094,8 +1147,12 @@ async def todo_get_item_property(
         Dictionary with success status and property value
     """
     value = mgr.get_item_property(list_key, item_key, property_key, parent_item_key)
-    target = f"subitem '{item_key}' under item '{parent_item_key}'" if parent_item_key else f"item '{item_key}'"
-    
+    target = (
+        f"subitem '{item_key}' under item '{parent_item_key}'"
+        if parent_item_key
+        else f"item '{item_key}'"
+    )
+
     if value is not None:
         return {
             "success": True,
@@ -1161,23 +1218,27 @@ async def todo_get_all_items_properties(
     for prop in properties:
         item_key = prop["item_key"]
         parent_item_key = prop.get("parent_item_key")
-        
+
         # Skip placeholder entries (like CLI JSON does)
         if prop["property_key"] == "—":
             continue
-            
+
         if parent_item_key:
             # This is a subitem
             if parent_item_key not in grouped_data:
                 grouped_data[parent_item_key] = {"properties": {}, "subitems": {}}
             if item_key not in grouped_data[parent_item_key]["subitems"]:
                 grouped_data[parent_item_key]["subitems"][item_key] = {}
-            grouped_data[parent_item_key]["subitems"][item_key][prop["property_key"]] = prop["property_value"]
+            grouped_data[parent_item_key]["subitems"][item_key][
+                prop["property_key"]
+            ] = prop["property_value"]
         else:
             # This is a main item
             if item_key not in grouped_data:
                 grouped_data[item_key] = {"properties": {}, "subitems": {}}
-            grouped_data[item_key]["properties"][prop["property_key"]] = prop["property_value"]
+            grouped_data[item_key]["properties"][prop["property_key"]] = prop[
+                "property_value"
+            ]
 
     return {"success": True, "properties": grouped_data, "count": len(grouped_data)}
 
@@ -1185,7 +1246,11 @@ async def todo_get_all_items_properties(
 @conditional_tool
 @mcp_error_handler
 async def todo_delete_item_property(
-    list_key: str, item_key: str, property_key: str, parent_item_key: str = None, mgr=None
+    list_key: str,
+    item_key: str,
+    property_key: str,
+    parent_item_key: str = None,
+    mgr=None,
 ) -> Dict[str, Any]:
     """Delete a property from an item or subitem.
 
@@ -1198,9 +1263,15 @@ async def todo_delete_item_property(
     Returns:
         Dictionary with success status and confirmation message
     """
-    success = mgr.delete_item_property(list_key, item_key, property_key, parent_item_key)
-    target = f"subitem '{item_key}' under item '{parent_item_key}'" if parent_item_key else f"item '{item_key}'"
-    
+    success = mgr.delete_item_property(
+        list_key, item_key, property_key, parent_item_key
+    )
+    target = (
+        f"subitem '{item_key}' under item '{parent_item_key}'"
+        if parent_item_key
+        else f"item '{item_key}'"
+    )
+
     if success:
         return {
             "success": True,
@@ -1287,7 +1358,7 @@ async def todo_find_subitems_by_status(
             "conditions": {"generate": "completed", "download": "pending"},
             "limit": 5
         }
-        
+
         # Returns:
         {
             "success": true,
@@ -1318,14 +1389,12 @@ async def todo_find_subitems_by_status(
     for match in matches:
         parent_dict = _convert_item_to_dict(match["parent"])
         matching_subitems_data = [
-            _convert_item_to_dict(subitem) 
-            for subitem in match["matching_subitems"]
+            _convert_item_to_dict(subitem) for subitem in match["matching_subitems"]
         ]
-        
-        matches_data.append({
-            "parent": parent_dict,
-            "matching_subitems": matching_subitems_data
-        })
+
+        matches_data.append(
+            {"parent": parent_dict, "matching_subitems": matching_subitems_data}
+        )
 
     return {
         "success": True,
@@ -1340,9 +1409,6 @@ async def todo_find_subitems_by_status(
 
 
 # ===== SUBTASK MANAGEMENT MCP TOOLS (Phase 1) =====
-
-
-
 
 
 @conditional_tool
@@ -1386,7 +1452,9 @@ async def todo_move_to_subitem(
     moved_item = mgr.move_to_subitem(list_key, item_key, new_parent_key)
     return {
         "success": True,
-        "moved_item": map_item_content_to_title(clean_to_dict_result(moved_item.to_dict(), "item")),
+        "moved_item": map_item_content_to_title(
+            clean_to_dict_result(moved_item.to_dict(), "item")
+        ),
         "message": f"Item '{item_key}' moved to be subtask of '{new_parent_key}'",
     }
 
@@ -1406,7 +1474,9 @@ async def todo_get_next_pending_smart(list_key: str, mgr=None) -> Dict[str, Any]
     if item:
         return {
             "success": True,
-            "next_item": map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item")),
+            "next_item": map_item_content_to_title(
+                clean_to_dict_result(item.to_dict(), "item")
+            ),
             "is_subtask": item.parent_item_id is not None,
             "message": f"Next smart task: {item.item_key}",
         }
@@ -1439,8 +1509,6 @@ async def todo_can_complete_item(
         "details": result,
         "item_key": item_key,
     }
-
-
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1568,7 +1636,10 @@ async def todo_get_items_blocked_by(
 
     return {
         "success": True,
-        "blocked_items": [map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item")) for item in blocked_items],
+        "blocked_items": [
+            map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item"))
+            for item in blocked_items
+        ],
         "blocked_count": len(blocked_items),
         "list_key": list_key,
         "item_key": item_key,
@@ -1696,7 +1767,9 @@ async def todo_get_next_pending_enhanced(
 
         return {
             "success": True,
-            "next_item": map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item")),
+            "next_item": map_item_content_to_title(
+                clean_to_dict_result(item.to_dict(), "item")
+            ),
             "is_blocked": is_blocked,
             "is_subtask": is_subtask,
             "context": {
@@ -1795,10 +1868,17 @@ async def todo_get_comprehensive_status(list_key: str, mgr=None) -> Dict[str, An
         "success": True,
         "list_key": list_key,
         "progress": progress.to_dict(),
-        "next_task": map_item_content_to_title(clean_to_dict_result(next_task.to_dict(), "item")) if next_task else None,
+        "next_task": (
+            map_item_content_to_title(clean_to_dict_result(next_task.to_dict(), "item"))
+            if next_task
+            else None
+        ),
         "blocked_items": blocked_items,
         "available_items": available_items,
-        "items": [map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item")) for item in items],
+        "items": [
+            map_item_content_to_title(clean_to_dict_result(item.to_dict(), "item"))
+            for item in items
+        ],
         "dependency_summary": dependency_summary,
         "recommendations": {
             "action": (
@@ -1845,7 +1925,6 @@ async def todo_delete_item(list_key: str, item_key: str, mgr=None) -> Dict[str, 
         }
 
 
-
 @conditional_tool
 @mcp_error_handler
 async def todo_rename_item(
@@ -1854,7 +1933,7 @@ async def todo_rename_item(
     new_key: Optional[str] = None,
     new_title: Optional[str] = None,
     subitem_key: Optional[str] = None,
-    mgr=None
+    mgr=None,
 ) -> Dict[str, Any]:
     """Rename item key and/or title.
 
@@ -1871,33 +1950,33 @@ async def todo_rename_item(
     Examples:
         # Rename item key only
         await todo_rename_item("project", "old_task", new_key="new_task")
-        
-        # Rename item title only  
+
+        # Rename item title only
         await todo_rename_item("project", "task1", new_title="Updated Title")
-        
+
         # Rename both key and title
         await todo_rename_item("project", "old", new_key="new", new_title="New Title")
-        
+
         # Rename subitem
         await todo_rename_item("project", "parent", new_key="new_sub", subitem_key="old_sub")
     """
     # Determine parent_item_key based on subitem_key parameter
     parent_item_key = item_key if subitem_key else None
     actual_item_key = subitem_key if subitem_key else item_key
-    
+
     updated_item = mgr.rename_item(
         list_key=list_key,
         item_key=actual_item_key,
         new_key=new_key,
         new_content=new_title,  # Map new_title to new_content for internal API
-        parent_item_key=parent_item_key
+        parent_item_key=parent_item_key,
     )
-    
+
     # Convert to dict with data cleaning and map content → title for response
     item_dict = clean_to_dict_result(updated_item.to_dict(), "item")
     if "content" in item_dict:
         item_dict["title"] = item_dict.pop("content")  # Map content → title
-    
+
     return {
         "success": True,
         "item": item_dict,
@@ -1911,7 +1990,7 @@ async def todo_rename_list(
     list_key: str,
     new_key: Optional[str] = None,
     new_title: Optional[str] = None,
-    mgr=None
+    mgr=None,
 ) -> Dict[str, Any]:
     """Rename list key and/or title.
 
@@ -1926,19 +2005,17 @@ async def todo_rename_list(
     Examples:
         # Rename list key only
         await todo_rename_list("old_project", new_key="new_project")
-        
+
         # Rename list title only
         await todo_rename_list("project", new_title="Updated Project Title")
-        
+
         # Rename both key and title
         await todo_rename_list("old", new_key="new", new_title="New Title")
     """
     updated_list = mgr.rename_list(
-        current_key=list_key,
-        new_key=new_key,
-        new_title=new_title
+        current_key=list_key, new_key=new_key, new_title=new_title
     )
-    
+
     return {
         "success": True,
         "list": clean_to_dict_result(updated_list.to_dict(), "list"),

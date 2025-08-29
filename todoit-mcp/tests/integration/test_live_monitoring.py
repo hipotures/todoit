@@ -3,9 +3,11 @@ Integration tests for live monitoring functionality.
 Tests the logic behind live monitoring without actual UI interaction.
 """
 
-import pytest
 import hashlib
 import json
+
+import pytest
+
 from core.manager import TodoManager
 
 
@@ -247,7 +249,9 @@ class TestLiveMonitoring:
         assert len(all_items) == 3  # parent + 2 subtasks
 
         # Change subitem status
-        temp_manager.update_item_status("hierarchy_test", "sub1", status="completed", parent_item_key="parent")
+        temp_manager.update_item_status(
+            "hierarchy_test", "sub1", status="completed", parent_item_key="parent"
+        )
 
         # Get progress (should include subtasks)
         # Note: parent status is now auto-synchronized to "in_progress" when subtasks are mixed

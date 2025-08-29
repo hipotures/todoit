@@ -3,10 +3,12 @@ Consolidated MCP Tools Tests
 Combines tests from test_mcp_tools_simple.py, test_mcp_tools_fixed.py, and test_mcp_tools_functional.py
 """
 
-import pytest
-import tempfile
 import os
-from unittest.mock import patch, MagicMock
+import tempfile
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 from core.manager import TodoManager
 
 
@@ -42,7 +44,9 @@ class TestMCPToolsBasic:
         tool_count = int(result.stdout.strip())
         # Expected count is 51 as per current implementation
         expected_count = 51
-        assert tool_count == expected_count, f"Expected exactly {expected_count} MCP tools, found {tool_count}"
+        assert (
+            tool_count == expected_count
+        ), f"Expected exactly {expected_count} MCP tools, found {tool_count}"
 
     def test_mcp_tool_names(self):
         """Test that all expected tool names are present"""
@@ -128,11 +132,15 @@ class TestMCPToolsFunctional:
         assert item2.item_key == "task2"
 
         # Update status
-        updated = temp_manager.update_item_status("item_test", "task1", status="in_progress")
+        updated = temp_manager.update_item_status(
+            "item_test", "task1", status="in_progress"
+        )
         assert updated.status == "in_progress"
 
         # Mark completed using status update
-        completed = temp_manager.update_item_status("item_test", "task2", status="completed")
+        completed = temp_manager.update_item_status(
+            "item_test", "task2", status="completed"
+        )
         assert completed.status == "completed"
 
         # Get progress

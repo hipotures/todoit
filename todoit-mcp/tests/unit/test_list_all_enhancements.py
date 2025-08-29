@@ -3,15 +3,16 @@ Unit tests for enhanced list all functionality
 Tests both CLI and MCP enhancements for failed status display
 """
 
-import pytest
-import os
-from unittest.mock import patch
-from io import StringIO
 import json
+import os
+from io import StringIO
+from unittest.mock import patch
+
+import pytest
 
 from core.manager import TodoManager
-from interfaces.mcp_server import todo_list_all
 from interfaces.cli_modules.display import _display_records
+from interfaces.mcp_server import todo_list_all
 
 
 class TestListAllEnhancements:

@@ -3,10 +3,12 @@ Unit tests for TODOIT_FORCE_TAGS environment variable functionality
 Tests environment isolation and automatic tagging behavior
 """
 
-import pytest
 import os
 import tempfile
 from unittest.mock import patch
+
+import pytest
+
 from core.manager import TodoManager
 
 

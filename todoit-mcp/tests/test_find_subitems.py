@@ -3,6 +3,7 @@ Tests for find_subitems_by_status functionality
 """
 
 import pytest
+
 from core.manager import TodoManager
 from core.models import TodoItem
 
@@ -31,13 +32,25 @@ def manager_with_test_data(tmp_path):
     manager.add_subitem("test_list", "parent_task2", "test", "Write tests")
 
     # Set some initial statuses
-    manager.update_item_status("test_list", "generate", status="completed", parent_item_key="parent_task")
-    manager.update_item_status("test_list", "download", status="pending", parent_item_key="parent_task")
-    manager.update_item_status("test_list", "process", status="pending", parent_item_key="parent_task")
+    manager.update_item_status(
+        "test_list", "generate", status="completed", parent_item_key="parent_task"
+    )
+    manager.update_item_status(
+        "test_list", "download", status="pending", parent_item_key="parent_task"
+    )
+    manager.update_item_status(
+        "test_list", "process", status="pending", parent_item_key="parent_task"
+    )
 
-    manager.update_item_status("test_list", "design", status="completed", parent_item_key="parent_task2")
-    manager.update_item_status("test_list", "code", status="completed", parent_item_key="parent_task2")
-    manager.update_item_status("test_list", "test", status="pending", parent_item_key="parent_task2")
+    manager.update_item_status(
+        "test_list", "design", status="completed", parent_item_key="parent_task2"
+    )
+    manager.update_item_status(
+        "test_list", "code", status="completed", parent_item_key="parent_task2"
+    )
+    manager.update_item_status(
+        "test_list", "test", status="pending", parent_item_key="parent_task2"
+    )
 
     return manager
 
@@ -203,8 +216,15 @@ class TestFindSubitemsByStatus:
         manager.add_subitem("test_list", "parent_task3", "download_v3", "Download v3")
 
         # Set statuses for third parent
-        manager.update_item_status("test_list", "generate_v3", status="in_progress", parent_item_key="parent_task3")
-        manager.update_item_status("test_list", "download_v3", status="pending", parent_item_key="parent_task3")
+        manager.update_item_status(
+            "test_list",
+            "generate_v3",
+            status="in_progress",
+            parent_item_key="parent_task3",
+        )
+        manager.update_item_status(
+            "test_list", "download_v3", status="pending", parent_item_key="parent_task3"
+        )
 
         # Search for original conditions should still work
         matches = manager.find_subitems_by_status(
@@ -236,7 +256,9 @@ class TestFindSubitemsByStatusIntegration:
         # Parent should have status in_progress due to mixed children
 
         # Complete download - this should trigger parent sync
-        manager.update_item_status("test_list", "download", status="completed", parent_item_key="parent_task")
+        manager.update_item_status(
+            "test_list", "download", status="completed", parent_item_key="parent_task"
+        )
 
         # Now search for completed downloads with completed generation
         matches = manager.find_subitems_by_status(
@@ -263,17 +285,38 @@ class TestFindSubitemsByStatusIntegration:
         for i in range(20):
             parent_key = f"parent_{i}"
             manager.add_item("perf_test", parent_key, f"Parent item {i}")
-            
+
             # Add subitems with unique keys
-            manager.add_subitem("perf_test", parent_key, f"step1_{i}", f"Step 1 for {i}")
-            manager.add_subitem("perf_test", parent_key, f"step2_{i}", f"Step 2 for {i}")
-            manager.add_subitem("perf_test", parent_key, f"step3_{i}", f"Step 3 for {i}")
+            manager.add_subitem(
+                "perf_test", parent_key, f"step1_{i}", f"Step 1 for {i}"
+            )
+            manager.add_subitem(
+                "perf_test", parent_key, f"step2_{i}", f"Step 2 for {i}"
+            )
+            manager.add_subitem(
+                "perf_test", parent_key, f"step3_{i}", f"Step 3 for {i}"
+            )
 
             # Set statuses for some groups
             if i % 3 == 0:
-                manager.update_item_status("perf_test", f"step1_{i}", status="completed", parent_item_key=parent_key)
-                manager.update_item_status("perf_test", f"step2_{i}", status="pending", parent_item_key=parent_key)
-                manager.update_item_status("perf_test", f"step3_{i}", status="pending", parent_item_key=parent_key)
+                manager.update_item_status(
+                    "perf_test",
+                    f"step1_{i}",
+                    status="completed",
+                    parent_item_key=parent_key,
+                )
+                manager.update_item_status(
+                    "perf_test",
+                    f"step2_{i}",
+                    status="pending",
+                    parent_item_key=parent_key,
+                )
+                manager.update_item_status(
+                    "perf_test",
+                    f"step3_{i}",
+                    status="pending",
+                    parent_item_key=parent_key,
+                )
 
         # For this test, we need to search for specific conditions that exist
         # Let's search for one specific group we know exists (parent_0)

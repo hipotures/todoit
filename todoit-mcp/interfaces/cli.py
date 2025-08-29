@@ -4,22 +4,23 @@ Command Line Interface with Rich for better presentation
 Modular design with separate command modules
 """
 
-import click
-from typing import Optional
 from pathlib import Path
+from typing import Optional
+
+import click
 from rich.console import Console
 
 from core.manager import TodoManager
 
+from .cli_modules.dependency_commands import dep
+from .cli_modules.io_stats_commands import interactive, io, schema_info, stats
+from .cli_modules.item_commands import item
+
 # Import command modules
 from .cli_modules.list_commands import list_group
-from .cli_modules.item_commands import item
-from .cli_modules.property_commands import list_property_group, item_property_group
-from .cli_modules.dependency_commands import dep
-from .cli_modules.io_stats_commands import stats, io, schema_info, interactive
+from .cli_modules.property_commands import item_property_group, list_property_group
 from .cli_modules.report_commands import report_group
 from .cli_modules.tag_commands import tag, tags
-
 
 console = Console()
 
@@ -29,7 +30,7 @@ def get_manager(db_path: Optional[str]) -> TodoManager:
     # If a specific db_path is provided, always use it (for tests and explicit paths)
     if db_path:
         return TodoManager(db_path)
-    
+
     # Detect if running from source vs installed package
     try:
         import importlib.metadata
@@ -92,7 +93,6 @@ def cli(ctx, db_path):
     # Show help if no command provided
     if ctx.invoked_subcommand is None:
         console.print(ctx.get_help())
-
 
 
 # Register command groups from modules

@@ -3,14 +3,16 @@ Unit tests for FORCE_TAGS functionality in item commands
 Tests environment isolation for all item operations
 """
 
-import pytest
 import os
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 from click.testing import CliRunner
+
 from interfaces.cli_modules.item_commands import (
-    item_status,
     item_add,
     item_next,
+    item_status,
     item_tree,
 )
 
@@ -41,7 +43,14 @@ class TestFORCETagsItemCommands:
 
                 result = runner.invoke(
                     item_status,
-                    ["--list", "test_list", "--item", "test_item", "--status", "completed"],
+                    [
+                        "--list",
+                        "test_list",
+                        "--item",
+                        "test_item",
+                        "--status",
+                        "completed",
+                    ],
                     obj={"db_path": "test.db"},
                 )
 
@@ -75,7 +84,14 @@ class TestFORCETagsItemCommands:
 
                 result = runner.invoke(
                     item_status,
-                    ["--list", "test_list", "--item", "test_item", "--status", "completed"],
+                    [
+                        "--list",
+                        "test_list",
+                        "--item",
+                        "test_item",
+                        "--status",
+                        "completed",
+                    ],
                     obj={"db_path": "test.db"},
                 )
 
@@ -103,7 +119,14 @@ class TestFORCETagsItemCommands:
 
                 result = runner.invoke(
                     item_add,
-                    ["--list", "test_list", "--item", "test_item", "--title", "Test content"],
+                    [
+                        "--list",
+                        "test_list",
+                        "--item",
+                        "test_item",
+                        "--title",
+                        "Test content",
+                    ],
                     obj={"db_path": "test.db"},
                 )
 
@@ -177,7 +200,14 @@ class TestFORCETagsItemCommands:
 
                 result = runner.invoke(
                     item_status,
-                    ["--list", "test_list", "--item", "test_item", "--status", "completed"],
+                    [
+                        "--list",
+                        "test_list",
+                        "--item",
+                        "test_item",
+                        "--status",
+                        "completed",
+                    ],
                     obj={"db_path": "test.db"},
                 )
 
@@ -205,7 +235,14 @@ class TestFORCETagsItemCommands:
 
                 result = runner.invoke(
                     item_status,
-                    ["--list", "test_list", "--item", "test_item", "--status", "completed"],
+                    [
+                        "--list",
+                        "test_list",
+                        "--item",
+                        "test_item",
+                        "--status",
+                        "completed",
+                    ],
                     obj={"db_path": "test.db"},
                 )
 

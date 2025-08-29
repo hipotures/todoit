@@ -5,42 +5,48 @@ SQLAlchemy models and database operations
 
 import os
 import re
-from typing import List, Optional, Dict, Any, Union, Set
+from contextlib import contextmanager
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Set, Union
+
 from sqlalchemy import (
-    create_engine,
-    Column,
-    Integer,
-    String,
-    Text,
     JSON,
+    Column,
     DateTime,
     ForeignKey,
     Index,
+    Integer,
+    String,
+    Text,
+    create_engine,
     event,
 )
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship, Session
-from sqlalchemy.sql import func
 from sqlalchemy.engine import Engine
-from contextlib import contextmanager
+from sqlalchemy.orm import Session, declarative_base, relationship, sessionmaker
+from sqlalchemy.sql import func
 
 from .models import (
-    TodoList as TodoListModel,
-    TodoItem as TodoItemModel,
-    TodoHistory as TodoHistoryModel,
-    ListProperty as ListPropertyModel,
-    ItemProperty as ItemPropertyModel,
-    ItemDependency as ItemDependencyModel,
-    ListTag as ListTagModel,
-    ListTagAssignment as ListTagAssignmentModel,
-    ProgressStats,
-    ListType,
-    ListStatus,
-    ItemStatus,
-    HistoryAction,
     DependencyType,
+    HistoryAction,
 )
+from .models import ItemDependency as ItemDependencyModel
+from .models import ItemProperty as ItemPropertyModel
+from .models import (
+    ItemStatus,
+)
+from .models import ListProperty as ListPropertyModel
+from .models import (
+    ListStatus,
+)
+from .models import ListTag as ListTagModel
+from .models import ListTagAssignment as ListTagAssignmentModel
+from .models import (
+    ListType,
+    ProgressStats,
+)
+from .models import TodoHistory as TodoHistoryModel
+from .models import TodoItem as TodoItemModel
+from .models import TodoList as TodoListModel
 
 Base = declarative_base()
 
@@ -74,9 +80,7 @@ class TodoListDB(Base):
     )
 
     # Indexes
-    __table_args__ = (
-        Index("idx_todo_lists_list_key", "list_key"),
-    )
+    __table_args__ = (Index("idx_todo_lists_list_key", "list_key"),)
 
 
 class TodoItemDB(Base):
@@ -109,13 +113,21 @@ class TodoItemDB(Base):
         Index("idx_todo_items_status", "status"),
         Index("idx_todo_items_position", "list_id", "position"),
         Index("idx_todo_items_parent", "parent_item_id"),
-        Index("idx_todo_items_unique_key", "list_id", "parent_item_id", "item_key", unique=True),
+        Index(
+            "idx_todo_items_unique_key",
+            "list_id",
+            "parent_item_id",
+            "item_key",
+            unique=True,
+        ),
         Index("idx_todo_items_parent_status", "parent_item_id", "status"),
-        Index("idx_todo_items_list_status", "list_id", "status"),  # For bulk status queries
-        Index("idx_todo_items_list_parent_null", "list_id", "parent_item_id"),  # For root items query
+        Index(
+            "idx_todo_items_list_status", "list_id", "status"
+        ),  # For bulk status queries
+        Index(
+            "idx_todo_items_list_parent_null", "list_id", "parent_item_id"
+        ),  # For root items query
     )
-
-
 
 
 class ListPropertyDB(Base):
@@ -281,24 +293,25 @@ class Database:
 
         # Run Phase 2 migration if needed
         self.run_phase2_migration()
-        
+
         # Note: Subtask flexibility migration is available via migrate_subtask_keys.py
         # It's not run automatically to give users full control over schema changes
 
     @staticmethod
     def natural_sort_key(text: str) -> List[Union[int, str]]:
         """Convert a string to a list for natural sorting.
-        
+
         Examples:
             'scene_0020' -> ['scene_', 20]
             'test_10' -> ['test_', 10]
             '0014_jane' -> [14, '_jane']
         """
+
         def convert(text_part):
             return int(text_part) if text_part.isdigit() else text_part.lower()
-        
-        return [convert(c) for c in re.split('([0-9]+)', text)]
-    
+
+        return [convert(c) for c in re.split("([0-9]+)", text)]
+
     def create_tables(self):
         """Create all database tables"""
         Base.metadata.create_all(bind=self.engine)
@@ -326,6 +339,7 @@ class Database:
             sql_content = f.read()
 
         from sqlalchemy import text
+
         with self.engine.connect() as conn:
             # Split by semicolon and execute each statement
             statements = [
@@ -333,7 +347,7 @@ class Database:
             ]
             for statement in statements:
                 # Skip comments and empty lines
-                if statement and not statement.startswith('--'):
+                if statement and not statement.startswith("--"):
                     conn.execute(text(statement))
             conn.commit()
 
@@ -373,18 +387,26 @@ class Database:
         try:
             # Check if new index already exists
             from sqlalchemy import text
-            
+
             with self.get_session() as session:
                 result = session.execute(
-                    text("SELECT name FROM sqlite_master WHERE type='index' AND name='idx_todo_items_unique_key_hierarchical'")
+                    text(
+                        "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_todo_items_unique_key_hierarchical'"
+                    )
                 )
                 if result.fetchone():
                     print("Subtask flexibility migration already applied")
                     return
-                    
+
             # Run migration
             import os
-            migration_path = os.path.join(os.path.dirname(__file__), "..", "migrations", "004_subtask_key_flexibility.sql")
+
+            migration_path = os.path.join(
+                os.path.dirname(__file__),
+                "..",
+                "migrations",
+                "004_subtask_key_flexibility.sql",
+            )
             if os.path.exists(migration_path):
                 print("Running subtask flexibility migration...")
                 self.execute_migration(migration_path)
@@ -424,14 +446,14 @@ class Database:
         with self.get_session() as session:
             # Get all lists first, then sort naturally in Python
             lists = session.query(TodoListDB).all()
-            
+
             # Sort using natural sort key
             lists.sort(key=lambda lst: self.natural_sort_key(lst.list_key))
-            
+
             # Apply limit after sorting
             if limit and len(lists) > limit:
                 lists = lists[:limit]
-                
+
             return lists
 
     def update_list(
@@ -458,7 +480,6 @@ class Database:
                 return True
             return False
 
-
     # TodoItem operations
     def create_item(self, item_data: Dict[str, Any]) -> TodoItemDB:
         """Create a new TODO item"""
@@ -483,13 +504,15 @@ class Database:
                 .first()
             )
 
-    def get_item_by_key_and_parent(self, list_id: int, item_key: str, parent_item_id: Optional[int] = None) -> Optional[TodoItemDB]:
+    def get_item_by_key_and_parent(
+        self, list_id: int, item_key: str, parent_item_id: Optional[int] = None
+    ) -> Optional[TodoItemDB]:
         """Get item by list_id, item_key and parent_item_id for precise subtask lookup"""
         with self.get_session() as session:
             query = session.query(TodoItemDB).filter(
                 TodoItemDB.list_id == list_id,
                 TodoItemDB.item_key == item_key,
-                TodoItemDB.parent_item_id == parent_item_id
+                TodoItemDB.parent_item_id == parent_item_id,
             )
             return query.first()
 
@@ -501,17 +524,17 @@ class Database:
             query = session.query(TodoItemDB).filter(TodoItemDB.list_id == list_id)
             if status:
                 query = query.filter(TodoItemDB.status == status)
-            
+
             # Get all items first, then sort naturally in Python
             items = query.all()
-            
+
             # Separate main items and subitems
             main_items = [item for item in items if item.parent_item_id is None]
             subitems = [item for item in items if item.parent_item_id is not None]
-            
+
             # Sort main items naturally by item_key
             main_items.sort(key=lambda item: self.natural_sort_key(item.item_key))
-            
+
             # Group subitems by parent and sort each group naturally
             subitems_by_parent = {}
             for subitem in subitems:
@@ -519,11 +542,13 @@ class Database:
                 if parent_id not in subitems_by_parent:
                     subitems_by_parent[parent_id] = []
                 subitems_by_parent[parent_id].append(subitem)
-            
+
             # Sort each subitem group naturally
             for parent_id in subitems_by_parent:
-                subitems_by_parent[parent_id].sort(key=lambda item: self.natural_sort_key(item.item_key))
-            
+                subitems_by_parent[parent_id].sort(
+                    key=lambda item: self.natural_sort_key(item.item_key)
+                )
+
             # Combine: main items first, then subitems grouped by parent
             result = []
             for main_item in main_items:
@@ -531,17 +556,17 @@ class Database:
                 # Add subitems for this parent
                 if main_item.id in subitems_by_parent:
                     result.extend(subitems_by_parent[main_item.id])
-            
+
             # Add any orphaned subitems at the end
             for parent_id, orphaned_subitems in subitems_by_parent.items():
                 # Check if this parent was already processed
                 if not any(item.id == parent_id for item in main_items):
                     result.extend(orphaned_subitems)
-            
+
             # Apply limit after sorting
             if limit is not None and limit >= 0:
                 result = result[:limit]
-                
+
             return result
 
     def get_items_by_status(self, list_id: int, status: str) -> List[TodoItemDB]:
@@ -552,14 +577,14 @@ class Database:
                 .filter(TodoItemDB.list_id == list_id, TodoItemDB.status == status)
                 .all()
             )
-            
+
             # Use same natural sorting logic as get_list_items
             main_items = [item for item in items if item.parent_item_id is None]
             subitems = [item for item in items if item.parent_item_id is not None]
-            
+
             # Sort main items naturally by item_key
             main_items.sort(key=lambda item: self.natural_sort_key(item.item_key))
-            
+
             # Group and sort subitems
             subitems_by_parent = {}
             for subitem in subitems:
@@ -567,22 +592,24 @@ class Database:
                 if parent_id not in subitems_by_parent:
                     subitems_by_parent[parent_id] = []
                 subitems_by_parent[parent_id].append(subitem)
-            
+
             for parent_id in subitems_by_parent:
-                subitems_by_parent[parent_id].sort(key=lambda item: self.natural_sort_key(item.item_key))
-            
+                subitems_by_parent[parent_id].sort(
+                    key=lambda item: self.natural_sort_key(item.item_key)
+                )
+
             # Combine results
             result = []
             for main_item in main_items:
                 result.append(main_item)
                 if main_item.id in subitems_by_parent:
                     result.extend(subitems_by_parent[main_item.id])
-            
+
             # Add orphaned subitems
             for parent_id, orphaned_subitems in subitems_by_parent.items():
                 if not any(item.id == parent_id for item in main_items):
                     result.extend(orphaned_subitems)
-            
+
             return result
 
     def update_item(
@@ -606,21 +633,21 @@ class Database:
         return self.update_item(item_id, {"content": new_content})
 
     def rename_item(
-        self, 
-        item_id: int, 
-        new_key: Optional[str] = None, 
-        new_content: Optional[str] = None
+        self,
+        item_id: int,
+        new_key: Optional[str] = None,
+        new_content: Optional[str] = None,
     ) -> Optional[TodoItemDB]:
         """Update item key and/or content in database"""
         if new_key is None and new_content is None:
             raise ValueError("At least one of new_key or new_content must be provided")
-            
+
         updates = {}
         if new_key is not None:
             updates["item_key"] = new_key
         if new_content is not None:
             updates["content"] = new_content
-            
+
         return self.update_item(item_id, updates)
 
     def delete_item(self, item_id: int) -> bool:
@@ -630,26 +657,32 @@ class Database:
             if db_item:
                 # Delete related records first to avoid foreign key constraints
                 # Delete history records
-                session.query(TodoHistoryDB).filter(TodoHistoryDB.item_id == item_id).delete(synchronize_session=False)
-                
+                session.query(TodoHistoryDB).filter(
+                    TodoHistoryDB.item_id == item_id
+                ).delete(synchronize_session=False)
+
                 # Delete item properties
-                session.query(ItemPropertyDB).filter(ItemPropertyDB.item_id == item_id).delete(synchronize_session=False)
-                
+                session.query(ItemPropertyDB).filter(
+                    ItemPropertyDB.item_id == item_id
+                ).delete(synchronize_session=False)
+
                 # Delete dependencies where this item is involved
                 session.query(ItemDependencyDB).filter(
-                    (ItemDependencyDB.dependent_item_id == item_id) | 
-                    (ItemDependencyDB.required_item_id == item_id)
+                    (ItemDependencyDB.dependent_item_id == item_id)
+                    | (ItemDependencyDB.required_item_id == item_id)
                 ).delete(synchronize_session=False)
-                
+
                 # Finally delete the item itself
                 session.delete(db_item)
                 session.commit()
                 return True
             return False
 
-    def get_next_position(self, list_id: int, parent_item_id: Optional[int] = None) -> int:
+    def get_next_position(
+        self, list_id: int, parent_item_id: Optional[int] = None
+    ) -> int:
         """Get next position for new item in list
-        
+
         Args:
             list_id: The list ID
             parent_item_id: If provided, get next position among siblings (subtasks of same parent)
@@ -659,14 +692,14 @@ class Database:
             query = session.query(func.max(TodoItemDB.position)).filter(
                 TodoItemDB.list_id == list_id
             )
-            
+
             if parent_item_id is None:
                 # Get max position among root items (main tasks)
                 query = query.filter(TodoItemDB.parent_item_id.is_(None))
             else:
                 # Get max position among siblings (subtasks of same parent)
                 query = query.filter(TodoItemDB.parent_item_id == parent_item_id)
-            
+
             max_pos = query.scalar()
             return (max_pos or 0) + 1
 
@@ -724,7 +757,6 @@ class Database:
                     stats[item.status] += 1
 
             return stats
-
 
     # History operations
     def create_history_entry(self, history_data: Dict[str, Any]) -> TodoHistoryDB:
@@ -973,11 +1005,11 @@ class Database:
                 .filter(ItemPropertyDB.property_key == property_key)
                 .filter(ItemPropertyDB.property_value == property_value)
             )
-            
+
             # Only filter by list_id if provided
             if list_id is not None:
                 query = query.filter(TodoItemDB.list_id == list_id)
-                
+
             items = query.all()
 
             # Sort naturally by item_key
@@ -1027,7 +1059,9 @@ class Database:
 
             for (parent_id,) in parents_query:
                 # Get parent item
-                parent_item = session.query(TodoItemDB).filter(TodoItemDB.id == parent_id).first()
+                parent_item = (
+                    session.query(TodoItemDB).filter(TodoItemDB.id == parent_id).first()
+                )
                 if not parent_item:
                     continue
 
@@ -1045,7 +1079,8 @@ class Database:
 
                 # Check if this sibling group satisfies all conditions
                 all_conditions_met = all(
-                    sibling_dict.get(key) == status for key, status in conditions.items()
+                    sibling_dict.get(key) == status
+                    for key, status in conditions.items()
                 )
 
                 if all_conditions_met:
@@ -1056,10 +1091,9 @@ class Database:
                             matching_subitems.append(sibling)
 
                     # Add this match to results
-                    matches.append({
-                        "parent": parent_item,
-                        "matching_subitems": matching_subitems
-                    })
+                    matches.append(
+                        {"parent": parent_item, "matching_subitems": matching_subitems}
+                    )
 
                     # Check limit on number of matches (parent groups)
                     if len(matches) >= limit:
@@ -1128,7 +1162,7 @@ class Database:
         self, item_id: int, session
     ) -> Dict[str, int]:
         """Internal method to get children status summary with provided session"""
-        from sqlalchemy import func, case
+        from sqlalchemy import case, func
 
         result = (
             session.query(
@@ -1185,7 +1219,7 @@ class Database:
     def get_root_items_with_children_optimized(self, list_id: int) -> List[TodoItemDB]:
         """Get all root items with their children preloaded (optimized for N+1 prevention)"""
         from sqlalchemy.orm import selectinload
-        
+
         with self.get_session() as session:
             items = (
                 session.query(TodoItemDB)
@@ -1400,7 +1434,7 @@ class Database:
         """Get set of blocked item IDs from a list of IDs (optimized for bulk checking)"""
         if not item_ids:
             return set()
-            
+
         with self.get_session() as session:
             # Get all dependencies for these items in a single query
             blocked_dependencies = (
@@ -1408,45 +1442,47 @@ class Database:
                 .join(TodoItemDB, ItemDependencyDB.required_item_id == TodoItemDB.id)
                 .filter(
                     ItemDependencyDB.dependent_item_id.in_(item_ids),
-                    TodoItemDB.status.notin_(["completed"])
+                    TodoItemDB.status.notin_(["completed"]),
                 )
                 .distinct()
                 .all()
             )
-            
+
             return {dep[0] for dep in blocked_dependencies}
 
-    def get_list_items_with_parents_optimized(self, list_id: int, status: str = None) -> List[TodoItemDB]:
+    def get_list_items_with_parents_optimized(
+        self, list_id: int, status: str = None
+    ) -> List[TodoItemDB]:
         """Get list items with parent information preloaded (optimized for bulk operations)"""
         from sqlalchemy.orm import selectinload
-        
+
         with self.get_session() as session:
             query = (
                 session.query(TodoItemDB)
                 .options(selectinload(TodoItemDB.parent))
                 .filter(TodoItemDB.list_id == list_id)
             )
-            
+
             if status:
                 query = query.filter(TodoItemDB.status == status)
-                
+
             return query.all()
 
     def create_items_bulk(self, items_data: List[Dict[str, Any]]) -> List[TodoItemDB]:
         """Create multiple items in a single transaction (optimized for bulk operations)"""
         if not items_data:
             return []
-            
+
         with self.transaction_scope() as session:
             db_items = []
             for item_data in items_data:
                 db_item = TodoItemDB(**item_data)
                 session.add(db_item)
                 db_items.append(db_item)
-            
+
             # Bulk insert with single commit
             session.flush()  # Assign IDs without committing
-            
+
             return db_items
 
     def get_all_dependencies_for_list(self, list_id: int) -> List[ItemDependencyDB]:
@@ -1681,60 +1717,62 @@ class Database:
             session.commit()
             return deleted_count > 0
 
-    def get_status_counts_for_lists(self, list_ids: List[int]) -> Dict[int, Dict[str, int]]:
+    def get_status_counts_for_lists(
+        self, list_ids: List[int]
+    ) -> Dict[int, Dict[str, int]]:
         """Get status counts for multiple lists in one query.
-        
+
         Args:
             list_ids: List of list IDs to get status counts for
-            
+
         Returns:
             Dict mapping list_id to dict of status counts: {list_id: {'pending': 5, 'completed': 10, ...}}
         """
         if not list_ids:
             return {}
-            
+
         with self.get_session() as session:
             # Get status counts grouped by list_id and status
             result = (
                 session.query(
                     TodoItemDB.list_id,
                     TodoItemDB.status,
-                    func.count(TodoItemDB.id).label('count')
+                    func.count(TodoItemDB.id).label("count"),
                 )
                 .filter(TodoItemDB.list_id.in_(list_ids))
                 .group_by(TodoItemDB.list_id, TodoItemDB.status)
                 .all()
             )
-            
+
             # Initialize result dict with empty counts for all lists
             status_counts = {}
             for list_id in list_ids:
                 status_counts[list_id] = {
-                    'pending': 0,
-                    'in_progress': 0,
-                    'completed': 0,
-                    'failed': 0
+                    "pending": 0,
+                    "in_progress": 0,
+                    "completed": 0,
+                    "failed": 0,
                 }
-            
+
             # Fill in actual counts
             for list_id, status, count in result:
                 if list_id in status_counts and status in status_counts[list_id]:
                     status_counts[list_id][status] = count
-                    
+
             return status_counts
 
     def get_tags_for_lists(self, list_ids: List[int]) -> Dict[int, List[ListTagDB]]:
         """Get tags for multiple lists in one query.
-        
+
         Args:
             list_ids: List of list IDs to get tags for
-            
+
         Returns:
             Dict mapping list_id to list of tags: {list_id: [ListTagDB, ...]}
         """
         if not list_ids:
             return {}
-            
+
         with self.get_session() as session:
             # Get all tag assignments for the specified lists
             result = (
@@ -1744,15 +1782,15 @@ class Database:
                 .order_by(ListTagAssignmentDB.list_id, ListTagDB.name)
                 .all()
             )
-            
+
             # Group by list_id
             tags_by_list = {}
             for list_id in list_ids:
                 tags_by_list[list_id] = []
-                
+
             for tag, list_id in result:
                 tags_by_list[list_id].append(tag)
-                
+
             return tags_by_list
 
     def get_tags_for_list(self, list_id: int) -> List[ListTagDB]:

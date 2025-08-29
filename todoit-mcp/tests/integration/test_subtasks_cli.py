@@ -3,12 +3,13 @@ Test Subtasks (Hierarchical tasks within lists) - CLI Layer
 Tests all subitem functionality at the CLI interface level
 """
 
-import pytest
-import subprocess
-import tempfile
 import os
 import shlex
+import subprocess
+import tempfile
 from pathlib import Path
+
+import pytest
 
 
 class TestSubtasksCLI:
@@ -41,16 +42,22 @@ class TestSubtasksCLI:
     def test_cli_create_list_with_subtasks(self, temp_db_path):
         """Test creating list and adding subtasks via CLI"""
         # Create list (fix argument format)
-        result = self.run_cli('list create --list test_list --title "Test List"', temp_db_path)
+        result = self.run_cli(
+            'list create --list test_list --title "Test List"', temp_db_path
+        )
         assert result.returncode == 0
 
         # Add main item
-        result = self.run_cli('item add --list test_list --item main_task --title "Main Item"', temp_db_path)
+        result = self.run_cli(
+            'item add --list test_list --item main_task --title "Main Item"',
+            temp_db_path,
+        )
         assert result.returncode == 0
 
         # Add subitem
         result = self.run_cli(
-            f"item add --list test_list --item main_task --subitem sub1 --title 'Subitem 1'", temp_db_path
+            f"item add --list test_list --item main_task --subitem sub1 --title 'Subitem 1'",
+            temp_db_path,
         )
         assert result.returncode == 0 or "add" in result.stderr
 
@@ -58,7 +65,10 @@ class TestSubtasksCLI:
         """Test listing items shows hierarchy"""
         # Setup data
         self.run_cli("list create --list test_list --title 'Test List'", temp_db_path)
-        self.run_cli("item add --list test_list --item main_task --title 'Main Item'", temp_db_path)
+        self.run_cli(
+            "item add --list test_list --item main_task --title 'Main Item'",
+            temp_db_path,
+        )
 
         # List items
         result = self.run_cli("list show --list test_list", temp_db_path)
@@ -70,11 +80,15 @@ class TestSubtasksCLI:
         """Test updating subitem status via CLI"""
         # Setup
         self.run_cli(f"list create --list test_list --title 'Test List'", temp_db_path)
-        self.run_cli(f"item add --list test_list --item main_task --title 'Main Item'", temp_db_path)
+        self.run_cli(
+            f"item add --list test_list --item main_task --title 'Main Item'",
+            temp_db_path,
+        )
 
         # Update status
         result = self.run_cli(
-            f"item status --list test_list --item main_task --status completed", temp_db_path
+            f"item status --list test_list --item main_task --status completed",
+            temp_db_path,
         )
         assert result.returncode == 0 or "status" in result.stderr
 
@@ -82,12 +96,17 @@ class TestSubtasksCLI:
         """Test converting item to subitem via CLI"""
         # Setup
         self.run_cli(f"list create --list test_list --title 'Test List'", temp_db_path)
-        self.run_cli(f"item add --list test_list --item task1 --title 'Item 1'", temp_db_path)
-        self.run_cli(f"item add --list test_list --item task2 --title 'Item 2'", temp_db_path)
+        self.run_cli(
+            f"item add --list test_list --item task1 --title 'Item 1'", temp_db_path
+        )
+        self.run_cli(
+            f"item add --list test_list --item task2 --title 'Item 2'", temp_db_path
+        )
 
         # Move task2 to be subitem of task1
         result = self.run_cli(
-            f"item move-to-subitem --list test_list --item task2 --parent task1", temp_db_path
+            f"item move-to-subitem --list test_list --item task2 --parent task1",
+            temp_db_path,
         )
         # CLI command may not exist - test documents this
         assert (
@@ -100,7 +119,10 @@ class TestSubtasksCLI:
         """Test next item command prioritizes subtasks"""
         # Setup
         self.run_cli("list create --list test_list --title 'Test List'", temp_db_path)
-        self.run_cli("item add --list test_list --item main_task --title 'Main Item'", temp_db_path)
+        self.run_cli(
+            "item add --list test_list --item main_task --title 'Main Item'",
+            temp_db_path,
+        )
 
         # Get next item
         result = self.run_cli("item next --list test_list", temp_db_path)
@@ -112,10 +134,15 @@ class TestSubtasksCLI:
         """Test displaying item hierarchy"""
         # Setup
         self.run_cli(f"list create --list test_list --title 'Test List'", temp_db_path)
-        self.run_cli(f"item add --list test_list --item main_task --title 'Main Item'", temp_db_path)
+        self.run_cli(
+            f"item add --list test_list --item main_task --title 'Main Item'",
+            temp_db_path,
+        )
 
         # Show hierarchy
-        result = self.run_cli(f"item list --list test_list --item main_task", temp_db_path)
+        result = self.run_cli(
+            f"item list --list test_list --item main_task", temp_db_path
+        )
         # Command may not exist - test documents availability
         assert (
             result.returncode == 0
@@ -127,7 +154,10 @@ class TestSubtasksCLI:
         """Test progress calculation includes subtasks"""
         # Setup
         self.run_cli(f"list create --list test_list --title 'Test List'", temp_db_path)
-        self.run_cli(f"item add --list test_list --item main_task --title 'Main Item'", temp_db_path)
+        self.run_cli(
+            f"item add --list test_list --item main_task --title 'Main Item'",
+            temp_db_path,
+        )
 
         # Get progress
         result = self.run_cli(f"list stats --list test_list", temp_db_path)
@@ -144,11 +174,15 @@ class TestSubtasksCLI:
         """Test that parent cannot be completed with pending subtasks"""
         # Setup
         self.run_cli(f"list create --list test_list --title 'Test List'", temp_db_path)
-        self.run_cli(f"item add --list test_list --item main_task --title 'Main Item'", temp_db_path)
+        self.run_cli(
+            f"item add --list test_list --item main_task --title 'Main Item'",
+            temp_db_path,
+        )
 
         # Try to complete parent (should work or give meaningful error)
         result = self.run_cli(
-            f"item status --list test_list --item main_task --status completed", temp_db_path
+            f"item status --list test_list --item main_task --status completed",
+            temp_db_path,
         )
         # Either succeeds or gives error - both are valid behaviors to test
         assert result.returncode == 0 or len(result.stderr) > 0
@@ -157,7 +191,10 @@ class TestSubtasksCLI:
         """Test markdown export includes subitem hierarchy"""
         # Setup
         self.run_cli(f"list create --list test_list --title 'Test List'", temp_db_path)
-        self.run_cli(f"item add --list test_list --item main_task --title 'Main Item'", temp_db_path)
+        self.run_cli(
+            f"item add --list test_list --item main_task --title 'Main Item'",
+            temp_db_path,
+        )
 
         # Export
         with tempfile.NamedTemporaryFile(suffix=".md", delete=False) as tmp:

@@ -7,7 +7,7 @@ import click
 from rich.console import Console
 from rich.prompt import Confirm
 
-from .display import _get_status_icon, _get_status_display, console, _display_records
+from .display import _display_records, _get_status_display, _get_status_icon, console
 
 
 def get_manager(db_path):
@@ -36,8 +36,18 @@ def dep():
 
 
 @dep.command("add")
-@click.option("--dependent", "dependent_ref", required=True, help="Dependent item reference (list:item)")
-@click.option("--required", "required_ref", required=True, help="Required item reference (list:item)")
+@click.option(
+    "--dependent",
+    "dependent_ref",
+    required=True,
+    help="Dependent item reference (list:item)",
+)
+@click.option(
+    "--required",
+    "required_ref",
+    required=True,
+    help="Required item reference (list:item)",
+)
 @click.option(
     "--type",
     "dep_type",
@@ -84,8 +94,18 @@ def dep_add(ctx, dependent_ref, required_ref, dep_type, force):
 
 
 @dep.command("remove")
-@click.option("--dependent", "dependent_ref", required=True, help="Dependent item reference (list:item)")
-@click.option("--required", "required_ref", required=True, help="Required item reference (list:item)")
+@click.option(
+    "--dependent",
+    "dependent_ref",
+    required=True,
+    help="Dependent item reference (list:item)",
+)
+@click.option(
+    "--required",
+    "required_ref",
+    required=True,
+    help="Required item reference (list:item)",
+)
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
 def dep_remove(ctx, dependent_ref, required_ref, force):
@@ -125,7 +145,9 @@ def dep_remove(ctx, dependent_ref, required_ref, force):
 
 
 @dep.command("show")
-@click.option("--item", "item_ref", required=True, help="Item reference to analyze (list:item)")
+@click.option(
+    "--item", "item_ref", required=True, help="Item reference to analyze (list:item)"
+)
 @click.pass_context
 def dep_show(ctx, item_ref):
     """Show all dependencies for an item

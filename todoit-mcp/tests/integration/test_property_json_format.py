@@ -4,10 +4,12 @@ Integration tests for property list JSON format.
 Tests the new grouped JSON format for item property list command.
 """
 
-import pytest
 import json
 import os
+
+import pytest
 from click.testing import CliRunner
+
 from core.manager import TodoManager
 from interfaces.cli_modules.property_commands import item_property_list
 
@@ -109,7 +111,9 @@ class TestPropertyJsonFormat:
 
         # Default table format
         result = runner.invoke(
-            item_property_list, ["--list", "testlist"], obj={"db_path": manager.db.db_path}
+            item_property_list,
+            ["--list", "testlist"],
+            obj={"db_path": manager.db.db_path},
         )
 
         assert result.exit_code == 0
@@ -219,7 +223,8 @@ class TestPropertyJsonFormat:
         json_data = json.loads(result.output)
         # Filter out placeholder entries (items with "—" property)
         actual_properties = {
-            item_key: properties for item_key, properties in json_data.items()
+            item_key: properties
+            for item_key, properties in json_data.items()
             if not (len(properties) == 1 and "—" in properties)
         }
         assert actual_properties == {}

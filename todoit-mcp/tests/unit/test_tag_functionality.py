@@ -3,11 +3,13 @@ Unit tests for tag functionality
 Tests core tag operations, validation, and business logic
 """
 
+import os
+import tempfile
+
 import pytest
+
 from core.manager import TodoManager
 from core.models import ListTag, ListTagAssignment
-import tempfile
-import os
 
 
 @pytest.fixture

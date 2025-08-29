@@ -6,6 +6,7 @@ in a list with optional status filtering.
 """
 
 import pytest
+
 from core.manager import TodoManager
 
 
@@ -51,7 +52,7 @@ class TestGetAllItemsPropertiesIntegration:
 
         # Filter only actual properties (exclude placeholder entries with "—")
         actual_properties = [p for p in result if p["property_key"] != "—"]
-        
+
         # Should have 7 total properties (3+2+2)
         assert len(actual_properties) == 7
 

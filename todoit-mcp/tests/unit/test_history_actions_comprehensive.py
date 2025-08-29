@@ -4,6 +4,7 @@ Tests that were missing and caused enum validation errors during refactoring
 """
 
 import pytest
+
 from core.manager import TodoManager
 from core.models import HistoryAction
 
@@ -18,13 +19,24 @@ class TestHistoryActionsComprehensive:
     def test_all_history_actions_enum_values(self):
         """Test that all enum values are valid strings"""
         expected_actions = {
-            "created", "updated", "status_updated", "content_updated", 
-            "completed", "failed", "deleted", "states_cleared", 
-            "rename_list", "exported", "dependency_added", 
-            "dependency_removed", "renamed", "subitem_created", 
-            "auto_completed", "moved_to_subitem"
+            "created",
+            "updated",
+            "status_updated",
+            "content_updated",
+            "completed",
+            "failed",
+            "deleted",
+            "states_cleared",
+            "rename_list",
+            "exported",
+            "dependency_added",
+            "dependency_removed",
+            "renamed",
+            "subitem_created",
+            "auto_completed",
+            "moved_to_subitem",
         }
-        
+
         actual_actions = {action.value for action in HistoryAction}
         assert actual_actions == expected_actions
 
@@ -32,7 +44,7 @@ class TestHistoryActionsComprehensive:
         """Test that item creation records 'created' action"""
         manager.create_list("test", "Test")
         manager.add_item("test", "item1", "Content")
-        
+
         # Check history (would need history retrieval method)
         # This tests the enum value is valid
         action = HistoryAction.CREATED
@@ -43,7 +55,7 @@ class TestHistoryActionsComprehensive:
         manager.create_list("test", "Test")
         manager.add_item("test", "item1", "Content")
         manager.update_item_status("test", "item1", "completed")
-        
+
         action = HistoryAction.STATUS_UPDATED
         assert action.value == "status_updated"
 
@@ -52,7 +64,7 @@ class TestHistoryActionsComprehensive:
         manager.create_list("test", "Test")
         manager.add_item("test", "item1", "Content")
         manager.update_item_content("test", "item1", "New content")
-        
+
         action = HistoryAction.CONTENT_UPDATED
         assert action.value == "content_updated"
 
@@ -61,7 +73,7 @@ class TestHistoryActionsComprehensive:
         manager.create_list("test", "Test")
         manager.add_item("test", "item1", "Content")
         manager.delete_item("test", "item1")
-        
+
         action = HistoryAction.DELETED
         assert action.value == "deleted"
 
@@ -69,13 +81,15 @@ class TestHistoryActionsComprehensive:
         """Test that clearing completion states records 'states_cleared' action"""
         manager.create_list("test", "Test")
         manager.add_item("test", "item1", "Content")
-        
+
         # Set some completion states first
-        manager.update_item_status("test", "item1", "in_progress", completion_states={"step1": True})
-        
+        manager.update_item_status(
+            "test", "item1", "in_progress", completion_states={"step1": True}
+        )
+
         # Clear states
         manager.clear_item_completion_states("test", "item1")
-        
+
         action = HistoryAction.STATES_CLEARED
         assert action.value == "states_cleared"
 
@@ -84,7 +98,7 @@ class TestHistoryActionsComprehensive:
         manager.create_list("test", "Test")
         manager.add_item("test", "item1", "Content")
         manager.rename_item("test", "item1", new_key="item2")
-        
+
         action = HistoryAction.RENAMED
         assert action.value == "renamed"
 
