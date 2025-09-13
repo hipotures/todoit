@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.14.3] - 2025-09-13
+
+### 🐛 Bug Fixes
+
+**CLI find-status Command Fix**: Fixed critical CLI bug where `--status` parameter was incorrectly marked as required even when using `--complex` parameter.
+
+#### Changes Made
+- **CLI Parameter Fix**: Changed `--status` from `required=True` to `required=False` in `item find-status` command
+- **Input Validation**: Added proper validation to ensure either `--status` or `--complex` is provided (but not both required)
+- **User Experience**: Users can now use `--complex` without needing dummy `--status` parameter
+
+#### Technical Details
+- **File**: `interfaces/cli_modules/item_commands.py:1348`
+- **Issue**: CLI parameter definition was inconsistent with documented behavior
+- **Solution**: Made `--status` optional and added validation logic
+
+#### Usage Examples
+```bash
+# Before (broken): Required both --status and --complex
+todoit item find-status --list "test" --status "pending" --complex '{"item": {"status": "in_progress"}}'
+
+# After (fixed): Only --complex needed
+todoit item find-status --list "test" --complex '{"item": {"status": "in_progress"}}'
+
+# Still works: Simple status search
+todoit item find-status --list "test" --status "pending"
+```
+
+**Impact**: Fixes CLI usability issue reported in production usage. Command now behaves as documented.
+
 ## [2.12.1] - 2025-08-19
 
 ### 🚀 Documentation Excellence & Codebase Consistency

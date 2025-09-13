@@ -1345,7 +1345,7 @@ def item_rename(ctx, list_key, item_key, new_key, new_title, parent_item_key, fo
     "--status",
     "statuses",
     multiple=True,
-    required=True,
+    required=False,
     help="Status to search for (can be specified multiple times for OR logic)",
 )
 @click.option(
@@ -1401,6 +1401,12 @@ def item_find_status(
         return
 
     try:
+        # Validate that either --status or --complex is provided
+        if not complex_conditions and not statuses:
+            console.print("[red]Error: Either --status or --complex must be provided[/]")
+            console.print("[dim]Use --status for simple status search or --complex for advanced conditions[/]")
+            return
+
         # Determine search conditions
         if complex_conditions:
             # Parse complex JSON conditions

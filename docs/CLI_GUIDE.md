@@ -290,6 +290,11 @@ todoit item find --list "frontend" --property "framework" --value "react" --firs
 
 **NEW in v2.14.0**: Universal item search with multiple modes - replaces old `find-subitems` command:
 
+**Parameter Requirements**:
+- Either `--status` OR `--complex` is required (not both)
+- `--status`: For simple/multiple status searches
+- `--complex`: For advanced item+subitem condition searches
+
 ```bash
 # 1. SIMPLE MODE: Find all pending items
 todoit item find-status --status pending
@@ -297,13 +302,13 @@ todoit item find-status --status pending
 # 2. MULTIPLE MODE: Find items with any of these statuses (OR logic)
 todoit item find-status --status pending --status in_progress --limit 20
 
-# 3. COMPLEX MODE: Advanced item + subitem combinations
+# 3. COMPLEX MODE: Advanced item + subitem combinations (--status not needed)
 todoit item find-status --complex '{"item": {"status": "in_progress"}, "subitem": {"download": "pending", "generate": "completed"}}'
 
 # 4. LEGACY MODE: Find subitems by conditions (backwards compatible)
 todoit item find-status --complex '{"generate": "completed", "download": "pending"}' --list "images"
 
-# Advanced options
+# Advanced options with --status
 todoit item find-status --status completed --export json --limit 50
 todoit item find-status --status pending --no-subitems --group-by-list
 todoit item find-status --status failed --list "production" --export csv
