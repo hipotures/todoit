@@ -143,10 +143,10 @@ class TestItemTreeJsonOutput:
             assert "task1" in keys
             assert "task2" in keys
 
-            # Verify status icons are present
+            # Verify clean status values are present (no emoji in JSON)
             statuses = [item["Status"] for item in output_data["data"]]
-            assert any("✅" in status for status in statuses)  # completed
-            assert any("🔄" in status for status in statuses)  # in_progress
+            assert any("completed" in status for status in statuses)  # completed
+            assert any("in_progress" in status for status in statuses)  # in_progress
 
     def test_item_tree_json_output_specific_item(self):
         """Test item list --list command --item with JSON output for specific item"""
