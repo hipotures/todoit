@@ -37,6 +37,39 @@ def _get_output_format() -> str:
     return format_value if format_value in valid_formats else "table"
 
 
+def _is_structured_format() -> bool:
+    """Check if current output format is structured (JSON/YAML/XML) vs human-readable (table/vertical)"""
+    return _get_output_format() in ["json", "yaml", "xml"]
+
+
+def _output_error_or_message(message: str, is_error: bool = False):
+    """Universal error/message output that respects format preference"""
+    output_format = _get_output_format()
+
+    if output_format == "json":
+        import json
+        key = "error" if is_error else "message"
+        output = {key: message}
+        print(json.dumps(output, indent=2, ensure_ascii=False))
+    elif output_format == "yaml":
+        import yaml
+        key = "error" if is_error else "message"
+        output = {key: message}
+        print(yaml.dump(output, default_flow_style=False, allow_unicode=True, indent=2))
+    elif output_format == "xml":
+        import dicttoxml
+        key = "error" if is_error else "message"
+        output = {key: message}
+        xml_data = dicttoxml.dicttoxml(output, custom_root="todoit_response", attr_type=False)
+        print(xml_data.decode("utf-8"))
+    else:
+        # Human-readable formats (table/vertical)
+        if is_error:
+            console.print(f"[bold red]❌ Error:[/] {message}")
+        else:
+            console.print(message)
+
+
 def _format_date(date: datetime) -> str:
     """Standardized date formatting - converts UTC to local time"""
     if date is None:

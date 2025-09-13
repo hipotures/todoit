@@ -127,7 +127,8 @@ def item_add(ctx, list_key, item_key, subitem_key, title, metadata):
             console.print(f"[green]✅ Added item '{item_key}' to list '{list_key}'[/]")
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        from .display import _output_error_or_message
+        _output_error_or_message(str(e), is_error=True)
 
 
 @item.command("status")
@@ -198,7 +199,8 @@ def item_status(ctx, list_key, item_key, subitem_key, status, state):
                 console.print(f"  {icon} {k}")
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        from .display import _output_error_or_message
+        _output_error_or_message(str(e), is_error=True)
 
 
 @item.command("edit")
@@ -259,7 +261,8 @@ def item_edit(ctx, list_key, item_key, subitem_key, title):
         )
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        from .display import _output_error_or_message
+        _output_error_or_message(str(e), is_error=True)
 
 
 @item.command("delete")
@@ -328,7 +331,8 @@ def item_delete(ctx, list_key, item_key, subitem_key, force):
             console.print(f"[red]❌ Failed to delete {target_type} '{target_key}'[/]")
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        from .display import _output_error_or_message
+        _output_error_or_message(str(e), is_error=True)
 
 
 @item.command("list")
@@ -446,7 +450,8 @@ def item_list(ctx, list_key, item_key):
             _display_records(data, f"Items in list '{list_key}'", columns)
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        from .display import _output_error_or_message
+        _output_error_or_message(str(e), is_error=True)
 
 
 @item.command("next")
@@ -495,12 +500,15 @@ def item_next(ctx, list_key, start):
 
         _display_records(data, f"⏭️ Next Item for list '{list_key}'", columns)
 
-        if start and Confirm.ask("Start this item?"):
+        # Interactive part should not be executed in structured formats
+        from .display import _is_structured_format
+        if start and not _is_structured_format() and Confirm.ask("Start this item?"):
             manager.update_item_status(list_key, item.item_key, status="in_progress")
             console.print("[green]✅ Item started[/]")
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        from .display import _output_error_or_message
+        _output_error_or_message(str(e), is_error=True)
 
 
 @item.command("next-smart")
@@ -555,12 +563,15 @@ def item_next_smart(ctx, list_key, start):
 
         _display_records(data, f"⏭️ Next Smart Item for list '{list_key}'", columns)
 
-        if start and Confirm.ask("Start this item?"):
+        # Interactive part should not be executed in structured formats
+        from .display import _is_structured_format
+        if start and not _is_structured_format() and Confirm.ask("Start this item?"):
             manager.update_item_status(list_key, item.item_key, status="in_progress")
             console.print("[green]✅ Item started[/]")
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        from .display import _output_error_or_message
+        _output_error_or_message(str(e), is_error=True)
 
 
 @item.command("tree")
@@ -682,7 +693,8 @@ def item_tree(ctx, list_key, item_key):
             )
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        from .display import _output_error_or_message
+        _output_error_or_message(str(e), is_error=True)
 
 
 @item.command("move-to-subitem")
@@ -742,7 +754,8 @@ def item_move_to_subitem(ctx, list_key, item_key, new_parent_key, force):
             pass
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        from .display import _output_error_or_message
+        _output_error_or_message(str(e), is_error=True)
 
 
 @item.command("find")
@@ -854,7 +867,8 @@ def item_find(ctx, list_key, property_key, property_value, limit, first):
         _display_records(data, title, columns)
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        from .display import _output_error_or_message
+        _output_error_or_message(str(e), is_error=True)
 
 
 @item.command("find-subitems")
@@ -1000,7 +1014,8 @@ def item_find_subitems(ctx, list_key, conditions, limit):
         console.print(f"[dim]Conditions: {conditions_str}[/]")
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        from .display import _output_error_or_message
+        _output_error_or_message(str(e), is_error=True)
 
 
 @item.group("state")
@@ -1063,7 +1078,8 @@ def state_list(ctx, list_key, item_key, subitem_key):
             console.print(f"  {icon} {key}: {value}")
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        from .display import _output_error_or_message
+        _output_error_or_message(str(e), is_error=True)
 
 
 @item_state.command("clear")
@@ -1132,7 +1148,8 @@ def state_clear(ctx, list_key, item_key, subitem_key, force):
         )
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        from .display import _output_error_or_message
+        _output_error_or_message(str(e), is_error=True)
 
 
 @item_state.command("remove")
@@ -1226,7 +1243,8 @@ def state_remove(ctx, list_key, item_key, subitem_key, state_keys, force):
         )
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        from .display import _output_error_or_message
+        _output_error_or_message(str(e), is_error=True)
 
 
 @item.command("rename")
@@ -1318,7 +1336,8 @@ def item_rename(ctx, list_key, item_key, new_key, new_title, parent_item_key, fo
         console.print(f"  Title: {updated_item.content}")
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        from .display import _output_error_or_message
+        _output_error_or_message(str(e), is_error=True)
 
 
 @item.command("find-status")
@@ -1517,4 +1536,5 @@ def item_find_status(
             _display_records(matches_data, title, columns)
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        from .display import _output_error_or_message
+        _output_error_or_message(str(e), is_error=True)

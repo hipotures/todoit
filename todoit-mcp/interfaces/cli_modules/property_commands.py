@@ -74,14 +74,23 @@ def list_property_get(ctx, list_key, property_key):
 
     try:
         value = manager.get_list_property(list_key, property_key)
+
+        # Check output format and display appropriately
+        from .display import _get_output_format, _output_error_or_message
+        output_format = _get_output_format()
+
         if value is not None:
-            console.print(f"[cyan]{property_key}:[/] {value}")
+            if output_format in ["json", "yaml", "xml"]:
+                # Use _display_records for structured formats
+                data = [{property_key: value}]
+                from .display import _display_records
+                _display_records(data, f"Property '{property_key}' for list '{list_key}'")
+            else:
+                console.print(f"[cyan]{property_key}:[/] {value}")
         else:
-            console.print(
-                f"[yellow]Property '{property_key}' not found for list '{list_key}'[/]"
-            )
+            _output_error_or_message(f"Property '{property_key}' not found for list '{list_key}'", is_error=True)
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        _output_error_or_message(str(e), is_error=True)
 
 
 @list_property_group.command("show")
@@ -216,14 +225,22 @@ def item_property_get(ctx, list_key, item_key, subitem_key, property_key):
             value = manager.get_item_property(list_key, item_key, property_key)
             target = f"item '{item_key}'"
 
+        # Check output format and display appropriately
+        from .display import _get_output_format, _output_error_or_message
+        output_format = _get_output_format()
+
         if value is not None:
-            console.print(f"[cyan]{property_key}:[/] {value}")
+            if output_format in ["json", "yaml", "xml"]:
+                # Use _display_records for structured formats
+                data = [{property_key: value}]
+                from .display import _display_records
+                _display_records(data, f"Property '{property_key}' for {target}")
+            else:
+                console.print(f"[cyan]{property_key}:[/] {value}")
         else:
-            console.print(
-                f"[yellow]Property '{property_key}' not found for {target} in list '{list_key}'[/]"
-            )
+            _output_error_or_message(f"Property '{property_key}' not found for {target} in list '{list_key}'", is_error=True)
     except Exception as e:
-        console.print(f"[bold red]❌ Error:[/] {e}")
+        _output_error_or_message(str(e), is_error=True)
 
 
 @item_property_group.command("list")

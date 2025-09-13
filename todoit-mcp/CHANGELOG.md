@@ -5,6 +5,24 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.14.2] - 2025-09-13
+
+### 🐛 **Bug Fixes**
+- **Universal structured format support for property commands**: Fixed `property get` commands to properly support JSON, YAML, and XML output formats instead of always returning Rich-formatted text
+- **Interactive command fixes**: Commands with `--start` flag (`item next`, `item next-smart`) now skip interactive prompts when using structured output formats (JSON/YAML/XML)
+- **Universal error handling**: All CLI commands now properly format errors in the requested output format (JSON/YAML/XML) instead of always using Rich formatting
+
+### 🔧 **Technical Improvements**
+- Added `_is_structured_format()` helper to detect JSON/YAML/XML formats vs human-readable formats
+- Added `_output_error_or_message()` universal function for consistent error/message formatting across all output formats
+- Enhanced `list property get` and `item property get` commands with full multi-format support
+- Improved user experience by maintaining interactivity in human-readable formats while ensuring clean data output in structured formats
+
+### 📦 **Compatibility**
+- Maintains backward compatibility with existing scripts using JSON output
+- Polish characters (ąęćłńóśżź) now properly supported in all output formats
+- All property values correctly encoded with `ensure_ascii=False` for international character support
+
 ## [2.14.1] - 2025-09-13
 
 ### 🐛 **Bug Fixes**
