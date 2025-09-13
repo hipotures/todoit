@@ -1147,63 +1147,181 @@ class TodoManager(
         
         return items
 
-    def find_subitems_by_status(
+
+    def find_items_by_status(
         self,
-        list_key: str,
-        conditions: Dict[str, str],
+        conditions: Union[str, List[str], Dict[str, Any]],
+        list_key: Optional[str] = None,
         limit: int = 10,
-    ) -> List[Dict[str, Any]]:
-        """Find grouped parent-subitem matches based on sibling status conditions.
+    ) -> Union[List[TodoItem], List[Dict[str, Any]]]:
+        """Universal function for finding items by status with multiple modes.
+
+        This function replaces and extends find_subitems_by_status with support for:
+        - Simple status search
+        - Multiple status search (OR logic)
+        - Complex item+subitem conditions
+        - Cross-list searching
 
         Args:
-            list_key: The key of the list to search in.
-            conditions: Dictionary of {subitem_key: expected_status}.
-            limit: Maximum number of parent matches to return.
+            conditions: Search conditions in various formats:
+                - str: Single status ("pending")
+                - List[str]: Multiple statuses (OR logic) (["pending", "in_progress"])
+                - Dict: Complex conditions with item/subitem filters
+            list_key: Optional list key to limit search scope
+            limit: Maximum number of results to return
 
         Returns:
-            List of dictionaries with format:
-            [
-                {
-                    "parent": TodoItem object,
-                    "matching_subitems": [TodoItem objects that match conditions]
-                },
-                ...
-            ]
+            List of TodoItem objects or List of parent-subitem match dictionaries
 
-        Raises:
-            ValueError: If the specified list is not found.
+        Examples:
+            # Simple status search
+            items = manager.find_items_by_status("pending", "mylist")
 
-        Example:
-            # Find downloads ready to process (where generation is completed)
-            matches = manager.find_subitems_by_status(
-                "images",
-                {"generate": "completed", "download": "pending"},
-                limit=5
-            )
-            # Returns grouped results with parent context
+            # Multiple statuses (OR)
+            items = manager.find_items_by_status(["pending", "in_progress"])
+
+            # Complex conditions
+            matches = manager.find_items_by_status({
+                "item": {"status": "in_progress"},
+                "subitem": {"download": "pending", "generate": "completed"}
+            })
+
+            # Backwards compatibility (same as find_subitems_by_status)
+            matches = manager.find_items_by_status({
+                "download": "pending",
+                "generate": "completed"
+            }, "mylist")
         """
-        db_list = self.db.get_list_by_key(list_key)
-        if not db_list:
-            raise ValueError(f"List '{list_key}' not found")
+        # Detect mode based on conditions type and content
+        if isinstance(conditions, str):
+            # Simple status search
+            return self._find_by_simple_status(conditions, list_key, limit)
 
-        if not conditions:
-            raise ValueError("Conditions dictionary cannot be empty")
+        elif isinstance(conditions, list):
+            # Multiple statuses search (OR logic)
+            return self._find_by_multiple_statuses(conditions, list_key, limit)
 
-        # Use database layer for efficient search
-        db_matches = self.db.find_subitems_by_status(db_list.id, conditions, limit)
+        elif isinstance(conditions, dict):
+            # Check for complex vs backwards compatibility mode
+            if "item" in conditions or "subitem" in conditions:
+                # Complex item+subitem conditions
+                return self._find_by_complex_conditions(conditions, list_key, limit)
+            else:
+                # Backwards compatibility - inline legacy logic
+                if not list_key:
+                    raise ValueError("list_key is required for subitem matching")
 
-        # Convert to Pydantic models
+                # Get list
+                db_list = self.db.get_list_by_key(list_key)
+                if not db_list:
+                    raise ValueError(f"List '{list_key}' not found")
+
+                if not conditions:
+                    raise ValueError("Conditions dictionary cannot be empty")
+
+                # Use database layer for efficient search
+                db_matches = self.db.find_subitems_by_status(db_list.id, conditions, limit)
+
+                # Convert to Pydantic models
+                matches = []
+                for db_match in db_matches:
+                    parent_model = self._db_to_model(db_match["parent"], TodoItem)
+                    matching_subitems = [
+                        self._db_to_model(db_item, TodoItem)
+                        for db_item in db_match["matching_subitems"]
+                    ]
+
+                    matches.append(
+                        {"parent": parent_model, "matching_subitems": matching_subitems}
+                    )
+
+                return matches
+
+        else:
+            raise ValueError(f"Unsupported conditions type: {type(conditions)}")
+
+    def _find_by_simple_status(
+        self,
+        status: str,
+        list_key: Optional[str],
+        limit: int
+    ) -> List[TodoItem]:
+        """Find items by single status."""
+        if list_key:
+            # Single list search
+            db_list = self.db.get_list_by_key(list_key)
+            if not db_list:
+                raise ValueError(f"List '{list_key}' not found")
+            db_items = self.db.get_items_by_status(db_list.id, status, limit)
+        else:
+            # Cross-list search
+            db_items = self.db.get_items_by_status_all_lists(status, limit)
+
+        return [self._db_to_model(db_item, TodoItem) for db_item in db_items]
+
+    def _find_by_multiple_statuses(
+        self,
+        statuses: List[str],
+        list_key: Optional[str],
+        limit: int
+    ) -> List[TodoItem]:
+        """Find items by multiple statuses (OR logic)."""
+        if not statuses:
+            raise ValueError("Status list cannot be empty")
+
+        if list_key:
+            # Single list search
+            db_list = self.db.get_list_by_key(list_key)
+            if not db_list:
+                raise ValueError(f"List '{list_key}' not found")
+            db_items = self.db.get_items_by_statuses(db_list.id, statuses, limit)
+        else:
+            # Cross-list search
+            db_items = self.db.get_items_by_statuses_all_lists(statuses, limit)
+
+        return [self._db_to_model(db_item, TodoItem) for db_item in db_items]
+
+    def _find_by_complex_conditions(
+        self,
+        conditions: Dict[str, Any],
+        list_key: Optional[str],
+        limit: int
+    ) -> List[Dict[str, Any]]:
+        """Find items matching complex item+subitem conditions."""
+        # Extract item and subitem conditions
+        item_conditions = conditions.get("item", {})
+        subitem_conditions = conditions.get("subitem", {})
+
+        if not item_conditions and not subitem_conditions:
+            raise ValueError("Either 'item' or 'subitem' conditions must be specified")
+
+        if list_key:
+            # Single list search
+            db_list = self.db.get_list_by_key(list_key)
+            if not db_list:
+                raise ValueError(f"List '{list_key}' not found")
+            db_matches = self.db.find_items_by_complex_conditions(
+                db_list.id, item_conditions, subitem_conditions, limit
+            )
+        else:
+            # Cross-list search
+            db_matches = self.db.find_items_by_complex_conditions_all_lists(
+                item_conditions, subitem_conditions, limit
+            )
+
+        # Convert to response format
         matches = []
         for db_match in db_matches:
             parent_model = self._db_to_model(db_match["parent"], TodoItem)
             matching_subitems = [
                 self._db_to_model(db_item, TodoItem)
-                for db_item in db_match["matching_subitems"]
+                for db_item in db_match.get("matching_subitems", [])
             ]
 
-            matches.append(
-                {"parent": parent_model, "matching_subitems": matching_subitems}
-            )
+            matches.append({
+                "parent": parent_model,
+                "matching_subitems": matching_subitems
+            })
 
         return matches
 

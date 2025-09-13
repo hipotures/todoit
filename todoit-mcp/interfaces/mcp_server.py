@@ -4,7 +4,7 @@ MCP (Model Context Protocol) interface for TodoManager
 """
 
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from mcp.server.fastmcp import FastMCP
 
@@ -185,7 +185,7 @@ TOOLS_STANDARD = TOOLS_MINIMAL + [
     "todo_set_item_property",
     "todo_get_item_property",
     "todo_find_items_by_property",
-    "todo_find_subitems_by_status",
+    "todo_find_items_by_status",
     "todo_get_all_items_properties",
     # Basic tagging (2)
     "todo_create_tag",
@@ -1623,89 +1623,196 @@ async def todo_find_items_by_property(
     }
 
 
+
 @conditional_tool
 @mcp_error_handler
-async def todo_find_subitems_by_status(
-    list_key: str,
-    conditions: Dict[str, str],
+async def todo_find_items_by_status(
+    conditions: Union[str, List[str], Dict[str, Any]],
+    list_key: Optional[str] = None,
     limit: int = 10,
     filter_tags: Optional[List[str]] = None,
     mgr=None,
 ) -> Dict[str, Any]:
-    """Find grouped parent-subitem matches based on sibling status conditions.
+    """Universal function for finding items by status with multiple modes.
+
+    This function supports multiple search modes based on the conditions parameter:
+    - Simple status search (str): Find all items with specific status
+    - Multiple status search (List[str]): Find items with any of the specified statuses (OR logic)
+    - Complex conditions (Dict): Find items matching item+subitem combinations
 
     Args:
-        list_key: Key of the list to search in (required)
-        conditions: Dictionary of {subitem_key: expected_status} (required)
-        limit: Maximum number of parent matches to return (default: 10)
+        conditions: Search conditions in various formats:
+            - str: Single status ("pending")
+            - List[str]: Multiple statuses (["pending", "in_progress"])
+            - Dict: Complex conditions with item/subitem filters
+        list_key: Optional list key to limit search scope (None = all lists)
+        limit: Maximum number of results to return (default: 10)
         filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
-        Dictionary with success status, grouped matches, and search details
+        Dictionary with success status, items/matches, and statistics
 
-    Example:
-        # Find downloads ready to process (where generation is completed)
-        {
-            "list_key": "images",
-            "conditions": {"generate": "completed", "download": "pending"},
-            "limit": 5
-        }
+    Examples:
+        # Simple status search
+        await todo_find_items_by_status("pending")
 
-        # Returns:
-        {
-            "success": true,
-            "matches": [
-                {
-                    "parent": {...},
-                    "matching_subitems": [...]
-                }
-            ],
-            "matches_count": 1
-        }
+        # Multiple statuses (OR)
+        await todo_find_items_by_status(["pending", "in_progress"], limit=20)
+
+        # Complex item+subitem conditions
+        await todo_find_items_by_status({
+            "item": {"status": "in_progress"},
+            "subitem": {"download": "pending", "generate": "completed"}
+        })
+
+        # Backwards compatibility (same as find_subitems_by_status)
+        await todo_find_items_by_status({
+            "download": "pending",
+            "generate": "completed"
+        }, "mylist")
     """
-    # Check if list exists first
-    if not mgr.get_list(list_key):
-        return {"success": False, "error": f"List '{list_key}' not found"}
-        
-    # Check filter_tags access
-    if not _check_list_access(mgr, list_key, filter_tags):
-        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
-    
-    matches = mgr.find_subitems_by_status(list_key, conditions, limit)
+    # Validate list access if list_key provided
+    if list_key:
+        if not mgr.get_list(list_key):
+            return {"success": False, "error": f"List '{list_key}' not found"}
 
-    def _convert_item_to_dict(item):
-        """Helper to convert TodoItem to dictionary"""
-        item_dict = {
-            "item_key": item.item_key,
-            "content": item.content,
-            "status": item.status.value,
-            "position": item.position,
-            "parent_item_id": item.parent_item_id,
+        # Check filter_tags access
+        if not _check_list_access(mgr, list_key, filter_tags):
+            return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+
+    try:
+        results = mgr.find_items_by_status(conditions, list_key, limit)
+
+        # Determine response mode based on result type
+        if isinstance(results, list) and results:
+            if hasattr(results[0], 'item_key'):
+                # Simple items list
+                items_data = []
+                for item in results:
+                    item_dict = {
+                        "item_key": item.item_key,
+                        "title": item.content,
+                        "status": item.status.value,
+                        "position": item.position,
+                    }
+
+                    # Add list context for cross-list searches
+                    if not list_key and hasattr(item, 'list_id'):
+                        # Get list key for context
+                        item_list = mgr.db.get_list_by_id(item.list_id)
+                        if item_list:
+                            item_dict["list_key"] = item_list.list_key
+
+                    # Add parent context for subitems
+                    if hasattr(item, 'parent_item_id') and item.parent_item_id:
+                        parent = mgr.db.get_item_by_id(item.parent_item_id)
+                        if parent:
+                            item_dict["parent_key"] = parent.item_key
+                        item_dict["is_subtask"] = True
+                    else:
+                        item_dict["is_subtask"] = False
+
+                    items_data.append(clean_item_data(item_dict))
+
+                return {
+                    "success": True,
+                    "mode": "simple" if isinstance(conditions, str) else "multiple",
+                    "items": items_data,
+                    "count": len(items_data),
+                    "search_criteria": {
+                        "conditions": conditions,
+                        "list_key": list_key,
+                        "limit": limit,
+                    },
+                    "statistics": {
+                        "total": len(items_data),
+                        "by_status": _calculate_status_stats(results),
+                        "by_list": _calculate_list_stats(results) if not list_key else None,
+                    }
+                }
+            else:
+                # Complex matches (parent-subitem format)
+                matches_data = []
+                for match in results:
+                    parent_dict = {
+                        "item_key": match["parent"].item_key,
+                        "title": match["parent"].content,
+                        "status": match["parent"].status.value,
+                        "position": match["parent"].position,
+                        "is_subtask": False,
+                    }
+
+                    # Add list context for cross-list searches
+                    if not list_key and hasattr(match["parent"], 'list_id'):
+                        parent_list = mgr.db.get_list_by_id(match["parent"].list_id)
+                        if parent_list:
+                            parent_dict["list_key"] = parent_list.list_key
+
+                    matching_subitems_data = []
+                    for subitem in match["matching_subitems"]:
+                        subitem_dict = {
+                            "item_key": subitem.item_key,
+                            "title": subitem.content,
+                            "status": subitem.status.value,
+                            "position": subitem.position,
+                            "parent_key": match["parent"].item_key,
+                            "is_subtask": True,
+                        }
+                        matching_subitems_data.append(clean_item_data(subitem_dict))
+
+                    matches_data.append({
+                        "parent": clean_item_data(parent_dict),
+                        "matching_subitems": matching_subitems_data
+                    })
+
+                return {
+                    "success": True,
+                    "mode": "complex" if ("item" in conditions or "subitem" in conditions) else "subitems",
+                    "matches": matches_data,
+                    "count": len(matches_data),
+                    "search_criteria": {
+                        "conditions": conditions,
+                        "list_key": list_key,
+                        "limit": limit,
+                    },
+                }
+
+        # Empty results
+        return {
+            "success": True,
+            "mode": "empty",
+            "items": [],
+            "count": 0,
+            "search_criteria": {
+                "conditions": conditions,
+                "list_key": list_key,
+                "limit": limit,
+            },
         }
-        return clean_item_data(item_dict)
 
-    # Convert matches to dictionaries
-    matches_data = []
-    for match in matches:
-        parent_dict = _convert_item_to_dict(match["parent"])
-        matching_subitems_data = [
-            _convert_item_to_dict(subitem) for subitem in match["matching_subitems"]
-        ]
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
-        matches_data.append(
-            {"parent": parent_dict, "matching_subitems": matching_subitems_data}
-        )
 
-    return {
-        "success": True,
-        "matches": matches_data,
-        "matches_count": len(matches_data),
-        "list_key": list_key,
-        "search_criteria": {
-            "conditions": conditions,
-            "limit": limit,
-        },
-    }
+def _calculate_status_stats(items):
+    """Calculate statistics by status for items."""
+    stats = {}
+    for item in items:
+        status = item.status.value if hasattr(item.status, 'value') else str(item.status)
+        stats[status] = stats.get(status, 0) + 1
+    return stats
+
+
+def _calculate_list_stats(items):
+    """Calculate statistics by list for cross-list searches."""
+    stats = {}
+    for item in items:
+        if hasattr(item, 'list_id'):
+            list_id = item.list_id
+            stats[f"list_{list_id}"] = stats.get(f"list_{list_id}", 0) + 1
+    return stats
+
+
 
 
 # ===== SUBTASK MANAGEMENT MCP TOOLS (Phase 1) =====

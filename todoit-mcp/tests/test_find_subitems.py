@@ -1,5 +1,5 @@
 """
-Tests for find_subitems_by_status functionality
+Tests for find_items_by_status functionality (legacy subitem format)
 """
 
 import pytest
@@ -56,15 +56,15 @@ def manager_with_test_data(tmp_path):
 
 
 class TestFindSubitemsByStatus:
-    """Test the find_subitems_by_status functionality"""
+    """Test the find_items_by_status functionality (legacy format)"""
 
     def test_basic_search_single_condition(self, manager_with_test_data):
         """Test basic search with single condition"""
         manager = manager_with_test_data
 
         # Find subitems where generate is completed
-        matches = manager.find_subitems_by_status(
-            "test_list", {"generate": "completed"}, limit=10
+        matches = manager.find_items_by_status(
+            {"generate": "completed"}, "test_list", limit=10
         )
 
         # Should find one parent group with generate subitem
@@ -79,11 +79,7 @@ class TestFindSubitemsByStatus:
         manager = manager_with_test_data
 
         # Find subitems where generate is completed AND download is pending
-        matches = manager.find_subitems_by_status(
-            "test_list",
-            {"generate": "completed", "download": "pending"},
-            limit=10,
-        )
+        matches = manager.find_items_by_status({"generate": "completed", "download": "pending"}, "test_list", limit=10)
 
         # Should find one parent group with both generate and download subitems
         assert len(matches) == 1
@@ -97,25 +93,19 @@ class TestFindSubitemsByStatus:
         manager = manager_with_test_data
 
         # Look for conditions that don't exist
-        results = manager.find_subitems_by_status(
-            "test_list",
-            {"generate": "failed", "download": "completed"},  # Wrong statuses
-            limit=10,
+        matches = manager.find_items_by_status(
+            {"generate": "failed", "download": "completed"}, "test_list", limit=10
         )
 
         # Should find nothing
-        assert len(results) == 0
+        assert len(matches) == 0
 
     def test_search_different_parent_groups(self, manager_with_test_data):
         """Test that search works across different parent groups"""
         manager = manager_with_test_data
 
         # Find subitems where design and code are both completed
-        matches = manager.find_subitems_by_status(
-            "test_list",
-            {"design": "completed", "code": "completed"},
-            limit=10,
-        )
+        matches = manager.find_items_by_status({"design": "completed", "code": "completed"}, "test_list", limit=10)
 
         # Should find one parent group with design and code subitems from second parent
         assert len(matches) == 1
@@ -129,38 +119,30 @@ class TestFindSubitemsByStatus:
         manager = manager_with_test_data
 
         # Find with limit of 1
-        results = manager.find_subitems_by_status(
-            "test_list", {"generate": "completed"}, limit=1
-        )
+        matches = manager.find_items_by_status({"generate": "completed"}, "test_list", limit=1)
 
-        assert len(results) == 1
+        assert len(matches) == 1
 
     def test_search_nonexistent_list(self, manager_with_test_data):
         """Test search on non-existent list raises error"""
         manager = manager_with_test_data
 
         with pytest.raises(ValueError, match="List 'nonexistent' not found"):
-            manager.find_subitems_by_status(
-                "nonexistent", {"generate": "completed"}, limit=10
-            )
+            manager.find_items_by_status({"generate": "completed"}, "nonexistent", limit=10)
 
     def test_search_empty_conditions(self, manager_with_test_data):
         """Test search with empty conditions raises error"""
         manager = manager_with_test_data
 
         with pytest.raises(ValueError, match="Conditions dictionary cannot be empty"):
-            manager.find_subitems_by_status("test_list", {}, limit=10)
+            manager.find_items_by_status({}, "test_list", limit=10)
 
     def test_search_ordering_by_item_key(self, manager_with_test_data):
         """Test that results are ordered naturally by item_key"""
         manager = manager_with_test_data
 
         # Find multiple subitems
-        matches = manager.find_subitems_by_status(
-            "test_list",
-            {"generate": "completed", "download": "pending", "process": "pending"},
-            limit=10,
-        )
+        matches = manager.find_items_by_status({"generate": "completed", "download": "pending", "process": "pending"}, "test_list", limit=10)
 
         # Should find one parent group with 3 matching subitems ordered naturally by item_key
         assert len(matches) == 1
@@ -175,11 +157,7 @@ class TestFindSubitemsByStatus:
         manager = manager_with_test_data
 
         # Scenario: Find downloads ready to process (generation completed)
-        ready_matches = manager.find_subitems_by_status(
-            "test_list",
-            {"generate": "completed", "download": "pending"},
-            limit=5,
-        )
+        ready_matches = manager.find_items_by_status({"generate": "completed", "download": "pending"}, "test_list", limit=5)
 
         # Should find one parent group with download subitem
         assert len(ready_matches) == 1
@@ -193,11 +171,7 @@ class TestFindSubitemsByStatus:
         manager = manager_with_test_data
 
         # Scenario: Find tests ready to run (design and code completed)
-        ready_matches = manager.find_subitems_by_status(
-            "test_list",
-            {"design": "completed", "code": "completed", "test": "pending"},
-            limit=5,
-        )
+        ready_matches = manager.find_items_by_status({"design": "completed", "code": "completed", "test": "pending"}, "test_list", limit=5)
 
         # Should find one parent group with test subitem
         assert len(ready_matches) == 1
@@ -227,11 +201,7 @@ class TestFindSubitemsByStatus:
         )
 
         # Search for original conditions should still work
-        matches = manager.find_subitems_by_status(
-            "test_list",
-            {"generate": "completed", "download": "pending"},
-            limit=10,
-        )
+        matches = manager.find_items_by_status({"generate": "completed", "download": "pending"}, "test_list", limit=10)
 
         # Should only find one parent group (where generate is completed)
         assert len(matches) == 1
@@ -261,11 +231,7 @@ class TestFindSubitemsByStatusIntegration:
         )
 
         # Now search for completed downloads with completed generation
-        matches = manager.find_subitems_by_status(
-            "test_list",
-            {"generate": "completed", "download": "completed"},
-            limit=10,
-        )
+        matches = manager.find_items_by_status({"generate": "completed", "download": "completed"}, "test_list", limit=10)
 
         # Should find one parent group with both subitems
         assert len(matches) == 1
@@ -320,11 +286,7 @@ class TestFindSubitemsByStatusIntegration:
 
         # For this test, we need to search for specific conditions that exist
         # Let's search for one specific group we know exists (parent_0)
-        matches = manager.find_subitems_by_status(
-            "perf_test",
-            {"step1_0": "completed", "step2_0": "pending"},
-            limit=50,
-        )
+        matches = manager.find_items_by_status({"step1_0": "completed", "step2_0": "pending"}, "perf_test", limit=50)
 
         # Should find one parent group with step1_0 and step2_0
         assert len(matches) == 1

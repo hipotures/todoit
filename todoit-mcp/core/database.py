@@ -1101,6 +1101,207 @@ class Database:
 
             return matches
 
+    def get_items_by_status(
+        self, list_id: int, status: str, limit: Optional[int] = None
+    ) -> List[TodoItemDB]:
+        """Find items by single status within a list."""
+        with self.get_session() as session:
+            query = (
+                session.query(TodoItemDB)
+                .filter(TodoItemDB.list_id == list_id, TodoItemDB.status == status)
+                .order_by(TodoItemDB.position, TodoItemDB.item_key)
+            )
+            if limit:
+                query = query.limit(limit)
+            return query.all()
+
+    def get_items_by_status_all_lists(
+        self, status: str, limit: Optional[int] = None
+    ) -> List[TodoItemDB]:
+        """Find items by single status across all lists."""
+        with self.get_session() as session:
+            query = (
+                session.query(TodoItemDB)
+                .filter(TodoItemDB.status == status)
+                .order_by(TodoItemDB.list_id, TodoItemDB.position, TodoItemDB.item_key)
+            )
+            if limit:
+                query = query.limit(limit)
+            return query.all()
+
+    def get_items_by_statuses(
+        self, list_id: int, statuses: List[str], limit: Optional[int] = None
+    ) -> List[TodoItemDB]:
+        """Find items by multiple statuses (OR logic) within a list."""
+        with self.get_session() as session:
+            query = (
+                session.query(TodoItemDB)
+                .filter(
+                    TodoItemDB.list_id == list_id,
+                    TodoItemDB.status.in_(statuses)
+                )
+                .order_by(TodoItemDB.position, TodoItemDB.item_key)
+            )
+            if limit:
+                query = query.limit(limit)
+            return query.all()
+
+    def get_items_by_statuses_all_lists(
+        self, statuses: List[str], limit: Optional[int] = None
+    ) -> List[TodoItemDB]:
+        """Find items by multiple statuses (OR logic) across all lists."""
+        with self.get_session() as session:
+            query = (
+                session.query(TodoItemDB)
+                .filter(TodoItemDB.status.in_(statuses))
+                .order_by(TodoItemDB.list_id, TodoItemDB.position, TodoItemDB.item_key)
+            )
+            if limit:
+                query = query.limit(limit)
+            return query.all()
+
+    def find_items_by_complex_conditions(
+        self,
+        list_id: int,
+        item_conditions: Dict[str, Any],
+        subitem_conditions: Dict[str, str],
+        limit: int = 10,
+    ) -> List[Dict[str, Any]]:
+        """Find items matching complex item+subitem conditions within a list."""
+        with self.get_session() as session:
+            matches = []
+
+            # Build query for parent items based on item_conditions
+            parent_query = session.query(TodoItemDB).filter(
+                TodoItemDB.list_id == list_id,
+                TodoItemDB.parent_item_id.is_(None)  # Only root items
+            )
+
+            # Apply item conditions
+            if "status" in item_conditions:
+                status_value = item_conditions["status"]
+                if isinstance(status_value, list):
+                    parent_query = parent_query.filter(TodoItemDB.status.in_(status_value))
+                else:
+                    parent_query = parent_query.filter(TodoItemDB.status == status_value)
+
+            # Order by position
+            parent_query = parent_query.order_by(TodoItemDB.position, TodoItemDB.item_key)
+
+            # Check each parent for subitem conditions
+            for parent_item in parent_query:
+                if not subitem_conditions:
+                    # No subitem conditions, just return the parent
+                    matches.append({
+                        "parent": parent_item,
+                        "matching_subitems": []
+                    })
+                else:
+                    # Get all subitems for this parent
+                    siblings = (
+                        session.query(TodoItemDB)
+                        .filter(TodoItemDB.parent_item_id == parent_item.id)
+                        .all()
+                    )
+
+                    # Create dict of sibling statuses
+                    sibling_dict = {s.item_key: s.status for s in siblings}
+
+                    # Check if all subitem conditions are met
+                    all_conditions_met = all(
+                        sibling_dict.get(key) == status
+                        for key, status in subitem_conditions.items()
+                    )
+
+                    if all_conditions_met:
+                        # Collect matching subitems
+                        matching_subitems = [
+                            s for s in siblings
+                            if s.item_key in subitem_conditions
+                        ]
+
+                        matches.append({
+                            "parent": parent_item,
+                            "matching_subitems": matching_subitems
+                        })
+
+                # Check limit
+                if len(matches) >= limit:
+                    break
+
+            return matches
+
+    def find_items_by_complex_conditions_all_lists(
+        self,
+        item_conditions: Dict[str, Any],
+        subitem_conditions: Dict[str, str],
+        limit: int = 10,
+    ) -> List[Dict[str, Any]]:
+        """Find items matching complex conditions across all lists."""
+        with self.get_session() as session:
+            matches = []
+
+            # Build query for parent items across all lists
+            parent_query = session.query(TodoItemDB).filter(
+                TodoItemDB.parent_item_id.is_(None)  # Only root items
+            )
+
+            # Apply item conditions
+            if "status" in item_conditions:
+                status_value = item_conditions["status"]
+                if isinstance(status_value, list):
+                    parent_query = parent_query.filter(TodoItemDB.status.in_(status_value))
+                else:
+                    parent_query = parent_query.filter(TodoItemDB.status == status_value)
+
+            # Order by list, then position
+            parent_query = parent_query.order_by(
+                TodoItemDB.list_id, TodoItemDB.position, TodoItemDB.item_key
+            )
+
+            # Check each parent for subitem conditions
+            for parent_item in parent_query:
+                if not subitem_conditions:
+                    # No subitem conditions, just return the parent
+                    matches.append({
+                        "parent": parent_item,
+                        "matching_subitems": []
+                    })
+                else:
+                    # Get all subitems for this parent
+                    siblings = (
+                        session.query(TodoItemDB)
+                        .filter(TodoItemDB.parent_item_id == parent_item.id)
+                        .all()
+                    )
+
+                    # Create dict of sibling statuses
+                    sibling_dict = {s.item_key: s.status for s in siblings}
+
+                    # Check if all subitem conditions are met
+                    all_conditions_met = all(
+                        sibling_dict.get(key) == status
+                        for key, status in subitem_conditions.items()
+                    )
+
+                    if all_conditions_met:
+                        # Collect matching subitems
+                        matching_subitems = [
+                            s for s in siblings
+                            if s.item_key in subitem_conditions
+                        ]
+
+                        matches.append({
+                            "parent": parent_item,
+                            "matching_subitems": matching_subitems
+                        })
+
+                # Check limit
+                if len(matches) >= limit:
+                    break
+
+            return matches
+
     # Hierarchical item operations (for subtasks)
     def get_item_children(self, item_id: int) -> List[TodoItemDB]:
         """Get all direct children (subtasks) of an item"""

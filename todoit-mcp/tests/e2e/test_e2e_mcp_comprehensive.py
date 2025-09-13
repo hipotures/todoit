@@ -277,7 +277,7 @@ class TestE2EComprehensiveMCP:
         assert result["count"] >= 1
 
         # Test subitem status finding
-        result = await todo_find_subitems_by_status("backend", {"auth": "pending"})
+        result = await todo_find_items_by_status({"auth": "pending"}, "backend")
         assert result["success"] == True
 
         # ============ PHASE 6: EXPORT/IMPORT ============

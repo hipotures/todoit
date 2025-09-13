@@ -887,7 +887,7 @@ def item_find_subitems(ctx, list_key, conditions, limit):
             return
 
         # Find subitems
-        matches = manager.find_subitems_by_status(list_key, conditions_dict, limit)
+        matches = manager.find_items_by_status(conditions_dict, list_key, limit)
 
         if not matches:
             # Use unified display for empty result
@@ -1304,6 +1304,205 @@ def item_rename(ctx, list_key, item_key, new_key, new_title, parent_item_key, fo
         console.print(f"\n[green]Updated {item_type}:[/]")
         console.print(f"  Key: {updated_item.item_key}")
         console.print(f"  Title: {updated_item.content}")
+
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/] {e}")
+
+
+@item.command("find-status")
+@click.option(
+    "--status",
+    "statuses",
+    multiple=True,
+    required=True,
+    help="Status to search for (can be specified multiple times for OR logic)",
+)
+@click.option(
+    "--list", "list_key", help="List key to limit search scope (optional, default: all lists)"
+)
+@click.option("--limit", type=int, default=20, help="Maximum number of results")
+@click.option(
+    "--complex",
+    "complex_conditions",
+    help="JSON string with complex conditions: {'item': {'status': 'pending'}, 'subitem': {'download': 'pending'}}",
+)
+@click.option("--no-subitems", is_flag=True, help="Exclude subitems from results")
+@click.option("--group-by-list", is_flag=True, help="Group results by list")
+@click.option("--export", type=click.Choice(["json", "csv"]), help="Export results to format")
+@click.pass_context
+def item_find_status(
+    ctx, statuses, list_key, limit, complex_conditions, no_subitems, group_by_list, export
+):
+    """Find items by status with multiple search modes.
+
+    This command supports three search modes:
+    1. Simple status search: --status pending
+    2. Multiple statuses (OR): --status pending --status in_progress
+    3. Complex conditions: --complex '{"item": {"status": "in_progress"}, "subitem": {"download": "pending"}}'
+
+    Examples:
+      # Find all pending items
+      todoit item find-status --status pending
+
+      # Find pending OR in_progress items in specific list
+      todoit item find-status --status pending --status in_progress --list myproject
+
+      # Complex search: in_progress items with pending download subitem
+      todoit item find-status --complex '{"item": {"status": "in_progress"}, "subitem": {"download": "pending"}}'
+
+      # Export to JSON
+      todoit item find-status --status completed --export json
+
+      # Exclude subitems, group by list
+      todoit item find-status --status pending --no-subitems --group-by-list
+    """
+    import json
+    from datetime import datetime
+
+    manager = get_manager(ctx.obj["db_path"])
+
+    # Check if list is accessible based on FORCE_TAGS (environment isolation)
+    if list_key and not _check_list_access(manager, list_key):
+        console.print(f"[red]List '{list_key}' not found or not accessible[/]")
+        console.print(
+            "[dim]Check your TODOIT_FORCE_TAGS environment variable if using environment isolation[/]"
+        )
+        return
+
+    try:
+        # Determine search conditions
+        if complex_conditions:
+            # Parse complex JSON conditions
+            try:
+                conditions = json.loads(complex_conditions)
+            except json.JSONDecodeError as e:
+                console.print(f"[red]Invalid JSON in --complex: {e}[/]")
+                return
+        else:
+            # Simple status search
+            if len(statuses) == 1:
+                conditions = statuses[0]
+            else:
+                conditions = list(statuses)
+
+        # Execute search
+        results = manager.find_items_by_status(conditions, list_key, limit)
+
+        if not results:
+            search_scope = list_key if list_key else "all lists"
+            console.print(f"[yellow]No items found matching criteria in '{search_scope}'[/]")
+            return
+
+        # Process results based on type
+        if isinstance(results, list) and results and hasattr(results[0], 'item_key'):
+            # Simple items list
+            items_data = []
+            for item in results:
+                item_data = {
+                    "Item Key": item.item_key,
+                    "Title": item.content,
+                    "Status": _get_status_display(item.status.value),
+                    "Position": str(item.position),
+                }
+
+                # Add list context for cross-list searches
+                if not list_key and hasattr(item, 'list_id'):
+                    item_list = manager.db.get_list_by_id(item.list_id)
+                    if item_list:
+                        item_data["List"] = item_list.list_key
+
+                # Add parent context for subitems (unless excluded)
+                if not no_subitems and hasattr(item, 'parent_item_id') and item.parent_item_id:
+                    parent = manager.db.get_item_by_id(item.parent_item_id)
+                    if parent:
+                        item_data["Parent"] = parent.item_key
+                elif no_subitems and hasattr(item, 'parent_item_id') and item.parent_item_id:
+                    # Skip subitems if no_subitems flag is set
+                    continue
+
+                items_data.append(item_data)
+
+            # Handle export
+            if export:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"items_by_status_{timestamp}.{export}"
+
+                if export == "json":
+                    with open(filename, 'w') as f:
+                        json.dump(items_data, f, indent=2)
+                elif export == "csv":
+                    import csv
+                    if items_data:
+                        with open(filename, 'w', newline='') as f:
+                            writer = csv.DictWriter(f, fieldnames=items_data[0].keys())
+                            writer.writeheader()
+                            writer.writerows(items_data)
+
+                console.print(f"[green]✅ Results exported to {filename}[/]")
+                return
+
+            # Display results
+            search_scope = list_key if list_key else "all lists"
+            if isinstance(conditions, str):
+                title = f"🔍 Found {len(items_data)} item(s) with status '{conditions}' in '{search_scope}'"
+            elif isinstance(conditions, list):
+                status_list = "', '".join(conditions)
+                title = f"🔍 Found {len(items_data)} item(s) with status '{status_list}' in '{search_scope}'"
+            else:
+                title = f"🔍 Found {len(items_data)} item(s) matching complex conditions in '{search_scope}'"
+
+            # Column styling
+            columns = {
+                "Item Key": {"style": "cyan", "width": 20},
+                "Title": {"style": "white"},
+                "Status": {"style": "yellow", "width": 12},
+                "Position": {"style": "blue", "width": 8},
+            }
+
+            # Add conditional columns
+            if items_data and "List" in items_data[0]:
+                columns["List"] = {"style": "magenta", "width": 20}
+            if items_data and "Parent" in items_data[0]:
+                columns["Parent"] = {"style": "green", "width": 15}
+
+            _display_records(items_data, title, columns)
+
+        else:
+            # Complex matches (parent-subitem format)
+            matches_data = []
+            for match in results:
+                parent_data = {
+                    "Parent Key": match["parent"].item_key,
+                    "Parent Title": match["parent"].content,
+                    "Parent Status": _get_status_display(match["parent"].status.value),
+                    "Matching Subitems": ", ".join([s.item_key for s in match["matching_subitems"]]),
+                    "Subitem Count": str(len(match["matching_subitems"])),
+                }
+
+                # Add list context
+                if not list_key and hasattr(match["parent"], 'list_id'):
+                    parent_list = manager.db.get_list_by_id(match["parent"].list_id)
+                    if parent_list:
+                        parent_data["List"] = parent_list.list_key
+
+                matches_data.append(parent_data)
+
+            # Display complex matches
+            search_scope = list_key if list_key else "all lists"
+            title = f"🔍 Found {len(matches_data)} parent item(s) with matching subitems in '{search_scope}'"
+
+            columns = {
+                "Parent Key": {"style": "cyan", "width": 20},
+                "Parent Title": {"style": "white"},
+                "Parent Status": {"style": "yellow", "width": 12},
+                "Matching Subitems": {"style": "green"},
+                "Subitem Count": {"style": "blue", "width": 12},
+            }
+
+            if matches_data and "List" in matches_data[0]:
+                columns["List"] = {"style": "magenta", "width": 20}
+
+            _display_records(matches_data, title, columns)
 
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/] {e}")

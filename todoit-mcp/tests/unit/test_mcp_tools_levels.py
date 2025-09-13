@@ -62,7 +62,7 @@ class TestMCPToolsLevels:
             # Test that STANDARD tools should register
             assert should_register_tool("todo_quick_add") == True
             assert should_register_tool("todo_set_list_property") == True
-            assert should_register_tool("todo_find_subitems_by_status") == True
+            assert should_register_tool("todo_find_items_by_status") == True
 
             # Test that MAX-only tools should NOT register (including moved archive tools)
             assert should_register_tool("todo_add_item_dependency") == False
@@ -222,7 +222,7 @@ class TestMCPToolsLevels:
         assert "todo_set_item_property" in TOOLS_STANDARD
         assert "todo_get_item_property" in TOOLS_STANDARD
         assert "todo_find_items_by_property" in TOOLS_STANDARD
-        assert "todo_find_subitems_by_status" in TOOLS_STANDARD
+        assert "todo_find_items_by_status" in TOOLS_STANDARD
         assert "todo_get_all_items_properties" in TOOLS_STANDARD
 
         # Should add basic tagging

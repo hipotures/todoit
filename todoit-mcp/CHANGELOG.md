@@ -5,6 +5,51 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.14.0] - 2025-09-13
+
+### 🚀 **MAJOR: Universal Item Search with todo_find_items_by_status**
+
+#### ✨ **New Features**
+- **🎯 Universal Search Function**: `todo_find_items_by_status` - single function with 4 modes:
+  - **Simple**: `todo_find_items_by_status("pending")` - find items by single status
+  - **Multiple**: `todo_find_items_by_status(["pending", "in_progress"])` - OR logic for multiple statuses
+  - **Complex**: `todo_find_items_by_status({"item": {"status": "in_progress"}, "subitem": {"download": "pending"}})` - advanced item+subitem combinations
+  - **Legacy**: `todo_find_items_by_status({"download": "pending"}, "list1")` - backwards compatible with old format
+
+- **📱 New CLI Command**: `todoit item find-status` with rich features:
+  - Multiple status search: `--status pending --status in_progress`
+  - Complex conditions: `--complex '{"item": {"status": "in_progress"}, "subitem": {"download": "pending"}}'`
+  - Export capabilities: `--export json` or `--export csv`
+  - Cross-list search: automatic when `--list` not specified
+  - Smart filtering: `--no-subitems`, `--group-by-list`
+
+- **🔍 Cross-List Search**: Search across ALL lists with `list_key=None`
+- **🏷️ Environment Isolation**: Full `filter_tags` support for secure multi-environment workflows
+
+#### ⚠️ **BREAKING CHANGES**
+- **REMOVED**: `todo_find_subitems_by_status` MCP tool (replaced by universal function)
+- **Migration**: Use `todo_find_items_by_status` with dict format for same results:
+  ```python
+  # OLD (removed)
+  await todo_find_subitems_by_status("list1", {"download": "pending"}, 10)
+
+  # NEW (recommended)
+  await todo_find_items_by_status({"download": "pending"}, "list1", 10)
+  ```
+
+#### 🔧 **Technical Enhancements**
+- **Database Optimizations**: 6 new optimized query methods leveraging existing composite indexes
+- **Intelligent Response Formatting**: Auto-detects search mode and formats response accordingly
+- **Performance**: Single queries instead of N+1 patterns for cross-list searches
+- **Statistics**: Enhanced response data with status/list breakdowns
+
+#### 📚 **Documentation & Testing**
+- **Comprehensive Test Suite**: 15+ test methods covering all modes and edge cases
+- **Updated Documentation**: Enhanced examples in MCP_TOOLS.md and CLI_GUIDE.md
+- **Migration Guide**: Complete examples for transitioning from old function
+
+---
+
 ## [2.13.4] - 2025-08-29
 
 ### 🎯 **Enhanced Search with Hierarchy Context**
