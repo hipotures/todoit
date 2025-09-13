@@ -286,22 +286,35 @@ todoit item find --list "frontend" --property "framework" --value "react" --firs
 - **Parent**: Shows parent item key for subitems (when `parent_item_id` exists)
 - Columns appear dynamically based on search context for optimal readability
 
-#### Advanced Subitem Search
+#### Universal Item Search by Status (`item find-status`)
 
-Find subitems based on sibling status conditions - useful for workflow automation:
+**NEW in v2.14.0**: Universal item search with multiple modes - replaces old `find-subitems` command:
 
 ```bash
-# Find downloads ready to process (where generation is completed)
-todoit item find-subitems --list "images" --conditions '{"generate":"completed","download":"pending"}' --limit 5
+# 1. SIMPLE MODE: Find all pending items
+todoit item find-status --status pending
 
-# Find test items where design and code are done
-todoit item find-subitems --list "features" --conditions '{"design":"completed","code":"completed","tests":"pending"}'
+# 2. MULTIPLE MODE: Find items with any of these statuses (OR logic)
+todoit item find-status --status pending --status in_progress --limit 20
 
-# Complex workflow condition matching
-todoit item find-subitems --list "ai-generation" --conditions '{"image_gen":"completed","image_dwn":"pending"}' --limit 1
+# 3. COMPLEX MODE: Advanced item + subitem combinations
+todoit item find-status --complex '{"item": {"status": "in_progress"}, "subitem": {"download": "pending", "generate": "completed"}}'
+
+# 4. LEGACY MODE: Find subitems by conditions (backwards compatible)
+todoit item find-status --complex '{"generate": "completed", "download": "pending"}' --list "images"
+
+# Advanced options
+todoit item find-status --status completed --export json --limit 50
+todoit item find-status --status pending --no-subitems --group-by-list
+todoit item find-status --status failed --list "production" --export csv
 ```
 
-This command finds subitems that match status conditions within their sibling groups. All conditions must be satisfied by the sibling group for subitems to be returned.
+**Key Features:**
+- **Cross-list search**: Automatic when `--list` not specified
+- **Export capabilities**: `--export json` or `--export csv`
+- **Smart filtering**: `--no-subitems` excludes subitems from results
+- **Multiple statuses**: Use `--status` multiple times for OR logic
+- **Complex conditions**: JSON format for advanced item+subitem combinations
 
 **Example Subitem Search Output:**
 ```

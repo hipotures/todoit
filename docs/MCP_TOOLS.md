@@ -284,7 +284,7 @@ Hierarchical task management with parent-child relationships.
 - **`todo_move_to_subitem`** - Convert existing task to subitem
 - **`todo_get_next_pending_smart`** - Smart next task with subitem prioritization
 - **`todo_can_complete_item`** - Check if item can be completed (no pending subitems)
-- **`todo_find_subitems_by_status`** - **STANDARD** Find subitems based on sibling status conditions for complex workflow management
+- **`todo_find_items_by_status`** - **STANDARD** Universal item search with 4 modes: simple, multiple, complex, legacy
 
 ### 🔗 Dependency Operations (6 tools)  
 Cross-list task dependencies for complex project coordination.
@@ -593,26 +593,41 @@ completed_props = await todo_get_all_items_properties("project", "completed")
 # 🆕 Find subitems based on sibling status conditions
 # Perfect for complex workflow automation where task relationships matter
 
+# NEW: Universal todo_find_items_by_status with 4 modes (v2.14.0+)
+
+# 1. SIMPLE MODE: Find all pending items
+pending_items = await todo_find_items_by_status("pending")
+
+# 2. MULTIPLE MODE: Find items with any of these statuses (OR logic)
+active_items = await todo_find_items_by_status(["pending", "in_progress"], limit=20)
+
+# 3. COMPLEX MODE: Advanced item + subitem combinations
+complex_search = await todo_find_items_by_status({
+    "item": {"status": "in_progress"},
+    "subitem": {"download": "pending", "generate": "completed"}
+}, "images", limit=10)
+
+# 4. LEGACY MODE: Backwards compatible with old format
 # Example: Image processing workflow with multiple stages per item
 # Parent tasks have subtasks: generate, download, process, upload
 
 # Find downloads ready to process (where generation is completed but download is pending)
-ready_downloads = await todo_find_subitems_by_status(
-    "images", 
+ready_downloads = await todo_find_items_by_status(
     {"generate": "completed", "download": "pending"},
+    "images",
     limit=5
 )
 # Returns grouped matches with parent context - BREAKING CHANGE in v2.3.0
 
 # Find items where upload failed but processing succeeded (needs retry)  
-failed_uploads = await todo_find_subitems_by_status(
+failed_uploads = await todo_find_items_by_status(
     "images", 
     {"process": "completed", "upload": "failed"},
     limit=10
 )
 
 # Find fully completed workflows (all stages done)
-completed_workflows = await todo_find_subitems_by_status(
+completed_workflows = await todo_find_items_by_status(
     "images", 
     {"generate": "completed", "download": "completed", "process": "completed", "upload": "completed"},
     limit=20
@@ -620,7 +635,7 @@ completed_workflows = await todo_find_subitems_by_status(
 
 # Complex multi-stage development workflows
 # Find features ready for testing (dev done, test pending)
-testing_ready = await todo_find_subitems_by_status(
+testing_ready = await todo_find_items_by_status(
     "features", 
     {"development": "completed", "testing": "pending", "documentation": "completed"},
     limit=3
@@ -628,7 +643,7 @@ testing_ready = await todo_find_subitems_by_status(
 
 # Real-world example: CI/CD pipeline status tracking
 # Find builds where tests passed but deployment is pending
-deployment_ready = await todo_find_subitems_by_status(
+deployment_ready = await todo_find_items_by_status(
     "releases", 
     {"build": "completed", "tests": "completed", "deployment": "pending"},
     limit=5
@@ -856,7 +871,7 @@ await todo_remove_list_tag("project-alpha", "urgent")
 | `todo_get_item_property` | Get specific item property |
 | `todo_get_all_items_properties` | 🆕 Get all properties for all items with status filter and optional limit |
 | `todo_find_items_by_property` | Search items by property value |
-| `todo_find_subitems_by_status` | Find subitems by sibling status conditions |
+| `todo_find_items_by_status` | Universal item search with multiple modes |
 | `todo_create_tag` | Create new system tag |
 | `todo_add_list_tag` | Add tag to list |
 
