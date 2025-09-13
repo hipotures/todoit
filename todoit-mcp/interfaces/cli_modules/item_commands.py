@@ -376,7 +376,7 @@ def item_list(ctx, list_key, item_key):
             # Prepare subitems data for unified display
             data = []
             for subitem in subitems:
-                status_display = _get_status_display(subitem.status.value)
+                status_display = _get_status_for_output(subitem.status.value)
 
                 states_str = ""
                 if subitem.completion_states:
@@ -408,13 +408,15 @@ def item_list(ctx, list_key, item_key):
             # Use unified display system
             _display_records(data, f"Subitems for '{item_key}'", columns)
 
-            # Show completion info
-            completed = sum(1 for st in subitems if st.status.value == "completed")
-            total = len(subitems)
-            percentage = (completed / total * 100) if total > 0 else 0
-            console.print(
-                f"\n[bold]Progress:[/] {percentage:.1f}% ({completed}/{total} completed)"
-            )
+            # Show completion info only for visual formats (not JSON/YAML/XML)
+            output_format = _get_output_format()
+            if output_format not in ["json", "yaml", "xml"]:
+                completed = sum(1 for st in subitems if st.status.value == "completed")
+                total = len(subitems)
+                percentage = (completed / total * 100) if total > 0 else 0
+                console.print(
+                    f"\n[bold]Progress:[/] {percentage:.1f}% ({completed}/{total} completed)"
+                )
         else:
             # List all items in the list
             items = manager.get_list_items(list_key)
@@ -430,7 +432,7 @@ def item_list(ctx, list_key, item_key):
                         "Position": str(item.position),
                         "Key": item.item_key,
                         "Title": item.content,
-                        "Status": _get_status_display(item.status.value),
+                        "Status": _get_status_for_output(item.status.value),
                     }
                 )
 
@@ -480,7 +482,7 @@ def item_next(ctx, list_key, start):
                 "Item": item.content,
                 "Key": item.item_key,
                 "Position": str(item.position),
-                "Status": _get_status_display(item.status.value),
+                "Status": _get_status_for_output(item.status.value),
             }
         ]
 
@@ -539,7 +541,7 @@ def item_next_smart(ctx, list_key, start):
                 "Item": item.content,
                 "Key": item.item_key,
                 "Position": str(item.position),
-                "Status": _get_status_display(item.status.value),
+                "Status": _get_status_for_output(item.status.value),
             }
         ]
 
@@ -808,7 +810,7 @@ def item_find(ctx, list_key, property_key, property_value, limit, first):
             item_data = {
                 "Item Key": item.item_key,
                 "Content": item.content,
-                "Status": _get_status_display(item.status.value),
+                "Status": _get_status_for_output(item.status.value),
                 "Position": str(item.position),
                 "Created": (
                     item.created_at.strftime("%Y-%m-%d %H:%M")
@@ -962,7 +964,7 @@ def item_find_subitems(ctx, list_key, conditions, limit):
                             if len(subitem_content) > 40
                             else subitem_content
                         ),
-                        "Status": _get_status_display(subitem_status),
+                        "Status": _get_status_for_output(subitem_status),
                         "Created": (
                             subitem_created.strftime("%Y-%m-%d %H:%M")
                             if subitem_created and hasattr(subitem_created, "strftime")
