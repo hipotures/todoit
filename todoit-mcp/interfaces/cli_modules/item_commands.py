@@ -14,10 +14,20 @@ from .display import (
     _display_records,
     _get_status_display,
     _get_status_icon,
+    _get_output_format,
     _render_tree_view,
     console,
 )
 from .tag_commands import _get_filter_tags
+
+
+def _get_status_for_output(status_value: str) -> str:
+    """Get status display based on output format - raw for JSON/YAML/XML, emoji for table"""
+    output_format = _get_output_format()
+    if output_format in ["json", "yaml", "xml"]:
+        return status_value  # Raw status for structured formats
+    else:
+        return _get_status_display(status_value)  # Emoji for table/vertical
 
 
 def _check_list_access(manager, list_key):
@@ -1401,7 +1411,7 @@ def item_find_status(
                 item_data = {
                     "Item Key": item.item_key,
                     "Title": item.content,
-                    "Status": _get_status_display(item.status.value),
+                    "Status": _get_status_for_output(item.status.value),
                     "Position": str(item.position),
                 }
 
@@ -1474,7 +1484,7 @@ def item_find_status(
                 parent_data = {
                     "Parent Key": match["parent"].item_key,
                     "Parent Title": match["parent"].content,
-                    "Parent Status": _get_status_display(match["parent"].status.value),
+                    "Parent Status": _get_status_for_output(match["parent"].status.value),
                     "Matching Subitems": ", ".join([s.item_key for s in match["matching_subitems"]]),
                     "Subitem Count": str(len(match["matching_subitems"])),
                 }

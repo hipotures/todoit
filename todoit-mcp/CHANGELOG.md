@@ -5,6 +5,18 @@ All notable changes to TODOIT MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.14.1] - 2025-09-13
+
+### 🐛 **Bug Fixes**
+- **Fixed emoji status in JSON output**: CLI command `item find-status` now returns clean status values (`pending`, `in_progress`, `completed`, `failed`) in JSON/YAML/XML formats instead of emoji characters (`⏳`, `🔄`, `✅`, `❌`)
+- **Improved structured output**: All structured formats (JSON, YAML, XML) now use raw status values for better parsing and automation
+- **Maintained visual output**: Table and vertical formats still display user-friendly emoji status indicators
+
+### 🔧 **Technical Changes**
+- Added `_get_status_for_output()` helper function to handle format-aware status display
+- Updated `item_find_status()` command to use context-aware status formatting
+- Enhanced compatibility with automation tools and scripts that parse JSON output
+
 ## [2.14.0] - 2025-09-13
 
 ### 🚀 **MAJOR: Universal Item Search with todo_find_items_by_status**
