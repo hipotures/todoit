@@ -4,6 +4,123 @@
 
 TODOIT MCP provides 51 comprehensive tools for Claude Code integration, offering complete programmatic access to all functionality through the Model Context Protocol.
 
+## 🔖 MCP Protocol Annotations (v2.15.0)
+
+**NEW FEATURE**: All 51 MCP tools now include proper MCP protocol annotations for improved LLM decision-making:
+
+### Annotation Types
+
+| Annotation | Count | Description | Examples |
+|------------|-------|-------------|----------|
+| **readOnlyHint** | 29 tools | Tools that only read data, never modify | `todo_get_list`, `todo_list_all`, `todo_get_progress` |
+| **idempotentHint** | 18 tools | Safe to retry - same result on repeated calls | `todo_create_list`, `todo_add_item`, `todo_set_property` |
+| **destructiveHint** | 12 tools | Modifies or deletes data | `todo_delete_list`, `todo_rename_item`, `todo_remove_tag` |
+
+### Key Benefits
+
+- **Better LLM Decisions**: Claude Code can distinguish read-only vs destructive operations
+- **Safe Retries**: Idempotent tools can be safely retried on errors
+- **Client Filtering**: MCP clients can filter/warn about destructive operations
+- **Auto-documentation**: Tools are self-documenting their behavior
+
+### Example Categories
+
+**Read-Only Tools** (29 tools):
+```python
+# Pure reads - no side effects
+todo_get_list(list_key)          # readOnlyHint=True
+todo_find_items_by_property()    # readOnlyHint=True
+todo_get_dependency_graph()      # readOnlyHint=True
+```
+
+**Idempotent, Non-Destructive** (18 tools):
+```python
+# Safe to retry, doesn't destroy data
+todo_create_list()               # idempotentHint=True, destructiveHint=False
+todo_add_item()                  # idempotentHint=True, destructiveHint=False
+todo_set_list_property()         # idempotentHint=True, destructiveHint=False
+```
+
+**Destructive** (12 tools):
+```python
+# Permanently modifies/deletes data
+todo_delete_list()               # destructiveHint=True, idempotentHint=False
+todo_rename_item()               # destructiveHint=True, idempotentHint=False
+todo_remove_item_dependency()    # destructiveHint=True, idempotentHint=True
+```
+
+## 📄 Pagination Support (v2.15.0)
+
+**NEW FEATURE**: List-returning tools now support pagination to prevent token overflow:
+
+### Supported Tools
+
+- **`todo_list_all(limit=50, offset=0)`** - Paginate through all lists
+- **`todo_find_items_by_property(limit=50, offset=0)`** - Paginate search results
+- **`todo_find_items_by_status(limit=50, offset=0)`** - Paginate status queries
+
+### Pagination Format
+
+All paginated responses include metadata:
+```python
+{
+    "success": True,
+    "items": [...],  # Current page items
+    "pagination": {
+        "limit": 50,
+        "offset": 0,
+        "total": 150,           # Total matching items
+        "has_more": True,       # More pages available?
+        "next_offset": 50       # Use this for next page
+    },
+    "count": 50,               # Items in current page
+    "total": 150               # Total available
+}
+```
+
+### Example Usage
+
+```python
+# Get first page
+result = await todo_list_all(limit=50, offset=0)
+print(f"Showing {result['count']} of {result['total']} lists")
+
+# Get next page if available
+if result['pagination']['has_more']:
+    next_result = await todo_list_all(
+        limit=50,
+        offset=result['pagination']['next_offset']
+    )
+```
+
+## 💡 Actionable Error Messages (v2.15.0)
+
+**NEW FEATURE**: Error responses now include actionable suggestions:
+
+### Error Response Format
+
+```python
+{
+    "success": False,
+    "error": "List 'mylist' not found",
+    "error_type": "not_found",
+    "suggestions": [
+        "Use todo_list_all() to see available lists",
+        "Use todo_create_list() to create a new list",
+        "Check the list_key spelling and format"
+    ]
+}
+```
+
+### Common Error Types
+
+| Error Type | Description | Example Suggestions |
+|------------|-------------|---------------------|
+| `not_found` | Resource doesn't exist | "Use todo_list_all() to see available lists" |
+| `permission` | Access denied (tag filter) | "Remove filter_tags parameter to access all lists" |
+| `validation` | Invalid input parameters | "Check parameter format and constraints" |
+| `internal` | System error | "Retry the operation or contact support" |
+
 ## 🏷️ Environment Isolation with filter_tags (v2.13.3)
 **NEW FEATURE**: All MCP tools now support optional `filter_tags` parameter for environment isolation:
 

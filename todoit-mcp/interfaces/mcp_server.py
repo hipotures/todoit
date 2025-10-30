@@ -7,8 +7,10 @@ from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 
 from core.manager import TodoManager
+from interfaces.mcp_tool_annotations import get_tool_annotations
 
 # Initialize FastMCP server
 mcp = FastMCP("todoit-mcp")
@@ -154,6 +156,105 @@ def clean_to_dict_result(
         return clean_dict
 
 
+def paginate_results(
+    items: List[Any],
+    limit: int = 50,
+    offset: int = 0,
+) -> Dict[str, Any]:
+    """
+    Paginate a list of results with metadata.
+
+    Provides standard pagination pattern for MCP tools that return lists.
+    Returns paginated items plus metadata about total count and navigation.
+
+    Args:
+        items: Full list of items to paginate
+        limit: Maximum number of items to return (default: 50)
+        offset: Number of items to skip (default: 0)
+
+    Returns:
+        Dict with:
+            - items: Paginated slice of items
+            - pagination: Dict with limit, offset, total, has_more, next_offset
+
+    Examples:
+        >>> items = [1, 2, 3, 4, 5]
+        >>> result = paginate_results(items, limit=2, offset=0)
+        >>> result["items"]
+        [1, 2]
+        >>> result["pagination"]["has_more"]
+        True
+        >>> result["pagination"]["next_offset"]
+        2
+    """
+    total = len(items)
+    paginated = items[offset : offset + limit]
+
+    return {
+        "items": paginated,
+        "pagination": {
+            "limit": limit,
+            "offset": offset,
+            "total": total,
+            "has_more": offset + limit < total,
+            "next_offset": offset + limit if offset + limit < total else None,
+        },
+    }
+
+
+def error_response(
+    error_msg: str,
+    suggestions: Optional[List[str]] = None,
+    error_type: str = "error",
+) -> Dict[str, Any]:
+    """
+    Create a standard error response with actionable suggestions.
+
+    Provides consistent error formatting across MCP tools with helpful
+    suggestions for LLMs on how to proceed or fix the issue.
+
+    Args:
+        error_msg: Human-readable error message describing what went wrong
+        suggestions: Optional list of actionable suggestions for fixing the error
+        error_type: Type of error (error, validation, not_found, permission, etc.)
+
+    Returns:
+        Dict with success=False, error message, optional suggestions, and error type
+
+    Examples:
+        >>> error_response("List 'mylist' not found")
+        {'success': False, 'error': "List 'mylist' not found", 'error_type': 'error'}
+
+        >>> error_response(
+        ...     "List 'mylist' not found",
+        ...     suggestions=[
+        ...         "Use todo_list_all() to see available lists",
+        ...         "Use todo_create_list() to create a new list"
+        ...     ],
+        ...     error_type="not_found"
+        ... )
+        {
+            'success': False,
+            'error': "List 'mylist' not found",
+            'suggestions': [
+                "Use todo_list_all() to see available lists",
+                "Use todo_create_list() to create a new list"
+            ],
+            'error_type': 'not_found'
+        }
+    """
+    response = {
+        "success": False,
+        "error": error_msg,
+        "error_type": error_type,
+    }
+
+    if suggestions:
+        response["suggestions"] = suggestions
+
+    return response
+
+
 # === MCP TOOLS LEVEL CONFIGURATION ===
 import os
 
@@ -213,12 +314,22 @@ def should_register_tool(tool_name: str) -> bool:
 
 
 def conditional_tool(func: Callable) -> Callable:
-    """Decorator to conditionally register MCP tool based on level configuration"""
+    """Decorator to conditionally register MCP tool based on level configuration.
+
+    Automatically applies MCP protocol annotations (readOnlyHint, destructiveHint,
+    idempotentHint) based on tool name.
+    """
     tool_name = func.__name__
 
     if should_register_tool(tool_name):
-        # Register the tool normally
-        return mcp.tool()(func)
+        # Get MCP annotations for this tool (returns dict)
+        annotations_dict = get_tool_annotations(tool_name)
+
+        # Create ToolAnnotations object from dict
+        tool_annotations = ToolAnnotations(**annotations_dict)
+
+        # Register the tool with proper MCP annotations
+        return mcp.tool(annotations=tool_annotations)(func)
     else:
         # Return the function undecorated (not registered with MCP)
         return func
@@ -300,11 +411,27 @@ async def todo_get_list(
     """
     todo_list = mgr.get_list(list_key)
     if not todo_list:
-        return {"success": False, "error": f"List '{list_key}' not found"}
-    
+        return error_response(
+            f"List '{list_key}' not found",
+            suggestions=[
+                "Use todo_list_all() to see available lists",
+                "Use todo_create_list() to create a new list",
+                "Check the list_key spelling and format"
+            ],
+            error_type="not_found"
+        )
+
     # Check filter_tags access
     if not _check_list_access(mgr, list_key, filter_tags):
-        return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
+        return error_response(
+            f"List '{list_key}' does not match tag filter",
+            suggestions=[
+                f"Remove filter_tags parameter to access all lists",
+                "Use todo_get_lists_by_tag() to find lists with specific tags",
+                "Use todo_add_list_tag() to add required tags to the list"
+            ],
+            error_type="permission"
+        )
 
     # Base response with list info
     response = {
@@ -455,28 +582,40 @@ async def todo_unarchive_list(
 @conditional_tool
 @mcp_error_handler
 async def todo_list_all(
-    limit: Optional[int] = None,
+    limit: int = 50,
+    offset: int = 0,
     include_archived: bool = False,
     filter_tags: Optional[List[str]] = None,
     mgr=None,
 ) -> Dict[str, Any]:
-    """List all TODO lists in the database with optional tag filtering.
+    """List all TODO lists in the database with optional tag filtering and pagination.
 
     Args:
-        limit: Optional maximum number of lists to return
+        limit: Maximum number of lists to return (default: 50)
+        offset: Number of lists to skip for pagination (default: 0)
         include_archived: Whether to include archived lists (default: False)
         filter_tags: Optional list of tag names to filter by (lists with ANY of these tags)
 
     Returns:
-        Dictionary with success status, list of all todo lists with progress statistics, tags, and count
+        Dictionary with success status, list of todo lists with progress statistics, tags,
+        pagination metadata, and count
+
+    Examples:
+        # Get first 50 lists
+        >>> await todo_list_all(limit=50, offset=0)
+
+        # Get next 50 lists
+        >>> await todo_list_all(limit=50, offset=50)
     """
-    lists = mgr.list_all(
-        limit=limit, include_archived=include_archived, filter_tags=filter_tags
+    # Get ALL lists first (we'll paginate in-memory for now)
+    # TODO: Future optimization - push pagination to database layer
+    all_lists = mgr.list_all(
+        limit=None, include_archived=include_archived, filter_tags=filter_tags
     )
 
     # Enhance each list with progress statistics and tag information
     enhanced_lists = []
-    for todo_list in lists:
+    for todo_list in all_lists:
         list_data = clean_to_dict_result(todo_list.to_dict(), "list")
 
         # Add progress statistics
@@ -489,7 +628,16 @@ async def todo_list_all(
 
         enhanced_lists.append(list_data)
 
-    response = {"success": True, "lists": enhanced_lists, "count": len(lists)}
+    # Apply pagination
+    paginated = paginate_results(enhanced_lists, limit=limit, offset=offset)
+
+    response = {
+        "success": True,
+        "lists": paginated["items"],
+        "pagination": paginated["pagination"],
+        "count": len(paginated["items"]),  # Count of returned items
+        "total": paginated["pagination"]["total"],  # Total available items
+    }
 
     # Add filtering metadata if tags were used
     if filter_tags:
@@ -1540,30 +1688,32 @@ async def todo_find_items_by_property(
     list_key: Optional[str],
     property_key: str,
     property_value: str,
-    limit: Optional[int] = None,
+    limit: int = 50,
+    offset: int = 0,
     filter_tags: Optional[List[str]] = None,
     mgr=None,
 ) -> Dict[str, Any]:
-    """Find items by property value with optional limit.
+    """Find items by property value with pagination support.
 
     Args:
         list_key: Key of the list to search in (optional, None = search all lists)
         property_key: Name of the property to match (required)
         property_value: Value of the property to match (required)
-        limit: Maximum number of results to return (optional, None = all)
+        limit: Maximum number of results to return (default: 50)
+        offset: Number of results to skip for pagination (default: 0)
         filter_tags: Optional list of tag names to filter by (when list_key=None, limits search to lists with ANY of these tags)
 
     Returns:
-        Dictionary with success status, found items, and count
+        Dictionary with success status, found items, pagination metadata, and count
     """
     # Handle access control based on list_key parameter
     if list_key is not None:
-        # Single list search - check access to specific list            
+        # Single list search - check access to specific list
         if not _check_list_access(mgr, list_key, filter_tags):
             return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
-        
-        # Single list search
-        items = mgr.find_items_by_property(list_key, property_key, property_value, limit)
+
+        # Single list search - get all results first
+        items = mgr.find_items_by_property(list_key, property_key, property_value, None)
     else:
         # Multi-list search - filter_tags will limit which lists to search
         if filter_tags:
@@ -1573,7 +1723,7 @@ async def todo_find_items_by_property(
             for list_info in all_lists:
                 if _check_list_access(mgr, list_info['list_key'], filter_tags):
                     accessible_lists.append(list_info['list_key'])
-            
+
             # Search across accessible lists
             all_items = []
             for accessible_list_key in accessible_lists:
@@ -1583,15 +1733,11 @@ async def todo_find_items_by_property(
                 except ValueError:
                     # List not found, skip
                     continue
-            
-            # Apply limit after collecting from all lists
-            if limit and len(all_items) > limit:
-                all_items = all_items[:limit]
-            
+
             items = all_items
         else:
             # No filter_tags, search all lists
-            items = mgr.find_items_by_property(list_key, property_key, property_value, limit)
+            items = mgr.find_items_by_property(list_key, property_key, property_value, None)
 
     # Convert items to dictionaries
     items_data = []
@@ -1607,18 +1753,23 @@ async def todo_find_items_by_property(
             "is_subitem": item.parent_item_id is not None,
         }
         item_dict = clean_item_data(item_dict)
-
         items_data.append(item_dict)
+
+    # Apply pagination
+    paginated = paginate_results(items_data, limit=limit, offset=offset)
 
     return {
         "success": True,
-        "items": items_data,
-        "count": len(items_data),
+        "items": paginated["items"],
+        "pagination": paginated["pagination"],
+        "count": len(paginated["items"]),  # Count of returned items
+        "total": paginated["pagination"]["total"],  # Total matching items
         "list_key": list_key if list_key else "all_lists",
         "search_criteria": {
             "property_key": property_key,
             "property_value": property_value,
             "limit": limit,
+            "offset": offset,
         },
     }
 
@@ -1629,11 +1780,12 @@ async def todo_find_items_by_property(
 async def todo_find_items_by_status(
     conditions: Union[str, List[str], Dict[str, Any]],
     list_key: Optional[str] = None,
-    limit: int = 10,
+    limit: int = 50,
+    offset: int = 0,
     filter_tags: Optional[List[str]] = None,
     mgr=None,
 ) -> Dict[str, Any]:
-    """Universal function for finding items by status with multiple modes.
+    """Universal function for finding items by status with multiple modes and pagination.
 
     This function supports multiple search modes based on the conditions parameter:
     - Simple status search (str): Find all items with specific status
@@ -1646,18 +1798,19 @@ async def todo_find_items_by_status(
             - List[str]: Multiple statuses (["pending", "in_progress"])
             - Dict: Complex conditions with item/subitem filters
         list_key: Optional list key to limit search scope (None = all lists)
-        limit: Maximum number of results to return (default: 10)
+        limit: Maximum number of results to return (default: 50)
+        offset: Number of results to skip for pagination (default: 0)
         filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
-        Dictionary with success status, items/matches, and statistics
+        Dictionary with success status, items/matches, pagination metadata, and statistics
 
     Examples:
         # Simple status search
         await todo_find_items_by_status("pending")
 
-        # Multiple statuses (OR)
-        await todo_find_items_by_status(["pending", "in_progress"], limit=20)
+        # Multiple statuses (OR) with pagination
+        await todo_find_items_by_status(["pending", "in_progress"], limit=50, offset=0)
 
         # Complex item+subitem conditions
         await todo_find_items_by_status({
@@ -1681,7 +1834,9 @@ async def todo_find_items_by_status(
             return {"success": False, "error": f"List '{list_key}' does not match tag filter"}
 
     try:
-        results = mgr.find_items_by_status(conditions, list_key, limit)
+        # Get all results first, then paginate (for consistency across all tools)
+        # Pass large limit to get all results (manager doesn't accept None)
+        results = mgr.find_items_by_status(conditions, list_key, 999999)
 
         # Determine response mode based on result type
         if isinstance(results, list) and results:
@@ -1714,18 +1869,24 @@ async def todo_find_items_by_status(
 
                     items_data.append(clean_item_data(item_dict))
 
+                # Apply pagination to items
+                paginated = paginate_results(items_data, limit=limit, offset=offset)
+
                 return {
                     "success": True,
                     "mode": "simple" if isinstance(conditions, str) else "multiple",
-                    "items": items_data,
-                    "count": len(items_data),
+                    "items": paginated["items"],
+                    "pagination": paginated["pagination"],
+                    "count": len(paginated["items"]),  # Count of returned items
+                    "total": paginated["pagination"]["total"],  # Total matching items
                     "search_criteria": {
                         "conditions": conditions,
                         "list_key": list_key,
                         "limit": limit,
+                        "offset": offset,
                     },
                     "statistics": {
-                        "total": len(items_data),
+                        "total": len(items_data),  # Total before pagination
                         "by_status": _calculate_status_stats(results),
                         "by_list": _calculate_list_stats(results) if not list_key else None,
                     }
@@ -1765,15 +1926,21 @@ async def todo_find_items_by_status(
                         "matching_subitems": matching_subitems_data
                     })
 
+                # Apply pagination to matches
+                paginated = paginate_results(matches_data, limit=limit, offset=offset)
+
                 return {
                     "success": True,
                     "mode": "complex" if ("item" in conditions or "subitem" in conditions) else "subitems",
-                    "matches": matches_data,
-                    "count": len(matches_data),
+                    "matches": paginated["items"],
+                    "pagination": paginated["pagination"],
+                    "count": len(paginated["items"]),  # Count of returned matches
+                    "total": paginated["pagination"]["total"],  # Total matching items
                     "search_criteria": {
                         "conditions": conditions,
                         "list_key": list_key,
                         "limit": limit,
+                        "offset": offset,
                     },
                 }
 
@@ -1782,11 +1949,20 @@ async def todo_find_items_by_status(
             "success": True,
             "mode": "empty",
             "items": [],
+            "pagination": {
+                "limit": limit,
+                "offset": offset,
+                "total": 0,
+                "has_more": False,
+                "next_offset": None,
+            },
             "count": 0,
+            "total": 0,
             "search_criteria": {
                 "conditions": conditions,
                 "list_key": list_key,
                 "limit": limit,
+                "offset": offset,
             },
         }
 

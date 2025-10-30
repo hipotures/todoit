@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "todoit-mcp"
-version = "2.14.4"
+version = "2.15.0"
 description = "TODOIT MCP - Universal TODO list management system with MCP integration for Claude Code"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -32,6 +32,7 @@ dependencies = [
     "pyyaml>=6.0.0",
     "dicttoxml>=1.7.0",
     "python-dotenv>=1.0.0",
+    "pytest>=8.4.2",
 ]
 
 [project.optional-dependencies]

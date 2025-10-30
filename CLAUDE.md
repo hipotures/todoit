@@ -75,6 +75,40 @@ todoit --help
 todoit list create "test" --title "Test List"
 ```
 
+## Recent Major Features (v2.15.0)
+
+### MCP Protocol Annotations
+All 51 MCP tools now include proper protocol annotations:
+- **29 read-only tools** (`readOnlyHint=True`) - Pure reads, no side effects
+- **18 idempotent tools** (`idempotentHint=True`) - Safe to retry
+- **12 destructive tools** (`destructiveHint=True`) - Modify/delete data
+
+Annotations managed in `interfaces/mcp_tool_annotations.py` and automatically applied via `conditional_tool` decorator using `ToolAnnotations` from `mcp.types`.
+
+### Pagination Support
+Three key tools now support pagination (limit=50, offset=0):
+- `todo_list_all()` - Paginate through all lists
+- `todo_find_items_by_property()` - Paginate search results
+- `todo_find_items_by_status()` - Paginate status queries
+
+Standard pagination format includes metadata: `{limit, offset, total, has_more, next_offset}`
+
+### Actionable Error Messages
+Error responses now include suggestions:
+```python
+{
+    "success": False,
+    "error": "List 'mylist' not found",
+    "error_type": "not_found",
+    "suggestions": [
+        "Use todo_list_all() to see available lists",
+        "Use todo_create_list() to create a new list"
+    ]
+}
+```
+
+Helper function `error_response()` available in `interfaces/mcp_server.py`.
+
 ## Architecture Overview
 
 ### Core Components
@@ -83,7 +117,8 @@ todoit list create "test" --title "Test List"
 - **`core/models.py`** (655 lines) - Pydantic models with comprehensive validation (5 enums, 17 model classes)
 
 ### Interface Layer
-- **`interfaces/mcp_server.py`** (2105 lines) - MCP tools for Claude Code integration
+- **`interfaces/mcp_server.py`** (~2200 lines) - MCP tools for Claude Code integration with protocol annotations, pagination, and actionable errors
+- **`interfaces/mcp_tool_annotations.py`** (289 lines) - MCP protocol annotations for all 51 tools (readOnlyHint, destructiveHint, idempotentHint)
 - **`interfaces/cli.py`** - Rich CLI with modular commands in `cli_modules/`
 - **`interfaces/cli_modules/`** - Modular CLI commands (list, item, dependency, property management)
 
@@ -150,6 +185,7 @@ Database layer includes graph traversal algorithms in `_would_create_circular_de
 - **Data integrity**: SQLite foreign key constraints and cascade operations
 - **Tag system**: Dynamic color assignment and self-healing capabilities
 - **MCP interface**: All 51 tools have basic coverage but need edge case expansion
+- **MCP compliance** (v2.15.0): `tests/unit/test_mcp_compliance.py` - 17 tests verifying protocol annotations for all 51 tools
 
 ## Common Development Patterns
 
