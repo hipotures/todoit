@@ -597,15 +597,34 @@ async def todo_list_all(
         filter_tags: Optional list of tag names to filter by (lists with ANY of these tags)
 
     Returns:
-        Dictionary with success status, list of todo lists with progress statistics, tags,
-        pagination metadata, and count
+        Dictionary with:
+            - success (bool): Operation status
+            - lists (List[Dict]): Todo lists with progress statistics and tags
+            - count (int): Number of lists returned on this page
+            - total (int): Total number of lists available
+            - pagination (Dict): Pagination metadata:
+                - limit (int): Maximum items per page
+                - offset (int): Number of items skipped
+                - total (int): Total items available
+                - has_more (bool): Whether more pages exist
+                - next_offset (int|None): Offset for next page or None
 
     Examples:
         # Get first 50 lists
-        >>> await todo_list_all(limit=50, offset=0)
+        >>> result = await todo_list_all(limit=50, offset=0)
+        >>> print(f"Showing {result['count']} of {result['total']}")
+        >>> if result['pagination']['has_more']:
+        >>>     next_page = await todo_list_all(limit=50, offset=result['pagination']['next_offset'])
 
-        # Get next 50 lists
-        >>> await todo_list_all(limit=50, offset=50)
+        # Iterate through all pages
+        >>> all_lists = []
+        >>> offset = 0
+        >>> while True:
+        >>>     result = await todo_list_all(limit=50, offset=offset)
+        >>>     all_lists.extend(result['lists'])
+        >>>     if not result['pagination']['has_more']:
+        >>>         break
+        >>>     offset = result['pagination']['next_offset']
     """
     # Get ALL lists first (we'll paginate in-memory for now)
     # TODO: Future optimization - push pagination to database layer
@@ -1704,7 +1723,29 @@ async def todo_find_items_by_property(
         filter_tags: Optional list of tag names to filter by (when list_key=None, limits search to lists with ANY of these tags)
 
     Returns:
-        Dictionary with success status, found items, pagination metadata, and count
+        Dictionary with:
+            - success (bool): Operation status
+            - items (List[Dict]): Found items matching the property
+            - count (int): Number of items returned on this page
+            - total (int): Total number of items matching the query
+            - pagination (Dict): Pagination metadata:
+                - limit (int): Maximum items per page
+                - offset (int): Number of items skipped
+                - total (int): Total items available
+                - has_more (bool): Whether more pages exist
+                - next_offset (int|None): Offset for next page or None
+
+    Examples:
+        # Find items with priority=high (first page)
+        >>> result = await todo_find_items_by_property('tasks', 'priority', 'high', limit=20, offset=0)
+        >>> print(f"Found {result['total']} items, showing {result['count']}")
+
+        # Get next page if available
+        >>> if result['pagination']['has_more']:
+        >>>     next_page = await todo_find_items_by_property(
+        >>>         'tasks', 'priority', 'high',
+        >>>         limit=20, offset=result['pagination']['next_offset']
+        >>>     )
     """
     # Handle access control based on list_key parameter
     if list_key is not None:
@@ -1803,26 +1844,37 @@ async def todo_find_items_by_status(
         filter_tags: Optional list of tag names to filter by (list must have ANY of these tags)
 
     Returns:
-        Dictionary with success status, items/matches, pagination metadata, and statistics
+        Dictionary with:
+            - success (bool): Operation status
+            - items (List[Dict]) or matches (List[Dict]): Found items/matches (depends on mode)
+            - count (int): Number of items returned on this page
+            - total (int): Total number of items matching the query
+            - pagination (Dict): Pagination metadata:
+                - limit (int): Maximum items per page
+                - offset (int): Number of items skipped
+                - total (int): Total items available
+                - has_more (bool): Whether more pages exist
+                - next_offset (int|None): Offset for next page or None
+            - mode (str): Search mode used (simple/multiple/complex/subitems)
 
     Examples:
-        # Simple status search
-        await todo_find_items_by_status("pending")
+        # Simple status search with pagination
+        >>> result = await todo_find_items_by_status("pending", limit=25, offset=0)
+        >>> print(f"Found {result['total']} pending items")
+        >>> if result['pagination']['has_more']:
+        >>>     next_page = await todo_find_items_by_status("pending", limit=25, offset=result['pagination']['next_offset'])
 
         # Multiple statuses (OR) with pagination
-        await todo_find_items_by_status(["pending", "in_progress"], limit=50, offset=0)
+        >>> result = await todo_find_items_by_status(["pending", "in_progress"], limit=50, offset=0)
 
         # Complex item+subitem conditions
-        await todo_find_items_by_status({
-            "item": {"status": "in_progress"},
-            "subitem": {"download": "pending", "generate": "completed"}
-        })
+        >>> await todo_find_items_by_status({
+        ...     "item": {"status": "in_progress"},
+        ...     "subitem": {"download": "pending", "generate": "completed"}
+        ... })
 
         # Backwards compatibility (same as find_subitems_by_status)
-        await todo_find_items_by_status({
-            "download": "pending",
-            "generate": "completed"
-        }, "mylist")
+        >>> await todo_find_items_by_status({"download": "pending", "generate": "completed"}, "mylist")
     """
     # Validate list access if list_key provided
     if list_key:
